@@ -1,6 +1,6 @@
 import React from 'react';
 
-// ===== Product Images (path ตรงกับ src/assets/... โฟลเดอร์ย่อย) =====
+// ===== Product Images =====
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
 import BLDCImg from '../assets/bldc/bldc.png';
@@ -18,6 +18,7 @@ import RImg from '../assets/rkfs/R.png';
 import KImg from '../assets/rkfs/K.png';
 import FImg from '../assets/rkfs/F.png';
 import SImg from '../assets/rkfs/S.png';
+import RKFSGif from '../assets/rkfs/rkfs-demo.gif';
 
 import KHead from '../assets/ac/K.png';
 import KBHead from '../assets/ac/KB.png';
@@ -39,6 +40,7 @@ export const productList = [
   { name: 'SRV Worm Gear', image: SRVImg }
 ];
 
+// ========== AC Motor Flow ==========
 export function renderACMotorFlow(state, setState, onConfirm) {
   const {
     acMotorType, acPower, acSpeedAdjust, acVoltage,
@@ -132,6 +134,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
   );
 }
 
+// ========== RKFS Flow ==============
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
@@ -148,17 +151,37 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     onConfirm(model);
   };
 
+  const descriptions = {
+    R: 'R Series – Helical Gear Motor',
+    K: 'K Series – Bevel Gear Motor',
+    F: 'F Series – Parallel Shaft Gear Motor',
+    S: 'S Series – Worm Gear Motor'
+  };
+
+  const gearList = [
+    { key: 'R', img: RImg },
+    { key: 'K', img: KImg },
+    { key: 'F', img: FImg },
+    { key: 'S', img: SImg }
+  ];
+
   return (
     <div className="space-y-6 mt-6">
       {!rkfsDesign && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[{key: 'R', img: RImg}, {key: 'K', img: KImg}, {key: 'F', img: FImg}, {key: 'S', img: SImg}].map(type => (
-            <img key={type.key} src={type.img} alt={type.key}
-              onClick={() => update('rkfsDesign', type.key)}
-              className="cursor-pointer hover:scale-105 transition" />
+        <div className="flex flex-col gap-6 sm:flex-row sm:justify-center">
+          {gearList.map(item => (
+            <div
+              key={item.key}
+              className="flex items-center gap-4 cursor-pointer hover:scale-105 transition"
+              onClick={() => update('rkfsDesign', item.key)}
+            >
+              <img src={item.img} alt={item.key} className="w-32 sm:w-36" />
+              <div className="text-left font-medium">{descriptions[item.key]}</div>
+            </div>
           ))}
         </div>
       )}
+
       {rkfsDesign && !rkfsSize && (
         <div className="flex flex-wrap gap-3">
           {['60', '80', '100', '120'].map(size => (
@@ -167,6 +190,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
           ))}
         </div>
       )}
+
       {rkfsSize && !rkfsPower && (
         <div className="flex flex-wrap gap-3">
           {['0.2kW', '0.4kW', '0.75kW', '1.5kW', '2.2kW'].map(power => (
@@ -175,6 +199,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
           ))}
         </div>
       )}
+
       {rkfsPower && !rkfsMounting && (
         <div className="flex flex-wrap gap-3">
           {['Foot', 'Flange', 'Both'].map(mount => (
@@ -183,12 +208,18 @@ export function renderRKFSFlow(state, setState, onConfirm) {
           ))}
         </div>
       )}
+
       {rkfsMounting && (
         <div className="text-center space-y-2">
           <p>Model: {rkfsDesign}-{rkfsSize}-{rkfsPower}-{rkfsMounting}</p>
           <button onClick={confirmModel} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">เสร็จสิ้น</button>
         </div>
       )}
+
+      {/* ✅ GIF Preview */}
+      <div className="flex justify-center mt-6">
+        <img src={RKFSGif} alt="rkfs-demo" className="max-w-full sm:max-w-[500px]" />
+      </div>
     </div>
   );
 }
