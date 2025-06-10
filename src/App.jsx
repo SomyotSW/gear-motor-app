@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { renderACMotorFlow, renderRKFSFlow, productList } from './components/GearSelector';
+import { renderACMotorFlow, renderRKFSFlow, productList } from './components/MotorFlows.js';
 
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
