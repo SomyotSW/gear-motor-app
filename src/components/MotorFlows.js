@@ -1,3 +1,5 @@
+// MotorFlows.js
+
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
 import BLDCImg from '../assets/bldc/bldc.png';
@@ -68,58 +70,98 @@ export function renderACMotorFlow(state, setState, onConfirm) {
   return (
     <div className="space-y-6 mt-6">
       {!acMotorType && (
-        <div className="flex flex-wrap gap-3">
-          {['Induction Motor', 'Reversible Motor', 'Torque Motor'].map(type => (
-            <button key={type} onClick={() => update('acMotorType', type)}
-              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{type}</button>
-          ))}
+        <div>
+          <h3 className="font-semibold mb-2">Motor Type</h3>
+          <div className="flex flex-wrap gap-3">
+            {['Induction Motor', 'Reversible Motor', 'Torque Motor'].map(type => (
+              <button key={type} onClick={() => update('acMotorType', type)}
+                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{type}</button>
+            ))}
+          </div>
         </div>
       )}
+
       {acMotorType && !acPower && (
-        <div className="flex flex-wrap gap-3">
-          {['10W','15W','25W','40W','60W','90W','120W','140W','200W','Special W ?'].map(w => (
-            <button key={w} onClick={() => update('acPower', w)}
-              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{w}</button>
-          ))}
+        <div>
+          <h3 className="font-semibold mb-2">Power Motor</h3>
+          <div className="flex flex-wrap gap-3">
+            {['10W','15W','25W','40W','60W','90W','120W','140W','200W','Special W ?'].map(w => (
+              <button key={w} onClick={() => update('acPower', w)}
+                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{w}</button>
+            ))}
+          </div>
+          <p className="text-sm mt-2 text-gray-600">Flame Size: 60, 60, 70, 70, 80, 90, 90, 104, 104 mm ตามลำดับ</p>
         </div>
       )}
+
       {acPower && !acSpeedAdjust && (
-        <div className="flex gap-4">
-          <button onClick={() => update('acSpeedAdjust', 'Fixed')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">ไม่ปรับสปีด</button>
-          <button onClick={() => update('acSpeedAdjust', 'Variable')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">ปรับสปีดได้</button>
+        <div>
+          <h3 className="font-semibold mb-2">การปรับความเร็วรอบของมอเตอร์</h3>
+          <div className="flex gap-4">
+            <button onClick={() => update('acSpeedAdjust', 'Fixed')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">ไม่ปรับสปีด</button>
+            <button onClick={() => update('acSpeedAdjust', 'Variable')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">ปรับสปีดได้</button>
+          </div>
         </div>
       )}
+
       {acSpeedAdjust && !acVoltage && (
-        <div className="flex gap-4">
-          <button onClick={() => update('acVoltage', 'C')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">1Phase220V</button>
-          <button onClick={() => update('acVoltage', 'S')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">3Phase220V</button>
+        <div>
+          <h3 className="font-semibold mb-2">Voltage</h3>
+          <div className="flex gap-4">
+            <button onClick={() => update('acVoltage', 'C')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">1Phase220V</button>
+            <button onClick={() => update('acVoltage', 'S')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">3Phase220V</button>
+          </div>
         </div>
       )}
+
       {acVoltage && !acOption && (
-        <div className="flex flex-wrap gap-3">
-          {['T', 'P', 'F', 'FF', 'M'].map(opt => (
-            <button key={opt} onClick={() => update('acOption', opt)}
-              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{opt}</button>
-          ))}
+        <div>
+          <h3 className="font-semibold mb-2">Optional</h3>
+          <div className="flex flex-wrap gap-3">
+            {['T', 'P', 'F', 'FF', 'M'].map(opt => (
+              <button key={opt} onClick={() => update('acOption', opt)}
+                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{opt}</button>
+            ))}
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            T = Terminal Box | P = Thermal Protector | F = Fan | FF = Force Cooling Fan | M = Electromagnetic Brake
+          </p>
         </div>
       )}
+
       {acOption && !acGearHead && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[{key: 'K', img: KHead}, {key: 'KB', img: KBHead}, {key: 'RC', img: RCHead}, {key: 'RT', img: RTHead}].map(head => (
-            <img key={head.key} src={head.img} alt={head.key}
-              onClick={() => update('acGearHead', head.key)}
-              className="cursor-pointer hover:scale-105 transition" />
-          ))}
+        <div>
+          <h3 className="font-semibold mb-2">Gear Type</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[{key: 'K', img: KHead}, {key: 'KB', img: KBHead}, {key: 'RC', img: RCHead}, {key: 'RT', img: RTHead}].map(head => (
+              <div key={head.key} className="text-center">
+                <img src={head.img} alt={head.key}
+                  onClick={() => update('acGearHead', head.key)}
+                  className="cursor-pointer hover:scale-105 transition mx-auto" />
+                <p className="text-sm mt-1 text-gray-700">
+                  {head.key === 'K' && 'K = Square box with wing'}
+                  {head.key === 'KB' && 'KB = Square box'}
+                  {head.key === 'RC' && 'RC = Right angle / Hollow shaft'}
+                  {head.key === 'RT' && 'RT = Right angle / Solid shaft'}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+
       {acGearHead && !acRatio && (
-        <div className="flex flex-wrap gap-2">
-          {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(r => (
-            <button key={r} onClick={() => update('acRatio', r)}
-              className="bg-blue-100 hover:bg-blue-300 px-3 py-1 rounded">{r}</button>
-          ))}
+        <div>
+          <h3 className="font-semibold mb-2">Ratio</h3>
+          <div className="flex flex-wrap gap-2">
+            {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(r => (
+              <button key={r} onClick={() => update('acRatio', r)}
+                className="bg-blue-100 hover:bg-blue-300 px-3 py-1 rounded">{r}</button>
+            ))}
+          </div>
         </div>
       )}
+
       {acRatio && (
         <div className="space-y-2 text-center">
           <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
@@ -127,6 +169,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
           <button onClick={generateModel} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">เสร็จสิ้น</button>
         </div>
       )}
+
       <div className="flex justify-center mt-10">
         <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[400px]" />
       </div>
