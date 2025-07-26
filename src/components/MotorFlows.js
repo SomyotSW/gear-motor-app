@@ -76,33 +76,57 @@ export function renderACMotorFlow(state, setState, onConfirm) {
       {!acMotorType && (
         <div>
           <h3 className="font-semibold mb-2">Motor Type</h3>
-          <div className="grid grid-cols-3 gap-4 mb-4 sm:grid-cols-3 md:grid-cols-3">
-            {[InductionImg, ReversibleImg, TorqueImg].map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt="motor type"
-                className="h-24 mx-auto cursor-pointer transition-transform hover:scale-105"
-                onClick={() => update('acMotorType', ['Induction Motor', 'Reversible Motor', 'Torque Motor'][idx])}
-              />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {['Induction Motor', 'Reversible Motor', 'Torque Motor'].map(type => (
-              <button
-                key={type}
-                onClick={() => update('acMotorType', type)}
-                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded w-full text-center shadow-md"
-              >
-                {type}
-              </button>
-            ))}
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-4">
+            <div className="flex flex-col items-center cursor-pointer" onClick={() => update('acMotorType', 'Induction Motor')}>
+              <img src={InductionImg} alt="Induction" className="h-20 object-contain" />
+              <button className="bg-blue-100 hover:bg-blue-300 px-2 py-1 rounded mt-1">Induction Motor</button>
+            </div>
+            <div className="flex flex-col items-center cursor-pointer" onClick={() => update('acMotorType', 'Reversible Motor')}>
+              <img src={ReversibleImg} alt="Reversible" className="h-20 object-contain" />
+              <button className="bg-blue-100 hover:bg-blue-300 px-2 py-1 rounded mt-1">Reversible Motor</button>
+            </div>
+            <div className="flex flex-col items-center cursor-pointer" onClick={() => update('acMotorType', 'Torque Motor')}>
+              <img src={TorqueImg} alt="Torque" className="h-20 object-contain" />
+              <button className="bg-blue-100 hover:bg-blue-300 px-2 py-1 rounded mt-1">Torque Motor</button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ส่วนอื่น ๆ ของการเลือก AC Motor สามารถต่อด้านล่างนี้ได้ */}
+      {/* Render ส่วนอื่นต่อได้ตามเดิม เช่น Power, Voltage ฯลฯ */}
+    </div>
+  );
+}
 
+export function renderDCMotorFlow(state, setState, onConfirm) {
+  // ตัวอย่างสำหรับ DC Motor
+  return (
+    <div className="mt-6">
+      <h3 className="font-semibold">DC Motor Flow Placeholder</h3>
+    </div>
+  );
+}
+
+export function renderBLDCMotorFlow(state, setState, onConfirm) {
+  return (
+    <div className="mt-6">
+      <h3 className="font-semibold">BLDC Motor Flow Placeholder</h3>
+    </div>
+  );
+}
+
+export function renderServoFlow(state, setState, onConfirm) {
+  return (
+    <div className="mt-6">
+      <h3 className="font-semibold">Servo Motor Flow Placeholder</h3>
+    </div>
+  );
+}
+
+export function renderRKFSFlow(state, setState, onConfirm) {
+  return (
+    <div className="mt-6">
+      <h3 className="font-semibold">RKFS Gear Flow Placeholder</h3>
     </div>
   );
 }
