@@ -77,16 +77,22 @@ export function renderACMotorFlow(state, setState, onConfirm) {
       {!acMotorType && (
         <div>
           <h3 className="font-semibold mb-2">Motor Type</h3>
-          <div className="flex gap-4 mb-4">
-            <img src={InductionImg} alt="Induction" className="h-20 object-contain" />
-            <img src={ReversibleImg} alt="Reversible" className="h-20 object-contain" />
-            <img src={TorqueImg} alt="Torque" className="h-20 object-contain" />
-          </div>
           <div className="flex flex-wrap gap-3">
-            {['Induction Motor', 'Reversible Motor', 'Torque Motor'].map(type => (
-              <button key={type} onClick={() => update('acMotorType', type)}
-                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{type}</button>
-            ))}
+            <button onClick={() => update('acMotorType', 'Induction Motor')}
+              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded flex flex-col items-center">
+              <img src={InductionImg} alt="Induction" className="h-16 mb-2" />
+              Induction Motor
+            </button>
+            <button onClick={() => update('acMotorType', 'Reversible Motor')}
+              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded flex flex-col items-center">
+              <img src={ReversibleImg} alt="Reversible" className="h-16 mb-2" />
+              Reversible Motor
+            </button>
+            <button onClick={() => update('acMotorType', 'Torque Motor')}
+              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded flex flex-col items-center">
+              <img src={TorqueImg} alt="Torque" className="h-16 mb-2" />
+              Torque Motor
+            </button>
           </div>
         </div>
       )}
