@@ -1,39 +1,4 @@
-
 // MotorFlows.js
-
-import ACImg from '../assets/ac/ac.png';
-import DCImg from '../assets/dc/dc.png';
-import BLDCImg from '../assets/bldc/bldc.png';
-import ServoImg from '../assets/servo/servo.png';
-import PlanetaryImg from '../assets/planetary/planetary.png';
-import HypoidImg from '../assets/hypoid/hypoid.png';
-import RKFSImg from '../assets/rkfs/rkfs.png';
-import SPNImg from '../assets/spn/spn.png';
-import HBImg from '../assets/hb/hb.png';
-import PPlanetaryImg from '../assets/pplanetary/pplanetary.png';
-import DriverImg from '../assets/driver/driver.png';
-import SRVImg from '../assets/srv/srv.png';
-
-import RImg from '../assets/rkfs/R.png';
-import KImg from '../assets/rkfs/K.png';
-import FImg from '../assets/rkfs/F.png';
-import SImg from '../assets/rkfs/S.png';
-
-import KHead from '../assets/ac/K.png';
-import KBHead from '../assets/ac/KB.png';
-import RCHead from '../assets/ac/RC.png';
-import RTHead from '../assets/ac/RT.png';
-
-import DemoGif from '../assets/rkfs/rkfs-demo.gif';
-
-// รูปภาพเฉพาะ Motor Type
-import InductionImg from '../assets/ac/induction.png';
-import ReversibleImg from '../assets/ac/reversible.png';
-import TorqueImg from '../assets/ac/torque.png';
-
-// ⬇️ ตัดเนื้อหาที่ยาวออกไปแล้ววางที่ไฟล์แทน
-
-
 
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
@@ -126,11 +91,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
         </div>
       )}
 
-      {/* ส่วนอื่นคงเดิม... */}
-      {/* ยังคง logic ของ Power, SpeedAdjust, Voltage, Option, GearHead, Ratio และ DemoGif ตามเดิม */}
-
+      {/* ส่วนอื่นยังคงเหมือนเดิม */}
     </div>
   );
 }
-
-// หมายเหตุ: renderRKFSFlow ยังเหมือนเดิม ไม่ได้แตะต้อง
