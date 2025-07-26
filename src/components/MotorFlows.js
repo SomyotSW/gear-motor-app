@@ -25,7 +25,6 @@ import RTHead from '../assets/ac/RT.png';
 
 import DemoGif from '../assets/rkfs/rkfs-demo.gif';
 
-// ✅ รูปภาพใหม่ที่เพิ่มสำหรับหัวข้อ Motor Type
 import InductionImg from '../assets/ac/induction.png';
 import ReversibleImg from '../assets/ac/reversible.png';
 import TorqueImg from '../assets/ac/torque.png';
@@ -45,7 +44,6 @@ export const productList = [
   { name: 'SRV Worm Gear', image: SRVImg }
 ];
 
-// ✅ renderACMotorFlow
 export function renderACMotorFlow(state, setState, onConfirm) {
   const {
     acMotorType, acPower, acSpeedAdjust, acVoltage,
@@ -78,28 +76,33 @@ export function renderACMotorFlow(state, setState, onConfirm) {
       {!acMotorType && (
         <div>
           <h3 className="font-semibold mb-2">Motor Type</h3>
-          <div className="flex gap-4 mb-4">
-            <img src={InductionImg} alt="Induction" className="h-20 object-contain" />
-            <img src={ReversibleImg} alt="Reversible" className="h-20 object-contain" />
-            <img src={TorqueImg} alt="Torque" className="h-20 object-contain" />
+          <div className="grid grid-cols-3 gap-4 mb-4 sm:grid-cols-3 md:grid-cols-3">
+            {[InductionImg, ReversibleImg, TorqueImg].map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                alt="motor type"
+                className="h-24 mx-auto cursor-pointer transition-transform hover:scale-105"
+                onClick={() => update('acMotorType', ['Induction Motor', 'Reversible Motor', 'Torque Motor'][idx])}
+              />
+            ))}
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {['Induction Motor', 'Reversible Motor', 'Torque Motor'].map(type => (
-              <button key={type} onClick={() => update('acMotorType', type)}
-                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{type}</button>
+              <button
+                key={type}
+                onClick={() => update('acMotorType', type)}
+                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded w-full text-center shadow-md"
+              >
+                {type}
+              </button>
             ))}
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-// ✅ renderRKFSFlow — เพิ่ม dummy เพื่อให้ build ผ่าน
-export function renderRKFSFlow() {
-  return (
-    <div className="text-gray-500 italic mt-10">
-      RKFS Flow is under development. Please check back later.
+      {/* ส่วนอื่น ๆ ของการเลือก AC Motor สามารถต่อด้านล่างนี้ได้ */}
+
     </div>
   );
 }
