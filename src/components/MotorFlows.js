@@ -86,28 +86,27 @@ export function renderACMotorFlow(state, setState, onConfirm) {
 
   return (
     <div className="space-y-6 mt-6">
-        {!acMotorType && (
+      {!acMotorType && (
         <div>
-        <h3 className="font-semibold mb-2">Motor Type</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-         {[
-          { label: 'Induction Motor', img: InductionImg },
-          { label: 'Reversible Motor', img: ReversibleImg },
-          { label: 'Variable Speed Motor', img: VariableImg }
-         ].map(({ label, img }) => (
-          <button
-            key={label}
-            onClick={() => update('acMotorType', label)}
-            className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
+          <h3 className="font-semibold mb-2">Motor Type</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Induction Motor', img: InductionImg },
+              { label: 'Reversible Motor', img: ReversibleImg },
+              { label: 'Variable Speed Motor', img: VariableImg }
+              ].map(({ label, img }) => (
+              <button
+               key={label}
+               onClick={() => update('acMotorType', label)}
+               className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
           >
-            <img src={img} alt={label} className="h-16 mb-1 object-contain" />
-            <span className="text-sm font-semibold">{label}</span>
-          </button>
-         ))}
+                <img src={img} alt={label} className="h-16 mb-1 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
+              ))}
+          </div>
         </div>
-        </div>
-        )}
-        </div>
+      )}
 
       {acMotorType && !acPower && (
         <div>
