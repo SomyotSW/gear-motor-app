@@ -183,5 +183,105 @@ export function renderACMotorFlow(state, setState, onConfirm) {
     </div>
   );
 }
+export function renderRKFSFlow(state, setState, onConfirm) {
+  const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
+  const update = (key, value) => {
+    if (state[key] === value) {
+      setState[`set${key.charAt(0).toUpperCase() + key.slice(1)}`](null);
+    } else {
+      setState[`set${key.charAt(0).toUpperCase() + key.slice(1)}`](value);
+    }
+  };
+
+  const confirmModel = () => {
+    const model = [rkfsDesign, rkfsSize, rkfsPower, rkfsMounting].filter(Boolean).join('-');
+    onConfirm(model);
+  };
+
+  const descriptionMap = {
+    R: 'R Series, Helical Gear Motor',
+    K: 'K Series, Bevel Gear Motor',
+    F: 'F Series, Parallel Shaft Gear Motor',
+    S: 'S Series, Worm Gear Motor'
+  };
+
+  return (
+    <div className="space-y-6 mt-6">
+      {!rkfsDesign && (
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+          {[{ key: 'R', img: RImg }, { key: 'K', img: KImg }, { key: 'F', img: FImg }, { key: 'S', img: SImg }].map(type => (
+            <div key={type.key} className="text-center">
+              <img
+                src={type.img}
+                alt={type.key}
+                onClick={() => update('rkfsDesign', type.key)}
+                className="cursor-pointer hover:scale-105 transition mx-auto"
+              />
+              <p className="mt-2">{descriptionMap[type.key]}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {rkfsDesign && !rkfsSize && (
+        <div className="flex flex-wrap gap-3">
+          {['60', '80', '100', '120'].map(size => (
+            <button
+              key={size}
+              onClick={() => update('rkfsSize', size)}
+              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
+            >
+              Size {size}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {rkfsSize && !rkfsPower && (
+        <div className="flex flex-wrap gap-3">
+          {['0.2kW', '0.4kW', '0.75kW', '1.5kW', '2.2kW'].map(power => (
+            <button
+              key={power}
+              onClick={() => update('rkfsPower', power)}
+              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
+            >
+              {power}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {rkfsPower && !rkfsMounting && (
+        <div className="flex flex-wrap gap-3">
+          {['Foot', 'Flange', 'Both'].map(mount => (
+            <button
+              key={mount}
+              onClick={() => update('rkfsMounting', mount)}
+              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
+            >
+              {mount}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {rkfsMounting && (
+        <div className="text-center space-y-2">
+          <p>Model: {rkfsDesign}-{rkfsSize}-{rkfsPower}-{rkfsMounting}</p>
+          <button
+            onClick={confirmModel}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            เสร็จสิ้น
+          </button>
+        </div>
+      )}
+
+      <div className="flex justify-center mt-10">
+        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[400px]" />
+      </div>
+    </div>
+  );
+}
 // ❗ ส่วน render อื่น ๆ เช่น renderDCMotorFlow, renderServoFlow, renderBLDCFlow ยังสามารถเพิ่มต่อด้านล่างนี้ โดยไม่ลบหรือเปลี่ยน renderRKFSFlow ที่คุณมีอยู่เดิม
