@@ -18,10 +18,10 @@ import KImg from '../assets/rkfs/K.png';
 import FImg from '../assets/rkfs/F.png';
 import SImg from '../assets/rkfs/S.png';
 
-import KHead from '../assets/ac/K.png';
-import KBHead from '../assets/ac/KB.png';
-import RCHead from '../assets/ac/RC.png';
-import RTHead from '../assets/ac/RT.png';
+import KImg from '../assets/ac/Gearhead/K.png';
+import KImg from '../assets/ac/Gearhead/KB.png';
+import RCImg from '../assets/ac/Gearhead/RC.png';
+import RTImg from '../assets/ac/Gearhead/RT.png';
 
 import W10Img from '../assets/ac/flame/10W.png';
 import W15Img from '../assets/ac/flame/15W.png';
@@ -202,21 +202,26 @@ export function renderACMotorFlow(state, setState, onConfirm) {
       {acOption && !acGearHead && (
         <div>
           <h3 className="font-semibold mb-2">Gear Type</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[{key: 'K', img: KHead}, {key: 'KB', img: KBHead}, {key: 'RC', img: RCHead}, {key: 'RT', img: RTHead}].map(head => (
-              <div key={head.key} className="text-center">
-                <img src={head.img} alt={head.key}
-                  onClick={() => update('acGearHead', head.key)}
-                  className="cursor-pointer hover:scale-105 transition mx-auto" />
-                <p className="text-sm mt-1 text-gray-700">
-                  {head.key === 'K' && 'K = Square box with wing'}
-                  {head.key === 'KB' && 'KB = Square box'}
-                  {head.key === 'RC' && 'RC = Right angle / Hollow shaft'}
-                  {head.key === 'RT' && 'RT = Right angle / Solid shaft'}
-                </p>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+	      { label: 'SQUARE BOX WITH WING', img: KImg },
+	      { label: 'SQUARE BOX', img: KBImg },
+              { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: RCImg },
+              { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: RTImg }
+              ].map(({ label, img }) => (
+              <button
+               key={label}
+               onClick={() => update('acGearHead', label)}
+               className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
+          >
+                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
+              ))}
           </div>
+          <p className="text-sm text-gray-600 mt-2">
+            Or Special optional ?? ( Special shaft for Encoder ) 
+          </p>
         </div>
       )}
 
