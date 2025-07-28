@@ -143,7 +143,7 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   return `${prefix}/${suffix}`;
 }
 
-export function renderACMotorFlow(state, setState, setmodelCode) {
+export function renderACMotorFlow(state, setState, setModelCode) {
   const {
     acMotorType, acPower, acSpeedAdjust, acVoltage,
     acOption, acGearHead, acRatio
@@ -341,7 +341,13 @@ export function renderACMotorFlow(state, setState, setmodelCode) {
         <div className="space-y-2 text-center">
           <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
           <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
-          <button onClick={modelCode} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">เสร็จสิ้น</button>
+          <button
+             <button
+                onClick={() => setModelCode(modelCode)}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+             >
+                เสร็จสิ้น
+             </button>
         </div>
       )}
 
