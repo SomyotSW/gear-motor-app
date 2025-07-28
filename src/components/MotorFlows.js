@@ -18,10 +18,10 @@ import KImg from '../assets/rkfs/K.png';
 import FImg from '../assets/rkfs/F.png';
 import SImg from '../assets/rkfs/S.png';
 
-import KImg from '../assets/ac/Gearhead/K.png';
-import KImg from '../assets/ac/Gearhead/KB.png';
-import RCImg from '../assets/ac/Gearhead/RC.png';
-import RTImg from '../assets/ac/Gearhead/RT.png';
+import GBKImg from '../assets/ac/Gearhead/K.png';
+import GBKBImg from '../assets/ac/Gearhead/KB.png';
+import GBRCImg from '../assets/ac/Gearhead/RC.png';
+import GBRTImg from '../assets/ac/Gearhead/RT.png';
 
 import W10Img from '../assets/ac/flame/10W.png';
 import W15Img from '../assets/ac/flame/15W.png';
@@ -204,10 +204,10 @@ export function renderACMotorFlow(state, setState, onConfirm) {
           <h3 className="font-semibold mb-2">Gear Type</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
-	      { label: 'SQUARE BOX WITH WING', img: KImg },
-	      { label: 'SQUARE BOX', img: KBImg },
-              { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: RCImg },
-              { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: RTImg }
+	      { label: 'SQUARE BOX WITH WING', img: GBKImg },
+	      { label: 'SQUARE BOX', img: GBKBImg },
+              { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: GBRCImg },
+              { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg }
               ].map(({ label, img }) => (
               <button
                key={label}
