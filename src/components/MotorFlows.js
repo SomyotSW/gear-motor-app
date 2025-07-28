@@ -240,7 +240,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
                  <img
                   src={require('../assets/ac/Gearhead/GearBG2.jpg')}
                   alt="Gear BG"
-                  className="h-64 mx-auto cursor-pointer hover:scale-105 transition"
+                  className="h-86 mx-auto cursor-pointer hover:scale-105 transition"
                  />
                  <p className="text-xs text-gray-600 mt-1">คลิกเพื่อดูวิธีคำนวณความเร็วรอบ</p>
                 </button>
@@ -265,7 +265,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
         <div className="space-y-2 text-center">
           <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
           <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
-          <button onClick={generateModel} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">เสร็จสิ้น</button>
+          <button onClick={generateModelCode} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">เสร็จสิ้น</button>
         </div>
       )}
 
@@ -275,6 +275,82 @@ export function renderACMotorFlow(state, setState, onConfirm) {
     </div>
   );
 }
+export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio }) {
+  if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
+
+  const phaseMap = {
+    '1Phase220V': 'C',
+    '3Phase220V': 'S'
+  };
+  const terminalSuffix = acOption === 'Terminal box' ? 'T' : '';
+
+  const getPrefix = () => {
+    const motorTypeCode = {
+      'Induction Motor': 'IK',
+      'Reversible Motor': 'RK',
+      'Variable Speed Motor': 'IKR'
+    }[acMotorType];
+
+    const powerMap = {
+      '10W': '2',
+      '15W': '3',
+      '25W': '4',
+      '40W': '5',
+      '60W': '5',
+      '90W': '5',
+      '120W': '5',
+      '140W': '6',
+      '200W': '6'
+    };
+    const powerCode = powerMap[acPower];
+
+    let model = '';
+
+    if (acPower === '10W') {
+      model = `${powerCode}${motorTypeCode}10GN-${phaseMap[acVoltage]}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    } else if (acPower === '15W') {
+      model = `${powerCode}${motorTypeCode}15GN-${phaseMap[acVoltage]}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    } else if (acPower === '25W') {
+      model = `${powerCode}${motorTypeCode}25GN-${phaseMap[acVoltage]}${terminalSuffix}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    } else if (acPower === '40W') {
+      model = `${powerCode}${motorTypeCode}40GN-${phaseMap[acVoltage]}${terminalSuffix}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    } else if (acPower === '60W') {
+      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
+      model = `${powerCode}${motorTypeCode}60${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    } else if (acPower === '90W') {
+      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
+      model = `${powerCode}${motorTypeCode}90${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    } else if (acPower === '120W') {
+      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
+      model = `${powerCode}${motorTypeCode}120${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    } else if (acPower === '140W') {
+      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
+      model = `6${motorTypeCode}140${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    } else if (acPower === '200W') {
+      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
+      model = `6${motorTypeCode}200${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+      if (motorTypeCode === 'RK') model += 'M';
+    }
+
+    return model;
+  };
+
+  const prefix = getPrefix();
+  if (!prefix) return null;
+
+  const suffix = `${acGearHead === 'KB' ? 'GU' : 'GN'}${acRatio}${acGearHead}`;
+
+  return `${prefix}/${suffix}`;
+}
+
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 

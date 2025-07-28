@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { renderACMotorFlow, renderRKFSFlow, productList } from './components/MotorFlows.js';
+import { renderACMotorFlow, renderRKFSFlow, productList, generateModelCode } from './components/MotorFlows.js';
 
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modelCode, setModelCode] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
 
   // AC Motor States
   const [acMotorType, setAcMotorType] = useState(null);
@@ -20,10 +22,16 @@ function App() {
   const [rkfsPower, setRkfsPower] = useState(null);
   const [rkfsMounting, setRkfsMounting] = useState(null);
 
-  const handleConfirm = (code) => setModelCode(code);
+  const handleConfirm = () => {
+    const code = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
+    if (code) setModelCode(code);
+  };
+
   const handleBack = () => {
     setSelectedProduct(null);
     setModelCode(null);
+    setShowForm(false);
+    setUserInfo({ name: '', phone: '', company: '', email: '' });
     setAcMotorType(null);
     setAcPower(null);
     setAcSpeedAdjust(null);
@@ -52,6 +60,12 @@ function App() {
     rkfsSize, setRkfsSize,
     rkfsPower, setRkfsPower,
     rkfsMounting, setRkfsMounting
+  };
+
+  const handleDownload = () => {
+    // handle download or email submission here
+    alert("ข้อมูลถูกส่งแล้ว ไปยัง Somyot@synergy-as.com");
+    setShowForm(false);
   };
 
   return (
@@ -98,11 +112,29 @@ function App() {
         </>
       )}
 
-      {modelCode && (
+      {modelCode && !showForm && (
         <div className="text-center mt-10">
           <h2 className="text-xl font-semibold">Model Code:</h2>
           <p className="text-lg mt-2 font-mono text-blue-700">{modelCode}</p>
-          <button onClick={handleBack} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">กลับไปเลือกใหม่</button>
+          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Download 3D</button>
+          <button onClick={handleBack} className="mt-4 ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">กลับไปเลือกใหม่</button>
+        </div>
+      )}
+
+      {showForm && (
+        <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow">
+          <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลเพื่อรับไฟล์ .STEP</h3>
+          <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+          <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+          <input type="text" placeholder="ชื่อบริษัท" value={userInfo.company} onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+          <input type="email" placeholder="Email ติดต่อ" value={userInfo.email} onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })} className="w-full mb-4 p-2 border rounded" />
+          <button
+            onClick={handleDownload}
+            disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email}
+            className="w-full py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+          >
+            ยืนยันและรับไฟล์
+          </button>
         </div>
       )}
     </div>
