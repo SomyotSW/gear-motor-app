@@ -42,6 +42,9 @@ import InductionImg from '../assets/ac/induction.png';
 import ReversibleImg from '../assets/ac/reversible.png';
 import VariableImg from '../assets/ac/variable.png';
 
+import SingleImg from '../assets/ac/Voltage/Single.png';
+import ThreeImg from '../assets/ac/Voltage/Three.png';
+
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
   { name: 'DC Gear Motor', image: DCImg },
@@ -105,6 +108,9 @@ export function renderACMotorFlow(state, setState, onConfirm) {
               </button>
               ))}
           </div>
+	  <p className="text-sm text-gray-600 mt-2">
+            Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม ( SAS Model : UX52..W ) 
+          </p>
         </div>
       )}
 
@@ -112,32 +118,48 @@ export function renderACMotorFlow(state, setState, onConfirm) {
         <div>
           <h3 className="font-semibold mb-2">Power Motor</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[{ label: '10W', img: W10Img }, { label: '15W', img: W15Img }, { label: '25W', img: W25Img }, { label: '40W', img: W40Img }, { label: '60W', img: W60Img }, { label: '90W', img: W90Img }, { label: '140W', img: W140Img }, { label: '200W', img: W200Img }, { label: 'SpeicalW', img: SpecialWImg }].map(({ label, img }) => (
-              <button key={label} onClick={() => update('acPower', label)} className="flex flex-col items-center bg-blue-50 hover:bg-blue-200 rounded p-2">
+            {[
+              { label: '10W AC Motor', img: W10Img },
+	      { label: '15W AC Motor', img: W15Img },
+	      { label: '25W AC Motor', img: W25Img },
+	      { label: '40W AC Motor', img: W40Img },
+	      { label: '60W AC Motor', img: W60Img },
+	      { label: '90W AC Motor', img: W90Img },
+	      { label: '120W AC Motor', img: W120Img },
+              { label: '140W AC Motor', img: W140Img },
+	      { label: '200W AC Motor', img: W200Img },
+              { label: 'Special W?', img: SpecialWImg }
+              ].map(({ label, img }) => (
+              <button
+               key={label}
+               onClick={() => update('acPower', label)}
+               className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
+          >
                 <img src={img} alt={label} className="h-32 mb-1 object-contain" />
-                <span>{label}</span>
+                <span className="text-sm font-semibold">{label}</span>
               </button>
-            ))}
+              ))}
           </div>
         </div>
       )}
 
-      {acPower && !acSpeedAdjust && (
-        <div>
-          <h3 className="font-semibold mb-2">การปรับความเร็วรอบของมอเตอร์</h3>
-          <div className="flex gap-4">
-            <button onClick={() => update('acSpeedAdjust', 'Fixed')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">ไม่ปรับสปีด</button>
-            <button onClick={() => update('acSpeedAdjust', 'Variable')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">ปรับสปีดได้</button>
-          </div>
-        </div>
-      )}
-
-      {acSpeedAdjust && !acVoltage && (
+      {acPower && !acVoltage && (
         <div>
           <h3 className="font-semibold mb-2">Voltage</h3>
-          <div className="flex gap-4">
-            <button onClick={() => update('acVoltage', 'C')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">1Phase220V</button>
-            <button onClick={() => update('acVoltage', 'S')} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">3Phase220V</button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+	      { label: '1Phase220V AC 50Hz', img: SingleImg },
+              { label: '3Phase220V AC 50Hz', img: ThreeImg }
+              ].map(({ label, img }) => (
+              <button
+               key={label}
+               onClick={() => update('acVoltage', label)}
+               className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
+          >
+                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
+              ))}
           </div>
         </div>
       )}
