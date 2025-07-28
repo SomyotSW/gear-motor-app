@@ -151,9 +151,9 @@ export function renderACMotorFlow(state, setters, onConfirm) {
 
   const update = (key, value) => {
     if (state[key] === value) {
-      setState[set${key.charAt(0).toUpperCase() + key.slice(1)}](null);
+      setState[set`${key.charAt(0).toUpperCase() + key.slice(1)}`](null);
     } else {
-      setState[set${key.charAt(0).toUpperCase() + key.slice(1)}](value);
+      setState[set`${key.charAt(0).toUpperCase() + key.slice(1)}`](value);
     }
   };
 
@@ -365,9 +365,9 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
   const update = (key, value) => {
     if (state[key] === value) {
-      setState[set${key.charAt(0).toUpperCase() + key.slice(1)}](null);
+      setState[set`${key.charAt(0).toUpperCase() + key.slice(1)}`](null);
     } else {
-      setState[set${key.charAt(0).toUpperCase() + key.slice(1)}](value);
+      setState[set`${key.charAt(0).toUpperCase() + key.slice(1)}`](value);
     }
   };
 
