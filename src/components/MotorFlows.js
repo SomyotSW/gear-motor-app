@@ -45,6 +45,13 @@ import VariableImg from '../assets/ac/variable.png';
 import SingleImg from '../assets/ac/Voltage/Single.png';
 import ThreeImg from '../assets/ac/Voltage/Three.png';
 
+import FanImg from '../assets/ac/Optional/Fan.png';
+import TmbImg from '../assets/ac/Optional/Tmb.png';
+import EmbImg from '../assets/ac/Optional/Emb.png';
+import FcfImg from '../assets/ac/Optional/Fcf.png';
+import TmpImg from '../assets/ac/Optional/Tmp.png';
+import StdImg from '../assets/ac/Optional/Std.png';
+
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
   { name: 'DC Gear Motor', image: DCImg },
@@ -166,15 +173,28 @@ export function renderACMotorFlow(state, setState, onConfirm) {
 
       {acVoltage && !acOption && (
         <div>
-          <h3 className="font-semibold mb-2">Optional</h3>
-          <div className="flex flex-wrap gap-3">
-            {['T', 'P', 'F', 'FF', 'M'].map(opt => (
-              <button key={opt} onClick={() => update('acOption', opt)}
-                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{opt}</button>
-            ))}
+          <h3 className="font-semibold mb-2">SAS Optional</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+	      { label: 'With Fan', img: FanImg },
+	      { label: 'With Terminal Box', img: TmbImg },
+              { label: 'With Electromagnetic Brake', img: EmbImg },
+              { label: 'With Force Cooling Fan', img: FcfImg },
+              { label: 'With Thermal Protector', img: TmpImg },
+              { label: 'Standard', img: StdImg }
+              ].map(({ label, img }) => (
+              <button
+               key={label}
+               onClick={() => update('acOption', label)}
+               className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
+          >
+                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
+              ))}
           </div>
           <p className="text-sm text-gray-600 mt-2">
-            T = Terminal Box | P = Thermal Protector | F = Fan | FF = Force Cooling Fan | M = Electromagnetic Brake
+            Or Special optional ?? ( Special shaft for Encoder ) 
           </p>
         </div>
       )}
