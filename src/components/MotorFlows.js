@@ -147,16 +147,16 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
   const {
     acMotorType, acPower, acSpeedAdjust, acVoltage,
     acOption, acGearHead, acRatio
-  } = state;
+  } = acState;
 
   const update = (key, value) => {
     const setterMap = {
-      acMotorType: setters.setAcMotorType,
-      acPower: setters.setAcPower,
-      acVoltage: setters.setAcVoltage,
-      acOption: setters.setAcOption,
-      acGearHead: setters.setAcGearHead,
-      acRatio: setters.setAcRatio
+      acMotorType: acSetters.setAcMotorType,
+      acPower: acSetters.setAcPower,
+      acVoltage: acSetters.setAcVoltage,
+      acOption: acSetters.setAcOption,
+      acGearHead: acSetters.setAcGearHead,
+      acRatio: acSetters.setAcRatio
     };
 
     const setter = setterMap[key];
