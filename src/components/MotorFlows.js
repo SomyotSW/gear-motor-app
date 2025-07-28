@@ -138,9 +138,9 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   const prefix = getPrefix();
   if (!prefix) return null;
 
-  const suffix = ${acGearHead === 'KB' ? 'GU' : 'GN'}${acRatio}${acGearHead};
+  const suffix = `${acGearHead === 'KB' ? 'GU' : 'GN'}${acRatio}${acGearHead}`;
 
-  return ${prefix}/${suffix};
+  return `${prefix}`/`${suffix}`;
 }
 
 export function renderACMotorFlow(state, setters, onConfirm) {
