@@ -143,7 +143,7 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   return `${prefix}/${suffix}`;
 }
 
-export function renderACMotorFlow(state, setters, OnConfirm) {
+export function renderACMotorFlow(acState, acSetters, OnConfirm) {
   const {
     acMotorType, acPower, acSpeedAdjust, acVoltage,
     acOption, acGearHead, acRatio
