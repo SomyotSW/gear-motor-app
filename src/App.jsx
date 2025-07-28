@@ -48,18 +48,18 @@ function App() {
   };
 
   const acState = {
-    acMotorType, setAcMotorType,
-    acPower, setAcPower,
-    acSpeedAdjust, setAcSpeedAdjust,
-    acVoltage, setAcVoltage,
-    acOption, setAcOption,
-    acGearHead, setAcGearHead,
-    acRatio, setAcRatio
+    acMotorType,
+    acPower,
+    acSpeedAdjust,
+    acVoltage,
+    acOption,
+    acGearHead,
+    acRatio
   };
 
-  const setState = {
+  const acSettars = {
   setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage,
-  setAcOption, setAcGearHead, setAcRatio, setModelCode,
+  setAcOption, setAcGearHead, setAcRatio
   };
 
   const rkfsState = {
