@@ -67,7 +67,7 @@ export const productList = [
   { name: 'SRV Worm Gear', image: SRVImg }
 ];
 
-export function renderACMotorFlow(state, setState, handleConfirm) {
+export function renderACMotorFlow(acstate, acState, setModelCode) {
   const {
     acMotorType, acPower, acSpeedAdjust, acVoltage,
     acOption, acGearHead, acRatio
