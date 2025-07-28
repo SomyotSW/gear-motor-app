@@ -240,7 +240,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
                  <img
                   src={require('../assets/ac/Gearhead/GearBG2.jpg')}
                   alt="Gear BG"
-                  className="h-24 mx-auto cursor-pointer hover:scale-105 transition"
+                  className="h-64 mx-auto cursor-pointer hover:scale-105 transition"
                  />
                  <p className="text-xs text-gray-600 mt-1">คลิกเพื่อดูวิธีคำนวณความเร็วรอบ</p>
                 </button>
@@ -270,7 +270,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
       )}
 
       <div className="flex justify-center mt-10">
-        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[400px]" />
+        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[600px]" />
       </div>
     </div>
   );
