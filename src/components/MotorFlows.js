@@ -103,29 +103,17 @@ export function renderACMotorFlow(state, setState, onConfirm) {
       {acMotorType && !acPower && (
         <div>
           <h3 className="font-semibold mb-2">Power Motor</h3>
-	  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[{key: '10W', img: 10WImg}, {key: '15W', img: 15WImg}, {key: '25W', img: 25WImg}, {key: '40W', img: 40WImg}, {key: '60W', img: 60WImg}, {key: '90W', img: 90WImg}, {key: '120W', img: 120WImg}, {key: '140W', img: 140WImg}, {key: '200W', img: 200WImg}, {key: 'SpecialW', img: SpecialWImg}].map(head => (
-              <div key={head.key} className="text-center">
-                <img src={head.img} alt={head.key}
-                  onClick={() => update('acMotorType', head.key)}
-                  className="cursor-pointer hover:scale-105 transition mx-auto" />
-                <p className="text-sm mt-1 text-gray-700">
-                  {head.key === '10W' && '10W AC Motor'}
-                  {head.key === '15W' && '15W AC Motor'}
-                  {head.key === '25W' && '25W AC Motor'}
-		  {head.key === '40W' && '40W AC Motor'}
-		  {head.key === '60W' && '60W AC Motor'}
-		  {head.key === '90W' && '90W AC Motor'}
-		  {head.key === '120W' && '120W AC Motor'}
-		  {head.key === '140W' && '140W AC Motor'}
-		  {head.key === '200W' && '200W AC Motor'}
-		  {head.key === 'SpecialW' && 'Special W AC Motor'}
-                </p>
-              </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[{ label: '10W', img: 10WImg }, { label: '15W', img: 15WImg }, { label: '25W', img: 25WImg }, { label: '40W', img: 40WImg }, { label: '60W', img: 60WImg }, { label: '90W', img: 90WImg }, { label: '140W', img: 140WImg }, { label: '200W', img: 200WImg }, { label: '"SpeicalW', img: SpecialWImg }].map(({ label, img }) => (
+              <button key={label} onClick={() => update('acMotorType', label)} className="flex flex-col items-center bg-blue-50 hover:bg-blue-200 rounded p-2">
+                <img src={img} alt={label} className="h-16 mb-1 object-contain" />
+                <span>{label}</span>
+              </button>
             ))}
-          </div> 
+          </div>
         </div>
       )}
+
 
       {acPower && !acSpeedAdjust && (
         <div>
