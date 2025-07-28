@@ -23,12 +23,24 @@ import KBHead from '../assets/ac/KB.png';
 import RCHead from '../assets/ac/RC.png';
 import RTHead from '../assets/ac/RT.png';
 
+import 10WImg from '../assets/ac/flame/10W.png';
+import 15WImg from '../assets/ac/flame/15W.png';
+import 20WImg from '../assets/ac/flame/25W.png';
+import 40WImg from '../assets/ac/flame/40W.png';
+import 60WImg from '../assets/ac/flame/60W.png';
+import 90WImg from '../assets/ac/flame/90W.png';
+import 120WImg from '../assets/ac/flame/120W.png';
+import 140WImg from '../assets/ac/flame/140W.png';
+import 200WImg from '../assets/ac/flame/200W.png';
+import SpecialWImg from '../assets/ac/flame/SpecialW.png';
+
+
 import DemoGif from '../assets/rkfs/rkfs-demo.gif';
 
 // ภาพแสดง Motor Type
 import InductionImg from '../assets/ac/induction.png';
 import ReversibleImg from '../assets/ac/reversible.png';
-import TorqueImg from '../assets/ac/torque.png';
+import VariableImg from '../assets/ac/variable.png';
 
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
@@ -78,7 +90,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
         <div>
           <h3 className="font-semibold mb-2">Motor Type</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[{ label: 'Induction Motor', img: InductionImg }, { label: 'Reversible Motor', img: ReversibleImg }, { label: 'Torque Motor', img: TorqueImg }].map(({ label, img }) => (
+            {[{ label: 'Induction Motor', img: InductionImg }, { label: 'Reversible Motor', img: ReversibleImg }, { label: 'Variable Speed Motor', img: VariableImg }].map(({ label, img }) => (
               <button key={label} onClick={() => update('acMotorType', label)} className="flex flex-col items-center bg-blue-50 hover:bg-blue-200 rounded p-2">
                 <img src={img} alt={label} className="h-16 mb-1 object-contain" />
                 <span>{label}</span>
@@ -91,13 +103,27 @@ export function renderACMotorFlow(state, setState, onConfirm) {
       {acMotorType && !acPower && (
         <div>
           <h3 className="font-semibold mb-2">Power Motor</h3>
-          <div className="flex flex-wrap gap-3">
-            {['10W','15W','25W','40W','60W','90W','120W','140W','200W','Special W ?'].map(w => (
-              <button key={w} onClick={() => update('acPower', w)}
-                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{w}</button>
+	  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[{key: '10W', img: 10WImg}, {key: '15W', img: 15WImg}, {key: '25W', img: 25WImg}, {key: '40W', img: 40WImg}, {key: '60W', img: 60WImg}, {key: '90W', img: 90WImg}, {key: '120W', img: 120WImg}, {key: '140W', img: 140WImg}, {key: '200W', img: 200WImg}, {key: 'SpecialW', img: SpecialWImg}].map(head => (
+              <div key={head.key} className="text-center">
+                <img src={head.img} alt={head.key}
+                  onClick={() => update('acMotorType', head.key)}
+                  className="cursor-pointer hover:scale-105 transition mx-auto" />
+                <p className="text-sm mt-1 text-gray-700">
+                  {head.key === '10W' && '10W AC Motor'}
+                  {head.key === '15W' && '15W AC Motor'}
+                  {head.key === '25W' && '25W AC Motor'}
+		  {head.key === '40W' && '40W AC Motor'}
+		  {head.key === '60W' && '60W AC Motor'}
+		  {head.key === '90W' && '90W AC Motor'}
+		  {head.key === '120W' && '120W AC Motor'}
+		  {head.key === '140W' && '140W AC Motor'}
+		  {head.key === '200W' && '200W AC Motor'}
+		  {head.key === 'SpecialW' && 'Special W AC Motor'}
+                </p>
+              </div>
             ))}
-          </div>
-          <p className="text-sm mt-2 text-gray-600">Flame Size: 60, 60, 70, 70, 80, 90, 90, 104, 104 mm ตามลำดับ</p>
+          </div> 
         </div>
       )}
 
