@@ -105,7 +105,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
           <h3 className="font-semibold mb-2">Power Motor</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[{ label: '10W', img: W10Img }, { label: '15W', img: W15Img }, { label: '25W', img: W25Img }, { label: '40W', img: W40Img }, { label: '60W', img: W60Img }, { label: '90W', img: W90Img }, { label: '140W', img: W140Img }, { label: '200W', img: W200Img }, { label: 'SpeicalW', img: SpecialWImg }].map(({ label, img }) => (
-              <button key={label} onClick={() => update('acMotorType', label)} className="flex flex-col items-center bg-blue-50 hover:bg-blue-200 rounded p-2">
+              <button key={label} onClick={() => update('acPower', label)} className="flex flex-col items-center bg-blue-50 hover:bg-blue-200 rounded p-2">
                 <img src={img} alt={label} className="h-16 mb-1 object-contain" />
                 <span>{label}</span>
               </button>
@@ -113,7 +113,6 @@ export function renderACMotorFlow(state, setState, onConfirm) {
           </div>
         </div>
       )}
-
 
       {acPower && !acSpeedAdjust && (
         <div>
