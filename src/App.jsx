@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { renderACMotorFlow, renderRKFSFlow, productList, generateModelCode } from './components/MotorFlows.js';
 
 function App() {
@@ -22,10 +22,12 @@ function App() {
   const [rkfsPower, setRkfsPower] = useState(null);
   const [rkfsMounting, setRkfsMounting] = useState(null);
 
-  const handleConfirm = () => {
-    const code = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
-    if (code) setModelCode(code);
-  };
+  useEffect(() => {
+    if (selectedProduct === 'AC Gear Motor' && acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio) {
+      const code = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
+      if (code) setModelCode(code);
+    }
+  }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
 
   const handleBack = () => {
     setSelectedProduct(null);
@@ -63,7 +65,6 @@ function App() {
   };
 
   const handleDownload = () => {
-    // handle download or email submission here
     alert("ข้อมูลถูกส่งแล้ว ไปยัง Somyot@synergy-as.com");
     setShowForm(false);
   };
@@ -98,7 +99,7 @@ function App() {
             <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
             <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
           </div>
-          {renderACMotorFlow(acState, acState, handleConfirm)}
+          {renderACMotorFlow(acState, acState)}
         </>
       )}
 
@@ -108,7 +109,7 @@ function App() {
             <h2 className="text-xl font-bold">RKFS Series</h2>
             <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
           </div>
-          {renderRKFSFlow(rkfsState, rkfsState, handleConfirm)}
+          {renderRKFSFlow(rkfsState, rkfsState)}
         </>
       )}
 
