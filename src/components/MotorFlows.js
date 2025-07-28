@@ -227,14 +227,38 @@ export function renderACMotorFlow(state, setState, onConfirm) {
 
       {acGearHead && !acRatio && (
         <div>
-          <h3 className="font-semibold mb-2">Ratio</h3>
-          <div className="flex flex-wrap gap-2">
-            {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(r => (
-              <button key={r} onClick={() => update('acRatio', r)}
-                className="bg-blue-100 hover:bg-blue-300 px-3 py-1 rounded">{r}</button>
-            ))}
-          </div>
-        </div>
+               <h3 className="font-semibold mb-2">Ratio</h3>
+
+               {/* 🖼 ปุ่มแสดงภาพ GearBG2 ที่คลิกแล้วแสดงคำอธิบาย */}
+               <div className="mb-4 text-center">
+      	      <button
+                 onClick={() => alert(
+                  '🛠 วิธีคำนวนความเร็วรอบ:\n\nความเร็วรอบของมอเตอร์ ÷ อัตราทด = ความเร็วรอบของหัวเกียร์\n\nเช่น มอเตอร์ 1500 / 15 = 100 rpm (รอบต่อนาที)'
+                 )}
+                 className="mx-auto block"
+                >
+                 <img
+                  src={require('../assets/ac/GearBG2.jpg')}
+                  alt="Gear BG"
+                  className="h-24 mx-auto cursor-pointer hover:scale-105 transition"
+                 />
+                 <p className="text-xs text-gray-600 mt-1">คลิกเพื่อดูวิธีคำนวณความเร็วรอบ</p>
+                </button>
+               </div>
+
+               {/* 🔢 ปุ่มเลือกอัตราทด */}
+               <div className="flex flex-wrap gap-2 justify-center">
+                {[3, 3.6, 5, 6, 7.5, 9, 10, 12.5, 15, 18, 20, 25, 30, 36, 40, 50, 60, 75, 90, 100, 120, 150, 180, 200].map(r => (
+                 <button
+                  key={r}
+                  onClick={() => update('acRatio', r)}
+                  className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
+                 >
+                  {r}
+                 </button>
+                ))}
+               </div>
+              </div>
       )}
 
       {acRatio && (
