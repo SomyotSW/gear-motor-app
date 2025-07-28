@@ -57,7 +57,7 @@ function App() {
     acRatio
   };
 
-  const acSettars = {
+  const acSetters = {
   setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage,
   setAcOption, setAcGearHead, setAcRatio
   };
@@ -104,7 +104,7 @@ function App() {
             <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
             <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
           </div>
-          {renderACMotorFlow(acState, acState)}
+          {renderACMotorFlow(acState, acSetters)}
         </>
       )}
 
