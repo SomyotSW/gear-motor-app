@@ -34,14 +34,16 @@ import SpecialWImg from '../assets/ac/flame/SpecialW.png';
 
 import DemoGif from '../assets/rkfs/rkfs-demo.gif';
 
-// ภาพแสดง Motor Type
+// Motor type images
 import InductionImg from '../assets/ac/induction.png';
 import ReversibleImg from '../assets/ac/reversible.png';
 import VariableImg from '../assets/ac/variable.png';
 
+// Voltage images
 import SingleImg from '../assets/ac/Voltage/Single.png';
 import ThreeImg from '../assets/ac/Voltage/Three.png';
 
+// Optional images
 import FanImg from '../assets/ac/Optional/Fan.png';
 import TmbImg from '../assets/ac/Optional/Tmb.png';
 import EmbImg from '../assets/ac/Optional/Emb.png';
@@ -64,49 +66,51 @@ export const productList = [
   { name: 'SRV Worm Gear', image: SRVImg }
 ];
 
+/**
+ * Generates the full model code string.
+ */
 export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio }) {
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
 
-  const phaseMap = {
-    '1Phase220V': 'C',
-    '3Phase220V': 'S'
-  };
+  const phaseMap = { '1Phase220V': 'C', '3Phase220V': 'S' };
   const terminalSuffix = acOption.includes('Terminal Box') ? 'T' : '';
+  const typeCode = { 'Induction Motor': 'IK', 'Reversible Motor': 'RK', 'Variable Speed Motor': 'IKR' }[acMotorType];
+  const prefixNum = { '10W': '2', '15W': '3', '25W': '4', '40W': '5', '60W': '5', '90W': '5', '120W': '5', '140W': '6', '200W': '6' }[acPower];
 
-  const motorTypeCode = {
-    'Induction Motor': 'IK',
-    'Reversible Motor': 'RK',
-    'Variable Speed Motor': 'IKR'
-  }[acMotorType];
-
-  const powerPrefix = {
-    '10W': '2', '15W': '3', '25W': '4', '40W': '5',
-    '60W': '5', '90W': '5', '120W': '5', '140W': '6', '200W': '6'
-  }[acPower];
-
-  let prefix = `${powerPrefix}${motorTypeCode}${acPower.replace('W','')}GN-${phaseMap[acVoltage]}`;
-  if (motorTypeCode === 'RK') prefix += 'M';
-  if (['25W','40W'].includes(acPower) && terminalSuffix) prefix += terminalSuffix;
+  let prefix;
   if (['60W','90W','120W','140W','200W'].includes(acPower)) {
-    const gu = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
-    prefix = `${powerPrefix}${motorTypeCode}${acPower.replace('W','')}${gu}-${phaseMap[acVoltage]}F${terminalSuffix}`;
-    if (motorTypeCode === 'RK') prefix += 'M';
+    const gu = typeCode === 'IKR' ? 'RGU' : 'GU';
+    prefix = `${prefixNum}${typeCode}${acPower.slice(0,-1)}${gu}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+    if (typeCode === 'RK') prefix += 'M';
+  } else {
+    prefix = `${prefixNum}${typeCode}${acPower.slice(0,-1)}GN-${phaseMap[acVoltage]}`;
+    if (typeCode === 'RK') prefix += 'M';
+    if (['25W','40W'].includes(acPower) && terminalSuffix) prefix += terminalSuffix;
   }
 
-  const headCode = acGearHead.includes('KB') ? 'GU' : 'GN';
-  const suffix = `${headCode}${acRatio}${acGearHead.startsWith('SQUARE BOX') ? 'K' : acGearHead.startsWith('RIGHT') ? acGearHead.includes('SOLID') ? 'RT' : 'RC' : 'KB'}`;
+  const headSuffix = acGearHead.startsWith('SQUARE BOX') ? 'K' : acGearHead.startsWith('RIGHT ANGLE') ? (acGearHead.includes('SOLID')?'RT':'RC') : 'KB';
+  const suffix = `${headSuffix}${acRatio}${headSuffix}`;
 
   return `${prefix}/${suffix}`;
 }
 
+/**
+ * Renders the AC motor selection flow. 
+ * @param state current selections
+ * @param setters setter functions { setAcMotorType, ... }
+ * @param onConfirm callback to receive final model code
+ */
 export function renderACMotorFlow(state, setters, onConfirm) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = state;
   const { setAcMotorType, setAcPower, setAcVoltage, setAcOption, setAcGearHead, setAcRatio } = setters;
 
-  const update = (setter, value) => setter(state[Object.keys(setters).find(k=>setters[k]===setter)]===value ? null : value);
+  const update = (setter, value) => {
+    setter(state[Object.keys(setters).find(k=>setters[k]===setter)] === value ? null : value);
+  };
 
   return (
     <div className="space-y-6 mt-6">
+      {/* Motor Type */}
       {!acMotorType && (
         <div>
           <h3 className="font-semibold mb-2">Motor Type</h3>
@@ -115,85 +119,127 @@ export function renderACMotorFlow(state, setters, onConfirm) {
               { label: 'Induction Motor', img: InductionImg },
               { label: 'Reversible Motor', img: ReversibleImg },
               { label: 'Variable Speed Motor', img: VariableImg }
-            ].map(({label,img}) => (
-              <button key={label} onClick={()=>update(setAcMotorType,label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
+            ].map(({ label, img }) => (
+              <button key={label} onClick={() => update(setAcMotorType, label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
                 <img src={img} alt={label} className="h-32 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
             ))}
-        </div>)
-      }
+          </div>
+        </div>
+      )}
+
+      {/* Power */}
       {acMotorType && !acPower && (
         <div>
-          <h3 className="font-semibold mb-2">Power Motor</h3>
+          <h3 className="font-semibold mb-2">Power</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
-              {label:'10W',img:W10Img},{label:'15W',img:W15Img},{label:'25W',img:W25Img},
-              {label:'40W',img:W40Img},{label:'60W',img:W60Img},{label:'90W',img:W90Img},
-              {label:'120W',img:W120Img},{label:'140W',img:W140Img},{label:'200W',img:W200Img}
-            ].map(({label,img})=> (
-              <button key={label} onClick={()=>update(setAcPower,label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
+              { label: '10W', img: W10Img },
+              { label: '15W', img: W15Img },
+              { label: '25W', img: W25Img },
+              { label: '40W', img: W40Img },
+              { label: '60W', img: W60Img },
+              { label: '90W', img: W90Img },
+              { label: '120W', img: W120Img },
+              { label: '140W', img: W140Img },
+              { label: '200W', img: W200Img },
+              { label: 'Special', img: SpecialWImg }
+            ].map(({ label, img }) => (
+              <button key={label} onClick={() => update(setAcPower, label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
                 <img src={img} alt={label} className="h-32 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
             ))}
-        </div>)
-      }
+          </div>
+        </div>
+      )}
+
+      {/* Voltage */}
       {acPower && !acVoltage && (
         <div>
           <h3 className="font-semibold mb-2">Voltage</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[{label:'1Phase220V',img:SingleImg},{label:'3Phase220V',img:ThreeImg}].map(({label,img})=> (
-              <button key={label} onClick={()=>update(setAcVoltage,label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
+            {[
+              { label: '1Phase220V', img: SingleImg },
+              { label: '3Phase220V', img: ThreeImg }
+            ].map(({ label, img }) => (
+              <button key={label} onClick={() => update(setAcVoltage, label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
                 <img src={img} alt={label} className="h-32 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
             ))}
-        </div>)
-      }
+          </div>
+        </div>
+      )}
+
+      {/* Optional */}
       {acVoltage && !acOption && (
         <div>
           <h3 className="font-semibold mb-2">SAS Optional</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[{label:'Fan',img:FanImg},{label:'Terminal Box',img:TmbImg},{label:'Brake',img:EmbImg},{label:'Cooling Fan',img:FcfImg},{label:'Thermal',img:TmpImg},{label:'Standard',img:StdImg}].map(({label,img})=> (
-              <button key={label} onClick={()=>update(setAcOption,label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
+            {[
+              { label: 'Fan', img: FanImg },
+              { label: 'Terminal Box', img: TmbImg },
+              { label: 'Brake', img: EmbImg },
+              { label: 'Cooling Fan', img: FcfImg },
+              { label: 'Thermal', img: TmpImg },
+              { label: 'Standard', img: StdImg }
+            ].map(({ label, img }) => (
+              <button key={label} onClick={() => update(setAcOption, label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
                 <img src={img} alt={label} className="h-32 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
             ))}
-        </div>)
-      }
+          </div>
+        </div>
+      )}
+
+      {/* Gear Head */}
       {acOption && !acGearHead && (
         <div>
           <h3 className="font-semibold mb-2">Gear Type</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[{label:'K',img:GBKImg},{label:'KB',img:GBKBImg},{label:'RC',img:GBRCImg},{label:'RT',img:GBRTImg}].map(({label,img})=> (
-              <button key={label} onClick={()=>update(setAcGearHead,label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
+            {[
+              { label: 'K', img: GBKImg },
+              { label: 'KB', img: GBKBImg },
+              { label: 'RC', img: GBRCImg },
+              { label: 'RT', img: GBRTImg }
+            ].map(({ label, img }) => (
+              <button key={label} onClick={() => update(setAcGearHead, label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200">
                 <img src={img} alt={label} className="h-32 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
             ))}
-        </div>)
-      }
+          </div>
+        </div>
+      )}
+
+      {/* Ratio */}
       {acGearHead && !acRatio && (
         <div>
           <h3 className="font-semibold mb-2">Ratio</h3>
-          <div className="flex flex-wrap gap-2 justify-center mb-4">
-            {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(r=> (
-              <button key={r} onClick={()=>update(setAcRatio,r)} className="bg-blue-100 hover:bg-blue-300 px-3 py-1 rounded">{r}</button>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(r => (
+              <button key={r} onClick={() => update(setAcRatio, r)} className="bg-blue-100 hover:bg-blue-300 px-3 py-1 rounded">
+                {r}
+              </button>
             ))}
           </div>
         </div>
-      }
+      )}
+
+      {/* Final */}
       {acRatio && (
         <div className="space-y-2 text-center">
           <p>Output Speed 50Hz: {(1500/acRatio).toFixed(1)} rpm</p>
           <p>Output Speed 60Hz: {(1800/acRatio).toFixed(1)} rpm</p>
-          <button onClick={()=>{ const code=generateModelCode(state); if(code) onConfirm(code); }} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">เสร็จสิ้น</button>
+          <button onClick={() => { const code = generateModelCode(state); if (code) onConfirm(code); }} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">เสร็จสิ้น</button>
         </div>
       )}
+
       <div className="flex justify-center mt-10">
-        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[600px]" />
+        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[600px] object-contain" />
       </div>
     </div>
   );
