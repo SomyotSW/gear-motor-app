@@ -23,15 +23,15 @@ import KBHead from '../assets/ac/KB.png';
 import RCHead from '../assets/ac/RC.png';
 import RTHead from '../assets/ac/RT.png';
 
-import 10Img from '../assets/ac/flame/10W.png';
-import 15WImg from '../assets/ac/flame/15W.png';
-import 25WImg from '../assets/ac/flame/25W.png';
-import 40WImg from '../assets/ac/flame/40W.png';
-import 60WImg from '../assets/ac/flame/60W.png';
-import 90WImg from '../assets/ac/flame/90W.png';
-import 120WImg from '../assets/ac/flame/120W.png';
-import 140WImg from '../assets/ac/flame/140W.png';
-import 200WImg from '../assets/ac/flame/200W.png';
+import W10Img from '../assets/ac/flame/10W.png';
+import W15Img from '../assets/ac/flame/15W.png';
+import W25Img from '../assets/ac/flame/25W.png';
+import W40Img from '../assets/ac/flame/40W.png';
+import W60Img from '../assets/ac/flame/60W.png';
+import W90Img from '../assets/ac/flame/90W.png';
+import W120Img from '../assets/ac/flame/120W.png';
+import W140Img from '../assets/ac/flame/140W.png';
+import W200Img from '../assets/ac/flame/200W.png';
 import SpecialWImg from '../assets/ac/flame/SpecialW.png';
 
 
@@ -104,7 +104,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
         <div>
           <h3 className="font-semibold mb-2">Power Motor</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[{ label: '10W', img: 10WImg }, { label: '15W', img: 15WImg }, { label: '25W', img: 25WImg }, { label: '40W', img: 40WImg }, { label: '60W', img: 60WImg }, { label: '90W', img: 90WImg }, { label: '140W', img: 140WImg }, { label: '200W', img: 200WImg }, { label: '"SpeicalW', img: SpecialWImg }].map(({ label, img }) => (
+            {[{ label: '10W', img: W10Img }, { label: '15W', img: W15Img }, { label: '25W', img: W25Img }, { label: '40W', img: W40Img }, { label: '60W', img: W60Img }, { label: '90W', img: W90Img }, { label: '140W', img: W140Img }, { label: '200W', img: W200Img }, { label: 'SpeicalW', img: SpecialWImg }].map(({ label, img }) => (
               <button key={label} onClick={() => update('acMotorType', label)} className="flex flex-col items-center bg-blue-50 hover:bg-blue-200 rounded p-2">
                 <img src={img} alt={label} className="h-16 mb-1 object-contain" />
                 <span>{label}</span>
