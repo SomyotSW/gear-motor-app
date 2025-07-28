@@ -343,14 +343,15 @@ export function renderACMotorFlow(state, setState, setModelCode) {
           <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
     
           <button
-                     onClick={() => {
-                      const code = generateModelCode(state);  // หรืออะไรก็ตามที่คุณใช้
-                      if (code) setModelCode(code);
-                     }}
-                     className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                     เสร็จสิ้น
-                    </button>
+             onClick={() => {
+               const code = generateModelCode(state);  // หรืออะไรก็ตามที่คุณใช้
+	          console.log("Generated Code:", code);
+             if (code) setModelCode(code);
+             }}
+               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+               เสร็จสิ้น
+          </button>
         </div>
       )}
 
