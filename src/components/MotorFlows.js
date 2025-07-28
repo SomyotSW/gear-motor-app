@@ -342,12 +342,12 @@ export function renderACMotorFlow(state, setState, setModelCode) {
           <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
           <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
           
-          <button
-             onClick={() => setModelCode(modelCode)}
-             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-             เสร็จสิ้น
-          </button>
+            <button
+               onClick={() => setModelCode(modelCode)}
+               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+               เสร็จสิ้น
+            </button>
         </div>
       )}
 
