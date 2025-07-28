@@ -13,10 +13,10 @@ import PPlanetaryImg from '../assets/pplanetary/pplanetary.png';
 import DriverImg from '../assets/driver/driver.png';
 import SRVImg from '../assets/srv/srv.png';
 
-import RImg from '../assets/rkfs/R.png';
-import KImg from '../assets/rkfs/K.png';
-import FImg from '../assets/rkfs/F.png';
-import SImg from '../assets/rkfs/S.png';
+import RImg from '../assets/rkfs/4Series/R.png';
+import KImg from '../assets/rkfs/4Series/K.png';
+import FImg from '../assets/rkfs/4Series/F.png';
+import SImg from '../assets/rkfs/4Series/S.png';
 
 import GBKImg from '../assets/ac/Gearhead/K.png';
 import GBKBImg from '../assets/ac/Gearhead/KB.png';
@@ -277,18 +277,28 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   return (
     <div className="space-y-6 mt-6">
       {!rkfsDesign && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-          {[{ key: 'R', img: RImg }, { key: 'K', img: KImg }, { key: 'F', img: FImg }, { key: 'S', img: SImg }].map(type => (
-            <div key={type.key} className="text-center">
-              <img
-                src={type.img}
-                alt={type.key}
-                onClick={() => update('rkfsDesign', type.key)}
-                className="cursor-pointer hover:scale-105 transition mx-auto"
-              />
-              <p className="mt-2">{descriptionMap[type.key]}</p>
-            </div>
-          ))}
+	<div>
+          <h3 className="font-semibold mb-2">4 Series Gear Motor</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'R Series : Helical Gear', img: RImg },
+	      { label: 'K Series : Helical-Bevel Gear', img: KImg },
+              { label: 'S Series : Worm Gear', img: SImg },
+              { label: 'F Series : Parallel Shaft Gear', img: FImg }
+              ].map(({ label, img }) => (
+              <button
+               key={label}
+               onClick={() => update('rkfsDesign', label)}
+               className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
+          >
+                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
+              ))}
+          </div>
+	  <p className="text-sm text-gray-600 mt-2">
+            Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม ( SAS Model : UX52..W ) 
+          </p>
         </div>
       )}
 
@@ -347,7 +357,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
       )}
 
       <div className="flex justify-center mt-10">
-        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[400px]" />
+        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[600px]" />
       </div>
     </div>
   );
