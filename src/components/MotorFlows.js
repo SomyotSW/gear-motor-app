@@ -345,7 +345,7 @@ export function renderACMotorFlow(state, setState, setModelCode) {
           <button
                      onClick={() => {
                       const code = generateModelCode(state);  // หรืออะไรก็ตามที่คุณใช้
-                      if (code) handleConfirm(code);
+                      if (code) setModelCode(code);
                      }}
                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
