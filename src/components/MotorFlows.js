@@ -238,7 +238,7 @@ export function renderACMotorFlow(state, setState, onConfirm) {
                  className="mx-auto block"
                 >
                  <img
-                  src={require('../assets/ac/GearBG2.jpg')}
+                  src={require('../assets/ac/Gearhead/GearBG2.jpg')}
                   alt="Gear BG"
                   className="h-24 mx-auto cursor-pointer hover:scale-105 transition"
                  />
