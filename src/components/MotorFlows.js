@@ -23,9 +23,9 @@ import KBHead from '../assets/ac/KB.png';
 import RCHead from '../assets/ac/RC.png';
 import RTHead from '../assets/ac/RT.png';
 
-import 10WImg from '../assets/ac/flame/10W.png';
+import 10Img from '../assets/ac/flame/10W.png';
 import 15WImg from '../assets/ac/flame/15W.png';
-import 20WImg from '../assets/ac/flame/25W.png';
+import 25WImg from '../assets/ac/flame/25W.png';
 import 40WImg from '../assets/ac/flame/40W.png';
 import 60WImg from '../assets/ac/flame/60W.png';
 import 90WImg from '../assets/ac/flame/90W.png';
