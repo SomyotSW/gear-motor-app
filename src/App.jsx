@@ -47,7 +47,7 @@ function App() {
     setRkfsMounting(null);
   };
 
-  const state = {
+  const acState = {
     acMotorType, setAcMotorType,
     acPower, setAcPower,
     acSpeedAdjust, setAcSpeedAdjust,
