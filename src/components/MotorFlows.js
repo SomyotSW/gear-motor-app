@@ -400,13 +400,6 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     onConfirm(model);
   };
 
-  const descriptionMap = {
-    R: 'R Series, Helical Gear Motor',
-    K: 'K Series, Bevel Gear Motor',
-    F: 'F Series, Parallel Shaft Gear Motor',
-    S: 'S Series, Worm Gear Motor'
-  };
-
   const modelCode = rkfsDesign && rkfsSize && rkfsPower && rkfsMounting
     ? `${rkfsDesign}-${rkfsSize}-${rkfsPower}-${rkfsMounting}`
     : '';
@@ -511,4 +504,3 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     </div>
   );
 }
-// ❗ ส่วน render อื่น ๆ เช่น renderDCMotorFlow, renderServoFlow, renderBLDCFlow ยังสามารถเพิ่มต่อด้านล่างนี้ โดยไม่ลบหรือเปลี่ยน renderRKFSFlow ที่คุณมีอยู่เดิม
