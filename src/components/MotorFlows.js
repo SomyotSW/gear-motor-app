@@ -362,7 +362,7 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
           </div>
 	  <FinalResult
              modelCode={generateModelCode(state)}
-             downloadLink={`https://raw.githubusercontent.com/somyot442s/sas-3d/main/${generateModelCode(state)}.stp`}
+             downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${generateModelCode(state)}.stp`}
           />
         </>  
       )}
@@ -372,22 +372,20 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
       </div>
     </div>
   );
-if (acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio) {
-  const modelCode = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
+  if (acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio) {
+    const modelCode = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
 
-  const rpm50 = 1500 / parseFloat(acRatio);
-  const rpm60 = 1800 / parseFloat(acRatio);
+    const rpm50 = 1500 / parseFloat(acRatio);
+    const rpm60 = 1800 / parseFloat(acRatio);
 
-  return (
-    <FinalSummary
-      modelCode={modelCode}
-      output50Hz={rpm50}
-      output60Hz={rpm60}
-    />
+    return (
+      <FinalSummary
+        modelCode={modelCode}
+        output50Hz={rpm50}
+        output60Hz={rpm60}
+      />
   );
-
 }
-
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
