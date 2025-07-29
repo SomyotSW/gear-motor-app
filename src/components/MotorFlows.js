@@ -1,5 +1,5 @@
 // MotorFlows.js
-
+import FinalResult from './components/FinalResult';
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
 import BLDCImg from '../assets/bldc/bldc.png';
@@ -344,20 +344,26 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
       )}
 
       {acRatio && (
-        <div className="space-y-2 text-center">
-          <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
-          <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
+	<>
+          <div className="space-y-2 text-center">
+            <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
+            <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
     
-          <button
-                     onClick={() => {
-                      const code = generateModelCode(state);  // หรืออะไรก็ตามที่คุณใช้
-                      if (code) handleConfirm(code);
-                     }}
-                     className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                     เสร็จสิ้น
-                    </button>
-        </div>
+            <button
+                       onClick={() => {
+                       const code = generateModelCode(state);  // หรืออะไรก็ตามที่คุณใช้
+                       if (code) handleConfirm(code);
+                       }}
+                       className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                       เสร็จสิ้น
+                      </button>
+          </div>
+	  <FinalResult
+             modelCode={generateModelCode(state)}
+             downloadLink={`https://raw.githubusercontent.com/somyot442s/sas-3d/main/${generateModelCode(state)}.stp`}
+          />
+        </>  
       )}
 
       <div className="flex justify-center mt-10">
