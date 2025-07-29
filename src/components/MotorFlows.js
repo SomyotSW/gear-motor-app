@@ -399,15 +399,12 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
   const update = (key, value) => {
-     const setter = setState[`set${key.charAt(0).toUpperCase() + key.slice(1)}`];
-     if (setter) {
-       setter(state[key] === value ? null : value);
-     }
-    };
-
-  const confirmModel = () => {
-    const model = [rkfsDesign, rkfsSize, rkfsPower, rkfsMounting].filter(Boolean).join('-');
-    onConfirm(model);
+    // ตรวจสอบว่า setState เป็น object ที่มีฟังก์ชันเช่น setRkfsDesign
+    const methodName = 'set' + key.charAt(0).toUpperCase() + key.slice(1);
+    const setter = setState[methodName];
+    if (typeof setter === 'function') {
+      setter(state[key] === value ? null : value);
+    }
   };
 
   const descriptionMap = {
