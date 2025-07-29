@@ -348,49 +348,41 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
 )}
 
 {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && (
-  <>
-    <div className="space-y-2 text-center mt-4">
-      <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
-      <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
+  (() => {
+    const modelCode = generateModelCode({
+      acMotorType,
+      acPower,
+      acVoltage,
+      acOption,
+      acGearHead,
+      acRatio,
+    });
 
-      <button
-        onClick={() => {
-          const code = generateModelCode({
-            acMotorType,
-            acPower,
-            acVoltage,
-            acOption,
-            acGearHead,
-            acRatio,
-          });
-          if (code) onConfirm(code); // ✅ เปลี่ยนจาก handleConfirm → onConfirm ที่ส่งมาจาก props
-        }}
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        เสร็จสิ้น
-      </button>
-    </div>
+    return (
+      <>
+        <div className="space-y-2 text-center mt-4">
+          <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
+          <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
 
-    <FinalResult
-      modelCode={generateModelCode({
-        acMotorType,
-        acPower,
-        acVoltage,
-        acOption,
-        acGearHead,
-        acRatio,
-      })}
-      downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${generateModelCode({
-        acMotorType,
-        acPower,
-        acVoltage,
-        acOption,
-        acGearHead,
-        acRatio,
-      })}.stp`}
-    />
-  </>
+          <button
+            onClick={() => {
+              if (modelCode) onConfirm(modelCode);
+            }}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            เสร็จสิ้น
+          </button>
+        </div>
+
+        <FinalResult
+          modelCode={modelCode}
+          downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${modelCode}.stp`}
+        />
+      </>
+    );
+  })()
 )}
+
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
