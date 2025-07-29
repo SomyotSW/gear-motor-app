@@ -1,4 +1,5 @@
 // MotorFlows.js
+import FinalSummary from '../components/FinalSummary'; 
 import FinalResult from './components/FinalResult';
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
@@ -371,6 +372,20 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
       </div>
     </div>
   );
+if (acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio) {
+  const modelCode = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
+
+  const rpm50 = 1500 / parseFloat(acRatio);
+  const rpm60 = 1800 / parseFloat(acRatio);
+
+  return (
+    <FinalSummary
+      modelCode={modelCode}
+      output50Hz={rpm50}
+      output60Hz={rpm60}
+    />
+  );
+
 }
 
 export function renderRKFSFlow(state, setState, onConfirm) {
