@@ -126,11 +126,11 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
       if (motorTypeCode === 'RK') model += 'M';
     } else if (acPower === '140W') {
       const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
-      model = 6`${motorTypeCode}140${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+      model = `${motorTypeCode}140${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
     } else if (acPower === '200W') {
       const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
-      model = 6`${motorTypeCode}200${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+      model = `${motorTypeCode}200${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
     }
 
