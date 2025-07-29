@@ -385,26 +385,19 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
   </>
 )}
 
-
-
-
-
-
-
-
-
-
-
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
   const update = (key, value) => {
-    // ตรวจสอบว่า setState เป็น object ที่มีฟังก์ชันเช่น setRkfsDesign
-    const methodName = 'set' + key.charAt(0).toUpperCase() + key.slice(1);
-    const setter = setState[methodName];
-    if (typeof setter === 'function') {
+    const setter = setState[`set${key.charAt(0).toUpperCase() + key.slice(1)}`];
+    if (setter) {
       setter(state[key] === value ? null : value);
     }
+  };
+
+  const confirmModel = () => {
+    const model = `${rkfsDesign}-${rkfsSize}-${rkfsPower}-${rkfsMounting}`;
+    onConfirm(model);
   };
 
   const descriptionMap = {
@@ -414,30 +407,34 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     S: 'S Series, Worm Gear Motor'
   };
 
+  const modelCode = rkfsDesign && rkfsSize && rkfsPower && rkfsMounting
+    ? `${rkfsDesign}-${rkfsSize}-${rkfsPower}-${rkfsMounting}`
+    : '';
+
   return (
     <div className="space-y-6 mt-6">
       {!rkfsDesign && (
-	<div>
+        <div>
           <h3 className="font-semibold mb-2">4 Series Gear Motor</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
-              { label: 'R Series : Helical Gear', img: RImg },
-	      { label: 'K Series : Helical-Bevel Gear', img: KImg },
-              { label: 'S Series : Worm Gear', img: SImg },
-              { label: 'F Series : Parallel Shaft Gear', img: FImg }
-              ].map(({ label, img }) => (
+              { label: 'R Series', img: RImg },
+              { label: 'K Series', img: KImg },
+              { label: 'S Series', img: SImg },
+              { label: 'F Series', img: FImg }
+            ].map(({ label, img }) => (
               <button
-               key={label}
-               onClick={() => update('rkfsDesign', label)}
-               className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
-          >
+                key={label}
+                onClick={() => update('rkfsDesign', label)}
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
+              >
                 <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
-              ))}
+            ))}
           </div>
-	  <p className="text-sm text-gray-600 mt-2">
-            Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม ( SAS Model : UX52..W ) 
+          <p className="text-sm text-gray-600 mt-2">
+            Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
           </p>
         </div>
       )}
@@ -485,14 +482,26 @@ export function renderRKFSFlow(state, setState, onConfirm) {
       )}
 
       {rkfsMounting && (
-        <div className="text-center space-y-2">
-          <p>Model: {rkfsDesign}-{rkfsSize}-{rkfsPower}-{rkfsMounting}</p>
+        <div className="text-center space-y-4">
+          <p className="text-lg font-semibold">Model Code: {modelCode}</p>
+
           <button
             onClick={confirmModel}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             เสร็จสิ้น
           </button>
+
+          <div className="mt-3">
+            <a
+              href={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${modelCode}.stp`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              ⬇ Download 3D File
+            </a>
+          </div>
         </div>
       )}
 
