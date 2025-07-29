@@ -1,5 +1,6 @@
 // MotorFlows.js
-import FinalSummary from '../components/FinalSummary'; 
+import FinalSummary from '../components/FinalSummary';
+import DownloadButton from '../components/DownloadButton';
 import FinalResult from './components/FinalResult';
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
@@ -193,7 +194,7 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
                onClick={() => update('acMotorType', label)}
                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
           >
-                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
               ))}
@@ -225,7 +226,7 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
                onClick={() => update('acPower', label)}
                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
           >
-                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
               ))}
@@ -246,7 +247,7 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
                onClick={() => update('acVoltage', label)}
                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
           >
-                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
               ))}
@@ -271,7 +272,7 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
                onClick={() => update('acOption', label)}
                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
           >
-                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
               ))}
@@ -297,7 +298,7 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
                onClick={() => update('acGearHead', label)}
                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
           >
-                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
               ))}
@@ -309,83 +310,87 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
       )}
 
       {acGearHead && !acRatio && (
-        <div>
-               <h3 className="font-semibold mb-2">Ratio</h3>
+  <div>
+    <h3 className="font-semibold mb-2">Ratio</h3>
 
-               {/* 🖼 ปุ่มแสดงภาพ GearBG2 ที่คลิกแล้วแสดงคำอธิบาย */}
-               <div className="mb-4 text-center">
-      	      <button
-                 onClick={() => alert(
-                  '🛠 วิธีคำนวนความเร็วรอบ:\n\nความเร็วรอบของมอเตอร์ ÷ อัตราทด = ความเร็วรอบของหัวเกียร์\n\nเช่น มอเตอร์ 1500 / 15 = 100 rpm (รอบต่อนาที)'
-                 )}
-                 className="mx-auto block"
-                >
-                 <img
-                  src={require('../assets/ac/Gearhead/GearBG2.jpg')}
-                  alt="Gear BG"
-                  className="h-86 mx-auto cursor-pointer hover:scale-105 transition"
-                 />
-                 <p className="text-xs text-gray-600 mt-1">คลิกเพื่อดูวิธีคำนวณความเร็วรอบ</p>
-                </button>
-               </div>
-
-               {/* 🔢 ปุ่มเลือกอัตราทด */}
-               <div className="flex flex-wrap gap-2 justify-center">
-                {[3, 3.6, 5, 6, 7.5, 9, 10, 12.5, 15, 18, 20, 25, 30, 36, 40, 50, 60, 75, 90, 100, 120, 150, 180, 200].map(r => (
-                 <button
-                  key={r}
-                  onClick={() => update('acRatio', r)}
-                  className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
-                 >
-                  {r}
-                 </button>
-                ))}
-               </div>
-              </div>
-      )}
-
-      {acRatio && (
-	<>
-          <div className="space-y-2 text-center">
-            <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
-            <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
-    
-            <button
-                       onClick={() => {
-                       const code = generateModelCode(state);  // หรืออะไรก็ตามที่คุณใช้
-                       if (code) handleConfirm(code);
-                       }}
-                       className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      >
-                       เสร็จสิ้น
-                      </button>
-          </div>
-	  <FinalResult
-             modelCode={generateModelCode(state)}
-             downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${generateModelCode(state)}.stp`}
-          />
-        </>  
-      )}
-
-      <div className="flex justify-center mt-10">
-        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[600px]" />
-      </div>
+    {/* 🖼 ปุ่มแสดงภาพ GearBG2 ที่คลิกแล้วแสดงคำอธิบาย */}
+    <div className="mb-4 text-center">
+      <button
+        onClick={() =>
+          alert(
+            '🛠 วิธีคำนวนความเร็วรอบ:\n\nความเร็วรอบของมอเตอร์ ÷ อัตราทด = ความเร็วรอบของหัวเกียร์\n\nเช่น มอเตอร์ 1500 / 15 = 100 rpm (รอบต่อนาที)'
+          )
+        }
+        className="mx-auto block"
+      >
+        <img
+          src={require('../assets/ac/Gearhead/GearBG2.jpg')}
+          alt="Gear BG"
+          className="h-86 mx-auto cursor-pointer hover:scale-105 transition"
+        />
+        <p className="text-xs text-gray-600 mt-1">คลิกเพื่อดูวิธีคำนวณความเร็วรอบ</p>
+      </button>
     </div>
-  );
-  if (acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio) {
-    const modelCode = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
 
-    const rpm50 = 1500 / parseFloat(acRatio);
-    const rpm60 = 1800 / parseFloat(acRatio);
+    {/* 🔢 ปุ่มเลือกอัตราทด */}
+    <div className="flex flex-wrap gap-2 justify-center">
+      {[3, 3.6, 5, 6, 7.5, 9, 10, 12.5, 15, 18, 20, 25, 30, 36, 40, 50, 60, 75, 90, 100, 120, 150, 180, 200].map(r => (
+        <button
+          key={r}
+          onClick={() => update('acRatio', r)}
+          className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
+        >
+          {r}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
 
-    return (
-      <FinalSummary
-        modelCode={modelCode}
-        output50Hz={rpm50}
-        output60Hz={rpm60}
-      />
-  );
-}
+{acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && (
+  <>
+    <div className="space-y-2 text-center mt-4">
+      <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
+      <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
+
+      <button
+        onClick={() => {
+          const code = generateModelCode({
+            acMotorType,
+            acPower,
+            acVoltage,
+            acOption,
+            acGearHead,
+            acRatio,
+          });
+          if (code) onConfirm(code); // ✅ เปลี่ยนจาก handleConfirm → onConfirm ที่ส่งมาจาก props
+        }}
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        เสร็จสิ้น
+      </button>
+    </div>
+
+    <FinalResult
+      modelCode={generateModelCode({
+        acMotorType,
+        acPower,
+        acVoltage,
+        acOption,
+        acGearHead,
+        acRatio,
+      })}
+      downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${generateModelCode({
+        acMotorType,
+        acPower,
+        acVoltage,
+        acOption,
+        acGearHead,
+        acRatio,
+      })}.stp`}
+    />
+  </>
+)}
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
@@ -426,7 +431,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
                onClick={() => update('rkfsDesign', label)}
                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
           >
-                <img src={img} alt={label} className="h-32 mb-1 object-contain" />
+                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
               ))}
