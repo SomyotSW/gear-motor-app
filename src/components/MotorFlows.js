@@ -387,12 +387,11 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
   const update = (key, value) => {
-    if (state[key] === value) {
-      setState[set`${key.charAt(0).toUpperCase() + key.slice(1)}`](null);
-    } else {
-      setState[set`${key.charAt(0).toUpperCase() + key.slice(1)}`](value);
-    }
-  };
+     const setter = setState[`set${key.charAt(0).toUpperCase() + key.slice(1)}`];
+     if (setter) {
+       setter(state[key] === value ? null : value);
+     }
+    };
 
   const confirmModel = () => {
     const model = [rkfsDesign, rkfsSize, rkfsPower, rkfsMounting].filter(Boolean).join('-');
