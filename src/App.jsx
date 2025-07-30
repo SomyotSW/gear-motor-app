@@ -47,7 +47,7 @@ function App() {
       const finalCodes = Array.isArray(generatedCodes[0]) ? generatedCodes.flat() : generatedCodes;
       if (finalCodes.length > 0) {
         setModelCodeList(finalCodes);
-        setSelectedModel(finalCodes[0]); // default select ตัวแรก
+        setSelectedModel(finalCodes[0]);
       }
     }
   }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
@@ -95,111 +95,118 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gray-50 text-gray-900">
-      {!selectedProduct && (
-        <>
-          <h1 className="text-2xl font-bold mb-4">SAS Transmission Request 3D file</h1>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {productList.map((p) => (
-              <div
-                key={p.name}
-                className="cursor-pointer hover:scale-105 transition text-center"
-                onClick={() => setSelectedProduct(p.name)}
-              >
-                <img src={p.image} alt={p.name} className="w-full h-32 sm:h-36 md:h-40 object-contain" />
-                <p className="mt-2 font-semibold">{p.name}</p>
+    <div className="relative min-h-screen overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center blur-sm z-0"
+        style={{ backgroundImage: `url('/src/assets/GearBG2.png')` }}
+      ></div>
+
+      <div className="relative z-10 p-6 text-gray-900">
+        {!selectedProduct && (
+          <>
+            <h1 className="text-2xl font-bold mb-4">SAS Transmission Request 3D file</h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {productList.map((p) => (
+                <div
+                  key={p.name}
+                  className="cursor-pointer hover:scale-105 transition text-center"
+                  onClick={() => setSelectedProduct(p.name)}
+                >
+                  <img src={p.image} alt={p.name} className="w-full h-32 sm:h-36 md:h-40 object-contain" />
+                  <p className="mt-2 font-semibold">{p.name}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
+          <>
+            <div className="flex justify-between items-center mt-6">
+              <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
+              <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+            </div>
+            <ACMotorFlow
+              acState={acState}
+              acSetters={acSetters}
+              onConfirm={(modelCode) => {
+                const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+                setModelCodeList(models);
+                setSelectedModel(models[0]);
+              }}
+            />
+          </>
+        )}
+
+        {selectedProduct === 'RKFS Series' && !selectedModel && (
+          <>
+            <div className="flex justify-between items-center mt-6">
+              <h2 className="text-xl font-bold">RKFS Series</h2>
+              <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+            </div>
+            {renderRKFSFlow(rkfsState, rkfsState)}
+          </>
+        )}
+
+        {modelCodeList.length > 0 && !showForm && (
+          <div className="text-center mt-10 space-y-4">
+            <h2 className="text-xl font-bold text-blue-700">Model Code:</h2>
+            {modelCodeList.map((code, idx) => (
+              <div key={idx} className="flex justify-center items-center space-x-2">
+                <input
+                  type="radio"
+                  name="modelSelect"
+                  value={code}
+                  checked={selectedModel === code}
+                  onChange={() => setSelectedModel(code)}
+                />
+                <label>{code}</label>
               </div>
             ))}
-          </div>
-        </>
-      )}
 
-      {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
-  <>
-    <div className="flex justify-between items-center mt-6">
-      <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
-    </div>
-    <ACMotorFlow
-      acState={acState}
-      acSetters={acSetters}
-      onConfirm={(modelCode) => {
-        const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-        setModelCodeList(models);
-        setSelectedModel(models[0]);
-      }}
-    />
-  </>
-)}
-
-      {selectedProduct === 'RKFS Series' && !selectedModel && (
-        <>
-          <div className="flex justify-between items-center mt-6">
-            <h2 className="text-xl font-bold">RKFS Series</h2>
-            <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
-          </div>
-          {renderRKFSFlow(rkfsState, rkfsState)}
-        </>
-      )}
-
-      {modelCodeList.length > 0 && !showForm && (
-        <div className="text-center mt-10 space-y-4">
-          <h2 className="text-xl font-bold text-blue-700">Model Code:</h2>
-          {modelCodeList.map((code, idx) => (
-            <div key={idx} className="flex justify-center items-center space-x-2">
-              <input
-                type="radio"
-                name="modelSelect"
-                value={code}
-                checked={selectedModel === code}
-                onChange={() => setSelectedModel(code)}
-              />
-              <label>{code}</label>
-            </div>
-          ))}
-
-          <button
-            onClick={() => setShowForm(true)}
-            disabled={!selectedModel || isDownloading}
-            className={`mt-4 px-5 py-2 rounded text-white transition ${
-              isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'
-            }`}
-          >
-            {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
-          </button>
-
-          <button onClick={handleBack} className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
-            กลับไปเลือกใหม่
-          </button>
-        </div>
-      )}
-
-      {showForm && (
-        <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
-          <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
-
-          <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="text" placeholder="ชื่อบริษัท" value={userInfo.company} onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="email" placeholder="Email ติดต่อ" value={userInfo.email} onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })} className="w-full mb-4 p-2 border rounded" />
-
-          <div className="relative">
             <button
-              onClick={handleDownload}
-              disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading}
-              className={`w-full py-2 rounded text-white font-semibold transition ${
+              onClick={() => setShowForm(true)}
+              disabled={!selectedModel || isDownloading}
+              className={`mt-4 px-5 py-2 rounded text-white transition ${
                 isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'
               }`}
             >
-              {isDownloading ? 'กำลังดาวน์โหลด...' : 'ยืนยันและรับไฟล์'}
+              {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
             </button>
 
-            {isDownloading && (
-              <img src="/assets/hourglass.gif" alt="loading" className="w-8 h-8 absolute -top-10 right-0 animate-spin" />
-            )}
+            <button onClick={handleBack} className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+              กลับไปเลือกใหม่
+            </button>
           </div>
-        </div>
-      )}
+        )}
+
+        {showForm && (
+          <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
+            <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
+
+            <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="text" placeholder="ชื่อบริษัท" value={userInfo.company} onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="email" placeholder="Email ติดต่อ" value={userInfo.email} onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })} className="w-full mb-4 p-2 border rounded" />
+
+            <div className="relative">
+              <button
+                onClick={handleDownload}
+                disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading}
+                className={`w-full py-2 rounded text-white font-semibold transition ${
+                  isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'
+                }`}
+              >
+                {isDownloading ? 'กำลังดาวน์โหลด...' : 'ยืนยันและรับไฟล์'}
+              </button>
+
+              {isDownloading && (
+                <img src="/assets/hourglass.gif" alt="loading" className="w-8 h-8 absolute -top-10 right-0 animate-spin" />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
