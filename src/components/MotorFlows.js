@@ -378,6 +378,14 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
                       <FinalResult
                         modelCode={modelCode}
                         downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${modelCode}.stp`}
+                        onReset={() => {
+				acSetters.setAcMotorType(null);
+    				acSetters.setAcPower(null);
+    				acSetters.setAcVoltage(null);
+    				acSetters.setAcOption(null);
+    				acSetters.setAcGearHead(null);
+    				acSetters.setAcRatio(null);
+			}}
                       />
                     </>
                   );
