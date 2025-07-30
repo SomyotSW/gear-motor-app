@@ -386,36 +386,36 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
 
           {/* ✅ ปุ่มเสร็จสิ้น */}
           {Array.isArray(modelCode) && (
-  <>
-    <p className="text-lg font-semibold text-gray-700">กรุณาเลือกรุ่นที่ต้องการดาวน์โหลด:</p>
-    <div className="flex flex-col items-center space-y-2">
-      {modelCode.map((code, idx) => (
-        <label key={idx} className="flex items-center space-x-2">
-          <input
-            type="radio"
-            name="modelChoice"
-            value={code}
-            checked={selectedModel === code}
-            onChange={() => setSelectedModel(code)}
-          />
-          <span className="font-mono">{code}</span>
-        </label>
-      ))}
-    </div>
-  </>
-)}
+  	       <>
+                      <p className="text-lg font-semibold text-gray-700">กรุณาเลือกรุ่นที่ต้องการดาวน์โหลด:</p>
+                      <div className="flex flex-col items-center space-y-2">
+                       {modelCode.map((code, idx) => (
+                        <label key={idx} className="flex items-center space-x-2">
+                         <input
+                          type="radio"
+                          name="modelChoice"
+                          value={code}
+                          checked={selectedModel === code}
+                          onChange={() => setSelectedModel(code)}
+                         />
+                      <span className="font-mono">{code}</span>
+                      </label>
+                       ))}
+                      </div>
+                     </>
+                    )}
 
-<button
-  onClick={() => {
-    if (modelCode) {
-      const selected = Array.isArray(modelCode) ? selectedModel : modelCode;
-      onConfirm(selected);
-    }
-  }}
-  className="mt-2 px-5 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700"
->
-  เสร็จสิ้น
-</button>
+                    <button
+                     onClick={() => {
+                      if (modelCode) {
+                       const selected = Array.isArray(modelCode) ? selectedModel : modelCode;
+                       onConfirm(selected);
+                     }
+                     }}
+                    className="mt-2 px-5 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700"
+                    >
+                  เสร็จสิ้น
+                    </button>
 
           {/* ✅ Final Result (ปุ่มดาวน์โหลด 3D + ย้อนกลับ) */}
           <FinalResult
