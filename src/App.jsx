@@ -57,8 +57,8 @@ function App() {
 
     setTimeout(() => {
       const link = document.createElement('a');
-      link.href = `https://raw.githubusercontent.com/SomyotSW/gear-motor-app/main/src/assets/model/${modelCode}.stp`;
-      link.download = `${modelCode}.stp`;
+      link.href = `https://raw.githubusercontent.com/SomyotSW/gear-motor-app/main/src/assets/model/${modelCode}.STEP`;
+      link.download = `${modelCode}.STEP`;
       link.click();
       setIsDownloading(false);
       setShowForm(false); // ปิดฟอร์มหลังโหลด
