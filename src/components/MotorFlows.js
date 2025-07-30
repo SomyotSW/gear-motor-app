@@ -10,7 +10,7 @@ import ServoImg from '../assets/servo/servo.png';
 import PlanetaryImg from '../assets/planetary/planetary.png';
 import HypoidImg from '../assets/hypoid/hypoid.png';
 import RKFSImg from '../assets/rkfs/rkfs.png';
-import SPNImg from '../assets/rkfs/rkfs.png';
+import SPNImg from '../assets/spn/spn.png';
 import HBImg from '../assets/hb/hb.png';
 import PPlanetaryImg from '../assets/pplanetary/pplanetary.png';
 import DriverImg from '../assets/driver/driver.png';
@@ -53,6 +53,7 @@ import FcfImg from '../assets/ac/Optional/Fcf.png';
 import TmpImg from '../assets/ac/Optional/Tmp.png';
 import StdImg from '../assets/ac/Optional/Std.png';
 
+// List of products
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
   { name: 'DC Gear Motor', image: DCImg },
@@ -68,71 +69,51 @@ export const productList = [
   { name: 'SRV Worm Gear', image: SRVImg }
 ];
 
+// Generate model codes based on selections
 export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio }) {
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
   const phaseMap = { '1Phase220V AC 50Hz': 'C', '3Phase220V AC 50Hz': 'S' };
-  const terminalSuffix = acOption === 'With Terminal Box' ? 'T' : '';
-  const gearHeadCodeMap = {
+  const suffixMap = { 'With Terminal Box': 'T' };
+  const phase = phaseMap[acVoltage];
+  const term = suffixMap[acOption] || '';
+  const gearHeadCode = {
     'SQUARE BOX WITH WING': 'K',
     'SQUARE BOX': 'KB',
     'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
     'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
-  };
-  const motorTypeCodeMap = {
-    'Induction Motor': 'IK',
-    'Reversible Motor': 'RK',
-    'Variable Speed Motor': 'IK'
-  };
-  const powerMap = {
-    '10W AC Motor': '2',
-    '15W AC Motor': '3',
-    '25W AC Motor': '4',
-    '40W AC Motor': '5',
-    '60W AC Motor': '5',
-    '90W AC Motor': '5',
-    '120W AC Motor': '5',
-    '140W AC Motor': '6',
-    '200W AC Motor': '6'
-  };
-  const gearCode = gearHeadCodeMap[acGearHead];
-  const motorCode = motorTypeCodeMap[acMotorType];
-  const powerCode = powerMap[acPower];
-  if (!gearCode || !motorCode || !powerCode) return null;
-  const num = acPower.replace(/W AC Motor/, '');
-  const phase = phaseMap[acVoltage];
-  let base = '';
-  if (['10', '15'].includes(num)) {
-    base = `${powerCode}${motorCode}${num}GN-${phase}`;
-  } else if (['25', '40'].includes(num)) {
-    base = `${powerCode}${motorCode}${num}GN-${phase}${terminalSuffix}`;
-  } else {
-    const suffix = motorCode === 'IKR' ? 'RGU' : 'GU';
-    base = `${powerCode}${motorCode}${num}${suffix}-${phase}F${terminalSuffix}`;
+  }[acGearHead];
+  const motorCode = { 'Induction Motor': 'IK', 'Reversible Motor': 'RK', 'Variable Speed Motor': 'IK' }[acMotorType];
+  const powerCode = {
+    '10W AC Motor': '2', '15W AC Motor': '3', '25W AC Motor': '4',
+    '40W AC Motor': '5', '60W AC Motor': '5', '90W AC Motor': '5',
+    '120W AC Motor': '5', '140W AC Motor': '6', '200W AC Motor': '6'
+  }[acPower];
+  if (!gearHeadCode || !motorCode || !powerCode) return null;
+
+  const num = acPower.replace('W AC Motor', '');
+  let base = ''; 
+  if (['10', '15'].includes(num)) base = `${powerCode}${motorCode}${num}GN-${phase}`;
+  else if (['25', '40'].includes(num)) base = `${powerCode}${motorCode}${num}GN-${phase}${term}`;
+  else {
+    const suf = motorCode === 'IKR' ? 'RGU' : 'GU';
+    base = `${powerCode}${motorCode}${num}${suf}-${phase}F${term}`;
   }
+
   const prefixes = num === '60' ? ['GN', 'GU'] : ['GN'];
-  const gearList = prefixes.map(pref => `${powerCode}${pref}${acRatio}${gearCode}`);
-  return gearList.map(g => `${base}-${g}`);
+  const list = prefixes.map(pref => `${powerCode}${pref}${acRatio}${gearHeadCode}`);
+  return list.map(item => `${base}-${item}`);
 }
 
+// Render AC motor selection flow
 export function renderACMotorFlow(acState, acSetters, onConfirm) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
   const [selectedModel, setSelectedModel] = useState(null);
-  const update = (key, value) => {
-    const setterMap = {
-      acMotorType: acSetters.setAcMotorType,
-      acPower: acSetters.setAcPower,
-      acVoltage: acSetters.setAcVoltage,
-      acOption: acSetters.setAcOption,
-      acGearHead: acSetters.setAcGearHead,
-      acRatio: acSetters.setAcRatio
-    };
-    setterMap[key]?.(value);
-  };
+  const update = (key, value) => acSetters[`set${key.charAt(2).toUpperCase()}${key.slice(3)}`](value);
   const codes = generateModelCode(acState);
 
   return (
     <div className="space-y-6 mt-6">
-      {/* Motor Type */}
+      {/* Motor Type Selection */}
       {!acMotorType && (
         <div>
           <h3 className="font-semibold mb-2">Motor Type</h3>
@@ -155,7 +136,7 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
-      {/* Power */}
+      {/* Power Selection */}
       {acMotorType && !acPower && (
         <div>
           <h3 className="font-semibold mb-2">Power Motor</h3>
@@ -184,7 +165,7 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
-      {/* Voltage */}
+      {/* Voltage Selection */}
       {acPower && !acVoltage && (
         <div>
           <h3 className="font-semibold mb-2">Voltage</h3>
@@ -206,7 +187,7 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
-      {/* Optional */}
+      {/* Optional Selection */}
       {acVoltage && !acOption && (
         <div>
           <h3 className="font-semibold mb-2">SAS Optional</h3>
@@ -232,7 +213,7 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
-      {/* Gear Type */}
+      {/* Gear Head Selection */}
       {acOption && !acGearHead && (
         <div>
           <h3 className="font-semibold mb-2">Gear Type</h3>
@@ -256,42 +237,73 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
+      {/* Ratio Selection */}
       {acGearHead && !acRatio && (
         <div>
-          <h3 className="font-semibold mb-2">Ratio</h3>          
+          <h3 className="font-semibold mb-2">Ratio</h3>
           <div className="flex flex-wrap gap-2 justify-center">
-            {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(r=>(
-              <button key={r} onClick={()=> update('acRatio',r)} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">{r}</button>
+            {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(ratio => (
+              <button
+                key={ratio}
+                onClick={() => update('acRatio', ratio)}
+                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
+              >
+                {ratio}
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Final summary and download */}
+      {/* Final Summary and Download */}
       {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && (
-        <div className="text-center mt-6 space-y-4">
-          <h2 className="text-2xl font-bold text-blue-700">{Array.isArray(codes)? codes.join(', ') : codes}</h2>
-          <div><p>Output Speed 50Hz: {(1500/acRatio).toFixed(1)} rpm</p><p>Output Speed 60Hz: {(1800/acRatio).toFixed(1)} rpm</p></div>
-
+        <div className="text-center space-y-4 mt-6">
+          <h2 className="text-2xl font-bold text-blue-700">
+            {Array.isArray(codes) ? codes.join(', ') : codes}
+          </h2>
+          <div>
+            <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
+            <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
+          </div>
           {Array.isArray(codes) && (
             <div className="flex flex-col items-center space-y-2">
-              {codes.map((code,idx)=>(
+              {codes.map((code, idx) => (
                 <label key={idx} className="flex items-center space-x-2">
-                  <input type="radio" name="modelChoice" value={code} checked={selectedModel===code} onChange={()=> setSelectedModel(code)} />
+                  <input
+                    type="radio"
+                    name="modelChoice"
+                    value={code}
+                    checked={selectedModel === code}
+                    onChange={() => setSelectedModel(code)}
+                  />
                   <span className="font-mono">{code}</span>
                 </label>
               ))}
             </div>
           )}
-
-          <button onClick={()=>{
-            const final = Array.isArray(codes)? selectedModel : codes;
-            if(final) onConfirm(final);
-          }} className="mt-2 px-5 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700">เสร็จสิ้น</button>
-
-          <FinalResult modelCode={Array.isArray(codes)? selectedModel : codes} downloadLink={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${Array.isArray(codes)? selectedModel : codes}.stp`} onReset={()=>{
-            acSetters.setAcMotorType(null); acSetters.setAcPower(null); acSetters.setAcVoltage(null); acSetters.setAcOption(null); acSetters.setAcGearHead(null); acSetters.setAcRatio(null);
-          }}/>
+          <button
+            onClick={() => {
+              const finalCode = Array.isArray(codes) ? selectedModel : codes;
+              if (finalCode) onConfirm(finalCode);
+            }}
+            className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            เสร็จสิ้น
+          </button>
+          <FinalResult
+            modelCode={Array.isArray(codes) ? selectedModel : codes}
+            downloadLink={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${
+              Array.isArray(codes) ? selectedModel : codes
+            }.stp`}
+            onReset={() => {
+              acSetters.setAcMotorType(null);
+              acSetters.setAcPower(null);
+              acSetters.setAcVoltage(null);
+              acSetters.setAcOption(null);
+              acSetters.setAcGearHead(null);
+              acSetters.setAcRatio(null);
+            }}
+          />
         </div>
       )}
     </div>
