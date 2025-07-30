@@ -1,4 +1,5 @@
 // MotorFlows.js
+import React, { useState } from 'react';
 import FinalSummary from '../components/FinalSummary';
 import DownloadButton from '../components/DownloadButton';
 import FinalResult from './FinalResult';
@@ -162,6 +163,8 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
     acOption, acGearHead, acRatio
   } = acState;
 
+    const [selectedModel, setSelectedModel] = useState(null);
+
   const update = (key, value) => {
     const setterMap = {
       acMotorType: acSetters.setAcMotorType,
@@ -225,7 +228,7 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
 	      { label: '15W AC Motor', img: W15Img },
 	      { label: '25W AC Motor', img: W25Img },
 	      { label: '40W AC Motor', img: W40Img },
-	      { label: '60W AC Motor', img: W60Img },
+		      { label: '60W AC Motor', img: W60Img },
 	      { label: '90W AC Motor', img: W90Img },
 	      { label: '120W AC Motor', img: W120Img },
               { label: '140W AC Motor', img: W140Img },
@@ -385,6 +388,27 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
           <button
             onClick={() => {
               if (modelCode) onConfirm(modelCode);
+		{Array.isArray(modelCode) ? (
+  <>
+    <p className="text-lg font-semibold text-gray-700">กรุณาเลือกรุ่นที่ต้องการดาวน์โหลด:</p>
+    <div className="flex flex-col items-center space-y-2">
+      {modelCode.map((code, idx) => (
+        <label key={idx} className="flex items-center space-x-2">
+          <input
+            type="radio"
+            name="modelChoice"
+            value={code}
+            checked={selectedModel === code}
+            onChange={() => setSelectedModel(code)}
+          />
+          <span className="font-mono">{code}</span>
+        </label>
+      ))}
+    </div>
+  </>
+) : (
+  <h2 className="text-2xl font-bold text-blue-700">{modelCode}</h2>
+)}
             }}
             className="mt-2 px-5 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700"
           >
