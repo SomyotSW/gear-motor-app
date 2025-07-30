@@ -2,6 +2,28 @@
 import React, { useState } from 'react';
 import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
+import DCImg from '../assets/dc/dc.png';
+import BLDCImg from '../assets/bldc/bldc.png';
+import ServoImg from '../assets/servo/servo.png';
+import PlanetaryImg from '../assets/planetary/planetary.png';
+import HypoidImg from '../assets/hypoid/hypoid.png';
+import RKFSImg from '../assets/rkfs/rkfs.png';
+import SPNImg from '../assets/spn/spn.png';
+import HBImg from '../assets/hb/hb.png';
+import PPlanetaryImg from '../assets/pplanetary/pplanetary.png';
+import DriverImg from '../assets/driver/driver.png';
+import SRVImg from '../assets/srv/srv.png';
+
+import RImg from '../assets/rkfs/4Series/R.png';
+import KImg from '../assets/rkfs/4Series/K.png';
+import FImg from '../assets/rkfs/4Series/F.png';
+import SImg from '../assets/rkfs/4Series/S.png';
+
+import GBKImg from '../assets/ac/Gearhead/K.png';
+import GBKBImg from '../assets/ac/Gearhead/KB.png';
+import GBRCImg from '../assets/ac/Gearhead/RC.png';
+import GBRTImg from '../assets/ac/Gearhead/RT.png';
+
 import W10Img from '../assets/ac/flame/10W.png';
 import W15Img from '../assets/ac/flame/15W.png';
 import W25Img from '../assets/ac/flame/25W.png';
@@ -11,45 +33,74 @@ import W90Img from '../assets/ac/flame/90W.png';
 import W120Img from '../assets/ac/flame/120W.png';
 import W140Img from '../assets/ac/flame/140W.png';
 import W200Img from '../assets/ac/flame/200W.png';
+import SpecialWImg from '../assets/ac/flame/SpecialW.png';
+
 import SingleImg from '../assets/ac/Voltage/Single.png';
 import ThreeImg from '../assets/ac/Voltage/Three.png';
+
 import FanImg from '../assets/ac/Optional/Fan.png';
 import TmbImg from '../assets/ac/Optional/Tmb.png';
 import EmbImg from '../assets/ac/Optional/Emb.png';
 import FcfImg from '../assets/ac/Optional/Fcf.png';
 import TmpImg from '../assets/ac/Optional/Tmp.png';
 import StdImg from '../assets/ac/Optional/Std.png';
-import GBKImg from '../assets/ac/Gearhead/K.png';
-import GBKBImg from '../assets/ac/Gearhead/KB.png';
-import GBRCImg from '../assets/ac/Gearhead/RC.png';
-import GBRTImg from '../assets/ac/Gearhead/RT.png';
+
 import InductionImg from '../assets/ac/induction.png';
 import ReversibleImg from '../assets/ac/reversible.png';
 import VariableImg from '../assets/ac/variable.png';
 
+export const productList = [
+  { name: 'AC Gear Motor', image: ACImg },
+  { name: 'DC Gear Motor', image: DCImg },
+  { name: 'BLDC Gear Motor', image: BLDCImg },
+  { name: 'Servo Motor', image: ServoImg },
+  { name: 'Planetary Gear', image: PlanetaryImg },
+  { name: 'Hypoid Gear', image: HypoidImg },
+  { name: 'RKFS Series', image: RKFSImg },
+  { name: 'SPN Series', image: SPNImg },
+  { name: 'HB Gearbox Series', image: HBImg },
+  { name: 'P Planetary Gearbox', image: PPlanetaryImg },
+  { name: 'Servo Driver and Speed Controller', image: DriverImg },
+  { name: 'SRV Worm Gear', image: SRVImg }
+];
+
+// Generate model code list based on selections
 export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio }) {
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
+
   const phaseMap = { '1Phase220V AC 50Hz': 'C', '3Phase220V AC 50Hz': 'S' };
   const term = acOption === 'With Terminal Box' ? 'T' : '';
+
   const gearHeadMap = {
     'SQUARE BOX WITH WING': 'K',
     'SQUARE BOX': 'KB',
     'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
     'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
   };
-  const motorMap = { 'Induction Motor': 'IK', 'Reversible Motor': 'RK', 'Variable Speed Motor': 'IKR' };
-  const powerMap = {
-    '10W AC Motor': '2', '15W AC Motor': '3', '25W AC Motor': '4',
-    '40W AC Motor': '5', '60W AC Motor': '5', '90W AC Motor': '5',
-    '120W AC Motor': '5', '140W AC Motor': '6', '200W AC Motor': '6'
+  const motorMap = {
+    'Induction Motor': 'IK',
+    'Reversible Motor': 'RK',
+    'Variable Speed Motor': 'IK'
   };
+  const powerMap = {
+    '10W AC Motor': '2',
+    '15W AC Motor': '3',
+    '25W AC Motor': '4',
+    '40W AC Motor': '5',
+    '60W AC Motor': '5',
+    '90W AC Motor': '5',
+    '120W AC Motor': '5',
+    '140W AC Motor': '6',
+    '200W AC Motor': '6'
+  };
+
   const phase = phaseMap[acVoltage];
   const gearCode = gearHeadMap[acGearHead];
   const motorCode = motorMap[acMotorType];
   const powerCode = powerMap[acPower];
   if (!phase || !gearCode || !motorCode || !powerCode) return null;
 
-  const num = acPower.replace(/W AC Motor/, '');
+  const num = acPower.replace('W AC Motor', '');
   let base = '';
   if (['10', '15'].includes(num)) {
     base = `${powerCode}${motorCode}${num}GN-${phase}`;
@@ -65,11 +116,11 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   return list.map(item => `${base}-${item}`);
 }
 
+// Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
 export function renderACMotorFlow(acState, acSetters, onConfirm) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
   const [selectedModel, setSelectedModel] = useState(null);
 
-  // Correct update mapping
   const update = (key, value) => {
     const setterMap = {
       acMotorType: acSetters.setAcMotorType,
@@ -186,7 +237,7 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
-      {/* Gear Head Selection */}
+      {/* Gearhead Selection */}
       {acOption && !acGearHead && (
         <div>
           <h3 className="font-semibold mb-2">Gear Type</h3>
@@ -265,9 +316,7 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
           </button>
           <FinalResult
             modelCode={Array.isArray(codes) ? selectedModel : codes}
-            downloadLink={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${
-              Array.isArray(codes) ? selectedModel : codes
-            }.stp`}
+            downloadLink={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${Array.isArray(codes) ? selectedModel : codes}.stp`}
             onReset={() => {
               acSetters.setAcMotorType(null);
               acSetters.setAcPower(null);
@@ -285,25 +334,17 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
 
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
-
   const update = (key, value) => {
-    const setter = setState[`set${key.charAt(0).toUpperCase() + key.slice(1)}`];
-    if (setter) {
-      setter(state[key] === value ? null : value);
-    }
+    const setter = setState[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
+    if (setter) setter(state[key] === value ? null : value);
   };
-
-  const confirmModel = () => {
-    const model = `${rkfsDesign}-${rkfsSize}-${rkfsPower}-${rkfsMounting}`;
-    onConfirm(model);
-  };
-
   const modelCode = rkfsDesign && rkfsSize && rkfsPower && rkfsMounting
     ? `${rkfsDesign}-${rkfsSize}-${rkfsPower}-${rkfsMounting}`
     : '';
 
   return (
     <div className="space-y-6 mt-6">
+      {/* Design Selection */}
       {!rkfsDesign && (
         <div>
           <h3 className="font-semibold mb-2">4 Series Gear Motor</h3>
@@ -317,7 +358,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
               <button
                 key={label}
                 onClick={() => update('rkfsDesign', label)}
-                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transform hover:-translate-y-1 transition duration-200"
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
               >
                 <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
@@ -330,6 +371,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         </div>
       )}
 
+      {/* Size Selection */}
       {rkfsDesign && !rkfsSize && (
         <div className="flex flex-wrap gap-3">
           {['60', '80', '100', '120'].map(size => (
@@ -344,6 +386,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         </div>
       )}
 
+      {/* Power Selection */}
       {rkfsSize && !rkfsPower && (
         <div className="flex flex-wrap gap-3">
           {['0.2kW', '0.4kW', '0.75kW', '1.5kW', '2.2kW'].map(power => (
@@ -358,6 +401,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         </div>
       )}
 
+      {/* Mounting Selection */}
       {rkfsPower && !rkfsMounting && (
         <div className="flex flex-wrap gap-3">
           {['Foot', 'Flange', 'Both'].map(mount => (
@@ -372,32 +416,30 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         </div>
       )}
 
+      {/* Final Summary */}
       {rkfsMounting && (
         <div className="text-center space-y-4">
           <p className="text-lg font-semibold">Model Code: {modelCode}</p>
-
           <button
-            onClick={confirmModel}
+            onClick={() => onConfirm(modelCode)}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             เสร็จสิ้น
           </button>
-
-          <div className="mt-3">
-            <a
-              href={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${modelCode}.stp`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              ⬇ Download 3D File
-            </a>
-          </div>
+          <a
+            href={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.stp`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            ⬇ Download 3D File
+          </a>
         </div>
       )}
 
+      {/* Demo GIF */}
       <div className="flex justify-center mt-10">
-        <img src={DemoGif} alt="Demo GIF" className="w-full max-w-[600px]" />
+        <img src={RKFSImg} alt="RKFS Series" className="w-full max-w-[600px]" />
       </div>
     </div>
   );
