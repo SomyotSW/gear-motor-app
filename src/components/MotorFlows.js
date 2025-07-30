@@ -76,89 +76,84 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
     '1Phase220V AC 50Hz': 'C',
     '3Phase220V AC 50Hz': 'S'
   };
+  const terminalSuffix = acOption === 'Terminal box' ? 'T' : '';
 
-  const terminalSuffix = acOption?.includes('Terminal') ? 'T' : '';
-  const rawPower = acPower?.replace(' AC Motor', '');
-
-  const getPrefix = () => {
-    const motorTypeCode = {
-      'Induction Motor': 'IK',
-      'Reversible Motor': 'RK',
-      'Variable Speed Motor': 'IKR'
-    }[acMotorType];
-
-    const powerMap = {
-      '10W': '2',
-      '15W': '3',
-      '25W': '4',
-      '40W': '5',
-      '60W': '5',
-      '90W': '5',
-      '120W': '5',
-      '140W': '6',
-      '200W': '6',
-            '250W': '7'
-    };
-    const powerCode = powerMap[rawPower];
-
-    let model = '';
-
-    if (rawPower === '10W') {
-      model = `${powerCode}${motorTypeCode}10GN-${phaseMap[acVoltage]}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    } else if (rawPower === '15W') {
-      model = `${powerCode}${motorTypeCode}15GN-${phaseMap[acVoltage]}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    } else if (rawPower === '25W') {
-      model = `${powerCode}${motorTypeCode}25GN-${phaseMap[acVoltage]}${terminalSuffix}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    } else if (rawPower === '40W') {
-      model = `${powerCode}${motorTypeCode}40GN-${phaseMap[acVoltage]}${terminalSuffix}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    } else if (rawPower === '60W') {
-      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
-      model = `${powerCode}${motorTypeCode}60${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    } else if (rawPower === '90W') {
-      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
-      model = `${powerCode}${motorTypeCode}90${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    } else if (rawPower === '120W') {
-      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
-      model = `${powerCode}${motorTypeCode}120${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    } else if (rawPower === '140W') {
-      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
-      model = `${motorTypeCode}140${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    } else if (rawPower === '200W') {
-      const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
-      model = `${motorTypeCode}200${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
-      if (motorTypeCode === 'RK') model += 'M';
-    }
-
-    return model;
+  const gearHeadCodeMap = {
+    'SQUARE BOX WITH WING': 'K',
+    'SQUARE BOX': 'KB',
+    'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
+    'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
   };
 
-  const prefix = getPrefix();
-    if (!prefix) return null;
+  const gearCode = gearHeadCodeMap[acGearHead];
+  if (!gearCode) return null;
 
-    const gearHeadCodeMap = {
-     'SQUARE BOX WITH WING': 'K',
-     'SQUARE BOX': 'KB',
-     'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
-     'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
-    };
+  const motorTypeCode = {
+    'Induction Motor': 'IK',
+    'Reversible Motor': 'RK',
+    'Variable Speed Motor': 'IK'
+  }[acMotorType];
 
-    const gearCode = gearHeadCodeMap[acGearHead];
-    if (!gearCode) return null;
+  const powerMap = {
+    '10W': '2',
+    '15W': '3',
+    '25W': '4',
+    '40W': '5',
+    '60W': '5',
+    '90W': '5',
+    '120W': '5',
+    '140W': '6',
+    '200W': '6'
+  };
+  const powerCode = powerMap[acPower];
 
-    // ถ้า acGearHead มีคำว่า 'RIGHT ANGLE' ให้ใช้ GU, ถ้าไม่งั้นใช้ GN
-    const gearPrefix = acGearHead.includes('RIGHT ANGLE') ? 'GU' : 'GN';
+  let model = '';
 
-    const suffix = `${gearPrefix}${acRatio}${gearCode}`;
+  if (acPower === '10W') {
+    model = `${powerCode}${motorTypeCode}10GN-${phaseMap[acVoltage]}`;
+    if (motorTypeCode === 'RK') model += 'M';
+  } else if (acPower === '15W') {
+    model = `${powerCode}${motorTypeCode}15GN-${phaseMap[acVoltage]}`;
+    if (motorTypeCode === 'RK') model += 'M';
+  } else if (acPower === '25W' || acPower === '40W') {
+    model = `${powerCode}${motorTypeCode}${acPower.replace('W', '')}GN-${phaseMap[acVoltage]}${terminalSuffix}`;
+    if (motorTypeCode === 'RK') model += 'M';
+  } else if (acPower === '60W') {
+    const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
+    model = `${powerCode}${motorTypeCode}60${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+    if (motorTypeCode === 'RK') model += 'M';
+  } else if (['90W', '120W'].includes(acPower)) {
+    const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
+    model = `${powerCode}${motorTypeCode}${acPower.replace('W', '')}${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+    if (motorTypeCode === 'RK') model += 'M';
+  } else if (['140W', '200W'].includes(acPower)) {
+    const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
+    model = `${motorTypeCode}${acPower.replace('W', '')}${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
+    if (motorTypeCode === 'RK') model += 'M';
+  }
 
-    return `${prefix}-${suffix}`;
+  if (!model) return null;
+
+  const gnPrefix = 'GN';  // ✅ ใช้ GN / GU เสมอ ไม่ว่าจะเป็น Variable หรือไม่
+  const guPrefix = 'GU';
+
+  const gearList = (() => {
+    if (['10W', '15W', '25W', '40W'].includes(acPower)) {
+      return [`${powerCode}${gnPrefix}${acRatio}${gearCode}`];
+    }
+    if (acPower === '60W') {
+      return [
+        `${powerCode}${gnPrefix}${acRatio}${gearCode}`,
+        `${powerCode}${guPrefix}${acRatio}${gearCode}`
+      ];
+    }
+    if (['90W', '120W', '140W', '200W'].includes(acPower)) {
+      return [`${powerCode}${guPrefix}${acRatio}${gearCode}`];
+    }
+    return [];
+  })();
+
+  return gearList.map(suffix => `${model}-${suffix}`);
 }
 
 export function renderACMotorFlow(acState, acSetters, OnConfirm) {
