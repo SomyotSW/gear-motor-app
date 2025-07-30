@@ -316,7 +316,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
           </button>
           <FinalResult
             modelCode={Array.isArray(codes) ? selectedModel : codes}
-            downloadLink={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${Array.isArray(codes) ? selectedModel : codes}.stp`}
+            downloadLink={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${Array.isArray(codes) ? selectedModel : codes}.STEP`}
             onReset={() => {
               acSetters.setAcMotorType(null);
               acSetters.setAcPower(null);
@@ -427,7 +427,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             เสร็จสิ้น
           </button>
           <a
-            href={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.stp`}
+            href={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.STEP`}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-2 inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
