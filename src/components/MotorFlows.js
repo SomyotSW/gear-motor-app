@@ -1,31 +1,7 @@
 // MotorFlows.js
 import React, { useState } from 'react';
-import FinalSummary from '../components/FinalSummary';
-import DownloadButton from '../components/DownloadButton';
 import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
-import DCImg from '../assets/dc/dc.png';
-import BLDCImg from '../assets/bldc/bldc.png';
-import ServoImg from '../assets/servo/servo.png';
-import PlanetaryImg from '../assets/planetary/planetary.png';
-import HypoidImg from '../assets/hypoid/hypoid.png';
-import RKFSImg from '../assets/rkfs/rkfs.png';
-import SPNImg from '../assets/spn/spn.png';
-import HBImg from '../assets/hb/hb.png';
-import PPlanetaryImg from '../assets/pplanetary/pplanetary.png';
-import DriverImg from '../assets/driver/driver.png';
-import SRVImg from '../assets/srv/srv.png';
-
-import RImg from '../assets/rkfs/4Series/R.png';
-import KImg from '../assets/rkfs/4Series/K.png';
-import FImg from '../assets/rkfs/4Series/F.png';
-import SImg from '../assets/rkfs/4Series/S.png';
-
-import GBKImg from '../assets/ac/Gearhead/K.png';
-import GBKBImg from '../assets/ac/Gearhead/KB.png';
-import GBRCImg from '../assets/ac/Gearhead/RC.png';
-import GBRTImg from '../assets/ac/Gearhead/RT.png';
-
 import W10Img from '../assets/ac/flame/10W.png';
 import W15Img from '../assets/ac/flame/15W.png';
 import W25Img from '../assets/ac/flame/25W.png';
@@ -35,80 +11,77 @@ import W90Img from '../assets/ac/flame/90W.png';
 import W120Img from '../assets/ac/flame/120W.png';
 import W140Img from '../assets/ac/flame/140W.png';
 import W200Img from '../assets/ac/flame/200W.png';
-import SpecialWImg from '../assets/ac/flame/SpecialW.png';
-
-import DemoGif from '../assets/rkfs/rkfs-demo.gif';
-// AC Motor images
-import InductionImg from '../assets/ac/induction.png';
-import ReversibleImg from '../assets/ac/reversible.png';
-import VariableImg from '../assets/ac/variable.png';
-// Voltage images
 import SingleImg from '../assets/ac/Voltage/Single.png';
 import ThreeImg from '../assets/ac/Voltage/Three.png';
-// Optional images
 import FanImg from '../assets/ac/Optional/Fan.png';
 import TmbImg from '../assets/ac/Optional/Tmb.png';
 import EmbImg from '../assets/ac/Optional/Emb.png';
 import FcfImg from '../assets/ac/Optional/Fcf.png';
 import TmpImg from '../assets/ac/Optional/Tmp.png';
 import StdImg from '../assets/ac/Optional/Std.png';
+import GBKImg from '../assets/ac/Gearhead/K.png';
+import GBKBImg from '../assets/ac/Gearhead/KB.png';
+import GBRCImg from '../assets/ac/Gearhead/RC.png';
+import GBRTImg from '../assets/ac/Gearhead/RT.png';
+import InductionImg from '../assets/ac/induction.png';
+import ReversibleImg from '../assets/ac/reversible.png';
+import VariableImg from '../assets/ac/variable.png';
 
-// List of products
-export const productList = [
-  { name: 'AC Gear Motor', image: ACImg },
-  { name: 'DC Gear Motor', image: DCImg },
-  { name: 'BLDC Gear Motor', image: BLDCImg },
-  { name: 'Servo Motor', image: ServoImg },
-  { name: 'Planetary Gear', image: PlanetaryImg },
-  { name: 'Hypoid Gear', image: HypoidImg },
-  { name: 'RKFS Series', image: RKFSImg },
-  { name: 'SPN Series', image: SPNImg },
-  { name: 'HB Gearbox Series', image: HBImg },
-  { name: 'P Planetary Gearbox', image: PPlanetaryImg },
-  { name: 'Servo Driver and Speed Controller', image: DriverImg },
-  { name: 'SRV Worm Gear', image: SRVImg }
-];
-
-// Generate model codes based on selections
 export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio }) {
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
   const phaseMap = { '1Phase220V AC 50Hz': 'C', '3Phase220V AC 50Hz': 'S' };
-  const suffixMap = { 'With Terminal Box': 'T' };
-  const phase = phaseMap[acVoltage];
-  const term = suffixMap[acOption] || '';
-  const gearHeadCode = {
+  const term = acOption === 'With Terminal Box' ? 'T' : '';
+  const gearHeadMap = {
     'SQUARE BOX WITH WING': 'K',
     'SQUARE BOX': 'KB',
     'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
     'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
-  }[acGearHead];
-  const motorCode = { 'Induction Motor': 'IK', 'Reversible Motor': 'RK', 'Variable Speed Motor': 'IK' }[acMotorType];
-  const powerCode = {
+  };
+  const motorMap = { 'Induction Motor': 'IK', 'Reversible Motor': 'RK', 'Variable Speed Motor': 'IKR' };
+  const powerMap = {
     '10W AC Motor': '2', '15W AC Motor': '3', '25W AC Motor': '4',
     '40W AC Motor': '5', '60W AC Motor': '5', '90W AC Motor': '5',
     '120W AC Motor': '5', '140W AC Motor': '6', '200W AC Motor': '6'
-  }[acPower];
-  if (!gearHeadCode || !motorCode || !powerCode) return null;
+  };
+  const phase = phaseMap[acVoltage];
+  const gearCode = gearHeadMap[acGearHead];
+  const motorCode = motorMap[acMotorType];
+  const powerCode = powerMap[acPower];
+  if (!phase || !gearCode || !motorCode || !powerCode) return null;
 
-  const num = acPower.replace('W AC Motor', '');
-  let base = ''; 
-  if (['10', '15'].includes(num)) base = `${powerCode}${motorCode}${num}GN-${phase}`;
-  else if (['25', '40'].includes(num)) base = `${powerCode}${motorCode}${num}GN-${phase}${term}`;
-  else {
-    const suf = motorCode === 'IKR' ? 'RGU' : 'GU';
-    base = `${powerCode}${motorCode}${num}${suf}-${phase}F${term}`;
+  const num = acPower.replace(/W AC Motor/, '');
+  let base = '';
+  if (['10', '15'].includes(num)) {
+    base = `${powerCode}${motorCode}${num}GN-${phase}`;
+  } else if (['25', '40'].includes(num)) {
+    base = `${powerCode}${motorCode}${num}GN-${phase}${term}`;
+  } else {
+    const suffix = motorCode === 'IKR' ? 'RGU' : 'GU';
+    base = `${powerCode}${motorCode}${num}${suffix}-${phase}F${term}`;
   }
 
   const prefixes = num === '60' ? ['GN', 'GU'] : ['GN'];
-  const list = prefixes.map(pref => `${powerCode}${pref}${acRatio}${gearHeadCode}`);
+  const list = prefixes.map(pref => `${powerCode}${pref}${acRatio}${gearCode}`);
   return list.map(item => `${base}-${item}`);
 }
 
-// Render AC motor selection flow
 export function renderACMotorFlow(acState, acSetters, onConfirm) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
   const [selectedModel, setSelectedModel] = useState(null);
-  const update = (key, value) => acSetters[`set${key.charAt(2).toUpperCase()}${key.slice(3)}`](value);
+
+  // Correct update mapping
+  const update = (key, value) => {
+    const setterMap = {
+      acMotorType: acSetters.setAcMotorType,
+      acPower: acSetters.setAcPower,
+      acVoltage: acSetters.setAcVoltage,
+      acOption: acSetters.setAcOption,
+      acGearHead: acSetters.setAcGearHead,
+      acRatio: acSetters.setAcRatio
+    };
+    setterMap[key]?.(value);
+  };
+
   const codes = generateModelCode(acState);
 
   return (
