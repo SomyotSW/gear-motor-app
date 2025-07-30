@@ -114,7 +114,7 @@ function App() {
         </>
       )}
 
-      {selectedProduct === 'AC Gear Motor' && modelCodeList.length === 0 && (
+      {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
         <>
           <div className="flex justify-between items-center mt-6">
             <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
