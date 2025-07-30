@@ -54,11 +54,15 @@ function App() {
 
   const handleDownload = () => {
     setIsDownloading(true);
+
     setTimeout(() => {
-      alert("✅ ขอบคุณที่มั่นใจเลือกใช้ SAS");
-      setShowForm(false);
+      const link = document.createElement('a');
+      link.href = `https://raw.githubusercontent.com/SomyotSW/gear-motor-app/main/src/assets/model/${modelCode}.stp`;
+      link.download = `${modelCode}.stp`;
+      link.click();
       setIsDownloading(false);
-    }, 2000);
+      setShowForm(false); // ปิดฟอร์มหลังโหลด
+     }, 2000); // รอ 2 วิแสดง gif ก่อนโหลดจริง
   };
 
   return (
@@ -132,20 +136,59 @@ function App() {
       )}
 
       {showForm && (
-        <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow">
-          <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
-          <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="text" placeholder="ชื่อบริษัท" value={userInfo.company} onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="email" placeholder="Email ติดต่อ" value={userInfo.email} onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })} className="w-full mb-4 p-2 border rounded" />
-          <button
-            onClick={handleDownload}
-            disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading}
-            className="w-full py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-          >
-            ยืนยันและรับไฟล์
-          </button>
-        </div>
+  <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
+    <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
+
+    <input
+      type="text"
+      placeholder="ชื่อ"
+      value={userInfo.name}
+      onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })}
+      className="w-full mb-2 p-2 border rounded"
+    />
+    <input
+      type="text"
+      placeholder="เบอร์ติดต่อ"
+      value={userInfo.phone}
+      onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })}
+      className="w-full mb-2 p-2 border rounded"
+    />
+    <input
+      type="text"
+      placeholder="ชื่อบริษัท"
+      value={userInfo.company}
+      onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })}
+      className="w-full mb-2 p-2 border rounded"
+    />
+    <input
+      type="email"
+      placeholder="Email ติดต่อ"
+      value={userInfo.email}
+      onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
+      className="w-full mb-4 p-2 border rounded"
+    />
+
+    {/* ✅ ปุ่ม + gif */}
+    <div className="relative">
+      <button
+        onClick={handleDownload}
+        disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading}
+        className={`w-full py-2 rounded text-white font-semibold transition 
+          ${isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'}`}
+      >
+        {isDownloading ? 'กำลังดาวน์โหลด...' : 'ยืนยันและรับไฟล์'}
+      </button>
+
+      {/* ✅ GIF นาฬิกาทราย */}
+      {isDownloading && (
+        <img
+          src="/assets/hourglass.gif"
+          alt="loading"
+          className="w-8 h-8 absolute -top-10 right-0 animate-spin"
+        />
+      )}
+    </div>
+  </div>
       )}
     </div>
   );
