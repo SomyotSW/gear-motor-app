@@ -10,7 +10,7 @@ import ServoImg from '../assets/servo/servo.png';
 import PlanetaryImg from '../assets/planetary/planetary.png';
 import HypoidImg from '../assets/hypoid/hypoid.png';
 import RKFSImg from '../assets/rkfs/rkfs.png';
-import SPNImg from '../assets/spn/spn.png';
+import SPNImg from '../assets/rkfs/rkfs.png';
 import HBImg from '../assets/hb/hb.png';
 import PPlanetaryImg from '../assets/pplanetary/pplanetary.png';
 import DriverImg from '../assets/driver/driver.png';
@@ -38,15 +38,14 @@ import W200Img from '../assets/ac/flame/200W.png';
 import SpecialWImg from '../assets/ac/flame/SpecialW.png';
 
 import DemoGif from '../assets/rkfs/rkfs-demo.gif';
-
-// ภาพแสดง Motor Type
+// AC Motor images
 import InductionImg from '../assets/ac/induction.png';
 import ReversibleImg from '../assets/ac/reversible.png';
 import VariableImg from '../assets/ac/variable.png';
-
+// Voltage images
 import SingleImg from '../assets/ac/Voltage/Single.png';
 import ThreeImg from '../assets/ac/Voltage/Three.png';
-
+// Optional images
 import FanImg from '../assets/ac/Optional/Fan.png';
 import TmbImg from '../assets/ac/Optional/Tmb.png';
 import EmbImg from '../assets/ac/Optional/Emb.png';
@@ -71,29 +70,37 @@ export const productList = [
 
 export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio }) {
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
-
   const phaseMap = { '1Phase220V AC 50Hz': 'C', '3Phase220V AC 50Hz': 'S' };
   const terminalSuffix = acOption === 'With Terminal Box' ? 'T' : '';
   const gearHeadCodeMap = {
-    'SQUARE BOX WITH WING': 'K', 'SQUARE BOX': 'KB',
-    'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC', 'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
+    'SQUARE BOX WITH WING': 'K',
+    'SQUARE BOX': 'KB',
+    'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
+    'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
   };
-  const motorTypeCodeMap = { 'Induction Motor': 'IK', 'Reversible Motor': 'RK', 'Variable Speed Motor': 'IK' };
+  const motorTypeCodeMap = {
+    'Induction Motor': 'IK',
+    'Reversible Motor': 'RK',
+    'Variable Speed Motor': 'IK'
+  };
   const powerMap = {
-    '10W AC Motor': '2', '15W AC Motor': '3', '25W AC Motor': '4',
-    '40W AC Motor': '5', '60W AC Motor': '5', '90W AC Motor': '5',
-    '120W AC Motor': '5', '140W AC Motor': '6', '200W AC Motor': '6'
+    '10W AC Motor': '2',
+    '15W AC Motor': '3',
+    '25W AC Motor': '4',
+    '40W AC Motor': '5',
+    '60W AC Motor': '5',
+    '90W AC Motor': '5',
+    '120W AC Motor': '5',
+    '140W AC Motor': '6',
+    '200W AC Motor': '6'
   };
-
   const gearCode = gearHeadCodeMap[acGearHead];
   const motorCode = motorTypeCodeMap[acMotorType];
   const powerCode = powerMap[acPower];
   if (!gearCode || !motorCode || !powerCode) return null;
-
-  let base = '';
   const num = acPower.replace(/W AC Motor/, '');
   const phase = phaseMap[acVoltage];
-
+  let base = '';
   if (['10', '15'].includes(num)) {
     base = `${powerCode}${motorCode}${num}GN-${phase}`;
   } else if (['25', '40'].includes(num)) {
@@ -102,20 +109,16 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
     const suffix = motorCode === 'IKR' ? 'RGU' : 'GU';
     base = `${powerCode}${motorCode}${num}${suffix}-${phase}F${terminalSuffix}`;
   }
-
-  const ratio = acRatio;
-  const prefixes = num === '60' ? ['GN','GU'] : ['GN'];
-  const gearList = prefixes.map(pref => `${powerCode}${pref}${ratio}${gearCode}`);
+  const prefixes = num === '60' ? ['GN', 'GU'] : ['GN'];
+  const gearList = prefixes.map(pref => `${powerCode}${pref}${acRatio}${gearCode}`);
   return gearList.map(g => `${base}-${g}`);
 }
 
-// Updated: use lowercase onConfirm and correct JSX flow
 export function renderACMotorFlow(acState, acSetters, onConfirm) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
   const [selectedModel, setSelectedModel] = useState(null);
-
   const update = (key, value) => {
-    const setters = {
+    const setterMap = {
       acMotorType: acSetters.setAcMotorType,
       acPower: acSetters.setAcPower,
       acVoltage: acSetters.setAcVoltage,
@@ -123,13 +126,13 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
       acGearHead: acSetters.setAcGearHead,
       acRatio: acSetters.setAcRatio
     };
-    setters[key]?.(value);
+    setterMap[key]?.(value);
   };
-
-  const codes = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
+  const codes = generateModelCode(acState);
 
   return (
     <div className="space-y-6 mt-6">
+      {/* Motor Type */}
       {!acMotorType && (
         <div>
           <h3 className="font-semibold mb-2">Motor Type</h3>
@@ -152,26 +155,49 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
+      {/* Power */}
       {acMotorType && !acPower && (
         <div>
           <h3 className="font-semibold mb-2">Power Motor</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[W10Img,W15Img,W25Img,W40Img,W60Img,W90Img,W120Img,W140Img,W200Img,SpecialWImg].map((img, i) => { const num = [ '10W AC Motor','15W AC Motor','25W AC Motor','40W AC Motor','60W AC Motor','90W AC Motor','120W AC Motor','140W AC Motor','200W AC Motor','Special W?' ][i]; return (
-              <button key={num} onClick={() => update('acPower', num)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition">
-                <img src={img} alt={num} className="h-48 mb-1 object-contain" />
-                <span className="text-sm font-semibold">{num}</span>
+            {[
+              { label: '10W AC Motor', img: W10Img },
+              { label: '15W AC Motor', img: W15Img },
+              { label: '25W AC Motor', img: W25Img },
+              { label: '40W AC Motor', img: W40Img },
+              { label: '60W AC Motor', img: W60Img },
+              { label: '90W AC Motor', img: W90Img },
+              { label: '120W AC Motor', img: W120Img },
+              { label: '140W AC Motor', img: W140Img },
+              { label: '200W AC Motor', img: W200Img }
+            ].map(({ label, img }) => (
+              <button
+                key={label}
+                onClick={() => update('acPower', label)}
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
+              >
+                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
               </button>
-            ); })}
+            ))}
           </div>
         </div>
       )}
 
+      {/* Voltage */}
       {acPower && !acVoltage && (
         <div>
           <h3 className="font-semibold mb-2">Voltage</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[ { label:'1Phase220V AC 50Hz', img: SingleImg },{ label:'3Phase220V AC 50Hz', img: ThreeImg } ].map(({label,img}) => (
-              <button key={label} onClick={() => update('acVoltage', label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition">
+            {[
+              { label: '1Phase220V AC 50Hz', img: SingleImg },
+              { label: '3Phase220V AC 50Hz', img: ThreeImg }
+            ].map(({ label, img }) => (
+              <button
+                key={label}
+                onClick={() => update('acVoltage', label)}
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
+              >
                 <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
@@ -180,12 +206,24 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
+      {/* Optional */}
       {acVoltage && !acOption && (
         <div>
           <h3 className="font-semibold mb-2">SAS Optional</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[ {label:'With Fan',img:FanImg},{label:'With Terminal Box',img:TmbImg},{label:'With Electromagnetic Brake',img:EmbImg},{label:'With Force Cooling Fan',img:FcfImg},{label:'With Thermal Protector',img:TmpImg},{label:'Standard',img:StdImg} ].map(({label,img}) => (
-              <button key={label} onClick={() => update('acOption', label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition">
+            {[
+              { label: 'With Fan', img: FanImg },
+              { label: 'With Terminal Box', img: TmbImg },
+              { label: 'With Electromagnetic Brake', img: EmbImg },
+              { label: 'With Force Cooling Fan', img: FcfImg },
+              { label: 'With Thermal Protector', img: TmpImg },
+              { label: 'Standard', img: StdImg }
+            ].map(({ label, img }) => (
+              <button
+                key={label}
+                onClick={() => update('acOption', label)}
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
+              >
                 <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
@@ -194,12 +232,22 @@ export function renderACMotorFlow(acState, acSetters, onConfirm) {
         </div>
       )}
 
+      {/* Gear Type */}
       {acOption && !acGearHead && (
         <div>
           <h3 className="font-semibold mb-2">Gear Type</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[{label:'SQUARE BOX WITH WING',img:GBKImg},{label:'SQUARE BOX',img:GBKBImg},{label:'RIGHT ANGLE GEAR/HOLLOW SHAFT',img:GBRCImg},{label:'RIGHT ANGLE GEAR/SOLID SHAFT',img:GBRTImg}].map(({label,img}) => (
-              <button key={label} onClick={() => update('acGearHead',label)} className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition">
+            {[
+              { label: 'SQUARE BOX WITH WING', img: GBKImg },
+              { label: 'SQUARE BOX', img: GBKBImg },
+              { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: GBRCImg },
+              { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg }
+            ].map(({ label, img }) => (
+              <button
+                key={label}
+                onClick={() => update('acGearHead', label)}
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
+              >
                 <img src={img} alt={label} className="h-48 mb-1 object-contain" />
                 <span className="text-sm font-semibold">{label}</span>
               </button>
