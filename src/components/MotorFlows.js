@@ -1,7 +1,7 @@
 // MotorFlows.js
 import FinalSummary from '../components/FinalSummary';
 import DownloadButton from '../components/DownloadButton';
-import FinalResult from './components/FinalResult';
+import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
 import BLDCImg from '../assets/bldc/bldc.png';
