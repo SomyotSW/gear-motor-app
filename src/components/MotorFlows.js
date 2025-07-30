@@ -91,7 +91,7 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   const motorTypeCode = {
     'Induction Motor': 'IK',
     'Reversible Motor': 'RK',
-    'Variable Speed Motor': 'IK'
+    'Variable Speed Motor': 'IKR'
   }[acMotorType];
 
   const powerMap = {
