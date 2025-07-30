@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode } from './components/MotorFlows.js';
-
+import bgImage from './assets/GearBG2.png';
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modelCodeList, setModelCodeList] = useState([]);
@@ -98,7 +98,7 @@ function App() {
     <div className="relative min-h-screen overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center blur-sm z-0"
-        style={{ backgroundImage: `url('/src/assets/GearBG2.png')` }}
+        style={{ backgroundImage: `url(${bgImage})` }}
       ></div>
 
       <div className="relative z-10 p-6 text-gray-900">
