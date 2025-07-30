@@ -51,13 +51,13 @@ function App() {
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
 
   const rkfsState = { rkfsDesign, setRkfsDesign, rkfsSize, setRkfsSize, rkfsPower, setRkfsPower, rkfsMounting, setRkfsMounting };
-
+  const fileUrl = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.STEP`;
   const handleDownload = () => {
     setIsDownloading(true);
 
     setTimeout(() => {
       const link = document.createElement('a');
-      link.href = `https://raw.githubusercontent.com/SomyotSW/gear-motor-app/main/src/assets/model/${modelCode}.STEP`;
+      link.href = fileUrl;
       link.download = `${modelCode}.STEP`;
       link.click();
       setIsDownloading(false);
