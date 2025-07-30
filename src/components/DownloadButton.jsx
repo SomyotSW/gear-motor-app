@@ -1,11 +1,21 @@
 // components/DownloadButton.jsx
-import React, { useState } from 'react';
-import HourglassGif from '../assets/hourglass.gif'; // 🔄 ไฟล์ GIF ต้องวางไว้ใน assets
+import React, { useState, useEffect } from 'react';
+import HourglassGif from '../assets/hourglass.gif';
 
-const DownloadButton = ({ modelCode, downloadLink }) => {
+const DownloadButton = ({ modelCodeList = [] }) => {
+  const [selectedModel, setSelectedModel] = useState('');
   const [downloading, setDownloading] = useState(false);
 
+  useEffect(() => {
+    if (modelCodeList.length > 0) {
+      setSelectedModel(modelCodeList[0]); // default เลือกตัวแรก
+    }
+  }, [modelCodeList]);
+
   const handleDownload = async () => {
+    if (!selectedModel) return;
+
+    const downloadLink = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${selectedModel}.stp`;
     setDownloading(true);
 
     try {
@@ -15,7 +25,7 @@ const DownloadButton = ({ modelCode, downloadLink }) => {
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${modelCode}.stp`;
+      link.download = `${selectedModel}.stp`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -30,18 +40,29 @@ const DownloadButton = ({ modelCode, downloadLink }) => {
     }
   };
 
-  if (!modelCode || !downloadLink) return null;
+  if (!modelCodeList || modelCodeList.length === 0) return null;
 
   return (
     <div className="text-center mt-4">
-      <p className="text-sm mb-2">
-        ดาวน์โหลดไฟล์ 3D STEP รุ่น: <strong>{modelCode}</strong>
-      </p>
+      <p className="text-sm mb-2 font-medium text-blue-700">เลือกรุ่นที่ต้องการดาวน์โหลด:</p>
+      {modelCodeList.map((code, idx) => (
+        <div key={idx} className="flex items-center justify-center space-x-2 mb-1">
+          <input
+            type="radio"
+            id={`model-${idx}`}
+            name="modelSelect"
+            value={code}
+            checked={selectedModel === code}
+            onChange={() => setSelectedModel(code)}
+          />
+          <label htmlFor={`model-${idx}`}>{code}</label>
+        </div>
+      ))}
 
-      <div className="flex justify-center items-center gap-3">
+      <div className="flex justify-center items-center gap-3 mt-3">
         <button
           onClick={handleDownload}
-          disabled={downloading}
+          disabled={!selectedModel || downloading}
           className={`px-6 py-2 text-white font-semibold rounded shadow-lg transition duration-200 ${
             downloading
               ? 'bg-gray-500 cursor-not-allowed'

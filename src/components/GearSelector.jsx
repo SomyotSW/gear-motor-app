@@ -5,10 +5,12 @@ import {
   renderRKFSFlow
 } from './MotorFlows.js';
 import rkfsDemo from '../assets/rkfs/rkfs-demo.gif';
+import DownloadButton from './DownloadButton';
 
 const GearSelector = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [confirmedModel, setConfirmedModel] = useState(null);
+  const [confirmedModels, setConfirmedModels] = useState([]); // ✅ เป็น array
+  const [selectedModel, setSelectedModel] = useState(null);   // ✅ ตัวที่ลูกค้าเลือก
 
   // State สำหรับ renderACMotorFlow
   const [acMotorType, setAcMotorType] = useState(null);
@@ -42,12 +44,15 @@ const GearSelector = () => {
   };
 
   const handleConfirm = (model) => {
-    setConfirmedModel(model);
+    const models = Array.isArray(model) ? model : [model];
+    setConfirmedModels(models);
+    setSelectedModel(models[0]); // default เลือกตัวแรก
   };
 
   const resetAll = () => {
     setSelectedProduct(null);
-    setConfirmedModel(null);
+    setConfirmedModels([]);
+    setSelectedModel(null);
     setAcMotorType(null); setAcPower(null); setAcSpeedAdjust(null); setAcVoltage(null);
     setAcOption(null); setAcGearHead(null); setAcRatio(null);
     setRkfsDesign(null); setRkfsSize(null); setRkfsPower(null); setRkfsMounting(null);
@@ -68,19 +73,39 @@ const GearSelector = () => {
         </div>
       )}
 
-      {selectedProduct === 'AC Gear Motor' && !confirmedModel && renderACMotorFlow(acState, setAcState, handleConfirm)}
+      {selectedProduct === 'AC Gear Motor' && confirmedModels.length === 0 &&
+        renderACMotorFlow(acState, setAcState, handleConfirm)
+      }
 
-      {selectedProduct === 'RKFS Series' && !confirmedModel && renderRKFSFlow(rkfsState, setRkfsState, handleConfirm)}
+      {selectedProduct === 'RKFS Series' && confirmedModels.length === 0 &&
+        renderRKFSFlow(rkfsState, setRkfsState, handleConfirm)
+      }
 
-      {confirmedModel && (
+      {confirmedModels.length > 0 && (
         <div className="text-center space-y-4 mt-6">
-          <h3 className="text-lg font-semibold text-green-700">คุณได้เลือก Model:</h3>
-          <p className="text-2xl font-mono text-blue-700">{confirmedModel}</p>
+          <h3 className="text-lg font-semibold text-green-700">✅ คุณได้เลือก Model:</h3>
+
+          {confirmedModels.map((code, idx) => (
+            <div key={idx} className="flex justify-center items-center space-x-2">
+              <input
+                type="radio"
+                id={`model-${idx}`}
+                name="modelSelect"
+                value={code}
+                checked={selectedModel === code}
+                onChange={() => setSelectedModel(code)}
+              />
+              <label htmlFor={`model-${idx}`}>{code}</label>
+            </div>
+          ))}
+
+          <DownloadButton modelCodeList={[selectedModel]} />
+
           <button
             onClick={resetAll}
             className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
           >
-            เลือกใหม่
+            🔁 เลือกใหม่
           </button>
         </div>
       )}

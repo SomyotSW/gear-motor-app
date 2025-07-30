@@ -1,27 +1,16 @@
-// components/FinalResult.jsx
 import React from 'react';
 import DownloadButton from './DownloadButton';
 
 const FinalResult = ({ modelCode, onReset }) => {
-  if (!modelCode) return null;
+  if (!modelCode || modelCode.length === 0) return null;
 
-  const renderModelBlock = (code) => (
-    <div key={code} className="p-4 bg-white rounded-xl shadow-md text-center space-y-3 mb-4">
-      <h3 className="text-lg font-semibold text-blue-700">✅ คุณได้เลือก Model:</h3>
-      <p className="text-xl font-bold text-gray-800">{code}</p>
-
-      <DownloadButton
-        modelCode={code}
-        downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${code}.STEP`}
-      />
-    </div>
-  );
+  const modelCodeList = Array.isArray(modelCode) ? modelCode : [modelCode];
 
   return (
-    <div className="mt-8">
-      {Array.isArray(modelCode)
-        ? modelCode.map(renderModelBlock)
-        : renderModelBlock(modelCode)}
+    <div className="mt-8 text-center">
+      <h3 className="text-lg font-semibold text-blue-700 mb-4">✅ คุณได้เลือก Model:</h3>
+
+      <DownloadButton modelCodeList={modelCodeList} />
 
       {onReset && (
         <div className="text-center mt-6">
