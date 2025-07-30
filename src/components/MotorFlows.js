@@ -73,10 +73,12 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
 
   const phaseMap = {
-    '1Phase220V': 'C',
-    '3Phase220V': 'S'
+    '1Phase220V AC 50Hz': 'C',
+    '3Phase220V AC 50Hz': 'S'
   };
-  const terminalSuffix = acOption === 'Terminal box' ? 'T' : '';
+
+  const terminalSuffix = acOption?.includes('Terminal') ? 'T' : '';
+  const rawPower = acPower?.replace(' AC Motor', '');
 
   const getPrefix = () => {
     const motorTypeCode = {
@@ -96,39 +98,39 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
       '140W': '6',
       '200W': '6'
     };
-    const powerCode = powerMap[acPower];
+    const powerCode = powerMap[rawPower];
 
     let model = '';
 
-    if (acPower === '10W') {
+    if (rawPower === '10W') {
       model = `${powerCode}${motorTypeCode}10GN-${phaseMap[acVoltage]}`;
       if (motorTypeCode === 'RK') model += 'M';
-    } else if (acPower === '15W') {
+    } else if (rawPower === '15W') {
       model = `${powerCode}${motorTypeCode}15GN-${phaseMap[acVoltage]}`;
       if (motorTypeCode === 'RK') model += 'M';
-    } else if (acPower === '25W') {
+    } else if (rawPower === '25W') {
       model = `${powerCode}${motorTypeCode}25GN-${phaseMap[acVoltage]}${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
-    } else if (acPower === '40W') {
+    } else if (rawPower === '40W') {
       model = `${powerCode}${motorTypeCode}40GN-${phaseMap[acVoltage]}${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
-    } else if (acPower === '60W') {
+    } else if (rawPower === '60W') {
       const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
       model = `${powerCode}${motorTypeCode}60${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
-    } else if (acPower === '90W') {
+    } else if (rawPower === '90W') {
       const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
       model = `${powerCode}${motorTypeCode}90${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
-    } else if (acPower === '120W') {
+    } else if (rawPower === '120W') {
       const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
       model = `${powerCode}${motorTypeCode}120${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
-    } else if (acPower === '140W') {
+    } else if (rawPower === '140W') {
       const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
       model = `${motorTypeCode}140${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
-    } else if (acPower === '200W') {
+    } else if (rawPower === '200W') {
       const suffix = motorTypeCode === 'IKR' ? 'RGU' : 'GU';
       model = `${motorTypeCode}200${suffix}-${phaseMap[acVoltage]}F${terminalSuffix}`;
       if (motorTypeCode === 'RK') model += 'M';
@@ -399,8 +401,9 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
   </>
 )}
     </div>
-  ); 
+  );
 }
+
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
 
