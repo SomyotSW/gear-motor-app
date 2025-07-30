@@ -22,11 +22,34 @@ function App() {
   const [rkfsMounting, setRkfsMounting] = useState(null);
 
   useEffect(() => {
-    if (selectedProduct === 'AC Gear Motor' && acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio) {
-      const code = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
-      if (code) setModelCode(code);
-    }
-  }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
+    if (
+    selectedProduct === 'AC Gear Motor' &&
+    acMotorType &&
+    acPower &&
+    acVoltage &&
+    acOption &&
+    acGearHead &&
+    acRatio
+    ) {
+    const code = generateModelCode({
+      acMotorType,
+      acPower,
+      acVoltage,
+      acOption,
+      acGearHead,
+      acRatio,
+    });
+
+    if (code) {
+      // ✅ ถ้าเป็น array ให้แสดงเฉพาะตัวแรกในหน้า App.jsx
+      if (Array.isArray(code)) {
+        setModelCode(code[0]);
+      } else {
+        setModelCode(code);
+      }
+      }
+     }
+    }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
 
   const handleBack = () => {
     setSelectedProduct(null);
@@ -51,7 +74,15 @@ function App() {
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
 
   const rkfsState = { rkfsDesign, setRkfsDesign, rkfsSize, setRkfsSize, rkfsPower, setRkfsPower, rkfsMounting, setRkfsMounting };
-  const fileUrl = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.STEP`;
+  const fileUrl =
+  modelCode && typeof modelCode === 'string'
+    ? `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.STEP`
+    : '#';
+
+    const handleModelConfirm = (code) => {
+     setModelCode(code);  // code อาจเป็น string หรือ array
+     setShowForm(true);   // แสดงฟอร์มหลังเลือกครบ
+    };
   const handleDownload = () => {
     setIsDownloading(true);
 
