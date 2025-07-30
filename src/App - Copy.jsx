@@ -6,8 +6,8 @@ function App() {
   const [modelCode, setModelCode] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
-  const [isDownloading, setIsDownloading] = useState(false);
 
+  // AC Motor States
   const [acMotorType, setAcMotorType] = useState(null);
   const [acPower, setAcPower] = useState(null);
   const [acSpeedAdjust, setAcSpeedAdjust] = useState(null);
@@ -16,6 +16,7 @@ function App() {
   const [acGearHead, setAcGearHead] = useState(null);
   const [acRatio, setAcRatio] = useState(null);
 
+  // RKFS Series States
   const [rkfsDesign, setRkfsDesign] = useState(null);
   const [rkfsSize, setRkfsSize] = useState(null);
   const [rkfsPower, setRkfsPower] = useState(null);
@@ -32,7 +33,6 @@ function App() {
     setSelectedProduct(null);
     setModelCode(null);
     setShowForm(false);
-    setIsDownloading(false);
     setUserInfo({ name: '', phone: '', company: '', email: '' });
     setAcMotorType(null);
     setAcPower(null);
@@ -47,18 +47,31 @@ function App() {
     setRkfsMounting(null);
   };
 
-  const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio };
-  const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
+  const acState = {
+    acMotorType,
+    acPower,
+    acSpeedAdjust,
+    acVoltage,
+    acOption,
+    acGearHead,
+    acRatio
+  };
 
-  const rkfsState = { rkfsDesign, setRkfsDesign, rkfsSize, setRkfsSize, rkfsPower, setRkfsPower, rkfsMounting, setRkfsMounting };
+  const acSetters = {
+  setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage,
+  setAcOption, setAcGearHead, setAcRatio
+  };
+
+  const rkfsState = {
+    rkfsDesign, setRkfsDesign,
+    rkfsSize, setRkfsSize,
+    rkfsPower, setRkfsPower,
+    rkfsMounting, setRkfsMounting
+  };
 
   const handleDownload = () => {
-    setIsDownloading(true);
-    setTimeout(() => {
-      alert("✅ ขอบคุณที่มั่นใจเลือกใช้ SAS");
-      setShowForm(false);
-      setIsDownloading(false);
-    }, 2000);
+    alert("ข้อมูลถูกส่งแล้ว ไปยัง Somyot@synergy-as.com");
+    setShowForm(false);
   };
 
   return (
@@ -73,7 +86,11 @@ function App() {
                 className="cursor-pointer hover:scale-105 transition text-center"
                 onClick={() => setSelectedProduct(p.name)}
               >
-                <img src={p.image} alt={p.name} className="w-full h-32 sm:h-36 md:h-40 object-contain" />
+                <img
+                  src={p.image}
+                  alt={p.name}
+                  className="w-full h-32 sm:h-36 md:h-40 object-contain"
+                />
                 <p className="mt-2 font-semibold">{p.name}</p>
               </div>
             ))}
@@ -87,7 +104,7 @@ function App() {
             <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
             <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
           </div>
-          {renderACMotorFlow(acState, acSetters, setModelCode)}
+          {renderACMotorFlow(acState, acSetters)}
         </>
       )}
 
@@ -102,45 +119,24 @@ function App() {
       )}
 
       {modelCode && !showForm && (
-        <div className="text-center mt-10 space-y-4">
-          <h2 className="text-2xl font-bold text-blue-700">Model Code: {modelCode}</h2>
-          <button
-            onClick={() => setShowForm(true)}
-            disabled={isDownloading}
-            className={`mt-4 px-5 py-2 rounded text-white transition ${
-              isDownloading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700 shadow-lg'
-            }`}
-          >
-            {isDownloading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin mr-2 h-5 w-5 text-white" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" fill="none" />
-                  <path d="M4 12a8 8 0 018-8" stroke="white" strokeWidth="4" fill="none" />
-                </svg>
-                กำลังดาวน์โหลด...
-              </span>
-            ) : (
-              'Download 3D'
-            )}
-          </button>
-          <button onClick={handleBack} className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
-            กลับไปเลือกใหม่
-          </button>
+        <div className="text-center mt-10">
+          <h2 className="text-xl font-semibold">Model Code:</h2>
+          <p className="text-lg mt-2 font-mono text-blue-700">{modelCode}</p>
+          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Download 3D</button>
+          <button onClick={handleBack} className="mt-4 ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">กลับไปเลือกใหม่</button>
         </div>
       )}
 
       {showForm && (
         <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow">
-          <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
+          <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลเพื่อรับไฟล์ .STEP</h3>
           <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
           <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
           <input type="text" placeholder="ชื่อบริษัท" value={userInfo.company} onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })} className="w-full mb-2 p-2 border rounded" />
           <input type="email" placeholder="Email ติดต่อ" value={userInfo.email} onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })} className="w-full mb-4 p-2 border rounded" />
           <button
             onClick={handleDownload}
-            disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading}
+            disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email}
             className="w-full py-2 bg-blue-600 text-white rounded disabled:opacity-50"
           >
             ยืนยันและรับไฟล์

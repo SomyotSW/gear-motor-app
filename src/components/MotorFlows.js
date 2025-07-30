@@ -96,7 +96,8 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
       '90W': '5',
       '120W': '5',
       '140W': '6',
-      '200W': '6'
+      '200W': '6',
+            '250W': '7'
     };
     const powerCode = powerMap[rawPower];
 
@@ -140,11 +141,24 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   };
 
   const prefix = getPrefix();
-  if (!prefix) return null;
+    if (!prefix) return null;
 
-  const suffix = `${acGearHead === 'KB' ? 'GU' : 'GN'}${acRatio}${acGearHead}`;
+    const gearHeadCodeMap = {
+     'SQUARE BOX WITH WING': 'K',
+     'SQUARE BOX': 'KB',
+     'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
+     'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
+    };
 
-  return `${prefix}/${suffix}`;
+    const gearCode = gearHeadCodeMap[acGearHead];
+    if (!gearCode) return null;
+
+    // ถ้า acGearHead มีคำว่า 'RIGHT ANGLE' ให้ใช้ GU, ถ้าไม่งั้นใช้ GN
+    const gearPrefix = acGearHead.includes('RIGHT ANGLE') ? 'GU' : 'GN';
+
+    const suffix = `${gearPrefix}${acRatio}${gearCode}`;
+
+    return `${prefix}-${suffix}`;
 }
 
 export function renderACMotorFlow(acState, acSetters, OnConfirm) {
