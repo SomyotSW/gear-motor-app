@@ -120,11 +120,15 @@ function App() {
       <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
       <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
     </div>
-    {renderACMotorFlow(acState, acSetters, (modelCode) => {
-      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-      setModelCodeList(models);
-      setSelectedModel(models[0]);
-    })}
+    <ACMotorFlow
+      acState={acState}
+      acSetters={acSetters}
+      onConfirm={(modelCode) => {
+        const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+        setModelCodeList(models);
+        setSelectedModel(models[0]);
+      }}
+    />
   </>
 )}
 

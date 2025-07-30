@@ -117,7 +117,7 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
 }
 
 // Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
-export function renderACMotorFlow(acState, acSetters, onConfirm) {
+export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
   const [selectedModel, setSelectedModel] = useState(null);
 
