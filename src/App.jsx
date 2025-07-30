@@ -23,33 +23,33 @@ function App() {
 
   useEffect(() => {
     if (
-    selectedProduct === 'AC Gear Motor' &&
-    acMotorType &&
-    acPower &&
-    acVoltage &&
-    acOption &&
-    acGearHead &&
-    acRatio
+      selectedProduct === 'AC Gear Motor' &&
+      acMotorType &&
+      acPower &&
+      acVoltage &&
+      acOption &&
+      acGearHead &&
+      acRatio
     ) {
-    const code = generateModelCode({
-      acMotorType,
-      acPower,
-      acVoltage,
-      acOption,
-      acGearHead,
-      acRatio,
-    });
+      // ✅ รองรับหลายค่า เช่น "60W GN, GU"
+      const powerArray = acPower.split(',').map(p => p.trim());
+      const generatedCodes = powerArray.map(power =>
+        generateModelCode({
+          acMotorType,
+          acPower: power,
+          acVoltage,
+          acOption,
+          acGearHead,
+          acRatio,
+        })
+      ).flat();
 
-    if (code) {
-      // ✅ ถ้าเป็น array ให้แสดงเฉพาะตัวแรกในหน้า App.jsx
-      if (Array.isArray(code)) {
-        setModelCode(code[0]);
-      } else {
-        setModelCode(code);
+      const finalCodes = Array.isArray(generatedCodes[0]) ? generatedCodes.flat() : generatedCodes;
+      if (finalCodes.length > 0) {
+        setModelCode(finalCodes[0]);
       }
-      }
-     }
-    }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
+    }
+  }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
 
   const handleBack = () => {
     setSelectedProduct(null);
@@ -75,14 +75,15 @@ function App() {
 
   const rkfsState = { rkfsDesign, setRkfsDesign, rkfsSize, setRkfsSize, rkfsPower, setRkfsPower, rkfsMounting, setRkfsMounting };
   const fileUrl =
-  modelCode && typeof modelCode === 'string'
-    ? `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.STEP`
-    : '#';
+    modelCode && typeof modelCode === 'string'
+      ? `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.STEP`
+      : '#';
 
-    const handleModelConfirm = (code) => {
-     setModelCode(code);  // code อาจเป็น string หรือ array
-     setShowForm(true);   // แสดงฟอร์มหลังเลือกครบ
-    };
+  const handleModelConfirm = (code) => {
+    setModelCode(code);
+    setShowForm(true);
+  };
+
   const handleDownload = () => {
     setIsDownloading(true);
 
@@ -92,8 +93,8 @@ function App() {
       link.download = `${modelCode}.STEP`;
       link.click();
       setIsDownloading(false);
-      setShowForm(false); // ปิดฟอร์มหลังโหลด
-     }, 2000); // รอ 2 วิแสดง gif ก่อนโหลดจริง
+      setShowForm(false);
+    }, 2000);
   };
 
   return (
@@ -167,59 +168,57 @@ function App() {
       )}
 
       {showForm && (
-  <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
-    <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
+        <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
+          <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
 
-    <input
-      type="text"
-      placeholder="ชื่อ"
-      value={userInfo.name}
-      onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })}
-      className="w-full mb-2 p-2 border rounded"
-    />
-    <input
-      type="text"
-      placeholder="เบอร์ติดต่อ"
-      value={userInfo.phone}
-      onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })}
-      className="w-full mb-2 p-2 border rounded"
-    />
-    <input
-      type="text"
-      placeholder="ชื่อบริษัท"
-      value={userInfo.company}
-      onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })}
-      className="w-full mb-2 p-2 border rounded"
-    />
-    <input
-      type="email"
-      placeholder="Email ติดต่อ"
-      value={userInfo.email}
-      onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
-      className="w-full mb-4 p-2 border rounded"
-    />
+          <input
+            type="text"
+            placeholder="ชื่อ"
+            value={userInfo.name}
+            onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })}
+            className="w-full mb-2 p-2 border rounded"
+          />
+          <input
+            type="text"
+            placeholder="เบอร์ติดต่อ"
+            value={userInfo.phone}
+            onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })}
+            className="w-full mb-2 p-2 border rounded"
+          />
+          <input
+            type="text"
+            placeholder="ชื่อบริษัท"
+            value={userInfo.company}
+            onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })}
+            className="w-full mb-2 p-2 border rounded"
+          />
+          <input
+            type="email"
+            placeholder="Email ติดต่อ"
+            value={userInfo.email}
+            onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
+            className="w-full mb-4 p-2 border rounded"
+          />
 
-    {/* ✅ ปุ่ม + gif */}
-    <div className="relative">
-      <button
-        onClick={handleDownload}
-        disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading}
-        className={`w-full py-2 rounded text-white font-semibold transition 
-          ${isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'}`}
-      >
-        {isDownloading ? 'กำลังดาวน์โหลด...' : 'ยืนยันและรับไฟล์'}
-      </button>
+          <div className="relative">
+            <button
+              onClick={handleDownload}
+              disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading}
+              className={`w-full py-2 rounded text-white font-semibold transition 
+                ${isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'}`}
+            >
+              {isDownloading ? 'กำลังดาวน์โหลด...' : 'ยืนยันและรับไฟล์'}
+            </button>
 
-      {/* ✅ GIF นาฬิกาทราย */}
-      {isDownloading && (
-        <img
-          src="/assets/hourglass.gif"
-          alt="loading"
-          className="w-8 h-8 absolute -top-10 right-0 animate-spin"
-        />
-      )}
-    </div>
-  </div>
+            {isDownloading && (
+              <img
+                src="/assets/hourglass.gif"
+                alt="loading"
+                className="w-8 h-8 absolute -top-10 right-0 animate-spin"
+              />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
