@@ -348,50 +348,56 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
 )}
 
             {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && (
-              <>
-                {(() => {
-                  const modelCode = generateModelCode({
-                    acMotorType,
-                    acPower,
-                    acVoltage,
-                    acOption,
-                    acGearHead,
-                    acRatio,
-                  });
+  <>
+    {(() => {
+      const modelCode = generateModelCode({
+        acMotorType,
+        acPower,
+        acVoltage,
+        acOption,
+        acGearHead,
+        acRatio,
+      });
 
-                  return (
-                    <>
-                      <div className="space-y-2 text-center mt-4">
-                        <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
-                        <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
+      return (
+        <div className="text-center mt-6 space-y-4">
+          {/* ✅ Model Code ด้านบนสุด */}
+          <h2 className="text-2xl font-bold text-blue-700">{modelCode}</h2>
 
-                        <button
-                          onClick={() => {
-                            if (modelCode) onConfirm(modelCode);
-                          }}
-                          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                          เสร็จสิ้น
-                        </button>
-                      </div>
+          {/* ✅ Output Speed */}
+          <div>
+            <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
+            <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
+          </div>
 
-                      <FinalResult
-                        modelCode={modelCode}
-                        downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${modelCode}.stp`}
-                        onReset={() => {
-				acSetters.setAcMotorType(null);
-    				acSetters.setAcPower(null);
-    				acSetters.setAcVoltage(null);
-    				acSetters.setAcOption(null);
-    				acSetters.setAcGearHead(null);
-    				acSetters.setAcRatio(null);
-			}}
-                      />
-                    </>
-                  );
-                })()}
-              </>
-            )}
+          {/* ✅ ปุ่มเสร็จสิ้น */}
+          <button
+            onClick={() => {
+              if (modelCode) onConfirm(modelCode);
+            }}
+            className="mt-2 px-5 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700"
+          >
+            เสร็จสิ้น
+          </button>
+
+          {/* ✅ Final Result (ปุ่มดาวน์โหลด 3D + ย้อนกลับ) */}
+          <FinalResult
+            modelCode={modelCode}
+            downloadLink={`https://github.com/SomyotSW/gear-motor-app/tree/main/src/assets/model/${modelCode}.stp`}
+            onReset={() => {
+              acSetters.setAcMotorType(null);
+              acSetters.setAcPower(null);
+              acSetters.setAcVoltage(null);
+              acSetters.setAcOption(null);
+              acSetters.setAcGearHead(null);
+              acSetters.setAcRatio(null);
+            }}
+          />
+        </div>
+      );
+    })()}
+  </>
+)}
     </div>
   ); 
 }
