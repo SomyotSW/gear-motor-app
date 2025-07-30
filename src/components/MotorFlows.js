@@ -385,10 +385,7 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
           </div>
 
           {/* ✅ ปุ่มเสร็จสิ้น */}
-          <button
-            onClick={() => {
-              if (modelCode) onConfirm(modelCode);
-		{Array.isArray(modelCode) ? (
+          {Array.isArray(modelCode) && (
   <>
     <p className="text-lg font-semibold text-gray-700">กรุณาเลือกรุ่นที่ต้องการดาวน์โหลด:</p>
     <div className="flex flex-col items-center space-y-2">
@@ -406,14 +403,19 @@ export function renderACMotorFlow(acState, acSetters, OnConfirm) {
       ))}
     </div>
   </>
-) : (
-  <h2 className="text-2xl font-bold text-blue-700">{modelCode}</h2>
 )}
-            }}
-            className="mt-2 px-5 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700"
-          >
-            เสร็จสิ้น
-          </button>
+
+<button
+  onClick={() => {
+    if (modelCode) {
+      const selected = Array.isArray(modelCode) ? selectedModel : modelCode;
+      onConfirm(selected);
+    }
+  }}
+  className="mt-2 px-5 py-2 bg-blue-600 text-white rounded shadow-md hover:bg-blue-700"
+>
+  เสร็จสิ้น
+</button>
 
           {/* ✅ Final Result (ปุ่มดาวน์โหลด 3D + ย้อนกลับ) */}
           <FinalResult
