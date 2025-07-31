@@ -21,6 +21,15 @@ function App() {
   const [acGearHead, setAcGearHead] = useState(null);
   const [acRatio, setAcRatio] = useState(null);
 
+  // Hypoid Gear Flow states
+  const [hypoidType, setHypoidType] = useState(null);             // F2 / F3
+  const [hypoidGearType, setHypoidGearType] = useState(null);     // H / A
+  const [hypoidRatio, setHypoidRatio] = useState(null);           // เช่น 10, 15,...
+  const [hypoidDirection, setHypoidDirection] = useState(null);   // RL, RR,...
+  const [hypoidPower, setHypoidPower] = useState(null);           // เช่น 90W
+  const [hypoidSupply, setHypoidSupply] = useState(null);         // C, A, S, S3
+  const [hypoidOptional, setHypoidOptional] = useState([]); 
+
   const [rkfsDesign, setRkfsDesign] = useState(null);
   const [rkfsSize, setRkfsSize] = useState(null);
   const [rkfsPower, setRkfsPower] = useState(null);
@@ -29,6 +38,26 @@ function App() {
   const [emailVerifiedCode, setEmailVerifiedCode] = useState(null);
   const [emailCodeInput, setEmailCodeInput] = useState('');
   const [codeSent, setCodeSent] = useState(false);
+
+const hypoidState = {
+  type: hypoidType,
+  gearType: hypoidGearType,
+  ratio: hypoidRatio,
+  direction: hypoidDirection,
+  power: hypoidPower,
+  supply: hypoidSupply,
+  optional: hypoidOptional
+};
+
+const hypoidSetters = {
+  setType: setHypoidType,
+  setGearType: setHypoidGearType,
+  setRatio: setHypoidRatio,
+  setDirection: setHypoidDirection,
+  setPower: setHypoidPower,
+  setSupply: setHypoidSupply,
+  setOptional: setHypoidOptional
+};
 
   useEffect(() => {
     if (
@@ -197,6 +226,19 @@ const handleDownload = () => {
             />
           </>
         )}
+                {selectedProduct === 'Hypoid Gear' && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Hypoid Gear Selection</h2>
+      <button className="text-blue-300 underline" onClick={handleBack}>ย้อนกลับ</button>
+    </div>
+    {renderHypoidGearFlow(hypoidState, hypoidSetters, (modelCode) => {
+      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+      setModelCodeList(models);
+      setSelectedModel(models[0]);
+    })}
+  </>
+)}
 
         {selectedProduct === 'RKFS Series' && !selectedModel && (
           <>

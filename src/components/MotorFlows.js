@@ -355,6 +355,143 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   );
 }
 
+export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
+  const {
+    type,        // F2 หรือ F3
+    gearType,    // H หรือ A
+    ratio,       // เช่น 10, 15, ... 240
+    direction,   // RL, RR, RF, RB, LL, LR, LF, LB
+    power,       // 15W–2200W
+    supply,      // C, A, S, S3
+    optional     // B, F, P (Array)
+  } = hypoidState;
+
+  const update = (key, value) => {
+    const setterMap = {
+      type: hypoidSetters.setType,
+      gearType: hypoidSetters.setGearType,
+      ratio: hypoidSetters.setRatio,
+      direction: hypoidSetters.setDirection,
+      power: hypoidSetters.setPower,
+      supply: hypoidSetters.setSupply,
+      optional: hypoidSetters.setOptional
+    };
+    if (setterMap[key]) setterMap[key](value);
+  };
+
+  const toggleOptional = (opt) => {
+    if (!optional.includes(opt)) update('optional', [...optional, opt]);
+    else update('optional', optional.filter(o => o !== opt));
+  };
+
+  const generateModelCode = () => {
+    const optCode = optional.join('');
+    return `${type}-${gearType}${ratio}${direction}-${power}-${supply}${optCode}`;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Step 1 */}
+      {!type && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-2">Gear Motor Type</h3>
+          <div className="flex gap-4">
+            <button onClick={() => update('type', 'F2')} className="button">F2</button>
+            <button onClick={() => update('type', 'F3')} className="button">F3</button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2 */}
+      {type && !gearType && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-2">Gear Type</h3>
+          <div className="flex gap-4">
+            <button onClick={() => update('gearType', 'H')} className="button">Hollow Shaft (H)</button>
+            <button onClick={() => update('gearType', 'A')} className="button">Solid Shaft (A)</button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3 */}
+      {type && gearType && !ratio && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-2">Ratio</h3>
+          <div className="grid grid-cols-4 gap-2">
+            {[10,15,20,25,30,40,50,60,80,100,120,160,200,240].map(r => (
+              <button key={r} onClick={() => update('ratio', r)} className="button">{r}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 4 */}
+      {type && ratio && !direction && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-2">Junction Box Direction</h3>
+          <div className="grid grid-cols-4 gap-2">
+            {["RL","RR","RF","RB","LL","LR","LF","LB"].map(d => (
+              <button key={d} onClick={() => update('direction', d)} className="button">{d}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 5 */}
+      {type && direction && !power && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-2">Motor Power</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {(type === 'F2'
+              ? [15,25,40,60,90]
+              : [100,200,400,750,1500,2200]).map(p => (
+                <button key={p} onClick={() => update('power', p)} className="button">{p}W</button>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 6 */}
+      {power && !supply && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-2">Power Supply</h3>
+          <div className="flex flex-wrap gap-2">
+            {(type === 'F2'
+              ? ['C','A','S','S3']
+              : ['S']).map(s => (
+                <button key={s} onClick={() => update('supply', s)} className="button">{s}</button>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 7 */}
+      {supply && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-2">Motor Optional</h3>
+          <div className="flex gap-3">
+            {['B','F','P'].map(opt => (
+              <button
+                key={opt}
+                className={`button ${optional.includes(opt) ? 'bg-blue-700 text-white' : ''}`}
+                onClick={() => toggleOptional(opt)}>{opt}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Final Confirm */}
+      {supply && (
+        <div className="pt-4">
+          <h4 className="text-white">Model Code: <strong>{generateModelCode()}</strong></h4>
+          <button className="mt-4 button bg-green-600" onClick={() => onConfirm(generateModelCode())}>เสร็จสิ้น</button>
+        </div>
+      )}
+    </div>
+  );
+} // END renderHypoidGearFlow
+
+
 export function renderRKFSFlow(state, setState, onConfirm) {
   const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
   const update = (key, value) => {
