@@ -78,12 +78,11 @@ function App() {
       code: code
     }, 'J6kLpbLcieCe2cKzU')
       .then(() => {
-      toast.success('✅ ส่งรหัสแล้ว กรุณาตรวจสอบอีเมลของคุณ');
-    })
-    .catch(() => {
-      toast.error('❌ ส่งรหัสไม่สำเร็จ กรุณาลองใหม่');
-    });
-
+        toast.success('✅ ส่งรหัสแล้ว กรุณาตรวจสอบอีเมลของคุณ');
+      })
+      .catch(() => {
+        toast.error('❌ ส่งรหัสไม่สำเร็จ กรุณาลองใหม่');
+      });
   };
 
   const handleDownload = () => {
@@ -141,7 +140,85 @@ function App() {
     <div className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center blur-sm z-0" style={{ backgroundImage: `url(${bgImage})` }}></div>
       <div className="relative z-10 p-6 text-gray-900">
-        {/* ... รหัสส่วนที่ไม่ได้แก้ ... */}
+        {!selectedProduct && (
+          <>
+            <h1 className="text-5xl text-white font-bold mb-5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+              SAS Transmission Request 3D file
+            </h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {productList.map((p) => (
+                <div
+                  key={p.name}
+                  className="cursor-pointer hover:scale-105 transition text-center bg-white bg-opacity-90 rounded-xl shadow-lg p-2"
+                  onClick={() => setSelectedProduct(p.name)}
+                >
+                  <img src={p.image} alt={p.name} className="w-full h-48 sm:h-56 md:h-64 object-contain" />
+                  <p className="mt-3 font-semibold text-black">{p.name}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
+          <>
+            <div className="flex justify-between items-center mt-6">
+              <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">AC Gear Motor Selection</h2>
+              <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+            </div>
+            <ACMotorFlow
+              acState={acState}
+              acSetters={acSetters}
+              onConfirm={(modelCode) => {
+                const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+                setModelCodeList(models);
+                setSelectedModel(models[0]);
+              }}
+            />
+          </>
+        )}
+
+        {selectedProduct === 'RKFS Series' && !selectedModel && (
+          <>
+            <div className="flex justify-between items-center mt-6">
+              <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">RKFS Series</h2>
+              <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+            </div>
+            {renderRKFSFlow(rkfsState, rkfsState)}
+          </>
+        )}
+
+        {modelCodeList.length > 0 && !showForm && (
+          <div className="text-center mt-10 space-y-4">
+            <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
+            {modelCodeList.map((code, idx) => (
+              <div key={idx} className="flex justify-center items-center space-x-2">
+                <input
+                  type="radio"
+                  name="modelSelect"
+                  value={code}
+                  checked={selectedModel === code}
+                  onChange={() => setSelectedModel(code)}
+                />
+                <label>{code}</label>
+              </div>
+            ))}
+
+            <button
+              onClick={() => setShowForm(true)}
+              disabled={!selectedModel || isDownloading}
+              className={`mt-4 px-5 py-2 rounded text-white transition ${
+                isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'
+              }`}
+            >
+              {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
+            </button>
+
+            <button onClick={handleBack} className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+              กลับไปเลือกใหม่
+            </button>
+          </div>
+        )}
 
         {showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
@@ -168,6 +245,8 @@ function App() {
             </div>
           </div>
         )}
+
+        <ToastContainer position="top-center" autoClose={3000} />
       </div>
     </div>
   );
