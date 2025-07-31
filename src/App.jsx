@@ -104,17 +104,17 @@ function App() {
       <div className="relative z-10 p-6 text-gray-900">
         {!selectedProduct && (
           <>
-	    <h1 className="text-white font-bold mb-5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+	    <h1 className="text-5xl text-white font-bold mb-5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
   SAS Transmission Request 3D file</h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {productList.map((p) => (
                 <div
                   key={p.name}
-                  className="cursor-pointer hover:scale-105 transition text-center"
+                  className="cursor-pointer hover:scale-105 transition text-center bg-white bg-opacity-90 rounded-xl shadow-lg p-2"
                   onClick={() => setSelectedProduct(p.name)}
                 >
-                  <img src={p.image} alt={p.name} className="w-full h-32 sm:h-36 md:h-40 object-contain" />
-                  <p className="mt-2 font-semibold">{p.name}</p>
+                  <img src={p.image} alt={p.name} className="w-full h-48 sm:h-56 md:h-64 object-contain" />
+                  <p className="mt-3 font-semibold text-black">{p.name}</p>
                 </div>
               ))}
             </div>
