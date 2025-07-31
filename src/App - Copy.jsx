@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { renderACMotorFlow, renderRKFSFlow, productList, generateModelCode } from './components/MotorFlows.js';
-
+import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode } from './components/MotorFlows.js';
+import bgImage from './assets/GearBG2.png';
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [modelCode, setModelCode] = useState(null);
+  const [modelCodeList, setModelCodeList] = useState([]);
+  const [selectedModel, setSelectedModel] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  // AC Motor States
   const [acMotorType, setAcMotorType] = useState(null);
   const [acPower, setAcPower] = useState(null);
   const [acSpeedAdjust, setAcSpeedAdjust] = useState(null);
@@ -16,23 +17,47 @@ function App() {
   const [acGearHead, setAcGearHead] = useState(null);
   const [acRatio, setAcRatio] = useState(null);
 
-  // RKFS Series States
   const [rkfsDesign, setRkfsDesign] = useState(null);
   const [rkfsSize, setRkfsSize] = useState(null);
   const [rkfsPower, setRkfsPower] = useState(null);
   const [rkfsMounting, setRkfsMounting] = useState(null);
 
   useEffect(() => {
-    if (selectedProduct === 'AC Gear Motor' && acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio) {
-      const code = generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio });
-      if (code) setModelCode(code);
+    if (
+      selectedProduct === 'AC Gear Motor' &&
+      acMotorType &&
+      acPower &&
+      acVoltage &&
+      acOption &&
+      acGearHead &&
+      acRatio
+    ) {
+      const powerArray = acPower.split(',').map(p => p.trim());
+      const generatedCodes = powerArray.map(power =>
+        generateModelCode({
+          acMotorType,
+          acPower: power,
+          acVoltage,
+          acOption,
+          acGearHead,
+          acRatio,
+        })
+      ).flat();
+
+      const finalCodes = Array.isArray(generatedCodes[0]) ? generatedCodes.flat() : generatedCodes;
+      if (finalCodes.length > 0) {
+        setModelCodeList(finalCodes);
+        setSelectedModel(finalCodes[0]);
+      }
     }
   }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
 
   const handleBack = () => {
     setSelectedProduct(null);
-    setModelCode(null);
+    setModelCodeList([]);
+    setSelectedModel(null);
     setShowForm(false);
+    setIsDownloading(false);
     setUserInfo({ name: '', phone: '', company: '', email: '' });
     setAcMotorType(null);
     setAcPower(null);
@@ -47,102 +72,145 @@ function App() {
     setRkfsMounting(null);
   };
 
-  const acState = {
-    acMotorType,
-    acPower,
-    acSpeedAdjust,
-    acVoltage,
-    acOption,
-    acGearHead,
-    acRatio
-  };
+  const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio };
+  const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
+  const rkfsState = { rkfsDesign, setRkfsDesign, rkfsSize, setRkfsSize, rkfsPower, setRkfsPower, rkfsMounting, setRkfsMounting };
 
-  const acSetters = {
-  setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage,
-  setAcOption, setAcGearHead, setAcRatio
-  };
-
-  const rkfsState = {
-    rkfsDesign, setRkfsDesign,
-    rkfsSize, setRkfsSize,
-    rkfsPower, setRkfsPower,
-    rkfsMounting, setRkfsMounting
-  };
+  const fileUrl =
+    selectedModel
+      ? `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${selectedModel}.STEP`
+      : '#';
 
   const handleDownload = () => {
-    alert("ข้อมูลถูกส่งแล้ว ไปยัง Somyot@synergy-as.com");
-    setShowForm(false);
+    if (!selectedModel) return;
+    setIsDownloading(true);
+    setTimeout(() => {
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = `${selectedModel}.STEP`;
+      link.click();
+      setIsDownloading(false);
+      setShowForm(false);
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gray-50 text-gray-900">
-      {!selectedProduct && (
-        <>
-          <h1 className="text-2xl font-bold mb-4">SAS Transmission Request 3D file</h1>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {productList.map((p) => (
-              <div
-                key={p.name}
-                className="cursor-pointer hover:scale-105 transition text-center"
-                onClick={() => setSelectedProduct(p.name)}
-              >
-                <img
-                  src={p.image}
-                  alt={p.name}
-                  className="w-full h-32 sm:h-36 md:h-40 object-contain"
+    <div className="relative min-h-screen overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center blur-sm z-0"
+        style={{ backgroundImage: `url(${bgImage})` }}
+      ></div>
+
+      <div className="relative z-10 p-6 text-gray-900">
+        {!selectedProduct && (
+          <>
+	    <h1 className="text-5xl text-white font-bold mb-5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+  SAS Transmission Request 3D file</h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {productList.map((p) => (
+                <div
+                  key={p.name}
+                  className="cursor-pointer hover:scale-105 transition text-center bg-white bg-opacity-90 rounded-xl shadow-lg p-2"
+                  onClick={() => setSelectedProduct(p.name)}
+                >
+                  <img src={p.image} alt={p.name} className="w-full h-48 sm:h-56 md:h-64 object-contain" />
+                  <p className="mt-3 font-semibold text-black">{p.name}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
+          <>
+            <div className="flex justify-between items-center mt-6">
+	      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  AC Gear Motor Selection</h2>
+              <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+            </div>
+            <ACMotorFlow
+              acState={acState}
+              acSetters={acSetters}
+              onConfirm={(modelCode) => {
+                const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+                setModelCodeList(models);
+                setSelectedModel(models[0]);
+              }}
+            />
+          </>
+        )}
+
+        {selectedProduct === 'RKFS Series' && !selectedModel && (
+          <>
+            <div className="flex justify-between items-center mt-6">
+	      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  RKFS Series</h2>
+              <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+            </div>
+            {renderRKFSFlow(rkfsState, rkfsState)}
+          </>
+        )}
+
+        {modelCodeList.length > 0 && !showForm && (
+          <div className="text-center mt-10 space-y-4">
+	    <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Model Code:</h2>
+            {modelCodeList.map((code, idx) => (
+              <div key={idx} className="flex justify-center items-center space-x-2">
+                <input
+                  type="radio"
+                  name="modelSelect"
+                  value={code}
+                  checked={selectedModel === code}
+                  onChange={() => setSelectedModel(code)}
                 />
-                <p className="mt-2 font-semibold">{p.name}</p>
+                <label>{code}</label>
               </div>
             ))}
+
+            <button
+              onClick={() => setShowForm(true)}
+              disabled={!selectedModel || isDownloading}
+              className={`mt-4 px-5 py-2 rounded text-white transition ${
+                isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'
+              }`}
+            >
+              {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
+            </button>
+
+            <button onClick={handleBack} className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+              กลับไปเลือกใหม่
+            </button>
           </div>
-        </>
-      )}
+        )}
 
-      {selectedProduct === 'AC Gear Motor' && !modelCode && (
-        <>
-          <div className="flex justify-between items-center mt-6">
-            <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
-            <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+        {showForm && (
+          <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
+            <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
+
+            <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="text" placeholder="ชื่อบริษัท" value={userInfo.company} onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input type="email" placeholder="Email ติดต่อ" value={userInfo.email} onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })} className="w-full mb-4 p-2 border rounded" />
+
+            <div className="relative">
+              <button
+                onClick={handleDownload}
+                disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading}
+                className={`w-full py-2 rounded text-white font-semibold transition ${
+                  isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'
+                }`}
+              >
+                {isDownloading ? 'กำลังดาวน์โหลด...' : 'ยืนยันและรับไฟล์'}
+              </button>
+
+              {isDownloading && (
+                <img src="/assets/hourglass.gif" alt="loading" className="w-8 h-8 absolute -top-10 right-0 animate-spin" />
+              )}
+            </div>
           </div>
-          {renderACMotorFlow(acState, acSetters)}
-        </>
-      )}
-
-      {selectedProduct === 'RKFS Series' && !modelCode && (
-        <>
-          <div className="flex justify-between items-center mt-6">
-            <h2 className="text-xl font-bold">RKFS Series</h2>
-            <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
-          </div>
-          {renderRKFSFlow(rkfsState, rkfsState)}
-        </>
-      )}
-
-      {modelCode && !showForm && (
-        <div className="text-center mt-10">
-          <h2 className="text-xl font-semibold">Model Code:</h2>
-          <p className="text-lg mt-2 font-mono text-blue-700">{modelCode}</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Download 3D</button>
-          <button onClick={handleBack} className="mt-4 ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">กลับไปเลือกใหม่</button>
-        </div>
-      )}
-
-      {showForm && (
-        <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow">
-          <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลเพื่อรับไฟล์ .STEP</h3>
-          <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="text" placeholder="ชื่อบริษัท" value={userInfo.company} onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-          <input type="email" placeholder="Email ติดต่อ" value={userInfo.email} onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })} className="w-full mb-4 p-2 border rounded" />
-          <button
-            onClick={handleDownload}
-            disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email}
-            className="w-full py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-          >
-            ยืนยันและรับไฟล์
-          </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
