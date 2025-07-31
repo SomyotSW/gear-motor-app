@@ -62,53 +62,73 @@ function App() {
 
   const generate6DigitCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-  const handleSendVerificationCode = () => {
-    if (!userInfo.email) {
-      toast.warning("⚠️ กรุณากรอกอีเมลก่อนขอรหัส");
-      return;
-    }
+  // ✅ ฟังก์ชันส่งรหัสยืนยันไปยังอีเมลของลูกค้า
+const handleSendVerificationCode = () => {
+  if (!userInfo.email) {
+    toast.warning("⚠️ กรุณากรอกอีเมลก่อนขอรหัส");
+    return;
+  }
 
-    const code = generate6DigitCode();
-    setEmailVerifiedCode(code);
-    setCodeSent(true);
+  const code = generate6DigitCode();
+  setEmailVerifiedCode(code);
+  setCodeSent(true);
 
-    emailjs.send('service_s30eakb', 'template_gum65p2', {
+  emailjs.send(
+    'service_s30eakb',           // ✅ Service ID ของคุณ
+    'template_gum65p2',          // ✅ Template สำหรับส่งรหัสให้ลูกค้า
+    {
       to_email: userInfo.email,
       name: userInfo.name || 'ลูกค้า',
       code: code
-    }, 'J6kLpbLcieCe2cKzU')
-      .then(() => {
-        toast.success('✅ ส่งรหัสแล้ว กรุณาตรวจสอบอีเมลของคุณ');
-      })
-      .catch(() => {
-        toast.error('❌ ส่งรหัสไม่สำเร็จ กรุณาลองใหม่');
-      });
-  };
+    },
+    'J6kLpbLcieCe2cKzU'          // ✅ Public Key
+  )
+  .then(() => {
+    toast.success('✅ ส่งรหัสแล้ว กรุณาตรวจสอบอีเมลของคุณ');
+  })
+  .catch(() => {
+    toast.error('❌ ส่งรหัสไม่สำเร็จ กรุณาลองใหม่');
+  });
+};
 
-  const handleDownload = () => {
-    if (emailCodeInput !== emailVerifiedCode) {
-      alert("รหัสยืนยันไม่ถูกต้อง");
-      return;
-    }
+// ✅ ฟังก์ชันกดยืนยันและรับไฟล์
+const handleDownload = () => {
+  if (emailCodeInput !== emailVerifiedCode) {
+    toast.error("❌ รหัสยืนยันไม่ถูกต้อง");
+    return;
+  }
 
-    emailjs.send('service_s30eakb', 'template_gum65p2', {
+  // ✅ ส่งข้อมูลลูกค้าเข้าอีเมล Somyot
+  emailjs.send(
+    'service_s30eakb',           // ✅ Service ID ของคุณ
+    'template_4vqperj',     // ✅ Template ส่งข้อมูลเข้าอีเมลคุณ
+    {
       name: userInfo.name,
       phone: userInfo.phone,
       email: userInfo.email,
       company: userInfo.company,
       model: selectedModel
-    }, 'J6kLpbLcieCe2cKzU');
+    },
+    'J6kLpbLcieCe2cKzU'          // ✅ Public Key
+  )
+  .then(() => {
+    toast.success("✅ ส่งข้อมูลเรียบร้อยแล้ว");
+  })
+  .catch(() => {
+    toast.error("❌ ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่");
+  });
 
-    setIsDownloading(true);
-    setTimeout(() => {
-      const link = document.createElement('a');
-      link.href = fileUrl;
-      link.download = `${selectedModel}.STEP`;
-      link.click();
-      setIsDownloading(false);
-      setShowForm(false);
-    }, 2000);
-  };
+  // ✅ ดำเนินการดาวน์โหลด .STEP
+  setIsDownloading(true);
+  setTimeout(() => {
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = `${selectedModel}.STEP`;
+    link.click();
+    setIsDownloading(false);
+    setShowForm(false);
+  }, 2000);
+};
 
   const handleBack = () => {
     setSelectedProduct(null);
