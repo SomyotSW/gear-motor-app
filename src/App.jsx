@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode } from './components/MotorFlows.js';
+import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow } from './components/MotorFlows.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
