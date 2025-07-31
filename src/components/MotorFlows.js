@@ -140,7 +140,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       {/* Motor Type Selection */}
       {!acMotorType && (
         <div>
-          <h3 className="font-semibold mb-2">Motor Type</h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Motor Type
+                    </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: 'Induction Motor', img: InductionImg },
@@ -166,7 +168,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       {/* Power Selection */}
       {acMotorType && !acPower && (
         <div>
-          <h3 className="font-semibold mb-2">Power Motor</h3>
+	    <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Power Motor
+                    </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: '10W AC Motor', img: W10Img },
@@ -195,7 +199,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       {/* Voltage Selection */}
       {acPower && !acVoltage && (
         <div>
-          <h3 className="font-semibold mb-2">Voltage</h3>
+	    <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Voltage
+                    </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: '1Phase220V AC 50Hz', img: SingleImg },
@@ -217,7 +223,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       {/* Optional Selection */}
       {acVoltage && !acOption && (
         <div>
-          <h3 className="font-semibold mb-2">SAS Optional</h3>
+	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Motor Optional
+                    </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: 'With Fan', img: FanImg },
@@ -246,7 +254,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       {/* Gearhead Selection */}
       {acOption && !acGearHead && (
         <div>
-          <h3 className="font-semibold mb-2">Gear Type</h3>
+	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Gear Type
+                    </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: 'SQUARE BOX WITH WING', img: GBKImg },
@@ -270,9 +280,11 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       {/* Ratio Selection */}
       {acGearHead && !acRatio && (
         <div>
-          <h3 className="font-semibold mb-2">Ratio</h3>
+	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Ratio Selection
+                    </h3>
           <div className="flex flex-wrap gap-2 justify-center">
-	    <p className="text-sm text-gray-600 mt-2">
+	    <p className="text-sm text-white-600 mt-2">
             สูตรการหาความเร็วรอบ ( rpm ) = ความเร็วรอบมอเตอร์ / อัตราทด : 
             : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 
             : 1500 / 30 = 50 rpm , จะได้ความเร็วรอบจาก Gear Head = 30 รอบ/นาที 

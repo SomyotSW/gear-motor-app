@@ -104,7 +104,8 @@ function App() {
       <div className="relative z-10 p-6 text-gray-900">
         {!selectedProduct && (
           <>
-            <h1 className="text-2xl font-bold mb-4">SAS Transmission Request 3D file</h1>
+	    <h1 className="text-white font-bold mb-5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+  SAS Transmission Request 3D file</h1>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {productList.map((p) => (
                 <div
@@ -123,7 +124,8 @@ function App() {
         {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
           <>
             <div className="flex justify-between items-center mt-6">
-              <h2 className="text-xl font-bold">AC Gear Motor Selection</h2>
+	      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  AC Gear Motor Selection</h2>
               <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
             </div>
             <ACMotorFlow
@@ -141,7 +143,8 @@ function App() {
         {selectedProduct === 'RKFS Series' && !selectedModel && (
           <>
             <div className="flex justify-between items-center mt-6">
-              <h2 className="text-xl font-bold">RKFS Series</h2>
+	      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  RKFS Series</h2>
               <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
             </div>
             {renderRKFSFlow(rkfsState, rkfsState)}
@@ -150,7 +153,8 @@ function App() {
 
         {modelCodeList.length > 0 && !showForm && (
           <div className="text-center mt-10 space-y-4">
-            <h2 className="text-xl font-bold text-blue-700">Model Code:</h2>
+	    <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Model Code:</h2>
             {modelCodeList.map((code, idx) => (
               <div key={idx} className="flex justify-center items-center space-x-2">
                 <input
