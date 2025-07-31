@@ -157,6 +157,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               </button>
             ))}
           </div>
+                    <p className="text-sm text-gray-600 mt-2">
+            Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
+          </p>
         </div>
       )}
 
@@ -234,6 +237,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               </button>
             ))}
           </div>
+                    <p className="text-sm text-gray-600 mt-2">
+            **หากไม่ต้องการ Option เสริม เลือกปุ่ม "STANDARD"ได้เลยครับ
+          </p>
         </div>
       )}
 
@@ -266,6 +272,11 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
         <div>
           <h3 className="font-semibold mb-2">Ratio</h3>
           <div className="flex flex-wrap gap-2 justify-center">
+	    <p className="text-sm text-gray-600 mt-2">
+            สูตรการหาความเร็วรอบ ( rpm ) = ความเร็วรอบมอเตอร์ / อัตราทด : 
+            : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 
+            : 1500 / 30 = 50 rpm , จะได้ความเร็วรอบจาก Gear Head = 30 รอบ/นาที 
+          </p>
             {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(ratio => (
               <button
                 key={ratio}
@@ -365,16 +376,13 @@ export function renderRKFSFlow(state, setState, onConfirm) {
               </button>
             ))}
           </div>
-          <p className="text-sm text-gray-600 mt-2">
-            Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
-          </p>
         </div>
       )}
 
-      {/* Size Selection */}
+      {/* Design Selection */}
       {rkfsDesign && !rkfsSize && (
         <div className="flex flex-wrap gap-3">
-          {['60', '80', '100', '120'].map(size => (
+          {['FOOT-MOUNTED', 'FLANGE-MOUNTED', 'FOOT&FLANGE', 'RM DESIGN'].map(size => (
             <button
               key={size}
               onClick={() => update('rkfsSize', size)}
