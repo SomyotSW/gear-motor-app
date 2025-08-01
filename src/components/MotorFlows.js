@@ -107,14 +107,15 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
 
   const num = acPower.replace('W AC Motor', '');
   let base = '';
+
   if (['10', '15'].includes(num)) {
-    base = `${powerCode}${motorCode}${num}GN-${phase}`;
+  base = `${powerCode}${motorCode}${num}GN-${phase}`;
   } else if (['25', '40'].includes(num)) {
-    base = `${powerCode}${motorCode}${num}GN-${phase}${term}`;
+  base = `${powerCode}${motorCode}${num}GN-${phase}${term}`;
   } else {
   if (['60', '90'].includes(num)) {
     base = `${powerCode}${motorCode}${num}GU-${phase}`;
-  } else if (['120', '140','200'].includes(num)) {
+  } else if (['120', '140', '200'].includes(num)) {
     base = `${powerCode}${motorCode}${num}GU-${phase}${term}`;
   } else {
     const suffix = motorCode === 'IK' ? 'RGU' : 'GU';
