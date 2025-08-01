@@ -69,7 +69,11 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
 
   const phaseMap = { '1Phase220V AC 50Hz': 'C', '3Phase220V AC 50Hz': 'S' };
+  const term = acOption === 'With Fan' ? 'F' : '';
   const term = acOption === 'With Terminal Box' ? 'T' : '';
+  const term = acOption === 'With Force cooling Fan' ? 'FF' : '';
+  const term = acOption === 'With Electromagnetic Brake' ? 'M' : '';
+  const term = acOption === 'With Thermal Protection' ? 'P' : '';
 
   const gearHeadMap = {
     'SQUARE BOX WITH WING': 'K',
@@ -107,11 +111,16 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   } else if (['25', '40'].includes(num)) {
     base = `${powerCode}${motorCode}${num}GN-${phase}${term}`;
   } else {
-    const suffix = motorCode === 'IKR' ? 'RGU' : 'GU';
+  if (['60', '90'].includes(num)) {
+    base = `${powerCode}${motorCode}${num}GU-${phase}`;
+  } else if (['120', '140','200'].includes(num)) {
+    base = `${powerCode}${motorCode}${num}GU-${phase}${term}`;
+  } else {
+    const suffix = motorCode === 'IK' ? 'RGU' : 'GU';
     base = `${powerCode}${motorCode}${num}${suffix}-${phase}F${term}`;
   }
 
-  const prefixes = num === '60' ? ['GN', 'GU'] : ['GN'];
+  const prefixes = num === '60' ? ['GN', 'GU'] : ['GU'];
   const list = prefixes.map(pref => `${powerCode}${pref}${acRatio}${gearCode}`);
   return list.map(item => `${base}-${item}`);
 }
