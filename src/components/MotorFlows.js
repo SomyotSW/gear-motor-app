@@ -174,13 +174,14 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               { label: 'Variable Speed Motor', img: VariableImg }
             ].map(({ label, img }) => (
               <button
-                key={label}
-                onClick={() => update('acMotorType', label)}
-                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
-              >
-                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
-                <span className="text-sm font-semibold">{label}</span>
-              </button>
+  		key={label}
+  		onClick={() => update('acMotorType', label)}
+  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+             		transform hover:-translate-y-1 active:scale-105"
+	             >
+  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
+  		<span className="text-sm font-semibold">{label}</span>
+                             </button>
             ))}
           </div>
                     <p className="text-sm text-gray-600 mt-2">
@@ -208,13 +209,14 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               { label: '200W AC Motor', img: W200Img }
             ].map(({ label, img }) => (
               <button
-                key={label}
-                onClick={() => update('acPower', label)}
-                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
-              >
-                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
-                <span className="text-sm font-semibold">{label}</span>
-              </button>
+  		key={label}
+  		onClick={() => update('acPower', label)}
+  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+             		transform hover:-translate-y-1 active:scale-105"
+	             >
+  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
+  		<span className="text-sm font-semibold">{label}</span>
+                             </button>
             ))}
           </div>
         </div>
@@ -232,13 +234,14 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               { label: '3Phase220V AC 50Hz', img: ThreeImg }
             ].map(({ label, img }) => (
               <button
-                key={label}
-                onClick={() => update('acVoltage', label)}
-                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
-              >
-                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
-                <span className="text-sm font-semibold">{label}</span>
-              </button>
+  		key={label}
+  		onClick={() => update('acVoltage', label)}
+  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+             		transform hover:-translate-y-1 active:scale-105"
+	             >
+  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
+  		<span className="text-sm font-semibold">{label}</span>
+                             </button>
             ))}
           </div>
         </div>
@@ -250,6 +253,10 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
 	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
   Motor Optional
                     </h3>
+          <p className="text-sm text-red-600 mt-3">
+            **AC Motor 60W-200W จำเป็นต้องเลือกปุ่ม "With Fan" แทน Standard
+          </p>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: 'With Fan', img: FanImg },
@@ -260,13 +267,14 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               { label: 'Standard', img: StdImg }
             ].map(({ label, img }) => (
               <button
-                key={label}
-                onClick={() => update('acOption', label)}
-                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
-              >
-                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
-                <span className="text-sm font-semibold">{label}</span>
-              </button>
+  		key={label}
+  		onClick={() => update('acOption', label)}
+  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+             		transform hover:-translate-y-1 active:scale-105"
+	             >
+  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
+  		<span className="text-sm font-semibold">{label}</span>
+                             </button>
             ))}
           </div>
                     <p className="text-sm text-gray-600 mt-2">
@@ -289,13 +297,14 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg }
             ].map(({ label, img }) => (
               <button
-                key={label}
-                onClick={() => update('acGearHead', label)}
-                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
-              >
-                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
-                <span className="text-sm font-semibold">{label}</span>
-              </button>
+  		key={label}
+  		onClick={() => update('acGearHead', label)}
+  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+             		transform hover:-translate-y-1 active:scale-105"
+	             >
+  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
+  		<span className="text-sm font-semibold">{label}</span>
+                             </button>
             ))}
           </div>
         </div>
@@ -313,11 +322,11 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
             : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 
             : 1500 / 30 = 50 rpm , จะได้ความเร็วรอบจาก Gear Head = 30 รอบ/นาที 
           </p>
-            {[3,3.6,5,6,7.5,9,10,12.5,15,18,20,25,30,36,40,50,60,75,90,100,120,150,180,200].map(ratio => (
+            {[3,3.6,5,6,7.5,9,12.5,15,18,25,30,36,50,60,75,90,100,120,150,180,200].map(ratio => (
               <button
                 key={ratio}
                 onClick={() => update('acRatio', ratio)}
-                className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
+                className="bg-blue-200 hover:bg-blue-500 px-6 py-3 rounded"
               >
                 {ratio}
               </button>
