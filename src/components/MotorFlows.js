@@ -69,11 +69,12 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
 
   const phaseMap = { '1Phase220V AC 50Hz': 'C', '3Phase220V AC 50Hz': 'S' };
-  const term = acOption === 'With Fan' ? 'F' : '';
-  const term = acOption === 'With Terminal Box' ? 'T' : '';
-  const term = acOption === 'With Force cooling Fan' ? 'FF' : '';
-  const term = acOption === 'With Electromagnetic Brake' ? 'M' : '';
-  const term = acOption === 'With Thermal Protection' ? 'P' : '';
+  let term = '';
+  if (acOption === 'With Fan') term = 'F';
+  else if (acOption === 'With Terminal Box') term = 'T';
+  else if (acOption === 'With Force cooling Fan') term = 'FF';
+  else if (acOption === 'With Electromagnetic Brake') term = 'M';
+  else if (acOption === 'With Thermal Protection') term = 'P';
 
   const gearHeadMap = {
     'SQUARE BOX WITH WING': 'K',
