@@ -68,13 +68,18 @@ export const productList = [
 export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio }) {
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
 
-  const phaseMap = { '1Phase220V AC 50Hz': 'C', '3Phase220V AC 50Hz': 'S' };
-  let term = '';
-  if (acOption === 'With Fan') term = 'F';
-  else if (acOption === 'With Terminal Box') term = 'T';
-  else if (acOption === 'With Force cooling Fan') term = 'FF';
-  else if (acOption === 'With Electromagnetic Brake') term = 'M';
-  else if (acOption === 'With Thermal Protection') term = 'P';
+  const phaseMap = {
+    '1Phase220V AC 50Hz': 'C',
+    '3Phase220V AC 50Hz': 'S'
+  };
+
+  const optionMap = {
+    'With Fan': 'F',
+    'With Terminal Box': 'T',
+    'With Force cooling Fan': 'FF',
+    'With Electromagnetic Brake': 'M',
+    'With Thermal Protection': 'P'
+  };
 
   const gearHeadMap = {
     'SQUARE BOX WITH WING': 'K',
@@ -82,11 +87,13 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
     'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
     'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
   };
+
   const motorMap = {
     'Induction Motor': 'IK',
     'Reversible Motor': 'RK',
-    'Variable Speed Motor': 'IK'
+    'Variable Speed Motor': 'IK'  // code still IK, but suffix is RGN/RGU
   };
+
   const powerMap = {
     '10W AC Motor': '2',
     '15W AC Motor': '3',
@@ -103,28 +110,40 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   const gearCode = gearHeadMap[acGearHead];
   const motorCode = motorMap[acMotorType];
   const powerCode = powerMap[acPower];
-  if (!phase || !gearCode || !motorCode || !powerCode) return null;
-
+  const term = optionMap[acOption] || '';
   const num = acPower.replace('W AC Motor', '');
-  let base = '';
 
-  if (['10', '15'].includes(num)) {
-  base = `${powerCode}${motorCode}${num}GN-${phase}`;
-  } else if (['25', '40', '60'].includes(num)) {
-  base = `${powerCode}${motorCode}${num}GN-${phase}${term}`;
+  if (!phase || !gearCode || !motorCode || !powerCode || !num) return null;
+
+  // กำหนด suffix: GN หรือ GU หรือ RGN/RGU
+  const isVariable = acMotorType === 'Variable Speed Motor';
+  const suffixGN = isVariable ? 'RGN' : 'GN';
+  const suffixGU = isVariable ? 'RGU' : 'GU';
+
+  // เงื่อนไข GN/GU ตามกำลังไฟ
+  let modelCodes = [];
+
+  // 10W–60W → GN เท่านั้น (ยกเว้น 60W มีทั้ง GN/GU)
+  if (['10', '15', '25', '40'].includes(num)) {
+    const base = `${powerCode}${motorCode}${num}${suffixGN}-${phase}${term}`;
+    const end = `${powerCode}${suffixGN}${acRatio}${gearCode}`;
+    modelCodes.push(`${base}-${end}`);
+  } else if (num === '60') {
+    // 60W → ทั้ง GN และ GU
+    const baseGN = `${powerCode}${motorCode}${num}${suffixGN}-${phase}${term}`;
+    const baseGU = `${powerCode}${motorCode}${num}${suffixGU}-${phase}${term}`;
+    const endGN = `${powerCode}${suffixGN}${acRatio}${gearCode}`;
+    const endGU = `${powerCode}${suffixGU}${acRatio}${gearCode}`;
+    modelCodes.push(`${baseGN}-${endGN}`);
+    modelCodes.push(`${baseGU}-${endGU}`);
   } else {
-  if (['60', '90'].includes(num)) {
-    base = `${powerCode}${motorCode}${num}GU-${phase}`;
-  } else if (['120', '140', '200'].includes(num)) {
-    base = `${powerCode}${motorCode}${num}GU-${phase}${term}`;
-  } else {
-    const suffix = motorCode === 'IK' ? 'RGU' : 'GU';
-    base = `${powerCode}${motorCode}${num}${suffix}-${phase}F${term}`;
+    // 90W, 120W, 140W, 200W → GU เท่านั้น
+    const base = `${powerCode}${motorCode}${num}${suffixGU}-${phase}${term}`;
+    const end = `${powerCode}${suffixGU}${acRatio}${gearCode}`;
+    modelCodes.push(`${base}-${end}`);
   }
 
-  const prefixes = num === '60' ? ['GN', 'GU'] : ['GN', 'GU'];
-  const list = prefixes.map(pref => `${powerCode}${pref}${acRatio}${gearCode}`);
-  return list.map(item => `${base}-${item}`);
+  return modelCodes;
 }
 }
 // Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
