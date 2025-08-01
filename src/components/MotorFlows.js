@@ -85,7 +85,7 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   const motorMap = {
     'Induction Motor': 'IK',
     'Reversible Motor': 'RK',
-    'Variable Speed Motor': 'IK{num}'
+    'Variable Speed Motor': 'IK'
   };
   const powerMap = {
     '10W AC Motor': '2',
@@ -110,7 +110,7 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
 
   if (['10', '15'].includes(num)) {
   base = `${powerCode}${motorCode}${num}GN-${phase}`;
-  } else if (['25', '40'].includes(num)) {
+  } else if (['25', '40', '60'].includes(num)) {
   base = `${powerCode}${motorCode}${num}GN-${phase}${term}`;
   } else {
   if (['60', '90'].includes(num)) {
@@ -118,11 +118,11 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   } else if (['120', '140', '200'].includes(num)) {
     base = `${powerCode}${motorCode}${num}GU-${phase}${term}`;
   } else {
-    const suffix = motorCode === 'IK{num}' ? 'RGU' : 'GU';
-    base = `${powerCode}${motorCode}${suffix}-${phase}F${term}`;
+    const suffix = motorCode === 'IK' ? 'RGU' : 'GU';
+    base = `${powerCode}${motorCode}${num}${suffix}-${phase}F${term}`;
   }
 
-  const prefixes = num === '60' ? ['GN', 'GU'] : ['GU'];
+  const prefixes = num === '60' ? ['GN', 'GU'] : ['GN', 'GU'];
   const list = prefixes.map(pref => `${powerCode}${pref}${acRatio}${gearCode}`);
   return list.map(item => `${base}-${item}`);
 }
