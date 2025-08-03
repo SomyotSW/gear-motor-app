@@ -251,41 +251,42 @@ const handleDownload = () => {
         )}
 
         {modelCodeList.length > 0 && !showForm && (
-          <div className="text-center mt-10 space-y-4">
-            <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
-            {modelCodeList.map((code, idx) => (
-              <div key={idx} className="flex justify-center items-center space-x-2">
-                <input
-                  type="radio"
-                  name="modelSelect"
-                  value={code}
-                  checked={selectedModel === code}
-                  onChange={() => setSelectedModel(code)}
-                />
-                <label>{code}</label>
-              </div>
-	            <div className="mt-10 flex justify-center">
-                          {selectedModel && (() => {
-                        let gifSrc = null;
-                        if (selectedModel.endsWith('K')) gifSrc = "assets/3Dgif/K3D.gif";
-                        else if (selectedModel.endsWith('KB')) gifSrc = "assets/3Dgif/KB3D.gif";
-                        else if (selectedModel.endsWith('RC')) gifSrc = "assets/3Dgif/RC3D.gif";
-                        else if (selectedModel.endsWith('RT')) gifSrc = "assets/3Dgif/RT3D.gif";
+  <div className="text-center mt-10 space-y-4">
+    <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
+    
+    {modelCodeList.map((code, idx) => (
+      <div key={idx} className="flex justify-center items-center space-x-2">
+        <input
+          type="radio"
+          name="modelSelect"
+          value={code}
+          checked={selectedModel === code}
+          onChange={() => setSelectedModel(code)}
+        />
+        <label>{code}</label>
+      </div>
+    ))}
 
-                        return (
-			<>
-			{gifSrc && (
-                      <img
-                    src={gifSrc}
-                    alt="Gear 3D Preview"
-                    className="w-[200px] sm:w-[300px] md:w-[400px] lg:w-[500px] xl:w-[600px] 2xl:w-[700px] h-auto"
-                      />
-        )}
-      </>
-    );
-  })()}
-</div>
-            ))}
+    {/* ✅ แสดง GIF แยกต่างหากด้านล่าง ไม่อยู่ใน .map() */}
+    <div className="mt-10 flex justify-center">
+      {selectedModel && (() => {
+        let gifSrc = null;
+        if (selectedModel.endsWith('K')) gifSrc = "assets/3Dgif/K3D.gif";
+        else if (selectedModel.endsWith('KB')) gifSrc = "assets/3Dgif/KB3D.gif";
+        else if (selectedModel.endsWith('RC')) gifSrc = "assets/3Dgif/RC3D.gif";
+        else if (selectedModel.endsWith('RT')) gifSrc = "assets/3Dgif/RT3D.gif";
+
+        return gifSrc && (
+          <img
+            src={gifSrc}
+            alt="Gear 3D Preview"
+            className="w-[200px] sm:w-[300px] md:w-[400px] lg:w-[500px] xl:w-[600px] 2xl:w-[700px] h-auto"
+          />
+        );
+      })()}
+    </div>
+  </div>
+)}
 
             <button
               onClick={() => setShowForm(true)}
