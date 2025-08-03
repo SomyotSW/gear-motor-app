@@ -10,6 +10,11 @@ import KB3D from './assets/3Dgif/KB3D.gif';
 import RC3D from './assets/3Dgif/RC3D.gif';
 import RT3D from './assets/3Dgif/RT3D.gif';
 
+import F2A from './assets/hypoid/F2A.gif';
+import F2H from './assets/hypoid/F2H.gif';
+import F3A from './assets/hypoid/F3A.gif';
+import F3H from './assets/hypoid/F3H.gif';
+
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modelCodeList, setModelCodeList] = useState([]);
@@ -196,8 +201,8 @@ const handleDownload = () => {
       <div className="relative z-10 p-6 text-gray-900">
         {!selectedProduct && (
           <>
-            <h1 className="text-5xl text-white font-bold mb-5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-              SAS Transmission Request 3D file
+            <h1 className="text-5xl text-blue font-bold mb-5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+              SAS 3D.STEP
             </h1>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {productList.map((p) => (

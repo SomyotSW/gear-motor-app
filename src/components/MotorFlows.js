@@ -49,6 +49,21 @@ import InductionImg from '../assets/ac/induction.png';
 import ReversibleImg from '../assets/ac/reversible.png';
 import VariableImg from '../assets/ac/variable.png';
 
+import F2Img from '../assets/hypoid/F2.png';
+import F3Img from '../assets/hypoid/F3.png';
+import F23HImg from '../assets/hypoid/F23H.png';
+import F23AImg from '../assets/hypoid/F23A.png';
+import LBImg from '../assets/hypoid/LB.png';
+import LFImg from '../assets/hypoid/LF.png';
+import LLImg from '../assets/hypoid/LL.png';
+import LRImg from '../assets/hypoid/LR.png';
+import RBImg from '../assets/hypoid/RB.png';
+import RFImg from '../assets/hypoid/RF.png';
+import RLImg from '../assets/hypoid/RL.png';
+import RRImg from '../assets/hypoid/RR.png';
+
+
+
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
   { name: 'DC Gear Motor', image: DCImg },
@@ -428,9 +443,21 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {!type && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Gear Motor Type</h3>
-          <div className="flex gap-4">
-            <button onClick={() => update('type', 'F2')} className="button">F2</button>
-            <button onClick={() => update('type', 'F3')} className="button">F3</button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'F2 Series', img: F2Img },
+              { label: 'F3 Series', img: F3Img }
+            ].map(({ label, img }) => (
+              <button
+  		key={label}
+  		onClick={() => update('type', label)}
+  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+             		transform hover:-translate-y-1 active:scale-105"
+	             >
+  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
+  		<span className="text-sm font-semibold">{label}</span>
+                             </button>
+            ))}
           </div>
         </div>
       )}
@@ -439,9 +466,21 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {type && !gearType && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Gear Type</h3>
-          <div className="flex gap-4">
-            <button onClick={() => update('gearType', 'H')} className="button">Hollow Shaft (H)</button>
-            <button onClick={() => update('gearType', 'A')} className="button">Solid Shaft (A)</button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'A', img: F23AImg },
+              { label: 'H', img: F23HImg }
+            ].map(({ label, img }) => (
+              <button
+  		key={label}
+  		onClick={() => update('gearType', label)}
+  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+             		transform hover:-translate-y-1 active:scale-105"
+	             >
+  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
+  		<span className="text-sm font-semibold">{label}</span>
+                             </button>
+            ))}
           </div>
         </div>
       )}
@@ -462,11 +501,29 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {type && ratio && !direction && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Junction Box Direction</h3>
-          <div className="grid grid-cols-4 gap-2">
-            {["RL","RR","RF","RB","LL","LR","LF","LB"].map(d => (
-              <button key={d} onClick={() => update('direction', d)} className="button">{d}</button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'LB', img: LBImg },
+              { label: 'LF', img: LFImg },
+              { label: 'LL', img: LLImg },
+              { label: 'LR', img: LRImg },
+              { label: 'RB', img: RBImg },
+              { label: 'RF', img: RFImg },
+              { label: 'RL', img: RLImg },
+              { label: 'RR', img: RRImg }
+            ].map(({ label, img }) => (
+              <button
+  		key={label}
+  		onClick={() => update('direction', label)}
+  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+             		transform hover:-translate-y-1 active:scale-105"
+	             >
+  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
+  		<span className="text-sm font-semibold">{label}</span>
+                             </button>
             ))}
           </div>
+
         </div>
       )}
 
