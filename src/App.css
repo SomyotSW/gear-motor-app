@@ -36,3 +36,40 @@
     transform: rotate(360deg);
   }
 }
+.product-button {
+  background: linear-gradient(to right, #1366d6, #38b6ff);
+  color: white;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: background 0.3s, transform 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.product-button:hover {
+  background: linear-gradient(to right, #1058ba, #1ca1e8);
+  transform: translateY(-3px);
+}
+
+/* ✅ กล่องสินค้าแบบหรูหรา (Product Card) */
+.card {
+  border-radius: 16px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+}
+
+/* ✅ ปุ่มในกล่องแบบโฮเวอร์ */
+.card button {
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.card button:hover {
+  transform: scale(1.03);
+}
