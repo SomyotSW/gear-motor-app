@@ -264,6 +264,23 @@ const handleDownload = () => {
                 />
                 <label>{code}</label>
               </div>
+	            <div className="mt-10 flex justify-center">
+                          {selectedModel && (() => {
+                        let gifSrc = null;
+                        if (selectedModel.endsWith('K')) gifSrc = "assets/3Dgif/K3D.gif";
+                        else if (selectedModel.endsWith('KB')) gifSrc = "assets/3Dgif/KB3D.gif";
+                        else if (selectedModel.endsWith('RC')) gifSrc = "assets/3Dgif/RC3D.gif";
+                        else if (selectedModel.endsWith('RT')) gifSrc = "assets/3Dgif/RT3D.gif";
+
+                        return gifSrc && (
+                      <img
+                    src={gifSrc}
+                    alt="Gear 3D Preview"
+                    className="w-[200px] sm:w-[300px] md:w-[400px] lg:w-[500px] xl:w-[600px] 2xl:w-[700px] h-auto"
+                      />
+                        );
+                          })()}
+                            </div>
             ))}
 
             <button
