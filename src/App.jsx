@@ -249,25 +249,26 @@ const handleDownload = () => {
             {renderRKFSFlow(rkfsState, rkfsState)}
           </>
         )}
-
         {modelCodeList.length > 0 && !showForm && (
-  <div className="text-center mt-10 space-y-4">
-    <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
-    
-    {modelCodeList.map((code, idx) => (
-      <div key={idx} className="flex justify-center items-center space-x-2">
-        <input
-          type="radio"
-          name="modelSelect"
-          value={code}
-          checked={selectedModel === code}
-          onChange={() => setSelectedModel(code)}
-        />
-        <label>{code}</label>
-      </div>
-    ))}
+  <>
+    <div className="text-center mt-10 space-y-4">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
+      
+      {modelCodeList.map((code, idx) => (
+        <div key={idx} className="flex justify-center items-center space-x-2">
+          <input
+            type="radio"
+            name="modelSelect"
+            value={code}
+            checked={selectedModel === code}
+            onChange={() => setSelectedModel(code)}
+          />
+          <label>{code}</label>
+        </div>
+      ))}
+    </div>
 
-    {/* ✅ แสดง GIF แยกต่างหากด้านล่าง ไม่อยู่ใน .map() */}
+    {/* ✅ แสดง GIF แยกออกมา และห่อด้วย tag ครบ */}
     <div className="mt-10 flex justify-center">
       {selectedModel && (() => {
         let gifSrc = null;
@@ -285,9 +286,8 @@ const handleDownload = () => {
         );
       })()}
     </div>
-  </div>
+  </>
 )}
-
             <button
               onClick={() => setShowForm(true)}
               disabled={!selectedModel || isDownloading}
