@@ -272,15 +272,19 @@ const handleDownload = () => {
                         else if (selectedModel.endsWith('RC')) gifSrc = "assets/3Dgif/RC3D.gif";
                         else if (selectedModel.endsWith('RT')) gifSrc = "assets/3Dgif/RT3D.gif";
 
-                        return gifSrc && (
+                        return (
+			<>
+			{gifSrc && (
                       <img
                     src={gifSrc}
                     alt="Gear 3D Preview"
                     className="w-[200px] sm:w-[300px] md:w-[400px] lg:w-[500px] xl:w-[600px] 2xl:w-[700px] h-auto"
                       />
-                        );
-                          })()}
-                            </div>
+        )}
+      </>
+    );
+  })()}
+</div>
             ))}
 
             <button
