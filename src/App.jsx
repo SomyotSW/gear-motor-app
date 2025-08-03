@@ -250,25 +250,23 @@ const handleDownload = () => {
           </>
         )}
         {modelCodeList.length > 0 && !showForm && (
-  <>
-    <div className="text-center mt-10 space-y-4">
-      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
-      
-      {modelCodeList.map((code, idx) => (
-        <div key={idx} className="flex justify-center items-center space-x-2">
-          <input
-            type="radio"
-            name="modelSelect"
-            value={code}
-            checked={selectedModel === code}
-            onChange={() => setSelectedModel(code)}
-          />
-          <label>{code}</label>
-        </div>
-      ))}
-    </div>
+  <div className="text-center mt-10 space-y-4">
+    <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
+    
+    {modelCodeList.map((code, idx) => (
+      <div key={idx} className="flex justify-center items-center space-x-2">
+        <input
+          type="radio"
+          name="modelSelect"
+          value={code}
+          checked={selectedModel === code}
+          onChange={() => setSelectedModel(code)}
+        />
+        <label>{code}</label>
+      </div>
+    ))}
 
-    {/* ✅ แสดง GIF แยกออกมา และห่อด้วย tag ครบ */}
+    {/* ✅ GIF Section */}
     <div className="mt-10 flex justify-center">
       {selectedModel && (() => {
         let gifSrc = null;
@@ -286,24 +284,26 @@ const handleDownload = () => {
         );
       })()}
     </div>
-  </>
+
+    {/* ✅ Buttons */}
+    <button
+      onClick={() => setShowForm(true)}
+      disabled={!selectedModel || isDownloading}
+      className={`mt-4 px-5 py-2 rounded text-white transition ${
+        isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'
+      }`}
+    >
+      {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
+    </button>
+
+    <button
+      onClick={handleBack}
+      className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+    >
+      กลับไปเลือกใหม่
+    </button>
+  </div>
 )}
-            <button
-              onClick={() => setShowForm(true)}
-              disabled={!selectedModel || isDownloading}
-              className={`mt-4 px-5 py-2 rounded text-white transition ${
-                isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'
-              }`}
-            >
-              {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
-            </button>
-
-            <button onClick={handleBack} className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
-              กลับไปเลือกใหม่
-            </button>
-          </div>
-        )}
-
         {showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
             <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
