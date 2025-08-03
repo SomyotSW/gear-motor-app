@@ -5,6 +5,11 @@ import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import K3D from './assets/3Dgif/K3D.gif';
+import KB3D from './assets/3Dgif/KB3D.gif';
+import RC3D from './assets/3Dgif/RC3D.gif';
+import RT3D from './assets/3Dgif/RT3D.gif';
+
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modelCodeList, setModelCodeList] = useState([]);
@@ -274,10 +279,10 @@ const handleDownload = () => {
     <div className="mt-10 flex justify-center">
       {selectedModel && (() => {
         let gifSrc = null;
-        if (selectedModel.endsWith('K')) gifSrc = "assets/3Dgif/K3D.gif";
-        else if (selectedModel.endsWith('KB')) gifSrc = "assets/3Dgif/KB3D.gif";
-        else if (selectedModel.endsWith('RC')) gifSrc = "assets/3Dgif/RC3D.gif";
-        else if (selectedModel.endsWith('RT')) gifSrc = "assets/3Dgif/RT3D.gif";
+        if (selectedModel.endsWith('K')) gifSrc = K3D;
+        else if (selectedModel.endsWith('KB')) gifSrc = KB3D;
+        else if (selectedModel.endsWith('RC')) gifSrc = RC3D;
+        else if (selectedModel.endsWith('RT')) gifSrc = RT3D;
 
         return gifSrc && (
           <img
