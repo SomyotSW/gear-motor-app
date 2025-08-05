@@ -646,9 +646,8 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     S: '/assets/rkfs/KSMT.png',
     F: '/assets/rkfs/FMT.png'
   };
-
-  return (
-        <div className="space-y-6 mt-6">
+ return (
+    <div className="space-y-6 mt-6">
       {/* Step 1: Select Series (Clickable Images) */}
       {!rkfsSeries && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -665,12 +664,12 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             <img src={require('../assets/rkfs/4Series/1F.png')} alt="F Series" className="w-full rounded-xl" />
           </button>
         </div>
-      )
+      )}
 
-      /* Step 2–10 อยู่ถัดจากนี้ ไม่เปลี่ยนแปลง */
+      {/* Step 2–10 อยู่ถัดจากนี้ ไม่เปลี่ยนแปลง */}
+    </div>
   );
 }
-
       {/* Step 2: Select Design */}
       {rkfsSeries && !rkfsDesign && (
         <div className="flex flex-wrap gap-3">
