@@ -649,32 +649,35 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
   return (
     <div className="space-y-6 mt-6">
-      {/* Step 1: Select Series */}
-      {!rkfsSeries && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[{ label: 'R Series', value: 'R' }, { label: 'K Series', value: 'K' }, { label: 'S Series', value: 'S' }, { label: 'F Series', value: 'F' }].map(({ label, value }) => (
-            <button key={value} onClick={() => update('rkfsSeries', value)} className="bg-white rounded-xl p-3 shadow-md hover:shadow-xl">
-              <span className="font-semibold">{label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Step 1.5: Show Series Header Image */}
-      {rkfsSeries && !rkfsDesign && (
-        <div className="flex justify-center mt-4">
-          <img
-            src={
-              rkfsSeries === 'R' ? require('../assets/rkfs/4Series/1R.png') :
-              rkfsSeries === 'K' ? require('../assets/rkfs/4Series/1K.png') :
-              rkfsSeries === 'F' ? require('../assets/rkfs/4Series/1F.png') :
-              rkfsSeries === 'S' ? require('../assets/rkfs/4Series/1S.png') : ''
-            }
-            alt={`${rkfsSeries} Series`}
-            className="w-full max-w-md rounded-xl shadow"
-          />
-        </div>
-      )}
+      {/* Step 1: เลือก Series โดยคลิกภาพ */}
+{!rkfsSeries && (
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <img
+      src={R1Img}
+      alt="R Series"
+      onClick={() => update('rkfsSeries', 'R')}
+      className="cursor-pointer rounded-xl shadow hover:shadow-xl transition duration-200"
+    />
+    <img
+      src={K1Img}
+      alt="K Series"
+      onClick={() => update('rkfsSeries', 'K')}
+      className="cursor-pointer rounded-xl shadow hover:shadow-xl transition duration-200"
+    />
+    <img
+      src={F1Img}
+      alt="F Series"
+      onClick={() => update('rkfsSeries', 'F')}
+      className="cursor-pointer rounded-xl shadow hover:shadow-xl transition duration-200"
+    />
+    <img
+      src={S1Img}
+      alt="S Series"
+      onClick={() => update('rkfsSeries', 'S')}
+      className="cursor-pointer rounded-xl shadow hover:shadow-xl transition duration-200"
+    />
+  </div>
+)}
 
       {/* Step 2: Select Design */}
       {rkfsSeries && !rkfsDesign && (
