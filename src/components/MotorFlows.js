@@ -14,10 +14,40 @@ import PPlanetaryImg from '../assets/pplanetary/pplanetary.png';
 import DriverImg from '../assets/driver/driver.png';
 import SRVImg from '../assets/srv/srv.png';
 
-import RImg from '../assets/rkfs/4Series/R.png';
-import KImg from '../assets/rkfs/4Series/K.png';
-import FImg from '../assets/rkfs/4Series/F.png';
-import SImg from '../assets/rkfs/4Series/S.png';
+import R1Img from '../assets/rkfs/4Series/1R.png';
+import K1Img from '../assets/rkfs/4Series/1K.png';
+import F1Img from '../assets/rkfs/4Series/1F.png';
+import S1Img from '../assets/rkfs/4Series/1S.png';
+
+import RImg from '../assets/rkfs/RF.png';
+import RFImg from '../assets/rkfs/RF.png';
+import RMImg from '../assets/rkfs/RM.png';
+
+import KImg from '../assets/rkfs/K.png';
+import KAImg from '../assets/rkfs/KA.png';
+import KABImg from '../assets/rkfs/KAB.png';
+import KAFImg from '../assets/rkfs/KAF.png';
+import KATImg from '../assets/rkfs/KAT.png';
+import KAZImg from '../assets/rkfs/KAZ.png';
+import KFImg from '../assets/rkfs/KF.png';
+import K..AImg from '../assets/rkfs/K..A.png';
+import K..BImg from '../assets/rkfs/K..B.png';
+import K..A+BImg from '../assets/rkfs/K..A+B.png';
+
+import SImg from '../assets/rkfs/S.png';
+import S..AImg from '../assets/rkfs/S..A.png';
+import S..BImg from '../assets/rkfs/S..B.png';
+import S..A+BImg from '../assets/rkfs/S..A+B.png';
+import SAImg from '../assets/rkfs/SA.png';
+import SAFImg from '../assets/rkfs/SAF.png';
+import SATImg from '../assets/rkfs/SAT.png';
+import SAZImg from '../assets/rkfs/SAZ.png';
+
+import FImg from '../assets/rkfs/F.png';
+import FAImg from '../assets/rkfs/FA.png';
+import FAFImg from '../assets/rkfs/FAF.png';
+import FAZImg from '../assets/rkfs/FAZ.png';
+import FFImg from '../assets/rkfs/FF.png';
 
 import GBKImg from '../assets/ac/Gearhead/K.png';
 import GBKBImg from '../assets/ac/Gearhead/KB.png';
@@ -61,7 +91,6 @@ import RBImg from '../assets/hypoid/RB.png';
 import RFImg from '../assets/hypoid/RF.png';
 import RLImg from '../assets/hypoid/RL.png';
 import RRImg from '../assets/hypoid/RR.png';
-
 
 
 export const productList = [
@@ -583,111 +612,266 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
 
 
 export function renderRKFSFlow(state, setState, onConfirm) {
-  const { rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = state;
+  const {
+    rkfsSeries,
+    rkfsDesign,
+    rkfsSize,
+    rkfsMotorType,
+    rkfsMotorPower,
+    rkfsPole,
+    rkfsRatio,
+    rkfsMounting,
+    rkfsPosition,
+    rkfsPositionSub
+  } = state;
+
   const update = (key, value) => {
     const setter = setState[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
     if (setter) setter(state[key] === value ? null : value);
   };
-  const modelCode = rkfsDesign && rkfsSize && rkfsPower && rkfsMounting
-    ? `${rkfsDesign}-${rkfsSize}-${rkfsPower}-${rkfsMounting}`
-    : '';
+
+  const mountingImageMap = {
+    R: '/assets/rkfs/RMT.png',
+    K: '/assets/rkfs/KSMT.png',
+    S: '/assets/rkfs/KSMT.png',
+    F: '/assets/rkfs/FMT.png'
+  };
 
   return (
     <div className="space-y-6 mt-6">
-      {/* Design Selection */}
-      {!rkfsDesign && (
+      {/* Step 1: Series */}
+      {!rkfsSeries && (
         <div>
-          <h3 className="font-semibold mb-2">4 Series Gear Motor</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { label: 'R Series', img: RImg },
-              { label: 'K Series', img: KImg },
-              { label: 'S Series', img: SImg },
-              { label: 'F Series', img: FImg }
-            ].map(({ label, img }) => (
+          <h3 className="font-semibold mb-2">เลือก Series</h3>
+          <div className="flex flex-wrap gap-3">
+            {['R', 'K', 'S', 'F'].map(series => (
               <button
-                key={label}
-                onClick={() => update('rkfsDesign', label)}
-                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition"
+                key={series}
+                onClick={() => update('rkfsSeries', series)}
+                className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded"
               >
-                <img src={img} alt={label} className="h-48 mb-1 object-contain" />
-                <span className="text-sm font-semibold">{label}</span>
+                {series} Series
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Design Selection */}
+      {/* Step 2: Gear Design */}
+      {rkfsSeries && !rkfsDesign && (
+        <div>
+          <h3 className="font-semibold mb-2">เลือก Gear Design</h3>
+          <div className="flex flex-wrap gap-3">
+            {(rkfsSeries === 'R' && ['R', 'RF', 'RM']) ||
+             (rkfsSeries === 'K' && ['K', 'KA', 'KAB', 'KAF', 'KAT', 'KAZ', 'KF']) ||
+             (rkfsSeries === 'F' && ['F', 'FA', 'FAF', 'FAZ', 'FF']) ||
+             (rkfsSeries === 'S' && ['S', 'SA', 'SAF', 'SAT', 'SAZ'])
+            ).map(design => (
+              <button
+                key={design}
+                onClick={() => update('rkfsDesign', design)}
+                className="bg-blue-300 hover:bg-blue-500 px-4 py-2 rounded"
+              >
+                {design}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Size */}
       {rkfsDesign && !rkfsSize && (
-        <div className="flex flex-wrap gap-3">
-          {['FOOT-MOUNTED', 'FLANGE-MOUNTED', 'FOOT&FLANGE', 'RM DESIGN'].map(size => (
-            <button
-              key={size}
-              onClick={() => update('rkfsSize', size)}
-              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
-            >
-              Size {size}
-            </button>
-          ))}
+        <div>
+          <h3 className="font-semibold mb-2">เลือก Size</h3>
+          <div className="flex flex-wrap gap-3">
+            {(rkfsSeries === 'R' && ['17','27','37','47','57','67','77','87','97','107','137','147','167']) ||
+             (rkfsSeries === 'K' && ['37','47','57','67','77','87','97','107','127','157','167','187']) ||
+             (rkfsSeries === 'S' && ['37','47','57','67','77','87','97']) ||
+             (rkfsSeries === 'F' && ['37','47','57','67','77','87','97','107','127','157','167','187'])
+            .map(size => (
+              <button
+                key={size}
+                onClick={() => update('rkfsSize', size)}
+                className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded"
+              >
+                {size}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Power Selection */}
-      {rkfsSize && !rkfsPower && (
-        <div className="flex flex-wrap gap-3">
-          {['0.2kW', '0.4kW', '0.75kW', '1.5kW', '2.2kW'].map(power => (
-            <button
-              key={power}
-              onClick={() => update('rkfsPower', power)}
-              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
-            >
-              {power}
-            </button>
-          ))}
+      {/* Step 4: Motor Type */}
+      {rkfsSize && !rkfsMotorType && (
+        <div>
+          <h3 className="font-semibold mb-2">เลือก Motor Type</h3>
+          <div className="flex flex-wrap gap-3">
+            {['YE3', 'YE4', 'YEJ', 'YVP', 'YVPEJ', 'YB'].map(type => (
+              <button
+                key={type}
+                onClick={() => update('rkfsMotorType', type)}
+                className="bg-blue-300 hover:bg-blue-500 px-4 py-2 rounded"
+              >
+                {type}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Mounting Selection */}
-      {rkfsPower && !rkfsMounting && (
-        <div className="flex flex-wrap gap-3">
-          {['Foot', 'Flange', 'Both'].map(mount => (
-            <button
-              key={mount}
-              onClick={() => update('rkfsMounting', mount)}
-              className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded"
-            >
-              {mount}
-            </button>
-          ))}
+      {/* Step 5: Motor Power */}
+      {rkfsMotorType && !rkfsMotorPower && (
+        <div>
+          <h3 className="font-semibold mb-2">เลือกกำลังมอเตอร์ (kW)</h3>
+          <div className="flex flex-wrap gap-3">
+            {['0.18','0.25','0.37','0.55','0.75','1.1','1.5','2.2','3','4','5.5','7.5','9.2','11','15','18.5','22','30','37','45','55','75','90','110','132','160'].map(power => (
+              <button
+                key={power}
+                onClick={() => update('rkfsMotorPower', power)}
+                className="bg-blue-500 text-white font-bold shadow px-4 py-2 rounded-xl"
+              >
+                {power} kW
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Final Summary */}
-      {rkfsMounting && (
-        <div className="text-center space-y-4">
-          <p className="text-lg font-semibold">Model Code: {modelCode}</p>
+      {/* Step 6: Pole */}
+      {rkfsMotorPower && !rkfsPole && (
+        <div>
+          <h3 className="font-semibold mb-2">เลือกจำนวน Pole</h3>
+          <div className="flex flex-wrap gap-3">
+            {['2P', '4P', '6P', '8P'].map(pole => (
+              <button
+                key={pole}
+                onClick={() => update('rkfsPole', pole)}
+                className="bg-blue-500 text-white font-bold shadow px-4 py-2 rounded-xl"
+              >
+                {pole}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 7: Ratio */}
+      {rkfsPole && !rkfsRatio && (
+  <div>
+    <h3 className="font-semibold mb-2">เลือกอัตราทดเกียร์ (Gear Ratio)</h3>
+    <div className="flex flex-wrap gap-3">
+
+      {(rkfsDesign.startsWith('R') && ['17','27','37','47','57','67','77','87','97','107','137','147','167'].includes(rkfsSize) && [
+        '15.33', '20.45', '30.55', '41.12', '55.23', '73.6', '92.3', '110.5', '130.7', '160.3', '190.8', '220.6'
+      ]) ||
+
+      (rkfsDesign.startsWith('K') && ['37','47','57','67','77','87','97','107','127','157','167','187'].includes(rkfsSize) && [
+        '18.5', '25.5', '35.3', '45.8', '60.4', '75.6', '91.3', '110.2', '135.7', '160.9', '180.5'
+      ]) ||
+
+      (rkfsDesign.startsWith('F') && ['37','47','57','67','77','87','97','107','127','157','167','187'].includes(rkfsSize) && [
+        '16.8', '22.4', '28.5', '35.9', '42.6', '50.3', '60.1', '70.8', '85.3', '100.2', '120.6'
+      ]) ||
+
+      (rkfsDesign.startsWith('S') && ['37','47','57','67','77','87','97'].includes(rkfsSize) && [
+        '14.2', '18.6', '22.3', '27.7', '34.6', '40.1', '50.5', '60.2', '75.3'
+      ])).map((ratio) => (
+        <button
+          key={ratio}
+          onClick={() => update('rkfsRatio', ratio)}
+          className="bg-blue-600 text-white font-bold shadow px-4 py-2 rounded-xl hover:bg-blue-700"
+        >
+          i = {ratio}
+        </button>
+      ))}
+
+    </div>
+  </div>
+)}
+
+      {/* Step 8: Mounting */}
+      {rkfsRatio && !rkfsMounting && (
+        <div>
+          <h3 className="font-semibold mb-2">เลือกรูปแบบ Mounting</h3>
+          <div className="flex justify-center">
+            <img
+              src={mountingImageMap[rkfsSeries]}
+              alt="Mounting"
+              className="w-full max-w-md rounded-xl shadow"
+            />
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 mt-4">
+            {['M1', 'M2', 'M3', 'M4', 'M5', 'M6'].map(mount => (
+              <button
+                key={mount}
+                onClick={() => update('rkfsMounting', mount)}
+                className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
+              >
+                {mount}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 9: Terminal Box + Sub */}
+      {rkfsMounting && !rkfsPosition && (
+        <div>
+          <h3 className="font-semibold mb-2">เลือกตำแหน่งกล่องสายไฟ (Terminal Box)</h3>
+          <div className="flex flex-wrap gap-3">
+            {['0', '90', '180', '270'].map(pos => (
+              <button
+                key={pos}
+                onClick={() => update('rkfsPosition', pos)}
+                className="bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
+              >
+                {pos}°
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {rkfsPosition && !rkfsPositionSub && (
+        <div>
+          <h3 className="font-semibold mb-2">เลือกตำแหน่งย่อย (เพิ่มเติม)</h3>
+          <div className="flex flex-wrap gap-3">
+            {['X', '2', '3', '4'].map(sub => (
+              <button
+                key={sub}
+                onClick={() => update('rkfsPositionSub', sub)}
+                className="bg-gradient-to-br from-blue-600 to-blue-900 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 10: Final Summary */}
+      {rkfsPositionSub && (
+        <div className="text-center mt-6 space-y-4">
+          <h3 className="text-lg font-bold">Model Code</h3>
+          <p className="text-xl text-blue-700 font-semibold">
+            {`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`}
+          </p>
           <button
-            onClick={() => onConfirm(modelCode)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => onConfirm(`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`)}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow"
           >
-            เสร็จสิ้น
+            ✅ เสร็จสิ้น
           </button>
           <a
-            href={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${modelCode}.STEP`}
+            href={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}.STEP`}
+            className="inline-block bg-green-600 text-white font-bold px-5 py-2 rounded-lg hover:bg-green-700 shadow"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
-            ⬇ Download 3D File
+            ⬇ ดาวน์โหลด 3D Model
           </a>
         </div>
       )}
-
-      {/* Demo GIF */}
-      <div className="flex justify-center mt-10">
-        <img src={RKFSImg} alt="RKFS Series" className="w-full max-w-[600px]" />
-      </div>
     </div>
   );
 }
