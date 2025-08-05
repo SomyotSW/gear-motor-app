@@ -19,7 +19,7 @@ import K1Img from '../assets/rkfs/4Series/1K.png';
 import F1Img from '../assets/rkfs/4Series/1F.png';
 import S1Img from '../assets/rkfs/4Series/1S.png';
 
-import RImg from '../assets/rkfs/RF.png';
+import RImg from '../assets/rkfs/R.png';
 import RFImg from '../assets/rkfs/RF.png';
 import RMImg from '../assets/rkfs/RM.png';
 
