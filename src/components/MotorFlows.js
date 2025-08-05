@@ -648,36 +648,28 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   };
 
   return (
-    <div className="space-y-6 mt-6">
-      {/* Step 1: เลือก Series โดยคลิกภาพ */}
-{!rkfsSeries && (
-  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-    <img
-      src={R1Img}
-      alt="R Series"
-      onClick={() => update('rkfsSeries', 'R')}
-      className="cursor-pointer rounded-xl shadow hover:shadow-xl transition duration-200"
-    />
-    <img
-      src={K1Img}
-      alt="K Series"
-      onClick={() => update('rkfsSeries', 'K')}
-      className="cursor-pointer rounded-xl shadow hover:shadow-xl transition duration-200"
-    />
-    <img
-      src={F1Img}
-      alt="F Series"
-      onClick={() => update('rkfsSeries', 'F')}
-      className="cursor-pointer rounded-xl shadow hover:shadow-xl transition duration-200"
-    />
-    <img
-      src={S1Img}
-      alt="S Series"
-      onClick={() => update('rkfsSeries', 'S')}
-      className="cursor-pointer rounded-xl shadow hover:shadow-xl transition duration-200"
-    />
-  </div>
-)}
+        <div className="space-y-6 mt-6">
+      {/* Step 1: Select Series (Clickable Images) */}
+      {!rkfsSeries && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <button onClick={() => update('rkfsSeries', 'R')} className="rounded-xl shadow hover:shadow-lg">
+            <img src={require('../assets/rkfs/4Series/1R.png')} alt="R Series" className="w-full rounded-xl" />
+          </button>
+          <button onClick={() => update('rkfsSeries', 'K')} className="rounded-xl shadow hover:shadow-lg">
+            <img src={require('../assets/rkfs/4Series/1K.png')} alt="K Series" className="w-full rounded-xl" />
+          </button>
+          <button onClick={() => update('rkfsSeries', 'S')} className="rounded-xl shadow hover:shadow-lg">
+            <img src={require('../assets/rkfs/4Series/1S.png')} alt="S Series" className="w-full rounded-xl" />
+          </button>
+          <button onClick={() => update('rkfsSeries', 'F')} className="rounded-xl shadow hover:shadow-lg">
+            <img src={require('../assets/rkfs/4Series/1F.png')} alt="F Series" className="w-full rounded-xl" />
+          </button>
+        </div>
+      )
+
+      /* Step 2–10 อยู่ถัดจากนี้ ไม่เปลี่ยนแปลง */
+  );
+}
 
       {/* Step 2: Select Design */}
       {rkfsSeries && !rkfsDesign && (
