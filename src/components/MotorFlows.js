@@ -88,7 +88,7 @@ import LFImg from '../assets/hypoid/LF.png';
 import LLImg from '../assets/hypoid/LL.png';
 import LRImg from '../assets/hypoid/LR.png';
 import RBImg from '../assets/hypoid/RB.png';
-import RFImg from '../assets/hypoid/RF.png';
+import HRFImg from '../assets/hypoid/HRF.png';
 import RLImg from '../assets/hypoid/RL.png';
 import RRImg from '../assets/hypoid/RR.png';
 
@@ -537,7 +537,7 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
               { label: 'LL', img: LLImg },
               { label: 'LR', img: LRImg },
               { label: 'RB', img: RBImg },
-              { label: 'RF', img: RFImg },
+              { label: 'RF', img: HRFImg },
               { label: 'RL', img: RLImg },
               { label: 'RR', img: RRImg }
             ].map(({ label, img }) => (
