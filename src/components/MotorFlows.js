@@ -613,22 +613,32 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
 
 export function renderRKFSFlow(state, setState, onConfirm) {
   const {
-    rkfsSeries,
-    rkfsDesign,
-    rkfsSize,
-    rkfsMotorType,
-    rkfsMotorPower,
-    rkfsPole,
-    rkfsRatio,
-    rkfsMounting,
-    rkfsPosition,
-    rkfsPositionSub
+    rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
+    rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub
   } = state;
 
   const update = (key, value) => {
     const setter = setState[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
     if (setter) setter(state[key] === value ? null : value);
   };
+
+  const designOptions = {
+    R: ['R', 'RF', 'RM'],
+    K: ['K', 'KA', 'KAB', 'KAF', 'KAT', 'KAZ', 'KF'],
+    F: ['F', 'FA', 'FAF', 'FAZ', 'FF'],
+    S: ['S', 'SA', 'SAF', 'SAT', 'SAZ']
+  };
+
+  const ratioList =
+    rkfsDesign?.startsWith('R') && ['17','27','37','47','57','67','77','87','97','107','137','147','167'].includes(rkfsSize)
+      ? ['15.33', '20.45', '30.55', '41.12']
+      : rkfsDesign?.startsWith('K') && ['37','47','57','67','77','87','97','107','127','157','167','187'].includes(rkfsSize)
+      ? ['25.5', '35.3', '45.8', '60.4']
+      : rkfsDesign?.startsWith('F') && ['37','47','57','67','77','87','97','107','127','157','167','187'].includes(rkfsSize)
+      ? ['22.4', '28.5', '35.9', '42.6']
+      : rkfsDesign?.startsWith('S') && ['37','47','57','67','77','87','97'].includes(rkfsSize)
+      ? ['18.6', '22.3', '27.7', '34.6']
+      : [];
 
   const mountingImageMap = {
     R: '/assets/rkfs/RMT.png',
@@ -639,157 +649,106 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
   return (
     <div className="space-y-6 mt-6">
-      {/* Step 1: Series */}
+      {/* Step 1: Select Series */}
       {!rkfsSeries && (
-        <div>
-          <h3 className="font-semibold mb-2">เลือก Series</h3>
-          <div className="flex flex-wrap gap-3">
-            {['R', 'K', 'S', 'F'].map(series => (
-              <button
-                key={series}
-                onClick={() => update('rkfsSeries', series)}
-                className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded"
-              >
-                {series} Series
-              </button>
-            ))}
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[{ label: 'R Series', value: 'R' }, { label: 'K Series', value: 'K' }, { label: 'S Series', value: 'S' }, { label: 'F Series', value: 'F' }].map(({ label, value }) => (
+            <button key={value} onClick={() => update('rkfsSeries', value)} className="bg-white rounded-xl p-3 shadow-md hover:shadow-xl">
+              <span className="font-semibold">{label}</span>
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Step 2: Gear Design */}
+      {/* Step 2: Select Design */}
       {rkfsSeries && !rkfsDesign && (
-        <div>
-          <h3 className="font-semibold mb-2">เลือก Gear Design</h3>
-          <div className="flex flex-wrap gap-3">
-            {(rkfsSeries === 'R' && ['R', 'RF', 'RM']) ||
-             (rkfsSeries === 'K' && ['K', 'KA', 'KAB', 'KAF', 'KAT', 'KAZ', 'KF']) ||
-             (rkfsSeries === 'F' && ['F', 'FA', 'FAF', 'FAZ', 'FF']) ||
-             (rkfsSeries === 'S' && ['S', 'SA', 'SAF', 'SAT', 'SAZ'])
-            ).map(design => (
-              <button
-                key={design}
-                onClick={() => update('rkfsDesign', design)}
-                className="bg-blue-300 hover:bg-blue-500 px-4 py-2 rounded"
-              >
-                {design}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-3">
+          {designOptions[rkfsSeries].map(design => (
+            <button key={design} onClick={() => update('rkfsDesign', design)} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">
+              {design}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Step 3: Size */}
+      {/* Step 3: Select Size */}
       {rkfsDesign && !rkfsSize && (
-        <div>
-          <h3 className="font-semibold mb-2">เลือก Size</h3>
-          <div className="flex flex-wrap gap-3">
-            {(rkfsSeries === 'R' && ['17','27','37','47','57','67','77','87','97','107','137','147','167']) ||
-             (rkfsSeries === 'K' && ['37','47','57','67','77','87','97','107','127','157','167','187']) ||
-             (rkfsSeries === 'S' && ['37','47','57','67','77','87','97']) ||
-             (rkfsSeries === 'F' && ['37','47','57','67','77','87','97','107','127','157','167','187'])
-            .map(size => (
-              <button
-                key={size}
-                onClick={() => update('rkfsSize', size)}
-                className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded"
-              >
-                {size}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-3">
+          {rkfsSeries === 'R' && ['17','27','37','47','57','67','77','87','97','107','137','147','167'].map(size => (
+            <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
+              Size {size}
+            </button>
+          ))}
+          {rkfsSeries === 'K' && ['37','47','57','67','77','87','97','107','127','157','167','187'].map(size => (
+            <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
+              Size {size}
+            </button>
+          ))}
+          {rkfsSeries === 'S' && ['37','47','57','67','77','87','97'].map(size => (
+            <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
+              Size {size}
+            </button>
+          ))}
+          {rkfsSeries === 'F' && ['37','47','57','67','77','87','97','107','127','157','167','187'].map(size => (
+            <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
+              Size {size}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Step 4: Motor Type */}
+      {/* Step 4: Select Motor Type */}
       {rkfsSize && !rkfsMotorType && (
-        <div>
-          <h3 className="font-semibold mb-2">เลือก Motor Type</h3>
-          <div className="flex flex-wrap gap-3">
-            {['YE3', 'YE4', 'YEJ', 'YVP', 'YVPEJ', 'YB'].map(type => (
-              <button
-                key={type}
-                onClick={() => update('rkfsMotorType', type)}
-                className="bg-blue-300 hover:bg-blue-500 px-4 py-2 rounded"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-3">
+          {['YE3', 'YE4', 'YEJ', 'YVP', 'YVPEJ', 'YB'].map(type => (
+            <button key={type} onClick={() => update('rkfsMotorType', type)} className="bg-gradient-to-br from-blue-400 to-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow">
+              {type}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Step 5: Motor Power */}
+      {/* Step 5: Select Motor Power */}
       {rkfsMotorType && !rkfsMotorPower && (
-        <div>
-          <h3 className="font-semibold mb-2">เลือกกำลังมอเตอร์ (kW)</h3>
-          <div className="flex flex-wrap gap-3">
-            {['0.18','0.25','0.37','0.55','0.75','1.1','1.5','2.2','3','4','5.5','7.5','9.2','11','15','18.5','22','30','37','45','55','75','90','110','132','160'].map(power => (
-              <button
-                key={power}
-                onClick={() => update('rkfsMotorPower', power)}
-                className="bg-blue-500 text-white font-bold shadow px-4 py-2 rounded-xl"
-              >
-                {power} kW
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-3">
+          {['0.18','0.25','0.37','0.55','0.75','1.1','1.5','2.2','3','4','5.5','7.5','9.2','11','15','18.5','22','30','37','45','55','75','90','110','132','160'].map(power => (
+            <button key={power} onClick={() => update('rkfsMotorPower', power)} className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg">
+              {power} kW
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Step 6: Pole */}
+      {/* Step 6: Select Pole */}
       {rkfsMotorPower && !rkfsPole && (
+        <div className="flex flex-wrap gap-3">
+          {['2P', '4P', '6P', '8P'].map(pole => (
+            <button key={pole} onClick={() => update('rkfsPole', pole)} className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow">
+              {pole}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Step 7: Select Ratio */}
+      {rkfsPole && !rkfsRatio && (
         <div>
-          <h3 className="font-semibold mb-2">เลือกจำนวน Pole</h3>
+          <h3 className="font-semibold mb-2">เลือกอัตราทดเกียร์ (Gear Ratio)</h3>
           <div className="flex flex-wrap gap-3">
-            {['2P', '4P', '6P', '8P'].map(pole => (
+            {ratioList.map((ratio) => (
               <button
-                key={pole}
-                onClick={() => update('rkfsPole', pole)}
-                className="bg-blue-500 text-white font-bold shadow px-4 py-2 rounded-xl"
+                key={ratio}
+                onClick={() => update('rkfsRatio', ratio)}
+                className="bg-blue-600 text-white font-bold shadow px-4 py-2 rounded-xl hover:bg-blue-700"
               >
-                {pole}
+                i = {ratio}
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Step 7: Ratio */}
-      {rkfsPole && !rkfsRatio && (
-  <div>
-    <h3 className="font-semibold mb-2">เลือกอัตราทดเกียร์ (Gear Ratio)</h3>
-    <div className="flex flex-wrap gap-3">
-
-      {(rkfsDesign.startsWith('R') && ['17','27','37','47','57','67','77','87','97','107','137','147','167'].includes(rkfsSize) && [
-        '15.33', '20.45', '30.55', '41.12', '55.23', '73.6', '92.3', '110.5', '130.7', '160.3', '190.8', '220.6'
-      ]) ||
-
-      (rkfsDesign.startsWith('K') && ['37','47','57','67','77','87','97','107','127','157','167','187'].includes(rkfsSize) && [
-        '18.5', '25.5', '35.3', '45.8', '60.4', '75.6', '91.3', '110.2', '135.7', '160.9', '180.5'
-      ]) ||
-
-      (rkfsDesign.startsWith('F') && ['37','47','57','67','77','87','97','107','127','157','167','187'].includes(rkfsSize) && [
-        '16.8', '22.4', '28.5', '35.9', '42.6', '50.3', '60.1', '70.8', '85.3', '100.2', '120.6'
-      ]) ||
-
-      (rkfsDesign.startsWith('S') && ['37','47','57','67','77','87','97'].includes(rkfsSize) && [
-        '14.2', '18.6', '22.3', '27.7', '34.6', '40.1', '50.5', '60.2', '75.3'
-      ])).map((ratio) => (
-        <button
-          key={ratio}
-          onClick={() => update('rkfsRatio', ratio)}
-          className="bg-blue-600 text-white font-bold shadow px-4 py-2 rounded-xl hover:bg-blue-700"
-        >
-          i = {ratio}
-        </button>
-      ))}
-
-    </div>
-  </div>
-)}
-
-      {/* Step 8: Mounting */}
+      {/* Step 8: Select Mounting */}
       {rkfsRatio && !rkfsMounting && (
         <div>
           <h3 className="font-semibold mb-2">เลือกรูปแบบ Mounting</h3>
@@ -814,7 +773,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         </div>
       )}
 
-      {/* Step 9: Terminal Box + Sub */}
+      {/* Step 9: Terminal Box Position + Sub */}
       {rkfsMounting && !rkfsPosition && (
         <div>
           <h3 className="font-semibold mb-2">เลือกตำแหน่งกล่องสายไฟ (Terminal Box)</h3>
@@ -849,7 +808,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         </div>
       )}
 
-      {/* Step 10: Final Summary */}
+      {/* Step 10: Final Summary + Download */}
       {rkfsPositionSub && (
         <div className="text-center mt-6 space-y-4">
           <h3 className="text-lg font-bold">Model Code</h3>
