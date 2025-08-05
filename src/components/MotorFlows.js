@@ -660,6 +660,22 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         </div>
       )}
 
+      {/* Step 1.5: Show Series Header Image */}
+      {rkfsSeries && !rkfsDesign && (
+        <div className="flex justify-center mt-4">
+          <img
+            src={
+              rkfsSeries === 'R' ? require('../assets/rkfs/4Series/1R.png') :
+              rkfsSeries === 'K' ? require('../assets/rkfs/4Series/1K.png') :
+              rkfsSeries === 'F' ? require('../assets/rkfs/4Series/1F.png') :
+              rkfsSeries === 'S' ? require('../assets/rkfs/4Series/1S.png') : ''
+            }
+            alt={`${rkfsSeries} Series`}
+            className="w-full max-w-md rounded-xl shadow"
+          />
+        </div>
+      )}
+
       {/* Step 2: Select Design */}
       {rkfsSeries && !rkfsDesign && (
         <div className="flex flex-wrap gap-3">
@@ -784,7 +800,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
                 onClick={() => update('rkfsPosition', pos)}
                 className="bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
               >
-                {pos}°
+                {pos}
               </button>
             ))}
           </div>
