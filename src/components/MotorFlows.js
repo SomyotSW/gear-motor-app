@@ -670,6 +670,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             </button>
           ))}
         </div>
+                <div className="mt-4">
+      <button onClick={() => update('rkfsSeries', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {/* Step 3 */}
@@ -686,6 +690,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             ))
           )}
         </div>
+                <div className="mt-4">
+      <button onClick={() => update('rkfsDesign', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {/* Step 4: Select Motor Type */}
@@ -697,6 +705,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             </button>
           ))}
         </div>
+        <div className="mt-4">
+      <button onClick={() => update('rkfsSize', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {/* Step 5: Select Motor Power */}
@@ -708,6 +720,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             </button>
           ))}
         </div>
+        <div className="mt-4">
+      <button onClick={() => update('rkfsMotorType', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {/* Step 6: Select Pole */}
@@ -719,6 +735,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             </button>
           ))}
         </div>
+        <div className="mt-4">
+      <button onClick={() => update('rkfsMotorPower', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {/* Step 7: Select Ratio */}
@@ -737,6 +757,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             ))}
           </div>
         </div>
+        <div className="mt-4">
+      <button onClick={() => update('rkfsPole', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {/* Step 8: Select Mounting */}
@@ -762,6 +786,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             ))}
           </div>
         </div>
+        <div className="mt-4">
+      <button onClick={() => update('rkfsRatio', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {/* Step 9: Terminal Box Position + Sub */}
@@ -780,6 +808,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             ))}
           </div>
         </div>
+        <div className="mt-4">
+      <button onClick={() => update('rkfsMounting', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {rkfsPosition && !rkfsPositionSub && (
@@ -797,6 +829,10 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             ))}
           </div>
         </div>
+        <div className="mt-4">
+      <button onClick={() => update('rkfsPosition', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+    </div>
+  </>
       )}
 
       {/* Step 10: Final Summary + Download */}
@@ -810,18 +846,13 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             onClick={() => onConfirm(`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`)}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow"
           >
-            ✅ เสร็จสิ้น
+            ✅ เสร็จสิ้นพร้อมดาวน์โหลด 3D Model
           </button>
-          <a
-            href={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}.STEP`}
-            className="inline-block bg-green-600 text-white font-bold px-5 py-2 rounded-lg hover:bg-green-700 shadow"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            ⬇ ดาวน์โหลด 3D Model
-          </a>
         </div>
       )}
+    </div>
+        <div className="mt-4">
+      <button onClick={() => update('rkfsPositionSub', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
     </div>
   );
 }
