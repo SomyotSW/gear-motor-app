@@ -665,21 +665,43 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         </div>
       )}
 
-      {/* Step 2 */}
-      {rkfsSeries && !rkfsDesign && (
-       	<>
-        <div className="flex flex-wrap gap-3">
-          {designOptions[rkfsSeries].map(design => (
-            <button key={design} onClick={() => update('rkfsDesign', design)} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">
-              {design}
-            </button>
-          ))}
-        </div>
-                <div className="mt-4">
-      <button onClick={() => update('rkfsSeries', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
+      {/* Step 2: เลือก Design แบบรูปภาพ 3D + เงา + เด้ง */}
+{rkfsSeries && !rkfsDesign && (
+  <>
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {designOptions[rkfsSeries].map(design => {
+        const imageMap = {
+          R: { R: RImg, RF: RFImg, RM: RMImg },
+          K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg, KF: KFImg },
+          F: { F: FImg, FA: FAImg, FAF: FAFImg, FAZ: FAZImg, FF: FFImg },
+          S: { S: SImg, SA: SAImg, SAF: SAFImg, SAT: SATImg, SAZ: SAZImg }
+        };
+
+        const imgSrc = imageMap[rkfsSeries][design];
+
+        return (
+          <button
+            key={design}
+            onClick={() => update('rkfsDesign', design)}
+            className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
+          >
+            <img src={imgSrc} alt={design} className="w-full rounded-xl" />
+            <p className="text-center mt-2 font-semibold">{design}</p>
+          </button>
+        );
+      })}
+    </div>
+
+    <div className="mt-4">
+      <button
+        onClick={() => update('rkfsSeries', null)}
+        className="text-blue-600 underline"
+      >
+        ← ย้อนกลับ
+      </button>
     </div>
   </>
-      )}
+)}
 
       {/* Step 3 */}
       {rkfsDesign && !rkfsSize && (
