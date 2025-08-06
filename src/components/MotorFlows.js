@@ -654,9 +654,9 @@ export function renderRKFSFlow(state, setState, onConfirm) {
       {!rkfsSeries && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {['R','K','S','F'].map(label => (
-            <button key={label} onClick={() => { resetRKFSState(); // ✅ Reset ก่อนทุกครั้ง 
-                        update('rkfsSeries', label);  // ➕ เริ่ม Step 1 ใหม่  
-                    }}
+            <button
+    key={label}
+    onClick={() => update('rkfsSeries', label)}
     className="rounded-xl shadow hover:shadow-lg"
   >
               <img src={require(`../assets/rkfs/4Series/1${label}.png`)} alt={`${label} Series`} className="w-full rounded-xl" />
