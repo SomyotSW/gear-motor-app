@@ -613,9 +613,13 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
 } // END renderHypoidGearFlow
 
 
-export function renderRKFSFlow(state, setState, onConfirm) {
-  const { rkfsSeries, rkfsDesign, rkfsSize, rkfsPower, rkfsMounting } = rkfsState;
-const { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsPower, setRkfsMounting } = rkfsSetters;
+export function renderRKFSFlow(state, setters, onConfirm) {
+  const { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
+    rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub
+  } = state;
+const { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower,
+    setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub
+  } = setters;
 
 const update = (key, value) => {
   const setterMap = {

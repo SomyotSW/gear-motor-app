@@ -40,11 +40,16 @@ function App() {
   const [hypoidSupply, setHypoidSupply] = useState(null);         // C, A, S, S3
   const [hypoidOptional, setHypoidOptional] = useState([]); 
 
-    const [rkfsSeries, setRkfsSeries] = useState(null);
-  const [rkfsDesign, setRkfsDesign] = useState(null);
-  const [rkfsSize, setRkfsSize] = useState(null);
-  const [rkfsPower, setRkfsPower] = useState(null);
-  const [rkfsMounting, setRkfsMounting] = useState(null);
+  const [rkfsSeries, setRkfsSeries] = useState(null);
+    const [rkfsDesign, setRkfsDesign] = useState(null);
+    const [rkfsSize, setRkfsSize] = useState(null);
+    const [rkfsMotorType, setRkfsMotorType] = useState(null);
+    const [rkfsMotorPower, setRkfsMotorPower] = useState(null);
+    const [rkfsPole, setRkfsPole] = useState(null);
+    const [rkfsRatio, setRkfsRatio] = useState(null);
+    const [rkfsMounting, setRkfsMounting] = useState(null);
+    const [rkfsPosition, setRkfsPosition] = useState(null);
+    const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
 
   const [emailVerifiedCode, setEmailVerifiedCode] = useState(null);
   const [emailCodeInput, setEmailCodeInput] = useState('');
@@ -192,8 +197,8 @@ const handleDownload = () => {
 
   const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio };
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
-  const rkfsState = { rkfsSeries, rkfsDesign, setRkfsDesign, rkfsSize, setRkfsSize, rkfsPower, setRkfsPower, rkfsMounFting, setRkfsMounting };
-  const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsPower, setRkfsMounting };
+  const rkfsState = { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower, rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub };
+  const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower, setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub };
   const fileUrl = selectedModel ? `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${selectedModel}.STEP` : '#';
 
   return (
@@ -252,18 +257,18 @@ const handleDownload = () => {
 )}
 
         {selectedProduct === 'RKFS Series' && !selectedModel && (
-          <>
-            <div className="flex justify-between items-center mt-6">
-              <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">RKFS Series</h2>
-              <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
-            </div>
-            {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
-  const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-  setModelCodeList(models);
-  setSelectedModel(models[0]);
-})}
-          </>
-        )}
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-xl font-bold">RKFS Series Selection</h2>
+      <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+    </div>
+    {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
+      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+      setModelCodeList(models);
+      setSelectedModel(models[0]);
+    })}
+  </>
+)}
         {modelCodeList.length > 0 && !showForm && (
   <div className="text-center mt-10 space-y-4">
     {/* Heading */}
