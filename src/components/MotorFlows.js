@@ -612,26 +612,16 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
   );
 } // END renderHypoidGearFlow
 
-
-export function renderRKFSFlow(state, setters, onConfirm) {
-  const { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
+export function renderRKFSFlow(state, setState, onConfirm) {
+  const {
+    rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
     rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub
   } = state;
-const { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower,
-    setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub
-  } = setters;
 
-const update = (key, value) => {
-  const setterMap = {
-    rkfsSeries: setRkfsSeries,
-    rkfsDesign: setRkfsDesign,
-    rkfsSize: setRkfsSize,
-    rkfsPower: setRkfsPower,
-    rkfsMounting: setRkfsMounting,
+  const update = (key, value) => {
+    const setter = setState[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
+    if (setter) setter(value); // ✅ ไม่ toggle เป็น null แล้ว
   };
-  const setter = setterMap[key];
-  if (setter) setter(value);
-};
 
   const designOptions = {
     R: ['R', 'RF', 'RM'],
@@ -660,24 +650,18 @@ const update = (key, value) => {
 
   return (
     <div className="space-y-6 mt-6">
-      {/* ✅ Step 1: Select Series with image */}
-{!rkfsSeries && (
-  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-    {[
-      { label: 'R', img: require('../assets/rkfs/4Series/1R.png') },
-      { label: 'K', img: require('../assets/rkfs/4Series/1K.png') },
-      { label: 'F', img: require('../assets/rkfs/4Series/1F.png') },
-      { label: 'S', img: require('../assets/rkfs/4Series/1S.png') }
-    ].map(({ label, img }) => (
-      <div key={label} className="cursor-pointer" onClick={() => update('rkfsSeries', label)}>
-        <img src={img} alt={`${label} Series`} className="rounded-xl shadow-lg hover:scale-105 transition" />
-        <p className="text-center mt-2 font-semibold text-black">{label} Series</p>
-      </div>
-    ))}
-  </div>
-)}
+      {/* Step 1 */}
+      {!rkfsSeries && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {['R','K','S','F'].map(label => (
+            <button onClick={() => update('rkfsSeries', label)} className="rounded-xl shadow hover:shadow-lg" key={label}>
+              <img src={require(`../assets/rkfs/4Series/1${label}.png`)} alt={`${label} Series`} className="w-full rounded-xl" />
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Step 2: Select Design */}
+      {/* Step 2 */}
       {rkfsSeries && !rkfsDesign && (
         <div className="flex flex-wrap gap-3">
           {designOptions[rkfsSeries].map(design => (
@@ -688,29 +672,19 @@ const update = (key, value) => {
         </div>
       )}
 
-      {/* Step 3: Select Size */}
+      {/* Step 3 */}
       {rkfsDesign && !rkfsSize && (
         <div className="flex flex-wrap gap-3">
-          {rkfsSeries === 'R' && ['17','27','37','47','57','67','77','87','97','107','137','147','167'].map(size => (
-            <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
-              Size {size}
-            </button>
-          ))}
-          {rkfsSeries === 'K' && ['37','47','57','67','77','87','97','107','127','157','167','187'].map(size => (
-            <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
-              Size {size}
-            </button>
-          ))}
-          {rkfsSeries === 'S' && ['37','47','57','67','77','87','97'].map(size => (
-            <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
-              Size {size}
-            </button>
-          ))}
-          {rkfsSeries === 'F' && ['37','47','57','67','77','87','97','107','127','157','167','187'].map(size => (
-            <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
-              Size {size}
-            </button>
-          ))}
+          {['R','K','S','F'].includes(rkfsSeries) && (
+            (rkfsSeries === 'R' ? ['17','27','37','47','57','67','77','87','97','107','137','147','167'] :
+             rkfsSeries === 'K' || rkfsSeries === 'F' ? ['37','47','57','67','77','87','97','107','127','157','167','187'] :
+             ['37','47','57','67','77','87','97']
+            ).map(size => (
+              <button key={size} onClick={() => update('rkfsSize', size)} className="bg-blue-200 hover:bg-blue-400 px-4 py-2 rounded">
+                Size {size}
+              </button>
+            ))
+          )}
         </div>
       )}
 
