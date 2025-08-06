@@ -636,321 +636,362 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
 
 export function renderRKFSFlow(state, setState, onConfirm) {
   const {
-    rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
-    rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub
+    rkfsSeries,
+    rkfsDesign,
+    rkfsSize,
+    rkfsMotorType,
+    rkfsMotorPower,
+    rkfsPole,
+    rkfsRatio,
+    rkfsMounting,
+    rkfsPosition,
+    rkfsPositionSub
   } = state;
 
   const update = (key, value) => {
     const setter = setState[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
-    if (setter) setter(value); // ✅ ไม่ toggle เป็น null แล้ว
+    if (setter) setter(value);
   };
 
   const designOptions = {
-    R: ['R', 'RF', 'RM'],
-    K: ['K', 'KA', 'KAB', 'KAF', 'KAT', 'KAZ', 'KF'],
-    F: ['F', 'FA', 'FAF', 'FAZ', 'FF'],
-    S: ['S', 'SA', 'SAF', 'SAT', 'SAZ']
+    R: ["R", "RF", "RM"],
+    K: ["K", "KA", "KAB", "KAF", "KAT", "KAZ", "KF"],
+    F: ["F", "FA", "FAF", "FAZ", "FF"],
+    S: ["S", "SA", "SAF", "SAT", "SAZ"]
   };
 
   const ratioList =
-    rkfsDesign?.startsWith('R') && ['17','27','37','47','57','67','77','87','97','107','137','147','167'].includes(rkfsSize)
-      ? ['15.33', '20.45', '30.55', '41.12']
-      : rkfsDesign?.startsWith('K') && ['37','47','57','67','77','87','97','107','127','157','167','187'].includes(rkfsSize)
-      ? ['25.5', '35.3', '45.8', '60.4']
-      : rkfsDesign?.startsWith('F') && ['37','47','57','67','77','87','97','107','127','157','167','187'].includes(rkfsSize)
-      ? ['22.4', '28.5', '35.9', '42.6']
-      : rkfsDesign?.startsWith('S') && ['37','47','57','67','77','87','97'].includes(rkfsSize)
-      ? ['18.6', '22.3', '27.7', '34.6']
+    rkfsDesign?.startsWith("R") &&
+    ["17","27","37","47","57","67","77","87","97","107","137","147","167"].includes(rkfsSize)
+      ? ["15.33","20.45","30.55","41.12"]
+      : rkfsDesign?.startsWith("K") &&
+        ["37","47","57","67","77","87","97","107","127","157","167","187"].includes(rkfsSize)
+      ? ["25.5","35.3","45.8","60.4"]
+      : rkfsDesign?.startsWith("F") &&
+        ["37","47","57","67","77","87","97","107","127","157","167","187"].includes(rkfsSize)
+      ? ["22.4","28.5","35.9","42.6"]
+      : rkfsDesign?.startsWith("S") &&
+        ["37","47","57","67","77","87","97"].includes(rkfsSize)
+      ? ["18.6","22.3","27.7","34.6"]
       : [];
 
   const mountingImageMap = {
-     R: RMTImg,
-        K: KSMTImg,
-        S: KSMTImg,
-        F: FMTImg
+    R: RMTImg,
+    K: KSMTImg,
+    S: KSMTImg,
+    F: FMTImg
   };
 
   return (
-<>
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-  {['R','K','S','F'].map(label => (
-    <button
-      key={label}
-      onClick={() => update('rkfsSeries', label)}
-      className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
-    >
-      <img
-        src={require(`../assets/rkfs/4Series/1${label}.png`)}
-        alt={`${label} Series`}
-        className="w-full rounded-xl"
-      />
-      <p className="text-center mt-2 font-semibold text-gray-700">{label} Series</p>
-    </button>
-  ))}
-</div>
-</>
-);
-
-      {/* Step 2: เลือก Design แบบรูปภาพ 3D + เงา + เด้ง */}
-{rkfsSeries && !rkfsDesign && (
-  <>
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-      {designOptions[rkfsSeries].map(design => {
-        const imageMap = {
-          R: { R: RImg, RF: RFImg, RM: RMImg },
-          K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg, KF: KFImg },
-          F: { F: FImg, FA: FAImg, FAF: FAFImg, FAZ: FAZImg, FF: FFImg },
-          S: { S: SImg, SA: SAImg, SAF: SAFImg, SAT: SATImg, SAZ: SAZImg }
-        };
-
-        const imgSrc = imageMap[rkfsSeries][design];
-
-        return (
-          <button
-            key={design}
-            onClick={() => update('rkfsDesign', design)}
-            className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
-          >
-            <img src={imgSrc} alt={design} className="w-full rounded-xl" />
-            <p className="text-center mt-2 font-semibold">{design}</p>
-          </button>
-        );
-      })}
-    </div>
-
-    <div className="mt-4">
-      <button
-        onClick={() => update('rkfsSeries', null)}
-        className="text-blue-600 underline"
-      >
-        ← ย้อนกลับ
-      </button>
-    </div>
-  </>
-)}
-
-      {/* Step 3 */}
-{rkfsDesign && !rkfsSize && (
-  <>
-    <div className="flex flex-wrap gap-4 justify-center">
-      {['R', 'K', 'S', 'F'].includes(rkfsSeries) && (
-        (rkfsSeries === 'R'
-          ? ['17', '27', '37', '47', '57', '67', '77', '87', '97', '107', '137', '147', '167']
-          : rkfsSeries === 'K' || rkfsSeries === 'F'
-          ? ['37', '47', '57', '67', '77', '87', '97', '107', '127', '157', '167', '187']
-          : ['37', '47', '57', '67', '77', '87', '97']
-        ).map(size => (
-          <button
-            key={size}
-            onClick={() => update('rkfsSize', size)}
-            className="w-24 h-24 bg-white shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 rounded-xl flex items-center justify-center text-blue-800 font-bold text-lg border border-gray-300 hover:bg-blue-100"
-          >
-            Size {size}
-          </button>
-        ))
-      )}
-    </div>
-
-    <div className="mt-6 text-center">
-      <button
-        onClick={() => update('rkfsDesign', null)}
-        className="text-blue-600 underline text-base"
-      >
-        ← ย้อนกลับ
-      </button>
-    </div>
-  </>
-)}
-
-     {/* Step 4: Select Motor Type */}
-{rkfsSize && !rkfsMotorType && (
-  <>
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-      {[
-        { type: 'YE3', img: YE3Img },
-        { type: 'YE4', img: YE4Img },
-        { type: 'YEJ', img: YEJImg },
-        { type: 'YVP', img: YVPImg },
-        { type: 'YVPEJ', img: YVPEJImg },
-        { type: 'YB', img: YBImg },
-      ].map(({ type, img }) => (
-        <button
-          key={type}
-          onClick={() => update('rkfsMotorType', type)}
-          className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
-        >
-          <img src={img} alt={type} className="w-full rounded-t-xl" />
-          <p className="text-center py-2 font-semibold text-gray-800">{type}</p>
-        </button>
-      ))}
-    </div>
-
-    <div className="mt-6 text-center">
-      <button
-        onClick={() => update('rkfsSize', null)}
-        className="text-blue-600 underline text-base"
-      >
-        ← ย้อนกลับ
-      </button>
-    </div>
-  </>
-)}
-
-      {/* Step 5: Select Motor Power */}
-      {rkfsMotorType && !rkfsMotorPower && (
-<>
-        <div className="flex flex-wrap gap-3">
-          {['0.18','0.25','0.37','0.55','0.75','1.1','1.5','2.2','3','4','5.5','7.5','9.2','11','15','18.5','22','30','37','45','55','75','90','110','132','160'].map(power => (
-            <button key={power} onClick={() => update('rkfsMotorPower', power)} className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg">
-              {power} kW
+    <>
+      {/* Step 1: Series */}
+      {!rkfsSeries && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {["R","K","S","F"].map(label => (
+            <button
+              key={label}
+              onClick={() => update("rkfsSeries", label)}
+              className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
+            >
+              <img
+                src={require(`../assets/rkfs/4Series/1${label}.png`)}
+                alt={`${label} Series`}
+                className="w-full rounded-xl"
+              />
+              <p className="text-center mt-2 font-semibold text-gray-700">
+                {label} Series
+              </p>
             </button>
           ))}
         </div>
-        <div className="mt-4">
-      <button onClick={() => update('rkfsMotorType', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
-    </div>
-  </>
       )}
 
-      {/* Step 6: Select Pole */}
-      {rkfsMotorPower && !rkfsPole && (
-<>
-        <div className="flex flex-wrap gap-3">
-          {['2P', '4P', '6P', '8P'].map(pole => (
-            <button key={pole} onClick={() => update('rkfsPole', pole)} className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow">
-              {pole}
+      {/* Step 2: Design */}
+      {rkfsSeries && !rkfsDesign && (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {designOptions[rkfsSeries].map(design => {
+              const imageMap = {
+                R: { R: RImg, RF: RFImg, RM: RMImg },
+                K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg, KF: KFImg },
+                F: { F: FImg, FA: FAImg, FAF: FAFImg, FAZ: FAZImg, FF: FFImg },
+                S: { S: SImg, SA: SAImg, SAF: SAFImg, SAT: SATImg, SAZ: SAZImg }
+              };
+              const imgSrc = imageMap[rkfsSeries][design];
+              return (
+                <button
+                  key={design}
+                  onClick={() => update("rkfsDesign", design)}
+                  className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
+                >
+                  <img src={imgSrc} alt={design} className="w-full rounded-xl" />
+                  <p className="text-center mt-2 font-semibold">{design}</p>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => update("rkfsSeries", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
             </button>
-          ))}
-        </div>
-        <div className="mt-4">
-      <button onClick={() => update('rkfsMotorPower', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
-    </div>
-  </>
+          </div>
+        </>
       )}
 
-      {/* Step 7: Select Ratio */}
-      {rkfsPole && !rkfsRatio && (
-<>
-        <div>
-          <h3 className="font-semibold mb-2">เลือกอัตราทดเกียร์ (Gear Ratio)</h3>
-          <div className="flex flex-wrap gap-3">
-            {ratioList.map((ratio) => (
+      {/* Step 3: Size */}
+      {rkfsDesign && !rkfsSize && (
+        <>
+          <div className="flex flex-wrap gap-4 justify-center">
+            {(
+              rkfsSeries === "R"
+                ? ["17","27","37","47","57","67","77","87","97","107","137","147","167"]
+                : rkfsSeries === "K" || rkfsSeries === "F"
+                ? ["37","47","57","67","77","87","97","107","127","157","167","187"]
+                : ["37","47","57","67","77","87","97"]
+            ).map(size => (
               <button
-                key={ratio}
-                onClick={() => update('rkfsRatio', ratio)}
-                className="bg-blue-600 text-white font-bold shadow px-4 py-2 rounded-xl hover:bg-blue-700"
+                key={size}
+                onClick={() => update("rkfsSize", size)}
+                className="w-24 h-24 bg-white shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 rounded-xl flex items-center justify-center text-blue-800 font-bold text-lg border border-gray-300 hover:bg-blue-100"
               >
-                i = {ratio}
+                Size {size}
               </button>
             ))}
           </div>
-        </div>
-        <div className="mt-4">
-      <button onClick={() => update('rkfsPole', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
-    </div>
-  </>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => update("rkfsDesign", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
+            </button>
+          </div>
+        </>
       )}
 
-      {/* Step 8: Select Mounting */}
-      {rkfsRatio && !rkfsMounting && (
-<>
-        <div>
-          <h3 className="font-semibold mb-2">เลือกรูปแบบ Mounting</h3>
-          <div className="flex justify-center">
-            <img
-              src={mountingImageMap[rkfsSeries]}
-              alt="Mounting"
-              className="w-full max-w-md rounded-xl shadow"
-            />
-          </div>
-          <div className="flex flex-wrap justify-center gap-3 mt-4">
-            {['M1', 'M2', 'M3', 'M4', 'M5', 'M6'].map(mount => (
+      {/* Step 4: Motor Type */}
+      {rkfsSize && !rkfsMotorType && (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { type: "YE3", img: YE3Img },
+              { type: "YE4", img: YE4Img },
+              { type: "YEJ", img: YEJImg },
+              { type: "YVP", img: YVPImg },
+              { type: "YVPEJ", img: YVPEJImg },
+              { type: "YB", img: YBImg }
+            ].map(({ type, img }) => (
               <button
-                key={mount}
-                onClick={() => update('rkfsMounting', mount)}
+                key={type}
+                onClick={() => update("rkfsMotorType", type)}
+                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
+              >
+                <img src={img} alt={type} className="w-full rounded-t-xl" />
+                <p className="text-center py-2 font-semibold text-gray-800">
+                  {type}
+                </p>
+              </button>
+            ))}
+          </div>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => update("rkfsSize", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Step 5: Motor Power */}
+      {rkfsMotorType && !rkfsMotorPower && (
+        <>
+          <div className="flex flex-wrap gap-3">
+            {[
+              "0.18","0.25","0.37","0.55","0.75","1.1","1.5","2.2","3","4",
+              "5.5","7.5","9.2","11","15","18.5","22","30","37","45","55","75","90","110","132","160"
+            ].map(power => (
+              <button
+                key={power}
+                onClick={() => update("rkfsMotorPower", power)}
                 className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
               >
-                {mount}
+                {power} kW
               </button>
             ))}
           </div>
-        </div>
-        <div className="mt-4">
-      <button onClick={() => update('rkfsRatio', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
-    </div>
-  </>
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => update("rkfsMotorType", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
+            </button>
+          </div>
+        </>
       )}
 
-      {/* Step 9: Terminal Box Position + Sub */}
-{rkfsMounting && !rkfsPosition && (
-  <>
-    <div>
-      <h3 className="font-semibold mb-4 text-center">เลือกตำแหน่งกล่องสายไฟ (Terminal Box)</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
-        {[
-          { pos: '0', img: T0Img },
-          { pos: '90', img: T90Img },
-          { pos: '180', img: T180Img },
-          { pos: '270', img: T270Img },
-        ].map(({ pos, img }) => (
-          <button
-            key={pos}
-            onClick={() => update('rkfsPosition', pos)}
-            className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
-          >
-            <img src={img} alt={`T${pos}`} className="w-full rounded-t-xl" />
-            <p className="text-center py-2 font-semibold text-gray-800">{pos}°</p>
-          </button>
-        ))}
-      </div>
-    </div>
+      {/* Step 6: Pole */}
+      {rkfsMotorPower && !rkfsPole && (
+        <>
+          <div className="flex flex-wrap gap-3">
+            {["2P","4P","6P","8P"].map(pole => (
+              <button
+                key={pole}
+                onClick={() => update("rkfsPole", pole)}
+                className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+              >
+                {pole}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => update("rkfsMotorPower", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
+            </button>
+          </div>
+        </>
+      )}
 
-    <div className="mt-6 text-center">
-      <button
-        onClick={() => update('rkfsMounting', null)}
-        className="text-blue-600 underline text-base"
-      >
-        ← ย้อนกลับ
-      </button>
-    </div>
-  </>
-)}
+      {/* Step 7: Ratio */}
+      {rkfsPole && !rkfsRatio && (
+        <>
+          <div>
+            <h3 className="font-semibold mb-2">เลือกอัตราทดเกียร์ (Gear Ratio)</h3>
+            <div className="flex flex-wrap gap-3">
+              {ratioList.map(ratio => (
+                <button
+                  key={ratio}
+                  onClick={() => update("rkfsRatio", ratio)}
+                  className="bg-blue-600 text-white font-bold shadow px-4 py-2 rounded-xl hover:bg-blue-700"
+                >
+                  i = {ratio}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => update("rkfsPole", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
+            </button>
+          </div>
+        </>
+      )}
 
+      {/* Step 8: Mounting */}
+      {rkfsRatio && !rkfsMounting && (
+        <>
+          <div>
+            <h3 className="font-semibold mb-2">เลือกรูปแบบ Mounting</h3>
+            <div className="flex justify-center">
+              <img
+                src={mountingImageMap[rkfsSeries]}
+                alt="Mounting"
+                className="w-full max-w-md rounded-xl shadow"
+              />
+            </div>
+            <div className="flex flex-wrap justify-center gap-3 mt-4">
+              {["M1","M2","M3","M4","M5","M6"].map(mount => (
+                <button
+                  key={mount}
+                  onClick={() => update("rkfsMounting", mount)}
+                  className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
+                >
+                  {mount}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => update("rkfsRatio", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Step 9: Position */}
+      {rkfsMounting && !rkfsPosition && (
+        <>
+          <div>
+            <h3 className="font-semibold mb-4 text-center">เลือกตำแหน่งกล่องสายไฟ (Terminal Box)</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
+              {[
+                { pos: "0", img: T0Img },
+                { pos: "90", img: T90Img },
+                { pos: "180", img: T180Img },
+                { pos: "270", img: T270Img }
+              ].map(({ pos, img }) => (
+                <button
+                  key={pos}
+                  onClick={() => update("rkfsPosition", pos)}
+                  className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
+                >
+                  <img src={img} alt={`T${pos}`} className="w-full rounded-t-xl" />
+                  <p className="text-center py-2 font-semibold text-gray-800">{pos}°</p>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => update("rkfsMounting", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Step 9.2: Sub‐position */}
       {rkfsPosition && !rkfsPositionSub && (
-  <>
-    <div>
-      <h3 className="font-semibold mb-4 text-center">เลือกตำแหน่งย่อย (เพิ่มเติม)</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
-        {[
-          { sub: 'X', img: CXImg },
-          { sub: '2', img: C1Img },
-          { sub: '3', img: C2Img },
-          { sub: '4', img: C3Img },
-        ].map(({ sub, img }) => (
-          <button
-            key={sub}
-            onClick={() => update('rkfsPositionSub', sub)}
-            className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
-          >
-            <img src={img} alt={`C${sub}`} className="w-full rounded-t-xl" />
-            <p className="text-center py-2 font-semibold text-gray-800">{sub}</p>
-          </button>
-        ))}
-      </div>
-    </div>
+        <>
+          <div>
+            <h3 className="font-semibold mb-4 text-center">เลือกตำแหน่งย่อย (เพิ่มเติม)</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
+              {[
+                { sub: "X", img: CXImg },
+                { sub: "2", img: C1Img },
+                { sub: "3", img: C2Img },
+                { sub: "4", img: C3Img }
+              ].map(({ sub, img }) => (
+                <button
+                  key={sub}
+                  onClick={() => update("rkfsPositionSub", sub)}
+                  className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
+                >
+                  <img src={img} alt={`C${sub}`} className="w-full rounded-t-xl" />
+                  <p className="text-center py-2 font-semibold text-gray-800">{sub}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => update("rkfsPosition", null)}
+              className="text-blue-600 underline"
+            >
+              ← ย้อนกลับ
+            </button>
+          </div>
+        </>
+      )}
 
-    <div className="mt-6 text-center">
-      <button
-        onClick={() => update('rkfsPosition', null)}
-        className="text-blue-600 underline text-base"
-      >
-        ← ย้อนกลับ
-      </button>
-    </div>
-  </>
-)}
-
-           {/* Step 10 */}
+      {/* Step 10: Confirm */}
       {rkfsPositionSub && (
         <>
           <div className="text-center mt-6 space-y-4">
@@ -968,10 +1009,9 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             >
               ✅ เสร็จสิ้นพร้อมดาวน์โหลด 3D Model
             </button>
-
             <div className="mt-4">
               <button
-                onClick={() => update('rkfsPositionSub', null)}
+                onClick={() => update("rkfsPositionSub", null)}
                 className="text-blue-600 underline"
               >
                 ← ย้อนกลับ
@@ -980,5 +1020,6 @@ export function renderRKFSFlow(state, setState, onConfirm) {
           </div>
         </>
       )}
+    </>
   );
 }
