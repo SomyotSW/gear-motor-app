@@ -51,8 +51,7 @@ function App() {
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
 
-    const handleRKFSBackToHome = () => {
-  // รีเซตค่า state ทั้งหมดของ RKFS
+    const resetRKFSState = () => {
   rkfsSetters.setRkfsSeries(null);
   rkfsSetters.setRkfsDesign(null);
   rkfsSetters.setRkfsSize(null);
@@ -63,11 +62,13 @@ function App() {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
-
-  // กลับไปหน้าแรก (reset product selection)
-  setSelectedProduct(null);
   setSelectedModel(null);
   setModelCodeList([]);
+};
+
+const handleRKFSBackToHome = () => {
+  resetRKFSState();               // 🔁 รีเซตก่อนกลับหน้า Home
+  setSelectedProduct(null);      // ⬅ กลับหน้าเลือก Product
 };
 
   const [emailVerifiedCode, setEmailVerifiedCode] = useState(null);
