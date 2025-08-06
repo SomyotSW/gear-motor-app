@@ -663,7 +663,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 2 */}
       {rkfsSeries && !rkfsDesign && (
-<>
+       	<>
         <div className="flex flex-wrap gap-3">
           {designOptions[rkfsSeries].map(design => (
             <button key={design} onClick={() => update('rkfsDesign', design)} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">
@@ -844,32 +844,39 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   </>
       )}
 
-      {/* Step 10: Final Summary + Download */}
-{rkfsPositionSub && (
-  <>
-    <div className="text-center mt-6 space-y-4">
-      <h3 className="text-lg font-bold">Model Code</h3>
-      <p className="text-xl text-blue-700 font-semibold">
-        {`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`}
-      </p>
-      <button
-        onClick={() =>
-          onConfirm(
-            `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`
-          )
-        }
-        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow"
-      >
-        ✅ เสร็จสิ้นพร้อมดาวน์โหลด 3D Model
-      </button>
-    </div>
+           {/* Step 10 */}
+      {rkfsPositionSub && (
+        <>
+          <div className="text-center mt-6 space-y-4">
+            <h3 className="text-lg font-bold">Model Code</h3>
+            <p className="text-xl text-blue-700 font-semibold">
+              {`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`}
+            </p>
+            <button
+              onClick={() =>
+                onConfirm(
+                  `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`
+                )
+              }
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow"
+            >
+              ✅ เสร็จสิ้นพร้อมดาวน์โหลด 3D Model
+            </button>
 
-    <div className="mt-4">
-      <button
-        onClick={() => update('rkfsPositionSub', null)}
-        className="text-blue-600 underline"
-      >
-        
+            <a
+              href={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}.STEP`}
+              className="inline-block bg-green-600 text-white font-bold px-5 py-2 rounded-lg hover:bg-green-700 shadow"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              ⬇ ดาวน์โหลด 3D Model
+            </a>
+
+            <div className="mt-4">
+              <button
+                onClick={() => update('rkfsPositionSub', null)}
+                className="text-blue-600 underline"
+              >
                 ← ย้อนกลับ
               </button>
             </div>
