@@ -51,6 +51,25 @@ function App() {
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
 
+    const handleRKFSBackToHome = () => {
+  // รีเซตค่า state ทั้งหมดของ RKFS
+  rkfsSetters.setRkfsSeries(null);
+  rkfsSetters.setRkfsDesign(null);
+  rkfsSetters.setRkfsSize(null);
+  rkfsSetters.setRkfsMotorType(null);
+  rkfsSetters.setRkfsMotorPower(null);
+  rkfsSetters.setRkfsPole(null);
+  rkfsSetters.setRkfsRatio(null);
+  rkfsSetters.setRkfsMounting(null);
+  rkfsSetters.setRkfsPosition(null);
+  rkfsSetters.setRkfsPositionSub(null);
+
+  // กลับไปหน้าแรก (reset product selection)
+  setSelectedProduct(null);
+  setSelectedModel(null);
+  setModelCodeList([]);
+};
+
   const [emailVerifiedCode, setEmailVerifiedCode] = useState(null);
   const [emailCodeInput, setEmailCodeInput] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -260,7 +279,7 @@ const handleDownload = () => {
   <>
     <div className="flex justify-between items-center mt-6">
       <h2 className="text-xl font-bold">RKFS Series Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+      <button className="text-blue-600 hover:underline" onClick={handleRKFSBackToHome}>Home</button>
     </div>
     {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
       const models = Array.isArray(modelCode) ? modelCode : [modelCode];
