@@ -51,6 +51,34 @@ function App() {
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
 
+const handleBackUniversal = () => {
+  if (selectedProduct === 'RKFS Series') {
+    handleBackWithReset();
+  } else {
+    handleBack(); // ใช้อันเดิมสำหรับ Product อื่น
+  }
+};
+
+const handleBackWithReset = () => {
+  // Reset common states
+  setSelectedProduct(null);
+  setSelectedModel(null);
+  setModelCodeList([]);
+  setShowForm(false);
+
+  // เฉพาะ RKFS
+  rkfsSetters.setRkfsSeries(null);
+  rkfsSetters.setRkfsDesign(null);
+  rkfsSetters.setRkfsSize(null);
+  rkfsSetters.setRkfsMotorType(null);
+  rkfsSetters.setRkfsMotorPower(null);
+  rkfsSetters.setRkfsPole(null);
+  rkfsSetters.setRkfsRatio(null);
+  rkfsSetters.setRkfsMounting(null);
+  rkfsSetters.setRkfsPosition(null);
+  rkfsSetters.setRkfsPositionSub(null);
+};
+
     const resetRKFSState = () => {
   rkfsSetters.setRkfsSeries(null);
   rkfsSetters.setRkfsDesign(null);
@@ -64,6 +92,21 @@ function App() {
   rkfsSetters.setRkfsPositionSub(null);
   setSelectedModel(null);
   setModelCodeList([]);
+};
+
+  const handleResetRKFS = () => {
+  rkfsSetters.setRkfsSeries(null);
+  rkfsSetters.setRkfsDesign(null);
+  rkfsSetters.setRkfsSize(null);
+  rkfsSetters.setRkfsMotorType(null);
+  rkfsSetters.setRkfsMotorPower(null);
+  rkfsSetters.setRkfsPole(null);
+  rkfsSetters.setRkfsRatio(null);
+  rkfsSetters.setRkfsMounting(null);
+  rkfsSetters.setRkfsPosition(null);
+  rkfsSetters.setRkfsPositionSub(null);
+  setSelectedModel(null);
+  setModelCodeList([]); // ถ้ามี
 };
 
 const handleRKFSBackToHome = () => {
@@ -343,11 +386,12 @@ const handleDownload = () => {
     </button>
 
     <button
-      onClick={handleBack}
-      className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-    >
-      กลับไปเลือกใหม่
-    </button>
+  onClick={handleBackUniversal}
+  className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+>
+  กลับไปเลือกใหม่
+</button>
+
   </div>
 )}
         {showForm && (
