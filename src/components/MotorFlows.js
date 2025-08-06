@@ -688,7 +688,8 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     </button>
   ))}
 </div>
-      )}
+</>
+);
 
       {/* Step 2: เลือก Design แบบรูปภาพ 3D + เงา + เด้ง */}
 {rkfsSeries && !rkfsDesign && (
