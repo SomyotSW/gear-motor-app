@@ -663,6 +663,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 2 */}
       {rkfsSeries && !rkfsDesign && (
+<>
         <div className="flex flex-wrap gap-3">
           {designOptions[rkfsSeries].map(design => (
             <button key={design} onClick={() => update('rkfsDesign', design)} className="bg-blue-100 hover:bg-blue-300 px-4 py-2 rounded">
@@ -678,6 +679,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 3 */}
       {rkfsDesign && !rkfsSize && (
+<>
         <div className="flex flex-wrap gap-3">
           {['R','K','S','F'].includes(rkfsSeries) && (
             (rkfsSeries === 'R' ? ['17','27','37','47','57','67','77','87','97','107','137','147','167'] :
@@ -698,6 +700,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 4: Select Motor Type */}
       {rkfsSize && !rkfsMotorType && (
+<>
         <div className="flex flex-wrap gap-3">
           {['YE3', 'YE4', 'YEJ', 'YVP', 'YVPEJ', 'YB'].map(type => (
             <button key={type} onClick={() => update('rkfsMotorType', type)} className="bg-gradient-to-br from-blue-400 to-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow">
@@ -713,6 +716,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 5: Select Motor Power */}
       {rkfsMotorType && !rkfsMotorPower && (
+<>
         <div className="flex flex-wrap gap-3">
           {['0.18','0.25','0.37','0.55','0.75','1.1','1.5','2.2','3','4','5.5','7.5','9.2','11','15','18.5','22','30','37','45','55','75','90','110','132','160'].map(power => (
             <button key={power} onClick={() => update('rkfsMotorPower', power)} className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg">
@@ -728,6 +732,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 6: Select Pole */}
       {rkfsMotorPower && !rkfsPole && (
+<>
         <div className="flex flex-wrap gap-3">
           {['2P', '4P', '6P', '8P'].map(pole => (
             <button key={pole} onClick={() => update('rkfsPole', pole)} className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow">
@@ -743,6 +748,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 7: Select Ratio */}
       {rkfsPole && !rkfsRatio && (
+<>
         <div>
           <h3 className="font-semibold mb-2">เลือกอัตราทดเกียร์ (Gear Ratio)</h3>
           <div className="flex flex-wrap gap-3">
@@ -765,6 +771,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 8: Select Mounting */}
       {rkfsRatio && !rkfsMounting && (
+<>
         <div>
           <h3 className="font-semibold mb-2">เลือกรูปแบบ Mounting</h3>
           <div className="flex justify-center">
@@ -794,6 +801,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 9: Terminal Box Position + Sub */}
       {rkfsMounting && !rkfsPosition && (
+<>
         <div>
           <h3 className="font-semibold mb-2">เลือกตำแหน่งกล่องสายไฟ (Terminal Box)</h3>
           <div className="flex flex-wrap gap-3">
@@ -815,6 +823,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
       )}
 
       {rkfsPosition && !rkfsPositionSub && (
+<>
         <div>
           <h3 className="font-semibold mb-2">เลือกตำแหน่งย่อย (เพิ่มเติม)</h3>
           <div className="flex flex-wrap gap-3">
@@ -837,6 +846,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
       {/* Step 10: Final Summary + Download */}
       {rkfsPositionSub && (
+<>
         <div className="text-center mt-6 space-y-4">
           <h3 className="text-lg font-bold">Model Code</h3>
           <p className="text-xl text-blue-700 font-semibold">
@@ -854,5 +864,6 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         <div className="mt-4">
       <button onClick={() => update('rkfsPositionSub', null)} className="text-blue-600 underline">← ย้อนกลับ</button>
     </div>
+</>
   );
 }
