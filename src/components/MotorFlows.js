@@ -871,6 +871,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
       >
         ← ย้อนกลับ
       </button>
+      </div>
     </div>
   </>
 )}
