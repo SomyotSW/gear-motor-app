@@ -867,15 +867,6 @@ export function renderRKFSFlow(state, setState, onConfirm) {
               ✅ เสร็จสิ้นพร้อมดาวน์โหลด 3D Model
             </button>
 
-            <a
-              href={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}.STEP`}
-              className="inline-block bg-green-600 text-white font-bold px-5 py-2 rounded-lg hover:bg-green-700 shadow"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ⬇ ดาวน์โหลด 3D Model
-            </a>
-
             <div className="mt-4">
               <button
                 onClick={() => update('rkfsPositionSub', null)}
