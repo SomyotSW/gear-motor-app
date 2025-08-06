@@ -40,6 +40,7 @@ function App() {
   const [hypoidSupply, setHypoidSupply] = useState(null);         // C, A, S, S3
   const [hypoidOptional, setHypoidOptional] = useState([]); 
 
+    const [rkfsSeries, setRkfsSeries] = useState(null);
   const [rkfsDesign, setRkfsDesign] = useState(null);
   const [rkfsSize, setRkfsSize] = useState(null);
   const [rkfsPower, setRkfsPower] = useState(null);
@@ -191,8 +192,8 @@ const handleDownload = () => {
 
   const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio };
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
-  const rkfsState = { rkfsDesign, setRkfsDesign, rkfsSize, setRkfsSize, rkfsPower, setRkfsPower, rkfsMounting, setRkfsMounting };
-
+  const rkfsState = { rkfsSeries, rkfsDesign, setRkfsDesign, rkfsSize, setRkfsSize, rkfsPower, setRkfsPower, rkfsMounFting, setRkfsMounting };
+  const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsPower, setRkfsMounting };
   const fileUrl = selectedModel ? `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${selectedModel}.STEP` : '#';
 
   return (
@@ -256,7 +257,11 @@ const handleDownload = () => {
               <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">RKFS Series</h2>
               <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
             </div>
-            {renderRKFSFlow(rkfsState, rkfsState)}
+            {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
+  const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+  setModelCodeList(models);
+  setSelectedModel(models[0]);
+})}
           </>
         )}
         {modelCodeList.length > 0 && !showForm && (
