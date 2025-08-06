@@ -229,7 +229,7 @@ const handleDownload = () => {
           <>
             <div className="flex justify-between items-center mt-6">
               <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">AC Gear Motor Selection</h2>
-              <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+              <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
             </div>
             <ACMotorFlow
               acState={acState}
@@ -246,7 +246,7 @@ const handleDownload = () => {
   <>
     <div className="flex justify-between items-center mt-6">
       <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Hypoid Gear Selection</h2>
-      <button className="text-blue-300 underline" onClick={handleBack}>ย้อนกลับ</button>
+      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
     </div>
     {renderHypoidGearFlow(hypoidState, hypoidSetters, (modelCode) => {
       const models = Array.isArray(modelCode) ? modelCode : [modelCode];
@@ -260,7 +260,7 @@ const handleDownload = () => {
   <>
     <div className="flex justify-between items-center mt-6">
       <h2 className="text-xl font-bold">RKFS Series Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBack}>ย้อนกลับ</button>
+      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
     </div>
     {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
       const models = Array.isArray(modelCode) ? modelCode : [modelCode];
