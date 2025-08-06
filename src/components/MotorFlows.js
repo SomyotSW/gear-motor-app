@@ -869,9 +869,13 @@ export function renderRKFSFlow(state, setState, onConfirm) {
         onClick={() => update('rkfsPositionSub', null)}
         className="text-blue-600 underline"
       >
-        ← ย้อนกลับ
-      </button>
-      </div>
+        
+                ← ย้อนกลับ
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
-  </>
-)}
+  );
+}
