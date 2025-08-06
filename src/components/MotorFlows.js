@@ -979,6 +979,5 @@ export function renderRKFSFlow(state, setState, onConfirm) {
           </div>
         </>
       )}
-    </div>
   );
 }
