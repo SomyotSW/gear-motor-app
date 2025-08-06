@@ -671,6 +671,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   };
 
   return (
+<>
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
   {['R','K','S','F'].map(label => (
     <button
