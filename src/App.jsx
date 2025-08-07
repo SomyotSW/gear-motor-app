@@ -4,7 +4,7 @@ import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import DownloadButton from './components/DownloadButton';
+
 
 import K3D from './assets/3Dgif/K3D.gif';
 import KB3D from './assets/3Dgif/KB3D.gif';
@@ -348,68 +348,48 @@ const handleDownload = () => {
   </>
 )}
 
-{selectedProduct === 'RKFS Series' && !selectedModel && (
+{selectedProduct === 'RKFS Series' && !selectedModel && !showForm && (
   <>
-    {/* ส่วนที่แสดง renderRKFSFlow อยู่ตรงนี้ */}
-    {renderRKFSFlow(rkfsState, rkfsSetters, onConfirm)}
-  </>
-)}
+    <div className="text-center mt-10 space-y-4">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+        Model Code:
+      </h2>
 
-// ***** แทรกบล็อค Model Code + Download ตรงนี้ *****  
-{modelCodeList.length > 0 && !showForm && (
-  <div className="text-center mt-10 space-y-4">
-    {/* Heading */}
-    <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-      Model Code:
-    </h2>
+      <p className="text-blue-200 font-medium mb-2">เลือกรุ่นที่ต้องการดาวน์โหลด:</p>
 
-    {/* DownloadButton */}
-    <DownloadButton
-      modelCodeList={modelCodeList}
-      selectedProduct={selectedProduct}
-    />
-
-    {/* GIF Preview */}
-    <div className="mt-10 flex justify-center">
-      {selectedModel && (() => {
-        let gifSrc = null;
-        if (selectedModel.endsWith('K')) gifSrc = K3D;
-        else if (selectedModel.endsWith('KB')) gifSrc = KB3D;
-        else if (selectedModel.endsWith('RC')) gifSrc = RC3D;
-        else if (selectedModel.endsWith('RT')) gifSrc = RT3D;
-        return gifSrc && (
-          <img
-            src={gifSrc}
-            alt="Gear 3D Preview"
-            className="w-[200px] h-auto"
+      {modelCodeList.map((code, idx) => (
+        <div key={idx} className="flex justify-center items-center space-x-2">
+          <input
+            type="radio"
+            name="modelSelect"
+            value={code}
+            checked={selectedModel === code}
+            onChange={() => setSelectedModel(code)}
           />
-        );
-      })()}
+          <label className="text-white drop-shadow">{code}</label>
+        </div>
+      ))}
     </div>
 
-    {/* Buttons */}
+    {/* ✅ นำโค้ดปุ่มที่คุณให้มาแทรกตรงนี้ */}
     <div className="flex justify-center items-center gap-4 mt-4">
       <button
+        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
         onClick={() => setShowForm(true)}
-        disabled={!selectedModel || isDownloading}
-        className={`px-5 py-2 rounded text-white ${
-          isDownloading
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-green-600 hover:bg-green-700'
-        }`}
       >
-        {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
+        Download 3D
       </button>
       <button
+        className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
         onClick={handleBackUniversal}
-        className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
       >
         กลับไปเลือกใหม่
       </button>
     </div>
-  </div>
-)}
-        {showForm && (
+  </>
+)}        
+
+{showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
             <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
 
