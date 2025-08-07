@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import HourglassGif from '../assets/hourglass.gif';
 
-const DownloadButton = ({ modelCodeList = [] }) => {
+const DownloadButton = ({ modelCodeList = [], selectedProduct }) => {
   const [selectedModel, setSelectedModel] = useState('');
   const [downloading, setDownloading] = useState(false);
 
@@ -15,7 +15,18 @@ const DownloadButton = ({ modelCodeList = [] }) => {
   const handleDownload = async () => {
     if (!selectedModel) return;
 
-    const downloadLink = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${selectedModel}.stp`;
+    let filename = selectedModel;
+
+    // ✅ เฉพาะ RKFS Series เท่านั้นที่แทน Ratio ด้วย 'XXX'
+    if (selectedProduct === 'RKFS Series') {
+      const parts = selectedModel.split('-');
+      if (parts.length === 8) {
+        parts[4] = 'XXX'; // แทน Ratio
+        filename = parts.join('-');
+      }
+    }
+
+    const downloadLink = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${filename}.stp`;
     setDownloading(true);
 
     try {
@@ -25,7 +36,7 @@ const DownloadButton = ({ modelCodeList = [] }) => {
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${selectedModel}.stp`;
+      link.download = `${filename}.stp`;
       document.body.appendChild(link);
       link.click();
       link.remove();

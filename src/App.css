@@ -51,3 +51,22 @@
   transform: translateY(-3px);
 }
 
+/* ใส่ในไฟล์ CSS ของโปรเจกต์คุณ */
+@keyframes blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75%     { opacity: 0; }
+}
+
+.text-3d-blink {
+  /* ปรับสีเป็นน้ำเงินฟ้า */
+  color: #4fc3f7;
+  /* สร้างเงาหลายเลเยอร์ให้ดูนูน 3 มิติ */
+  text-shadow:
+    1px 1px 0px #0277bd,
+    2px 2px 0px #01579b,
+    3px 3px 0px #013a63,
+    4px 4px 0px #012f5c;
+  /* กระพริบตลอดเวลา */
+  animation: blink 1s infinite;
+}
+

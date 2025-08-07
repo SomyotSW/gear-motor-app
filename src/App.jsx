@@ -230,7 +230,7 @@ const handleDownload = () => {
   setIsDownloading(true);
   setTimeout(() => {
     const link = document.createElement('a');
-    link.href = fileUrl;
+    link.href = getFileUrl();
     link.download = `${selectedModel}.STEP`;
     link.click();
     setIsDownloading(false);
@@ -262,7 +262,21 @@ const handleDownload = () => {
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
   const rkfsState = { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower, rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub };
   const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower, setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub };
-  const fileUrl = selectedModel ? `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${selectedModel}.STEP` : '#';
+  const getFileUrl = () => {
+  if (!selectedModel) return '#';
+
+  // ถ้าเป็น RKFS ให้แปลง ratio → 'XXX'
+  if (selectedProduct === 'RKFS Series') {
+    const parts = selectedModel.split('-');
+    if (parts.length === 8) {
+      parts[4] = 'XXX';
+      return `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${parts.join('-')}.STEP`;
+    }
+  }
+
+  // อื่น ๆ ปกติ
+  return `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${selectedModel}.STEP`;
+};
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -270,9 +284,17 @@ const handleDownload = () => {
       <div className="relative z-10 p-6 text-gray-900">
         {!selectedProduct && (
           <>
-            <h1 className="text-5xl text-blue font-bold mb-5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-              SAS 3D.STEP
-            </h1>
+            <h1
+  className="
+    text-5xl
+    font-bold
+    mb-5
+    drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]
+    text-3d-blink
+  "
+>
+  SAS 3D.STEP
+</h1>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {productList.map((p) => (
                 <div
