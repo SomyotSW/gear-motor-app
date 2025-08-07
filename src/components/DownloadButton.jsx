@@ -26,7 +26,8 @@ const DownloadButton = ({ modelCodeList = [], selectedProduct }) => {
       }
     }
 
-    const downloadLink = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${filename}.stp`;
+    // ✅ เปลี่ยนจาก .stp → .STEP (แก้เฉพาะจุดนี้)
+    const downloadLink = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${filename}.STEP`;
     setDownloading(true);
 
     try {
@@ -36,7 +37,7 @@ const DownloadButton = ({ modelCodeList = [], selectedProduct }) => {
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${filename}.stp`;
+      link.download = `${filename}.STEP`;
       document.body.appendChild(link);
       link.click();
       link.remove();
