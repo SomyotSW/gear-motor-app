@@ -317,34 +317,75 @@ const handleDownload = () => {
           </>
         )}
 
-        {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
-          <>
-            <div className="flex justify-between items-center mt-6">
-              <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">AC Gear Motor Selection</h2>
-              <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
-            </div>
-            <ACMotorFlow
-              acState={acState}
-              acSetters={acSetters}
-              onConfirm={(modelCode) => {
-                const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-                setModelCodeList(models);
-                setSelectedModel(models[0]);
-              }}
-            />
-          </>
-        )}
-                {selectedProduct === 'Hypoid Gear' && !selectedModel && !showForm && (
+        {selectedProduct === 'AC Gear Motor' && selectedModel && !showForm && (
   <>
-    <div className="flex justify-between items-center mt-6">
-      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Hypoid Gear Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+    <div className="text-center mt-10 space-y-4">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
+      <p className="text-blue-200 font-medium mb-2">เลือกรุ่นที่ต้องการดาวน์โหลด:</p>
+      {modelCodeList.map((code, idx) => (
+        <div key={idx} className="flex justify-center items-center space-x-2">
+          <input
+            type="radio"
+            name="modelSelect"
+            value={code}
+            checked={selectedModel === code}
+            onChange={() => setSelectedModel(code)}
+          />
+          <label className="text-white drop-shadow">{code}</label>
+        </div>
+      ))}
     </div>
-    {renderHypoidGearFlow(hypoidState, hypoidSetters, (modelCode) => {
-      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-      setModelCodeList(models);
-      setSelectedModel(models[0]);
-    })}
+
+    <div className="flex justify-center items-center gap-4 mt-4">
+      <button
+        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        onClick={() => setShowForm(true)}
+      >
+        Download 3D
+      </button>
+      <button
+        className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
+        onClick={handleBack}
+      >
+        กลับไปเลือกใหม่
+      </button>
+    </div>
+  </>
+)}
+
+                {selectedProduct === 'Hypoid Gear' && selectedModel && !showForm && (
+  <>
+    <div className="text-center mt-10 space-y-4">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
+      <p className="text-blue-200 font-medium mb-2">เลือกรุ่นที่ต้องการดาวน์โหลด:</p>
+      {modelCodeList.map((code, idx) => (
+        <div key={idx} className="flex justify-center items-center space-x-2">
+          <input
+            type="radio"
+            name="modelSelect"
+            value={code}
+            checked={selectedModel === code}
+            onChange={() => setSelectedModel(code)}
+          />
+          <label className="text-white drop-shadow">{code}</label>
+        </div>
+      ))}
+    </div>
+
+    <div className="flex justify-center items-center gap-4 mt-4">
+      <button
+        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        onClick={() => setShowForm(true)}
+      >
+        Download 3D
+      </button>
+      <button
+        className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
+        onClick={handleBack}
+      >
+        กลับไปเลือกใหม่
+      </button>
+    </div>
   </>
 )}
 
