@@ -342,30 +342,28 @@ const handleDownload = () => {
   </>
 )}
 
-         {selectedProduct === 'RKFS Series' && !selectedModel && ( … )}
+{selectedProduct === 'RKFS Series' && !selectedModel && (
+  <>
+    {/* ส่วนที่แสดง renderRKFSFlow อยู่ตรงนี้ */}
+    {renderRKFSFlow(rkfsState, rkfsSetters, onConfirm)}
+  </>
+)}
 
-    {/* แทรกตรงนี้ แทน return ซ้อน */}
-    {modelCodeList.length > 0 && !showForm && (
-      <>
-        <div className="text-center mt-10 space-y-4">
-          <h2>Model Code:</h2>
-          <DownloadButton
-            modelCodeList={modelCodeList}
-            selectedProduct={selectedProduct}
-          />
-        </div>
+// ***** แทรกบล็อค Model Code + Download ตรงนี้ *****  
+{modelCodeList.length > 0 && !showForm && (
+  <div className="text-center mt-10 space-y-4">
+    {/* Heading */}
+    <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      Model Code:
+    </h2>
 
-        <div className="mt-10 flex justify-center">
-          {/* GIF preview */}
-        </div>
+    {/* DownloadButton */}
+    <DownloadButton
+      modelCodeList={modelCodeList}
+      selectedProduct={selectedProduct}
+    />
 
-        <div className="flex justify-center items-center gap-4 mt-4">
-          <button onClick={() => setShowForm(true)}>Download 3D</button>
-          <button onClick={handleBackUniversal}>กลับไปเลือกใหม่</button>
-        </div>
-      </>
-    )}
-    {/* Show GIF */}
+    {/* GIF Preview */}
     <div className="mt-10 flex justify-center">
       {selectedModel && (() => {
         let gifSrc = null;
@@ -373,37 +371,36 @@ const handleDownload = () => {
         else if (selectedModel.endsWith('KB')) gifSrc = KB3D;
         else if (selectedModel.endsWith('RC')) gifSrc = RC3D;
         else if (selectedModel.endsWith('RT')) gifSrc = RT3D;
-
         return gifSrc && (
           <img
             src={gifSrc}
             alt="Gear 3D Preview"
-            className="w-[200px] sm:w-[300px] md:w-[400px] lg:w-[500px] xl:w-[600px] 2xl:w-[700px] h-auto"
+            className="w-[200px] h-auto"
           />
         );
       })()}
     </div>
 
     {/* Buttons */}
-    <button
-      onClick={() => setShowForm(true)}
-      disabled={!selectedModel || isDownloading}
-      className={`mt-4 px-5 py-2 rounded text-white transition ${
-        isDownloading
-          ? 'bg-gray-400 cursor-not-allowed'
-          : 'bg-green-600 hover:bg-green-700 shadow-lg'
-      }`}
-    >
-      {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
-    </button>
-
-    <button
-  onClick={handleBackUniversal}
-  className="ml-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
->
-  กลับไปเลือกใหม่
-</button>
-
+    <div className="flex justify-center items-center gap-4 mt-4">
+      <button
+        onClick={() => setShowForm(true)}
+        disabled={!selectedModel || isDownloading}
+        className={`px-5 py-2 rounded text-white ${
+          isDownloading
+            ? 'bg-gray-400 cursor-not-allowed'
+            : 'bg-green-600 hover:bg-green-700'
+        }`}
+      >
+        {isDownloading ? 'กำลังดาวน์โหลด...' : 'Download 3D'}
+      </button>
+      <button
+        onClick={handleBackUniversal}
+        className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+      >
+        กลับไปเลือกใหม่
+      </button>
+    </div>
   </div>
 )}
         {showForm && (
