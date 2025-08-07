@@ -369,22 +369,22 @@ const handleDownload = () => {
           <label className="text-white drop-shadow">{code}</label>
         </div>
       ))}
-    </div>
 
-    {/* ✅ ปุ่ม Download 3D + กลับ */}
-    <div className="flex justify-center items-center gap-4 mt-4">
-      <button
-        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => setShowForm(true)}
-      >
-        Download 3D
-      </button>
-      <button
-        className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
-        onClick={handleBackUniversal}
-      >
-        กลับไปเลือกใหม่
-      </button>
+      {/* ✅ ปุ่ม Download 3D + กลับ */}
+      <div className="flex justify-center items-center gap-4 mt-4">
+        <button
+          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          onClick={() => setShowForm(true)}
+        >
+          Download 3D
+        </button>
+        <button
+          className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
+          onClick={handleBackUniversal}
+        >
+          กลับไปเลือกใหม่
+        </button>
+      </div>
     </div>
   </>
 )}
