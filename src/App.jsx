@@ -355,6 +355,7 @@ const handleDownload = () => {
     })}
   </>
 )}
+<>
        {modelCodeList.length > 0 && !showForm && (
   <div className="text-center mt-10 space-y-4">
     {/* Heading */}
@@ -367,6 +368,7 @@ const handleDownload = () => {
       modelCodeList={modelCodeList}
       selectedProduct={selectedProduct}
     />
+</>
   </div>
 )}
 
