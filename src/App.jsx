@@ -4,6 +4,7 @@ import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import DownloadButton from './components/DownloadButton';
 
 import K3D from './assets/3Dgif/K3D.gif';
 import KB3D from './assets/3Dgif/KB3D.gif';
@@ -354,26 +355,20 @@ const handleDownload = () => {
     })}
   </>
 )}
-        {modelCodeList.length > 0 && !showForm && (
+       {modelCodeList.length > 0 && !showForm && (
   <div className="text-center mt-10 space-y-4">
     {/* Heading */}
     <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
       Model Code:
     </h2>
 
-    {/* Radio List */}
-    {modelCodeList.map((code, idx) => (
-      <div key={idx} className="flex justify-center items-center space-x-2">
-        <input
-          type="radio"
-          name="modelSelect"
-          value={code}
-          checked={selectedModel === code}
-          onChange={() => setSelectedModel(code)}
-        />
-        <label>{code}</label>
-      </div>
-    ))}
+    {/* ✅ โหลดปุ่มดาวน์โหลดอัตโนมัติ (พร้อมเลือกรุ่น) */}
+    <DownloadButton
+      modelCodeList={modelCodeList}
+      selectedProduct={selectedProduct}
+    />
+  </div>
+)}
 
     {/* Show GIF */}
     <div className="mt-10 flex justify-center">

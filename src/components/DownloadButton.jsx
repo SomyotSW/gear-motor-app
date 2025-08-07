@@ -26,29 +26,29 @@ const DownloadButton = ({ modelCodeList = [], selectedProduct }) => {
       }
     }
 
-    const rawUrl = `https://raw.githubusercontent.com/SomyotSW/gear-motor-app/main/src/assets/model/${filename}.STEP`;
-    setDownloading(true);
+    const fileUrl = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${filename}.STEP`;
 
+    setDownloading(true);
     try {
-      const response = await fetch(rawUrl);
-      if (!response.ok) throw new Error('ไฟล์ไม่พบหรือเชื่อมต่อผิดพลาด');
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error('ไม่พบไฟล์ STEP');
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const blobUrl = window.URL.createObjectURL(blob);
 
       const link = document.createElement('a');
-      link.href = url;
+      link.href = blobUrl;
       link.download = `${filename}.STEP`;
       document.body.appendChild(link);
       link.click();
       link.remove();
 
       setTimeout(() => {
-        window.URL.revokeObjectURL(url);
+        window.URL.revokeObjectURL(blobUrl);
         setDownloading(false);
       }, 3000);
-    } catch (error) {
-      alert('❌ ไม่สามารถดาวน์โหลดไฟล์ได้ กรุณาตรวจสอบการเชื่อมต่อหรือลิงก์ไฟล์');
+    } catch (err) {
+      alert('❌ ไม่สามารถดาวน์โหลดไฟล์ STEP ได้ กรุณาตรวจสอบชื่อไฟล์หรือเครือข่าย');
       setDownloading(false);
     }
   };
@@ -86,11 +86,7 @@ const DownloadButton = ({ modelCodeList = [], selectedProduct }) => {
         </button>
 
         {downloading && (
-          <img
-            src={HourglassGif}
-            alt="loading"
-            className="w-6 h-6 animate-spin"
-          />
+          <img src={HourglassGif} alt="loading" className="w-6 h-6 animate-spin" />
         )}
       </div>
     </div>
