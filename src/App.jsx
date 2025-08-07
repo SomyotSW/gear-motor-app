@@ -348,15 +348,27 @@ const handleDownload = () => {
   </>
 )}
 
+{/* 🟦 RKFS Series STEP 1 */}
+{selectedProduct === 'RKFS Series' && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-white font-bold mb-2 drop-shadow">RKFS Series Selection</h2>
+      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+    </div>
+    {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
+      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+      setModelCodeList(models);
+      setSelectedModel(models[0]);
+    })}
+  </>
+)}
+
+{/* 🟩 RKFS Series หลังเลือก model แล้ว */}
 {selectedProduct === 'RKFS Series' && selectedModel && !showForm && (
   <>
     <div className="text-center mt-10 space-y-4">
-      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-        Model Code:
-      </h2>
-
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
       <p className="text-blue-200 font-medium mb-2">เลือกรุ่นที่ต้องการดาวน์โหลด:</p>
-
       {modelCodeList.map((code, idx) => (
         <div key={idx} className="flex justify-center items-center space-x-2">
           <input
@@ -387,6 +399,7 @@ const handleDownload = () => {
     </div>
   </>
 )}
+
 
 {showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
