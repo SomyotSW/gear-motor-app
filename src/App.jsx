@@ -342,33 +342,29 @@ const handleDownload = () => {
   </>
 )}
 
-        {selectedProduct === 'RKFS Series' && !selectedModel && (
-  <>
-    <div className="flex justify-between items-center mt-6">
-      <h2 className="text-xl font-bold">RKFS Series Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleRKFSBackToHome}>Home</button>
-    </div>
-    {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
-      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-      setModelCodeList(models);
-      setSelectedModel(models[0]);
-    })}
-  </>
-)}
-    {modelCodeList.length > 0 && !showForm && (
-  <div className="text-center mt-10 space-y-4">
-    {/* Heading */}
-    <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-      Model Code:
-    </h2>
+         {selectedProduct === 'RKFS Series' && !selectedModel && ( … )}
 
-    {/* ✅ โหลดปุ่มดาวน์โหลดอัตโนมัติ (พร้อมเลือกรุ่น) */}
-    <DownloadButton
-      modelCodeList={modelCodeList}
-      selectedProduct={selectedProduct}
-    />
-  </div>
-)}
+    {/* แทรกตรงนี้ แทน return ซ้อน */}
+    {modelCodeList.length > 0 && !showForm && (
+      <>
+        <div className="text-center mt-10 space-y-4">
+          <h2>Model Code:</h2>
+          <DownloadButton
+            modelCodeList={modelCodeList}
+            selectedProduct={selectedProduct}
+          />
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          {/* GIF preview */}
+        </div>
+
+        <div className="flex justify-center items-center gap-4 mt-4">
+          <button onClick={() => setShowForm(true)}>Download 3D</button>
+          <button onClick={handleBackUniversal}>กลับไปเลือกใหม่</button>
+        </div>
+      </>
+    )}
     {/* Show GIF */}
     <div className="mt-10 flex justify-center">
       {selectedModel && (() => {
