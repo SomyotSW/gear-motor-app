@@ -26,12 +26,13 @@ const DownloadButton = ({ modelCodeList = [], selectedProduct }) => {
       }
     }
 
-    // ✅ เปลี่ยนจาก .stp → .STEP (แก้เฉพาะจุดนี้)
-    const downloadLink = `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${filename}.STEP`;
+    const rawUrl = `https://raw.githubusercontent.com/SomyotSW/gear-motor-app/main/src/assets/model/${filename}.STEP`;
     setDownloading(true);
 
     try {
-      const response = await fetch(downloadLink);
+      const response = await fetch(rawUrl);
+      if (!response.ok) throw new Error('ไฟล์ไม่พบหรือเชื่อมต่อผิดพลาด');
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
 
@@ -47,7 +48,7 @@ const DownloadButton = ({ modelCodeList = [], selectedProduct }) => {
         setDownloading(false);
       }, 3000);
     } catch (error) {
-      alert('❌ เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์');
+      alert('❌ ไม่สามารถดาวน์โหลดไฟล์ได้ กรุณาตรวจสอบการเชื่อมต่อหรือลิงก์ไฟล์');
       setDownloading(false);
     }
   };
@@ -81,7 +82,7 @@ const DownloadButton = ({ modelCodeList = [], selectedProduct }) => {
               : 'bg-green-600 hover:bg-green-700 active:translate-y-[2px]'
           }`}
         >
-          {downloading ? 'กำลังดาวน์โหลด...' : '📥 ดาวน์โหลด .stp'}
+          {downloading ? 'กำลังดาวน์โหลด...' : '📥 ดาวน์โหลด .STEP'}
         </button>
 
         {downloading && (
