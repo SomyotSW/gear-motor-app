@@ -317,6 +317,23 @@ const handleDownload = () => {
           </>
         )}
 
+        {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
+          <>
+            <div className="flex justify-between items-center mt-6">
+              <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">AC Gear Motor Selection</h2>
+              <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+            </div>
+            <ACMotorFlow
+              acState={acState}
+              acSetters={acSetters}
+              onConfirm={(modelCode) => {
+                const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+                setModelCodeList(models);
+                setSelectedModel(models[0]);
+              }}
+            />
+          </>
+        )}
         {selectedProduct === 'AC Gear Motor' && selectedModel && !showForm && (
   <>
     <div className="text-center mt-10 space-y-4">
@@ -352,8 +369,20 @@ const handleDownload = () => {
     </div>
   </>
 )}
-
-                {selectedProduct === 'Hypoid Gear' && selectedModel && !showForm && (
+  {selectedProduct === 'Hypoid Gear' && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Hypoid Gear Selection</h2>
+      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+    </div>
+    {renderHypoidGearFlow(hypoidState, hypoidSetters, (modelCode) => {
+      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+      setModelCodeList(models);
+      setSelectedModel(models[0]);
+    })}
+  </>
+)}
+{selectedProduct === 'Hypoid Gear' && selectedModel && !showForm && (
   <>
     <div className="text-center mt-10 space-y-4">
       <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
@@ -388,6 +417,7 @@ const handleDownload = () => {
     </div>
   </>
 )}
+
 
 {/* 🟦 RKFS Series STEP 1 */}
 {selectedProduct === 'RKFS Series' && !selectedModel && !showForm && (
