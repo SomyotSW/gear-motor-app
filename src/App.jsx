@@ -348,7 +348,7 @@ const handleDownload = () => {
   </>
 )}
 
-{selectedProduct === 'RKFS Series' && !selectedModel && !showForm && (
+{selectedProduct === 'RKFS Series' && selectedModel && !showForm && (
   <>
     <div className="text-center mt-10 space-y-4">
       <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
@@ -371,7 +371,7 @@ const handleDownload = () => {
       ))}
     </div>
 
-    {/* ✅ นำโค้ดปุ่มที่คุณให้มาแทรกตรงนี้ */}
+    {/* ✅ ปุ่ม Download 3D + กลับ */}
     <div className="flex justify-center items-center gap-4 mt-4">
       <button
         className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
@@ -387,7 +387,7 @@ const handleDownload = () => {
       </button>
     </div>
   </>
-)}        
+)}
 
 {showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
