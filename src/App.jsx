@@ -139,6 +139,12 @@ const hypoidSetters = {
   setOptional: setHypoidOptional
 };
 
+const onConfirm = (modelCode) => {
+  const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+  setModelCodeList(models);
+  setSelectedModel(models[0]);
+};
+
   useEffect(() => {
     if (
       selectedProduct === 'AC Gear Motor' &&
