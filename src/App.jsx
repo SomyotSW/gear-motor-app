@@ -424,7 +424,7 @@ const handleDownload = () => {
   <>
     <div className="flex justify-between items-center mt-6">
       <h2 className="text-white font-bold mb-2 drop-shadow">RKFS Series Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+      <button className="text-blue-600 hover:underline" onClick={handleBackUniversal}>Home</button>
     </div>
     {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
       const models = Array.isArray(modelCode) ? modelCode : [modelCode];
