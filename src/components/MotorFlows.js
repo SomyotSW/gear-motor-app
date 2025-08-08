@@ -714,8 +714,8 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 
 
   const ratioList =
-   rkfsDesign && ratioMapping[rkfsDesign]?.[rkfsSize]
-      ? ratioMapping[rkfsDesign][rkfsSize]
+   rkfsSeries && ratioMapping[rkfsSeries]?.[rkfsSize]
+      ? ratioMapping[rkfsSeries][rkfsSize]
       : [];
 
   const mountingImageMap = {
