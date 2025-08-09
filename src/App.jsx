@@ -141,21 +141,19 @@ const resetBLDC = () => {
   setBldcRatio(null);
 };
 
-// [ADD-BLDC-HIGH] State เพิ่มเติมสำหรับ High-efficiency
+// [ADD-BLDC-HIGH] สำหรับ High-efficiency
 const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
-const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // '12'|'14'|'15'|'16'|'20'|'25'
+const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
 
-// backOneStepBLDC()
-if (bldcSFDiameter) { setBldcSFDiameter(null); return; } // เฉพาะโหมด SF
+// ใน backOneStepBLDC() — เพิ่มก่อนเคสอื่น (เฉพาะโหมด SF มี diameter)
+if (bldcSFDiameter) { setBldcSFDiameter(null); return; }
 if (bldcHEType) {
-  // ถอยภายใน HE ก่อน
   if (bldcRatio !== null && bldcRatio !== undefined) { setBldcRatio(null); return; }
   if (bldcSpeed) { setBldcSpeed(null); return; }
   if (bldcPower) { setBldcPower(null); return; }
   if (bldcFrame) { setBldcFrame(null); return; }
   setBldcHEType(null); return;
 }
-
 // [ADD-BLDC] Back ถอยทีละสเตป
 const backOneStepBLDC = () => {
   if (bldcRatio !== null && bldcRatio !== undefined) { setBldcRatio(null); return; }
@@ -176,6 +174,8 @@ const goHomeFromBLDC = () => {
   setModelCodeList([]);        // ถ้ามีตัวแปรนี้ใน App ของคุณอยู่แล้ว
   setSelectedModel(null);
   setSelectedProduct(null);    // กลับหน้า Product
+    setBldcHEType(null);
+    setBldcSFDiameter(null);
 };
 
 const hypoidState = {
@@ -519,6 +519,43 @@ const handleDownload = () => {
   goHomeFromBLDC,
   backOneStepBLDC
 )}
+  </>
+)}
+
+{/* [ADD-BLDC] แสดงรายการรุ่นหลัง Generate */}
+{selectedProduct === 'BLDC Gear Motor' && modelCodeList?.length > 0 && !showForm && (
+  <>
+    <div className="text-center mt-10 space-y-4">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
+
+      {modelCodeList.map((code, idx) => (
+        <div key={idx} className="flex justify-center items-center space-x-2">
+          <input
+            type="radio"
+            name="modelSelectBLDC"
+            value={code}
+            checked={selectedModel === code}
+            onChange={() => setSelectedModel(code)}
+          />
+          <label className="text-white/90">{code}</label>
+        </div>
+      ))}
+
+      <div className="mt-6 flex gap-3 justify-center">
+        <button
+          onClick={() => setShowForm(true)}
+          className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow"
+        >
+          ยืนยันและขอรหัสดาวน์โหลด
+        </button>
+        <button
+          onClick={goHomeFromBLDC}
+          className="px-5 py-2 rounded-xl bg-white hover:bg-white/90 shadow"
+        >
+          Home
+        </button>
+      </div>
+    </div>
   </>
 )}
 
