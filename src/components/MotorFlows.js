@@ -1282,7 +1282,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
         }}>BLDCGearmotor</Btn>
 
         <Btn active={bldcCategory === 'HighefficiencyBLDCGearmotor'} onClick={() => {
-          update('bldcCategory','HighefficiencyBLDCGearmotor');
+          update('bldcCategory','HighefficiencyBLDCGearmotor'); 
           // ตั้งค่าเริ่มต้นตามสเปค HE: โวลต์ 220 AC, ล้างค่าปุ่ม normal
           update('bldcVoltage','220');
           update('bldcOption', null);
@@ -1392,29 +1392,30 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           </Section>
 
           {/* Step 2: Frame (ตาม HE type) */}
-          {bldcHEType && (
-            <Section title="Step 2: เลือก Frame Size (HE)">
-              {Object.keys(HE_framePower[bldcHEType]).map(fr => (
-                <Btn key={fr} active={bldcFrame === fr} onClick={() => {
-                  update('bldcFrame', fr);
-                  update('bldcPower', null);
-                  update('bldcSpeed', null);
-                  update('bldcRatio', null);
-                  update('bldcSFDiameter', null);
-                }}>
-                  {fr}
-                  <div className="text-xs">
-                    {fr==='Z2BLD'&& (bldcHEType==='S'?'60mm • 30W': bldcHEType==='SF'?'60mm • 60W':'60mm • 100W')}
-                    {fr==='Z3BLD'&& (bldcHEType==='S'?'70mm • 60W':'')}
-                    {fr==='Z4BLD'&& (bldcHEType==='S'?'80mm • 60W,120W': bldcHEType==='SF'?'80mm • 120W':'80mm • 200W')}
-                    {fr==='Z5BLD'&& (bldcHEType==='S'?'90mm • 120W,200W': bldcHEType==='SF'?'90mm • 200W':'90mm • 400W')}
-                    {fr==='Z6BLD'&& (bldcHEType==='S'?'110mm • 200W,400W': bldcHEType==='SF'?'104mm • 400W':'104mm • 750W')}
-                    {fr==='Z7BLD'&& (bldcHEType==='S'?'120mm • 750W':'120mm • 1100W')}
-                  </div>
-                </Btn>
-              ))}
-            </Section>
-          )}
+          {/* Step 2: Frame (ตาม HE type) */}
+{bldcHEType && (
+  <Section title="Step 2: เลือก Frame Size (HE)">
+    {Object.keys(HE_framePower[bldcHEType] || {}).map(fr => (   // << เพิ่ม || {}
+      <Btn key={fr} active={bldcFrame === fr} onClick={() => {
+        update('bldcFrame', fr);
+        update('bldcPower', null);
+        update('bldcSpeed', null);
+        update('bldcRatio', null);
+        update('bldcSFDiameter', null);
+      }}>
+        {fr}
+        <div className="text-xs">
+          {fr==='Z2BLD'&& (bldcHEType==='S'?'60mm • 30W': bldcHEType==='SF'?'60mm • 60W':'60mm • 100W')}
+          {fr==='Z3BLD'&& (bldcHEType==='S'?'70mm • 60W':'')}
+          {fr==='Z4BLD'&& (bldcHEType==='S'?'80mm • 60W,120W': bldcHEType==='SF'?'80mm • 120W':'80mm • 200W')}
+          {fr==='Z5BLD'&& (bldcHEType==='S'?'90mm • 120W,200W': bldcHEType==='SF'?'90mm • 200W':'90mm • 400W')}
+          {fr==='Z6BLD'&& (bldcHEType==='S'?'110mm • 200W,400W': bldcHEType==='SF'?'104mm • 400W':'104mm • 750W')}
+          {fr==='Z7BLD'&& (bldcHEType==='S'?'120mm • 750W':'120mm • 1100W')}
+        </div>
+      </Btn>
+    ))}
+  </Section>
+)}
 
           {/* Step 3: Power */}
           {bldcHEType && bldcFrame && (

@@ -128,6 +128,10 @@ const [bldcGearType, setBldcGearType] = useState(null);
 const [bldcSpeed, setBldcSpeed] = useState(null);
 const [bldcOption, setBldcOption] = useState(null);
 const [bldcRatio, setBldcRatio] = useState(null);
+// [ADD-BLDC-HIGH] สำหรับ High-efficiency
+const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
+const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
+
 
 // [ADD-BLDC] เคลียร์ค่า BLDC ทั้งหมด
 const resetBLDC = () => {
@@ -140,10 +144,6 @@ const resetBLDC = () => {
   setBldcOption(null);
   setBldcRatio(null);
 };
-
-// [ADD-BLDC-HIGH] สำหรับ High-efficiency
-const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
-const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
 
 // ใน backOneStepBLDC() — เพิ่มก่อนเคสอื่น (เฉพาะโหมด SF มี diameter)
 if (bldcSFDiameter) { setBldcSFDiameter(null); return; }
@@ -477,22 +477,6 @@ const handleDownload = () => {
   </>
 )}
 
-
-{/* 🟦 RKFS Series STEP 1 */}
-{selectedProduct === 'RKFS Series' && !selectedModel && !showForm && (
-  <>
-    <div className="flex justify-between items-center mt-6">
-      <h2 className="text-white font-bold mb-2 drop-shadow">RKFS Series Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBackUniversal}>Home</button>
-    </div>
-    {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
-      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-      setModelCodeList(models);
-      setSelectedModel(models[0]);
-    })}
-  </>
-)}
-
 {selectedProduct === 'BLDC Gear Motor' && !selectedModel && (
   <>
     <div className="flex justify-between items-center mt-6">
@@ -556,6 +540,23 @@ const handleDownload = () => {
         </button>
       </div>
     </div>
+  </>
+)}
+
+
+
+{/* 🟦 RKFS Series STEP 1 */}
+{selectedProduct === 'RKFS Series' && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-white font-bold mb-2 drop-shadow">RKFS Series Selection</h2>
+      <button className="text-blue-600 hover:underline" onClick={handleBackUniversal}>Home</button>
+    </div>
+    {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
+      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+      setModelCodeList(models);
+      setSelectedModel(models[0]);
+    })}
   </>
 )}
 
