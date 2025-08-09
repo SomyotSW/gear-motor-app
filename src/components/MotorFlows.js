@@ -1066,3 +1066,242 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     </>
   );
 }
+
+// ==============================
+// [ADD-BLDC] BLDC Gear Motor Flow
+// ==============================
+
+export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
+  const {
+    bldcCategory,   // 'BLDCGearmotor' | 'HighefficiencyBLDCGearmotor'
+    bldcFrame,      // 'Z2BLD' | 'Z3BLD' | 'Z4BLD' | 'Z5BLD-GN' | 'Z5BLD-GU' | 'Z6BLD' | 'Z7BLD'
+    bldcPower,      // number: 15,25,30,40,60,90,120,200,400,750
+    bldcVoltage,    // '24' | '36' | '48'
+    bldcGearType,   // 'GN'|'GNL'|'GU'|'GUL'
+    bldcSpeed,      // '15S'|'20S'|'30S'
+    bldcOption,     // null|'M'|'BM' | 'Standard'
+    bldcRatio       // number|string: 3, 3.6, 5, ...
+  } = state;
+
+  const update = (key, value) => {
+    const setter = setState[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
+    if (setter) setter(value);
+  };
+
+  // --- Step 2 → 3: Frame → Power map ---
+  const framePowerMap = {
+    'Z2BLD': [15, 25],
+    'Z3BLD': [30, 40],
+    'Z4BLD': [40, 60],
+    'Z5BLD-GN': [40, 60],
+    'Z5BLD-GU': [60, 90, 120],
+    'Z6BLD': [200, 400],
+    'Z7BLD': [750],
+  };
+
+  // --- Step 5: Gear type by frame ---
+  const frameGearOptions = {
+    'Z2BLD': ['GN', 'GNL'],
+    'Z3BLD': ['GN', 'GNL'],
+    'Z4BLD': ['GN', 'GNL'],
+    'Z5BLD-GN': ['GN', 'GNL'],
+    'Z5BLD-GU': ['GU', 'GUL'],
+    'Z6BLD': ['GU', 'GUL'],
+    'Z7BLD': ['GU', 'GUL'],
+  };
+
+  // Step 6: Speed mapping (info text)
+  const speedInfo = {
+    '15S': '1500 rpm',
+    '20S': '2000 rpm',
+    '30S': '3000 rpm',
+  };
+
+  // Step 8: Ratio list
+  const ratioList = [3, 3.6, 5, 6, 7.5, 9, 10, 12.5, 15, 18, 20, 25, 30, 36, 50, 60, 75, 90, 100, 120, 150, 180, 200];
+
+  // Helpers
+  const seriesDigitFromFrame = (frame) => {
+    if (!frame) return '';
+    // 'Z5BLD-GN' → '5' , 'Z2BLD' → '2'
+    const m = frame.match(/^Z(\d)BLD/);
+    return m ? m[1] : '';
+  };
+
+  const gearBaseFromType = (gearType) => {
+    // GNL → base 'GN', GUL → base 'GU'
+    if (!gearType) return '';
+    return gearType.includes('N') ? 'GN' : 'GU';
+  };
+
+  const suffixFor = (gearType, frame, power) => {
+    // กฎที่คุณกำหนด:
+    // GU → KB (ยกเว้น Z7/750W ใช้ V)
+    // GUL → LC (ยกเว้น Z7/750W ใช้ L)
+    // GN → K
+    // GNL → LC
+    const isZ7_750 = (frame === 'Z7BLD' && Number(power) === 750);
+    if (gearType === 'GU')   return isZ7_750 ? 'V'  : 'KB';
+    if (gearType === 'GUL')  return isZ7_750 ? 'L'  : 'LC';
+    if (gearType === 'GN')   return 'K';
+    if (gearType === 'GNL')  return 'LC';
+    return 'K';
+  };
+
+  const canConfirm = !!(bldcCategory && bldcFrame && bldcPower && bldcVoltage && bldcGearType && bldcSpeed && bldcRatio);
+
+  // UI helpers
+  const Section = ({ title, children, note }) => (
+    <div className="mt-4">
+      <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">{title}</h3>
+      {note && <div className="text-sm text-white/80 mb-2">{note}</div>}
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+
+  const Btn = ({ active, onClick, children, smallNote }) => (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-xl shadow ${active ? 'bg-blue-600 text-white' : 'bg-white/90 hover:bg-white'} transition`}
+    >
+      <div className="font-semibold">{children}</div>
+      {smallNote && <div className="text-xs opacity-70">{smallNote}</div>}
+    </button>
+  );
+
+  // RENDER
+  return (
+    <>
+      {/* Header controls: Home / Back */}
+      <div className="flex items-center justify-between mt-6">
+        <button onClick={onHome} className="px-3 py-1.5 rounded-lg bg-white hover:bg-white/90 shadow">Home</button>
+        <button onClick={onBack} className="px-3 py-1.5 rounded-lg bg-white hover:bg-white/90 shadow">ย้อนกลับ</button>
+      </div>
+
+      {/* Step 1 */}
+      <Section title="Step 1: เลือกประเภท BLDC">
+        <Btn active={bldcCategory === 'BLDCGearmotor'} onClick={() => update('bldcCategory', 'BLDCGearmotor')}>BLDCGearmotor</Btn>
+        <Btn active={bldcCategory === 'HighefficiencyBLDCGearmotor'} onClick={() => update('bldcCategory', 'HighefficiencyBLDCGearmotor')}>
+          HighefficiencyBLDCGearmotor
+          <div className="text-[10px] opacity-70">(กำลังจัดทำ)</div>
+        </Btn>
+      </Section>
+
+      {/* Step 2: Frame */}
+      {bldcCategory === 'BLDCGearmotor' && (
+        <Section title="Step 2: เลือก Frame Size">
+          <Btn active={bldcFrame === 'Z2BLD'} onClick={() => update('bldcFrame', 'Z2BLD')}>Z2BLD<div className="text-xs">60mm • 15W,25W</div></Btn>
+          <Btn active={bldcFrame === 'Z3BLD'} onClick={() => update('bldcFrame', 'Z3BLD')}>Z3BLD<div className="text-xs">70mm • 30W,40W</div></Btn>
+          <Btn active={bldcFrame === 'Z4BLD'} onClick={() => update('bldcFrame', 'Z4BLD')}>Z4BLD<div className="text-xs">80mm • 40W,60W</div></Btn>
+          <Btn active={bldcFrame === 'Z5BLD-GN'} onClick={() => update('bldcFrame', 'Z5BLD-GN')}>Z5BLD (GN)<div className="text-xs">90mm • 40W,60W</div></Btn>
+          <Btn active={bldcFrame === 'Z5BLD-GU'} onClick={() => update('bldcFrame', 'Z5BLD-GU')}>Z5BLD (GU)<div className="text-xs">90mm • 60W,90W,120W</div></Btn>
+          <Btn active={bldcFrame === 'Z6BLD'} onClick={() => update('bldcFrame', 'Z6BLD')}>Z6BLD<div className="text-xs">104mm • 200W,400W</div></Btn>
+          <Btn active={bldcFrame === 'Z7BLD'} onClick={() => update('bldcFrame', 'Z7BLD')}>Z7BLD<div className="text-xs">120mm • 750W</div></Btn>
+        </Section>
+      )}
+
+      {/* Step 3: Power (depends on frame) */}
+      {bldcFrame && (
+        <Section title="Step 3: เลือกกำลัง (W)">
+          {(framePowerMap[bldcFrame] || []).map(p => (
+            <Btn key={p} active={bldcPower === p} onClick={() => update('bldcPower', p)}>{p}W</Btn>
+          ))}
+        </Section>
+      )}
+
+      {/* Step 4: Voltage */}
+      {bldcPower && (
+        <Section title="Step 4: Rated Voltage">
+          {['24','36','48'].map(v => (
+            <Btn key={v} active={bldcVoltage === v} onClick={() => update('bldcVoltage', v)}>{v}VDC</Btn>
+          ))}
+        </Section>
+      )}
+
+      {/* Step 5: Gear Type (depends on frame) */}
+      {bldcVoltage && (
+        <Section title="Step 5: Gear Type (ผูกเงื่อนไขกับ Frame)">
+          {(frameGearOptions[bldcFrame] || []).map(gt => (
+            <Btn key={gt} active={bldcGearType === gt} onClick={() => update('bldcGearType', gt)}>{gt}</Btn>
+          ))}
+        </Section>
+      )}
+
+      {/* Step 6: Speed */}
+      {bldcGearType && (
+        <Section title="Step 6: Speed code" note="15S=1500rpm, 20S=2000rpm, 30S=3000rpm">
+          {['15S','20S','30S'].map(s => (
+            <Btn key={s} active={bldcSpeed === s} onClick={() => update('bldcSpeed', s)}>
+              {s}<div className="text-xs">{speedInfo[s]}</div>
+            </Btn>
+          ))}
+        </Section>
+      )}
+
+      {/* Step 7: Motor options */}
+      {bldcSpeed && (
+        <Section title="Step 7: Motor options" note="M: Electromagnetic brake, BM: Closed loop (encoder/Hall). ถ้าเลือก Standard จะไม่ใส่โค้ดตัวนี้">
+          {['Standard','M','BM'].map(opt => (
+            <Btn key={opt} active={bldcOption === opt} onClick={() => update('bldcOption', opt)}>
+              {opt}
+            </Btn>
+          ))}
+        </Section>
+      )}
+
+      {/* Step 8: Ratio */}
+      {bldcOption !== undefined && bldcOption !== null && (
+        <Section title="Step 8: Ratio">
+          {ratioList.map(r => (
+            <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
+          ))}
+        </Section>
+      )}
+
+      {/* Step 9: Confirm */}
+      <div className="mt-6">
+        <button
+          disabled={!canConfirm}
+          onClick={() => {
+            const model = generateBLDCModelCode(state);
+            onConfirm(model);
+          }}
+          className={`px-5 py-2 rounded-xl shadow ${canConfirm ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+        >
+          ยืนยันรุ่น (Generate Model Code)
+        </button>
+      </div>
+    </>
+  );
+}
+
+// [ADD-BLDC] Model code generator
+export function generateBLDCModelCode(state) {
+  const {
+    bldcFrame, bldcPower, bldcVoltage, bldcGearType, bldcSpeed, bldcOption, bldcRatio
+  } = state;
+
+  if (!bldcFrame || !bldcPower || !bldcVoltage || !bldcGearType || !bldcSpeed || !bldcRatio) return null;
+
+  const series = (bldcFrame.match(/^Z(\d)BLD/) || [,''])[1]; // '2','3',...
+  const optionSeg = (bldcOption && bldcOption !== 'Standard') ? `-${bldcOption}` : '';
+  const base = bldcGearType.includes('N') ? 'GN' : 'GU'; // GNL→GN, GUL→GU
+  const suffix = (function() {
+    const isZ7_750 = (bldcFrame === 'Z7BLD' && Number(bldcPower) === 750);
+    if (bldcGearType === 'GU')  return isZ7_750 ? 'V'  : 'KB';
+    if (bldcGearType === 'GUL') return isZ7_750 ? 'L'  : 'LC';
+    if (bldcGearType === 'GN')  return 'K';
+    if (bldcGearType === 'GNL') return 'LC';
+    return 'K';
+  })();
+
+  // ตัวอย่างฟอร์แมต:
+  // Z2BLD15-24-GN-15S-M-2GN15K
+  // Z3BLD30-24-GN-20S-BM-3GN200K
+  // Z4BLD60-24-GNL-30S-4GN36LC
+  // Z5BLD60-24-GU-30S-5GU36KB
+  // Z7BLD750-48-GUL-30S-7GU50L
+  const head = `${bldcFrame}${bldcPower}-${bldcVoltage}-${bldcGearType}-${bldcSpeed}${optionSeg}`;
+  const tail = `${series}${base}${String(bldcRatio).replace(/\.0$/,'')}${suffix}`;
+  return `${head}-${tail}`;
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow } from './components/MotorFlows.js';
+import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode } from './components/MotorFlows.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
@@ -118,6 +118,50 @@ const handleRKFSBackToHome = () => {
   const [emailVerifiedCode, setEmailVerifiedCode] = useState(null);
   const [emailCodeInput, setEmailCodeInput] = useState('');
   const [codeSent, setCodeSent] = useState(false);
+
+// [ADD-BLDC] State ของ BLDC
+const [bldcCategory, setBldcCategory] = useState(null);
+const [bldcFrame, setBldcFrame] = useState(null);
+const [bldcPower, setBldcPower] = useState(null);
+const [bldcVoltage, setBldcVoltage] = useState(null);
+const [bldcGearType, setBldcGearType] = useState(null);
+const [bldcSpeed, setBldcSpeed] = useState(null);
+const [bldcOption, setBldcOption] = useState(null);
+const [bldcRatio, setBldcRatio] = useState(null);
+
+// [ADD-BLDC] เคลียร์ค่า BLDC ทั้งหมด
+const resetBLDC = () => {
+  setBldcCategory(null);
+  setBldcFrame(null);
+  setBldcPower(null);
+  setBldcVoltage(null);
+  setBldcGearType(null);
+  setBldcSpeed(null);
+  setBldcOption(null);
+  setBldcRatio(null);
+};
+
+// [ADD-BLDC] Back ถอยทีละสเตป
+const backOneStepBLDC = () => {
+  if (bldcRatio !== null && bldcRatio !== undefined) { setBldcRatio(null); return; }
+  if (bldcOption !== null && bldcOption !== undefined) { setBldcOption(null); return; }
+  if (bldcSpeed) { setBldcSpeed(null); return; }
+  if (bldcGearType) { setBldcGearType(null); return; }
+  if (bldcVoltage) { setBldcVoltage(null); return; }
+  if (bldcPower) { setBldcPower(null); return; }
+  if (bldcFrame) { setBldcFrame(null); return; }
+  if (bldcCategory) { setBldcCategory(null); return; }
+  // ถ้าไม่มีอะไรจะถอยแล้ว ค่อยกลับ Home
+  handleBackUniversal();
+};
+
+// [ADD-BLDC] ใช้เป็น callback ให้ flow
+const goHomeFromBLDC = () => {
+  resetBLDC();
+  setModelCodeList([]);        // ถ้ามีตัวแปรนี้ใน App ของคุณอยู่แล้ว
+  setSelectedModel(null);
+  setSelectedProduct(null);    // กลับหน้า Product
+};
 
 const hypoidState = {
   type: hypoidType,
@@ -261,7 +305,7 @@ const handleDownload = () => {
     setAcRatio(null);
     setRkfsDesign(null);
     setRkfsSize(null);
-    setRkfsPower(null);
+    setRkfsMotorPower(null);
     setRkfsMounting(null);
   };
 
@@ -431,6 +475,33 @@ const handleDownload = () => {
       setModelCodeList(models);
       setSelectedModel(models[0]);
     })}
+  </>
+)}
+
+{selectedProduct === 'BLDC Gear Motor' && !selectedModel && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-xl font-bold">BLDC Gear Motor Selection</h2>
+      <button className="text-blue-600 hover:underline" onClick={goHomeFromBLDC}>Home</button>
+    </div>
+
+    {renderBLDCGearFlow(
+      {
+        bldcCategory, bldcFrame, bldcPower, bldcVoltage,
+        bldcGearType, bldcSpeed, bldcOption, bldcRatio
+      },
+      {
+        setBldcCategory, setBldcFrame, setBldcPower, setBldcVoltage,
+        setBldcGearType, setBldcSpeed, setBldcOption, setBldcRatio
+      },
+      (modelCode) => {              // onConfirm
+        const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+        setModelCodeList(models);
+        setSelectedModel(models[0]);
+      },
+      goHomeFromBLDC,               // onHome
+      backOneStepBLDC               // onBack
+    )}
   </>
 )}
 
