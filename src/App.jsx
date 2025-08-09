@@ -141,6 +141,21 @@ const resetBLDC = () => {
   setBldcRatio(null);
 };
 
+// [ADD-BLDC-HIGH] State เพิ่มเติมสำหรับ High-efficiency
+const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
+const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // '12'|'14'|'15'|'16'|'20'|'25'
+
+// backOneStepBLDC()
+if (bldcSFDiameter) { setBldcSFDiameter(null); return; } // เฉพาะโหมด SF
+if (bldcHEType) {
+  // ถอยภายใน HE ก่อน
+  if (bldcRatio !== null && bldcRatio !== undefined) { setBldcRatio(null); return; }
+  if (bldcSpeed) { setBldcSpeed(null); return; }
+  if (bldcPower) { setBldcPower(null); return; }
+  if (bldcFrame) { setBldcFrame(null); return; }
+  setBldcHEType(null); return;
+}
+
 // [ADD-BLDC] Back ถอยทีละสเตป
 const backOneStepBLDC = () => {
   if (bldcRatio !== null && bldcRatio !== undefined) { setBldcRatio(null); return; }
@@ -486,22 +501,24 @@ const handleDownload = () => {
     </div>
 
     {renderBLDCGearFlow(
-      {
-        bldcCategory, bldcFrame, bldcPower, bldcVoltage,
-        bldcGearType, bldcSpeed, bldcOption, bldcRatio
-      },
-      {
-        setBldcCategory, setBldcFrame, setBldcPower, setBldcVoltage,
-        setBldcGearType, setBldcSpeed, setBldcOption, setBldcRatio
-      },
-      (modelCode) => {              // onConfirm
-        const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-        setModelCodeList(models);
-        setSelectedModel(models[0]);
-      },
-      goHomeFromBLDC,               // onHome
-      backOneStepBLDC               // onBack
-    )}
+  {
+    bldcCategory, bldcFrame, bldcPower, bldcVoltage,
+    bldcGearType, bldcSpeed, bldcOption, bldcRatio,
+    bldcHEType, bldcSFDiameter            // [ADD-BLDC-HIGH]
+  },
+  {
+    setBldcCategory, setBldcFrame, setBldcPower, setBldcVoltage,
+    setBldcGearType, setBldcSpeed, setBldcOption, setBldcRatio,
+    setBldcHEType, setBldcSFDiameter      // [ADD-BLDC-HIGH]
+  },
+  (modelCode) => {
+    const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+    setModelCodeList(models);
+    setSelectedModel(models[0]);
+  },
+  goHomeFromBLDC,
+  backOneStepBLDC
+)}
   </>
 )}
 

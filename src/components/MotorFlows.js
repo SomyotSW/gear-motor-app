@@ -456,6 +456,67 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   );
 }
 
+// [ADD-BLDC] Model code generator (updated for High-efficiency)
+export function generateBLDCModelCode(state) {
+  const {
+    bldcCategory, bldcFrame, bldcPower, bldcVoltage, bldcGearType,
+    bldcSpeed, bldcOption, bldcRatio,
+    bldcHEType, bldcSFDiameter
+  } = state;
+
+  const series = (bldcFrame?.match(/^Z(\d)BLD/) || [,''])[1];
+
+  // ---------- High-efficiency ----------
+  if (bldcCategory === 'HighefficiencyBLDCGearmotor') {
+    if (!bldcFrame || !bldcPower || !bldcSpeed) return null;
+
+    // S: ZxBLDxx-220-GV-YS- xGU[r]V
+    if (bldcHEType === 'S') {
+      if (!bldcRatio) return null;
+      const head = `${bldcFrame}${bldcPower}-220-GV-${bldcSpeed}`;
+      const tail = `${series}GU${String(bldcRatio).replace(/\.0$/,'')}V`;
+      return `${head}-${tail}`;
+    }
+
+    // SF: ZxBLDxx-220-GS-YS- [Dia]H[r]SF
+    if (bldcHEType === 'SF') {
+      if (!bldcSFDiameter || !bldcRatio) return null;
+      const head = `${bldcFrame}${bldcPower}-220-GS-${bldcSpeed}`;
+      const tail = `${bldcSFDiameter}H${String(bldcRatio).replace(/\.0$/,'')}SF`;
+      return `${head}-${tail}`;
+    }
+
+    // SL: ZxBLDxx-220-GSL-YS- xGU[r]SL
+    if (bldcHEType === 'SL') {
+      if (!bldcRatio) return null;
+      const head = `${bldcFrame}${bldcPower}-220-GSL-${bldcSpeed}`;
+      const tail = `${series}GU${String(bldcRatio).replace(/\.0$/,'')}SL`;
+      return `${head}-${tail}`;
+    }
+
+    return null;
+  }
+
+  // ---------- Normal BLDC (เหมือนเดิม) ----------
+  if (!bldcFrame || !bldcPower || !bldcVoltage || !bldcGearType || !bldcSpeed || !bldcRatio) return null;
+
+  const base = bldcGearType.includes('N') ? 'GN' : 'GU';
+  const optionSeg = (bldcOption && bldcOption !== 'Standard') ? `-${bldcOption}` : '';
+  const suffix = (() => {
+    const isZ7_750 = (bldcFrame === 'Z7BLD' && Number(bldcPower) === 750);
+    if (bldcGearType === 'GU')  return isZ7_750 ? 'V'  : 'KB';
+    if (bldcGearType === 'GUL') return isZ7_750 ? 'L'  : 'LC';
+    if (bldcGearType === 'GN')  return 'K';
+    if (bldcGearType === 'GNL') return 'LC';
+    return 'K';
+  })();
+
+  const head = `${bldcFrame}${bldcPower}-${bldcVoltage}-${bldcGearType}-${bldcSpeed}${optionSeg}`;
+  const tail = `${series}${base}${String(bldcRatio).replace(/\.0$/,'')}${suffix}`;
+  return `${head}-${tail}`;
+}
+
+
 export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
   const {
     type,        // F2 หรือ F3
@@ -1067,20 +1128,16 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   );
 }
 
+// [ADD-BLDC] BLDC Gear Motor Flow (updated with High-efficiency)
 // ==============================
-// [ADD-BLDC] BLDC Gear Motor Flow
-// ==============================
-
 export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
   const {
-    bldcCategory,   // 'BLDCGearmotor' | 'HighefficiencyBLDCGearmotor'
-    bldcFrame,      // 'Z2BLD' | 'Z3BLD' | 'Z4BLD' | 'Z5BLD-GN' | 'Z5BLD-GU' | 'Z6BLD' | 'Z7BLD'
-    bldcPower,      // number: 15,25,30,40,60,90,120,200,400,750
-    bldcVoltage,    // '24' | '36' | '48'
-    bldcGearType,   // 'GN'|'GNL'|'GU'|'GUL'
-    bldcSpeed,      // '15S'|'20S'|'30S'
-    bldcOption,     // null|'M'|'BM' | 'Standard'
-    bldcRatio       // number|string: 3, 3.6, 5, ...
+    // เดิม:
+    bldcCategory, bldcFrame, bldcPower, bldcVoltage, bldcGearType,
+    bldcSpeed, bldcOption, bldcRatio,
+    // [ADD-BLDC-HIGH] ใหม่:
+    bldcHEType,     // 'S' | 'SF' | 'SL'  (ใช้เมื่อ bldcCategory === 'HighefficiencyBLDCGearmotor')
+    bldcSFDiameter  // '12'|'14'|'15'|'16'|'20'|'25'  (เฉพาะโหมด SF)
   } = state;
 
   const update = (key, value) => {
@@ -1088,7 +1145,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
     if (setter) setter(value);
   };
 
-  // --- Step 2 → 3: Frame → Power map ---
+  // ---------- Normal BLDC (เหมือนเดิม) ----------
   const framePowerMap = {
     'Z2BLD': [15, 25],
     'Z3BLD': [30, 40],
@@ -1098,8 +1155,6 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
     'Z6BLD': [200, 400],
     'Z7BLD': [750],
   };
-
-  // --- Step 5: Gear type by frame ---
   const frameGearOptions = {
     'Z2BLD': ['GN', 'GNL'],
     'Z3BLD': ['GN', 'GNL'],
@@ -1110,36 +1165,69 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
     'Z7BLD': ['GU', 'GUL'],
   };
 
-  // Step 6: Speed mapping (info text)
-  const speedInfo = {
-    '15S': '1500 rpm',
-    '20S': '2000 rpm',
-    '30S': '3000 rpm',
+  // ---------- [ADD-BLDC-HIGH] High-efficiency mappings ----------
+  // Step 2 → 3 (Frame → Power) แยกตาม S / SF / SL
+  const HE_framePower = {
+    S: {
+      'Z2BLD': [30],
+      'Z3BLD': [60],
+      'Z4BLD': [60, 120],
+      'Z5BLD': [120, 200],
+      'Z6BLD': [200, 400],
+      'Z7BLD': [750],
+    },
+    SF: {
+      'Z2BLD': [60],
+      'Z4BLD': [120],
+      'Z5BLD': [200],
+      'Z6BLD': [400],
+    },
+    SL: {
+      'Z2BLD': [100],
+      'Z4BLD': [200],
+      'Z5BLD': [400],
+      'Z6BLD': [750],
+      'Z7BLD': [1100],
+    }
   };
 
-  // Step 8: Ratio list
-  const ratioList = [3, 3.6, 5, 6, 7.5, 9, 10, 12.5, 15, 18, 20, 25, 30, 36, 50, 60, 75, 90, 100, 120, 150, 180, 200];
+  // Step 5 (เงื่อนไข Speed text)
+  const speedInfo = { '15S': '1500 rpm', '20S': '2000 rpm', '30S': '3000 rpm', '40S': '4000 rpm' };
+  // Step 8 (Normal BLDC ratios)
+  const normalRatioList = [3, 3.6, 5, 6, 7.5, 9, 10, 12.5, 15, 18, 20, 25, 30, 36, 50, 60, 75, 90, 100, 120, 150, 180, 200];
+
+  // [ADD-BLDC-HIGH] S ratios (มีกรณีพิเศษ)
+  const HE_S_baseRatios = [5, 10, 15, 20, 30, 50, 100, 200];
+  const HE_S_ratiosForFrame = (frame) => {
+    if (frame === 'Z3BLD') return [...HE_S_baseRatios, 360];
+    if (frame === 'Z7BLD') return [5, 10, 15, 20, 30, 50]; // ตัด 100,200 ออก
+    return HE_S_baseRatios;
+  };
+
+  // [ADD-BLDC-HIGH] SF: Diameter options per frame (Step 6)
+  const HE_SF_diameterByFrame = {
+    'Z2BLD': [{v:'12', label:'Φ12 Standard'}, {v:'14', label:'Φ14 Special'}],
+    'Z4BLD': [{v:'15', label:'Φ15 Standard'}, {v:'16', label:'Φ16 Special'}],
+    'Z5BLD': [{v:'20', label:'Φ20 Standard (Key 6mm)'}, {v:'20', label:'Φ20 Special (Key 7mm)'}],
+    'Z6BLD': [{v:'25', label:'Φ25 Standard (Key 8mm)'}, {v:'25', label:'Φ25 Special (Key 7mm)'}],
+  };
+  // [ADD-BLDC-HIGH] SF: Ratio list (Step 7)
+  const HE_SF_ratios = [7.5, 10, 15, 20, 30, 50];
+
+  // [ADD-BLDC-HIGH] SL ratios (+ กรณีพิเศษ Z7)
+  const HE_SL_baseRatios = [5, 7.5, 10, 15, 20, 25, 30, 40, 50];
+  const HE_SL_ratiosForFrame = (frame) => {
+    if (frame === 'Z7BLD') return [...HE_SL_baseRatios, 100];
+    return HE_SL_baseRatios;
+  };
 
   // Helpers
   const seriesDigitFromFrame = (frame) => {
-    if (!frame) return '';
-    // 'Z5BLD-GN' → '5' , 'Z2BLD' → '2'
-    const m = frame.match(/^Z(\d)BLD/);
+    const m = frame?.match(/^Z(\d)BLD/);
     return m ? m[1] : '';
   };
 
-  const gearBaseFromType = (gearType) => {
-    // GNL → base 'GN', GUL → base 'GU'
-    if (!gearType) return '';
-    return gearType.includes('N') ? 'GN' : 'GU';
-  };
-
   const suffixFor = (gearType, frame, power) => {
-    // กฎที่คุณกำหนด:
-    // GU → KB (ยกเว้น Z7/750W ใช้ V)
-    // GUL → LC (ยกเว้น Z7/750W ใช้ L)
-    // GN → K
-    // GNL → LC
     const isZ7_750 = (frame === 'Z7BLD' && Number(power) === 750);
     if (gearType === 'GU')   return isZ7_750 ? 'V'  : 'KB';
     if (gearType === 'GUL')  return isZ7_750 ? 'L'  : 'LC';
@@ -1148,9 +1236,18 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
     return 'K';
   };
 
-  const canConfirm = !!(bldcCategory && bldcFrame && bldcPower && bldcVoltage && bldcGearType && bldcSpeed && bldcRatio);
+  const canConfirmNormal = !!(bldcCategory === 'BLDCGearmotor' &&
+    bldcFrame && bldcPower && bldcVoltage && bldcGearType && bldcSpeed && bldcRatio);
 
-  // UI helpers
+  const canConfirmHE_S = !!(bldcCategory === 'HighefficiencyBLDCGearmotor' && bldcHEType === 'S' &&
+    bldcFrame && bldcPower && bldcSpeed && bldcRatio);
+
+  const canConfirmHE_SF = !!(bldcCategory === 'HighefficiencyBLDCGearmotor' && bldcHEType === 'SF' &&
+    bldcFrame && bldcPower && bldcSpeed && bldcSFDiameter && bldcRatio);
+
+  const canConfirmHE_SL = !!(bldcCategory === 'HighefficiencyBLDCGearmotor' && bldcHEType === 'SL' &&
+    bldcFrame && bldcPower && bldcSpeed && bldcRatio);
+
   const Section = ({ title, children, note }) => (
     <div className="mt-4">
       <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">{title}</h3>
@@ -1158,18 +1255,14 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
-
   const Btn = ({ active, onClick, children, smallNote }) => (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-xl shadow ${active ? 'bg-blue-600 text-white' : 'bg-white/90 hover:bg-white'} transition`}
-    >
+    <button onClick={onClick} className={`px-4 py-2 rounded-xl shadow ${active ? 'bg-blue-600 text-white' : 'bg-white/90 hover:bg-white'} transition`}>
       <div className="font-semibold">{children}</div>
       {smallNote && <div className="text-xs opacity-70">{smallNote}</div>}
     </button>
   );
 
-  // RENDER
+  // ---------------- RENDER ----------------
   return (
     <>
       {/* Header controls: Home / Back */}
@@ -1178,130 +1271,228 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
         <button onClick={onBack} className="px-3 py-1.5 rounded-lg bg-white hover:bg-white/90 shadow">ย้อนกลับ</button>
       </div>
 
-      {/* Step 1 */}
-      <Section title="Step 1: เลือกประเภท BLDC">
-        <Btn active={bldcCategory === 'BLDCGearmotor'} onClick={() => update('bldcCategory', 'BLDCGearmotor')}>BLDCGearmotor</Btn>
-        <Btn active={bldcCategory === 'HighefficiencyBLDCGearmotor'} onClick={() => update('bldcCategory', 'HighefficiencyBLDCGearmotor')}>
-          HighefficiencyBLDCGearmotor
-          <div className="text-[10px] opacity-70">(กำลังจัดทำ)</div>
-        </Btn>
+      {/* Step 1: เลือกประเภท BLDC (Normal vs High-efficiency) */}
+      <Section title="Step 1: เลือกประเภท">
+        <Btn active={bldcCategory === 'BLDCGearmotor'} onClick={() => {
+          update('bldcCategory','BLDCGearmotor');
+          // reset he
+          update('bldcHEType', null);
+          update('bldcSFDiameter', null);
+          update('bldcVoltage', null); // ให้ผู้ใช้เลือก 24/36/48 เอง
+        }}>BLDCGearmotor</Btn>
+
+        <Btn active={bldcCategory === 'HighefficiencyBLDCGearmotor'} onClick={() => {
+          update('bldcCategory','HighefficiencyBLDCGearmotor');
+          // ตั้งค่าเริ่มต้นตามสเปค HE: โวลต์ 220 AC, ล้างค่าปุ่ม normal
+          update('bldcVoltage','220');
+          update('bldcOption', null);
+          update('bldcGearType', null);
+          update('bldcHEType', null);
+          update('bldcSFDiameter', null);
+        }}>HighefficiencyBLDCGearmotor</Btn>
       </Section>
 
-      {/* Step 2: Frame */}
+      {/* --------- Normal BLDC flow (เหมือนเดิม) --------- */}
       {bldcCategory === 'BLDCGearmotor' && (
-        <Section title="Step 2: เลือก Frame Size">
-          <Btn active={bldcFrame === 'Z2BLD'} onClick={() => update('bldcFrame', 'Z2BLD')}>Z2BLD<div className="text-xs">60mm • 15W,25W</div></Btn>
-          <Btn active={bldcFrame === 'Z3BLD'} onClick={() => update('bldcFrame', 'Z3BLD')}>Z3BLD<div className="text-xs">70mm • 30W,40W</div></Btn>
-          <Btn active={bldcFrame === 'Z4BLD'} onClick={() => update('bldcFrame', 'Z4BLD')}>Z4BLD<div className="text-xs">80mm • 40W,60W</div></Btn>
-          <Btn active={bldcFrame === 'Z5BLD-GN'} onClick={() => update('bldcFrame', 'Z5BLD-GN')}>Z5BLD (GN)<div className="text-xs">90mm • 40W,60W</div></Btn>
-          <Btn active={bldcFrame === 'Z5BLD-GU'} onClick={() => update('bldcFrame', 'Z5BLD-GU')}>Z5BLD (GU)<div className="text-xs">90mm • 60W,90W,120W</div></Btn>
-          <Btn active={bldcFrame === 'Z6BLD'} onClick={() => update('bldcFrame', 'Z6BLD')}>Z6BLD<div className="text-xs">104mm • 200W,400W</div></Btn>
-          <Btn active={bldcFrame === 'Z7BLD'} onClick={() => update('bldcFrame', 'Z7BLD')}>Z7BLD<div className="text-xs">120mm • 750W</div></Btn>
-        </Section>
+        <>
+          {/* Step 2: Frame */}
+          <Section title="Step 2: เลือก Frame Size">
+            <Btn active={bldcFrame === 'Z2BLD'} onClick={() => update('bldcFrame','Z2BLD')}>Z2BLD<div className="text-xs">60mm • 15W,25W</div></Btn>
+            <Btn active={bldcFrame === 'Z3BLD'} onClick={() => update('bldcFrame','Z3BLD')}>Z3BLD<div className="text-xs">70mm • 30W,40W</div></Btn>
+            <Btn active={bldcFrame === 'Z4BLD'} onClick={() => update('bldcFrame','Z4BLD')}>Z4BLD<div className="text-xs">80mm • 40W,60W</div></Btn>
+            <Btn active={bldcFrame === 'Z5BLD-GN'} onClick={() => update('bldcFrame','Z5BLD-GN')}>Z5BLD (GN)<div className="text-xs">90mm • 40W,60W</div></Btn>
+            <Btn active={bldcFrame === 'Z5BLD-GU'} onClick={() => update('bldcFrame','Z5BLD-GU')}>Z5BLD (GU)<div className="text-xs">90mm • 60W,90W,120W</div></Btn>
+            <Btn active={bldcFrame === 'Z6BLD'} onClick={() => update('bldcFrame','Z6BLD')}>Z6BLD<div className="text-xs">104mm • 200W,400W</div></Btn>
+            <Btn active={bldcFrame === 'Z7BLD'} onClick={() => update('bldcFrame','Z7BLD')}>Z7BLD<div className="text-xs">120mm • 750W</div></Btn>
+          </Section>
+
+          {/* Step 3: Power */}
+          {bldcFrame && (
+            <Section title="Step 3: เลือกกำลัง (W)">
+              {(framePowerMap[bldcFrame] || []).map(p => (
+                <Btn key={p} active={bldcPower === p} onClick={() => update('bldcPower', p)}>{p}W</Btn>
+              ))}
+            </Section>
+          )}
+
+          {/* Step 4: Voltage */}
+          {bldcPower && (
+            <Section title="Step 4: Rated Voltage">
+              {['24','36','48'].map(v => (
+                <Btn key={v} active={bldcVoltage === v} onClick={() => update('bldcVoltage', v)}>{v}VDC</Btn>
+              ))}
+            </Section>
+          )}
+
+          {/* Step 5: Gear Type */}
+          {bldcVoltage && (
+            <Section title="Step 5: Gear Type (ตาม Frame)">
+              {(frameGearOptions[bldcFrame] || []).map(gt => (
+                <Btn key={gt} active={bldcGearType === gt} onClick={() => update('bldcGearType', gt)}>{gt}</Btn>
+              ))}
+            </Section>
+          )}
+
+          {/* Step 6: Speed */}
+          {bldcGearType && (
+            <Section title="Step 6: Speed code" note="15S=1500rpm, 20S=2000rpm, 30S=3000rpm">
+              {['15S','20S','30S'].map(s => (
+                <Btn key={s} active={bldcSpeed === s} onClick={() => update('bldcSpeed', s)}>
+                  {s}<div className="text-xs">{speedInfo[s]}</div>
+                </Btn>
+              ))}
+            </Section>
+          )}
+
+          {/* Step 7: Motor options */}
+          {bldcSpeed && (
+            <Section title="Step 7: Motor options" note="M: Electromagnetic brake, BM: Closed loop (encoder/Hall). ถ้าเลือก Standard จะไม่ใส่โค้ดตัวนี้">
+              {['Standard','M','BM'].map(opt => (
+                <Btn key={opt} active={bldcOption === opt} onClick={() => update('bldcOption', opt)}>{opt}</Btn>
+              ))}
+            </Section>
+          )}
+
+          {/* Step 8: Ratio */}
+          {(bldcOption !== undefined && bldcOption !== null) && (
+            <Section title="Step 8: Ratio">
+              {normalRatioList.map(r => (
+                <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
+              ))}
+            </Section>
+          )}
+
+          {/* Confirm */}
+          <div className="mt-6">
+            <button disabled={!canConfirmNormal}
+              onClick={() => onConfirm(generateBLDCModelCode(state))}
+              className={`px-5 py-2 rounded-xl shadow ${canConfirmNormal ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}>
+              ยืนยันรุ่น (Generate Model Code)
+            </button>
+          </div>
+        </>
       )}
 
-      {/* Step 3: Power (depends on frame) */}
-      {bldcFrame && (
-        <Section title="Step 3: เลือกกำลัง (W)">
-          {(framePowerMap[bldcFrame] || []).map(p => (
-            <Btn key={p} active={bldcPower === p} onClick={() => update('bldcPower', p)}>{p}W</Btn>
-          ))}
-        </Section>
-      )}
+      {/* --------- [ADD-BLDC-HIGH] High-efficiency flow --------- */}
+      {bldcCategory === 'HighefficiencyBLDCGearmotor' && (
+        <>
+          {/* Step 1 (ในโหมด HE): S / SF / SL */}
+          <Section title="Step 1 (HE): เลือกซีรีส์">
+            {['S','SF','SL'].map(t => (
+              <Btn key={t} active={bldcHEType === t} onClick={() => {
+                update('bldcHEType', t);
+                // reset chain
+                update('bldcFrame', null);
+                update('bldcPower', null);
+                update('bldcSpeed', null);
+                update('bldcRatio', null);
+                update('bldcSFDiameter', null);
+              }}>{t}</Btn>
+            ))}
+          </Section>
 
-      {/* Step 4: Voltage */}
-      {bldcPower && (
-        <Section title="Step 4: Rated Voltage">
-          {['24','36','48'].map(v => (
-            <Btn key={v} active={bldcVoltage === v} onClick={() => update('bldcVoltage', v)}>{v}VDC</Btn>
-          ))}
-        </Section>
-      )}
+          {/* Step 2: Frame (ตาม HE type) */}
+          {bldcHEType && (
+            <Section title="Step 2: เลือก Frame Size (HE)">
+              {Object.keys(HE_framePower[bldcHEType]).map(fr => (
+                <Btn key={fr} active={bldcFrame === fr} onClick={() => {
+                  update('bldcFrame', fr);
+                  update('bldcPower', null);
+                  update('bldcSpeed', null);
+                  update('bldcRatio', null);
+                  update('bldcSFDiameter', null);
+                }}>
+                  {fr}
+                  <div className="text-xs">
+                    {fr==='Z2BLD'&& (bldcHEType==='S'?'60mm • 30W': bldcHEType==='SF'?'60mm • 60W':'60mm • 100W')}
+                    {fr==='Z3BLD'&& (bldcHEType==='S'?'70mm • 60W':'')}
+                    {fr==='Z4BLD'&& (bldcHEType==='S'?'80mm • 60W,120W': bldcHEType==='SF'?'80mm • 120W':'80mm • 200W')}
+                    {fr==='Z5BLD'&& (bldcHEType==='S'?'90mm • 120W,200W': bldcHEType==='SF'?'90mm • 200W':'90mm • 400W')}
+                    {fr==='Z6BLD'&& (bldcHEType==='S'?'110mm • 200W,400W': bldcHEType==='SF'?'104mm • 400W':'104mm • 750W')}
+                    {fr==='Z7BLD'&& (bldcHEType==='S'?'120mm • 750W':'120mm • 1100W')}
+                  </div>
+                </Btn>
+              ))}
+            </Section>
+          )}
 
-      {/* Step 5: Gear Type (depends on frame) */}
-      {bldcVoltage && (
-        <Section title="Step 5: Gear Type (ผูกเงื่อนไขกับ Frame)">
-          {(frameGearOptions[bldcFrame] || []).map(gt => (
-            <Btn key={gt} active={bldcGearType === gt} onClick={() => update('bldcGearType', gt)}>{gt}</Btn>
-          ))}
-        </Section>
-      )}
+          {/* Step 3: Power */}
+          {bldcHEType && bldcFrame && (
+            <Section title="Step 3: เลือกกำลัง (W)">
+              {(HE_framePower[bldcHEType][bldcFrame] || []).map(p => (
+                <Btn key={p} active={bldcPower === p} onClick={() => update('bldcPower', p)}>{p}W</Btn>
+              ))}
+            </Section>
+          )}
 
-      {/* Step 6: Speed */}
-      {bldcGearType && (
-        <Section title="Step 6: Speed code" note="15S=1500rpm, 20S=2000rpm, 30S=3000rpm">
-          {['15S','20S','30S'].map(s => (
-            <Btn key={s} active={bldcSpeed === s} onClick={() => update('bldcSpeed', s)}>
-              {s}<div className="text-xs">{speedInfo[s]}</div>
-            </Btn>
-          ))}
-        </Section>
-      )}
+          {/* Step 4: Voltage = 220V AC (fix) */}
+          {bldcHEType && bldcPower && (
+            <Section title="Step 4: Voltage">
+              <Btn active={bldcVoltage === '220'} onClick={() => update('bldcVoltage','220')}>220V AC</Btn>
+            </Section>
+          )}
 
-      {/* Step 7: Motor options */}
-      {bldcSpeed && (
-        <Section title="Step 7: Motor options" note="M: Electromagnetic brake, BM: Closed loop (encoder/Hall). ถ้าเลือก Standard จะไม่ใส่โค้ดตัวนี้">
-          {['Standard','M','BM'].map(opt => (
-            <Btn key={opt} active={bldcOption === opt} onClick={() => update('bldcOption', opt)}>
-              {opt}
-            </Btn>
-          ))}
-        </Section>
-      )}
+          {/* Step 5: Speed (15S,20S,30S,40S) */}
+          {bldcHEType && bldcVoltage === '220' && (
+            <Section title="Step 5: Speed code" note="15S=1500rpm • 20S=2000rpm • 30S=3000rpm • 40S=4000rpm">
+              {['15S','20S','30S','40S'].map(s => (
+                <Btn key={s} active={bldcSpeed === s} onClick={() => update('bldcSpeed', s)}>
+                  {s}<div className="text-xs">{speedInfo[s]}</div>
+                </Btn>
+              ))}
+            </Section>
+          )}
 
-      {/* Step 8: Ratio */}
-      {bldcOption !== undefined && bldcOption !== null && (
-        <Section title="Step 8: Ratio">
-          {ratioList.map(r => (
-            <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
-          ))}
-        </Section>
-      )}
+          {/* Step 6 / 7: ตาม S / SF / SL */}
+          {/* S: เลือก Ratio ใน Step 6 (มีกรณีพิเศษ) */}
+          {bldcHEType === 'S' && bldcSpeed && (
+            <Section title="Step 6: Ratio">
+              {HE_S_ratiosForFrame(bldcFrame).map(r => (
+                <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
+              ))}
+            </Section>
+          )}
 
-      {/* Step 9: Confirm */}
-      <div className="mt-6">
-        <button
-          disabled={!canConfirm}
-          onClick={() => {
-            const model = generateBLDCModelCode(state);
-            onConfirm(model);
-          }}
-          className={`px-5 py-2 rounded-xl shadow ${canConfirm ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
-        >
-          ยืนยันรุ่น (Generate Model Code)
-        </button>
-      </div>
+          {/* SF: Step 6 เลือก Shaft Diameter, Step 7 เลือก Ratio */}
+          {bldcHEType === 'SF' && bldcSpeed && (
+            <>
+              <Section title="Step 6: Diameter Output Shaft">
+                {(HE_SF_diameterByFrame[bldcFrame] || []).map(d => (
+                  <Btn key={d.label} active={bldcSFDiameter === d.v} onClick={() => update('bldcSFDiameter', d.v)}>
+                    {d.label}
+                  </Btn>
+                ))}
+              </Section>
+              {bldcSFDiameter && (
+                <Section title="Step 7: Ratio">
+                  {HE_SF_ratios.map(r => (
+                    <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
+                  ))}
+                </Section>
+              )}
+            </>
+          )}
+
+          {/* SL: เลือก Ratio ใน Step 6 (มีกรณีพิเศษ Z7) */}
+          {bldcHEType === 'SL' && bldcSpeed && (
+            <Section title="Step 6: Ratio">
+              {HE_SL_ratiosForFrame(bldcFrame).map(r => (
+                <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
+              ))}
+            </Section>
+          )}
+
+          {/* Confirm (HE) */}
+          <div className="mt-6">
+            <button
+              disabled={!(canConfirmHE_S || canConfirmHE_SF || canConfirmHE_SL)}
+              onClick={() => onConfirm(generateBLDCModelCode(state))}
+              className={`px-5 py-2 rounded-xl shadow ${(canConfirmHE_S || canConfirmHE_SF || canConfirmHE_SL) ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}>
+              ยืนยันรุ่น (Generate Model Code)
+            </button>
+          </div>
+        </>
+      )}
     </>
   );
-}
-
-// [ADD-BLDC] Model code generator
-export function generateBLDCModelCode(state) {
-  const {
-    bldcFrame, bldcPower, bldcVoltage, bldcGearType, bldcSpeed, bldcOption, bldcRatio
-  } = state;
-
-  if (!bldcFrame || !bldcPower || !bldcVoltage || !bldcGearType || !bldcSpeed || !bldcRatio) return null;
-
-  const series = (bldcFrame.match(/^Z(\d)BLD/) || [,''])[1]; // '2','3',...
-  const optionSeg = (bldcOption && bldcOption !== 'Standard') ? `-${bldcOption}` : '';
-  const base = bldcGearType.includes('N') ? 'GN' : 'GU'; // GNL→GN, GUL→GU
-  const suffix = (function() {
-    const isZ7_750 = (bldcFrame === 'Z7BLD' && Number(bldcPower) === 750);
-    if (bldcGearType === 'GU')  return isZ7_750 ? 'V'  : 'KB';
-    if (bldcGearType === 'GUL') return isZ7_750 ? 'L'  : 'LC';
-    if (bldcGearType === 'GN')  return 'K';
-    if (bldcGearType === 'GNL') return 'LC';
-    return 'K';
-  })();
-
-  // ตัวอย่างฟอร์แมต:
-  // Z2BLD15-24-GN-15S-M-2GN15K
-  // Z3BLD30-24-GN-20S-BM-3GN200K
-  // Z4BLD60-24-GNL-30S-4GN36LC
-  // Z5BLD60-24-GU-30S-5GU36KB
-  // Z7BLD750-48-GUL-30S-7GU50L
-  const head = `${bldcFrame}${bldcPower}-${bldcVoltage}-${bldcGearType}-${bldcSpeed}${optionSeg}`;
-  const tail = `${series}${base}${String(bldcRatio).replace(/\.0$/,'')}${suffix}`;
-  return `${head}-${tail}`;
 }
