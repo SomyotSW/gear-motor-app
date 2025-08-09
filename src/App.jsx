@@ -145,17 +145,20 @@ const resetBLDC = () => {
   setBldcRatio(null);
 };
 
-// ใน backOneStepBLDC() — เพิ่มก่อนเคสอื่น (เฉพาะโหมด SF มี diameter)
-if (bldcSFDiameter) { setBldcSFDiameter(null); return; }
-if (bldcHEType) {
-  if (bldcRatio !== null && bldcRatio !== undefined) { setBldcRatio(null); return; }
-  if (bldcSpeed) { setBldcSpeed(null); return; }
-  if (bldcPower) { setBldcPower(null); return; }
-  if (bldcFrame) { setBldcFrame(null); return; }
-  setBldcHEType(null); return;
-}
+// [ADD-BLDC] Back ถอยทีละสเตป
 // [ADD-BLDC] Back ถอยทีละสเตป
 const backOneStepBLDC = () => {
+  // ✅ เงื่อนไขถอยสำหรับ HE (รวม SF diameter) — ต้องอยู่ในฟังก์ชันนี้เท่านั้น
+  if (bldcSFDiameter) { setBldcSFDiameter(null); return; }
+  if (bldcHEType) {
+    if (bldcRatio !== null && bldcRatio !== undefined) { setBldcRatio(null); return; }
+    if (bldcSpeed) { setBldcSpeed(null); return; }
+    if (bldcPower) { setBldcPower(null); return; }
+    if (bldcFrame) { setBldcFrame(null); return; }
+    setBldcHEType(null); return;
+  }
+
+  // ▼ เงื่อนไขเดิม (Normal BLDC)
   if (bldcRatio !== null && bldcRatio !== undefined) { setBldcRatio(null); return; }
   if (bldcOption !== null && bldcOption !== undefined) { setBldcOption(null); return; }
   if (bldcSpeed) { setBldcSpeed(null); return; }
@@ -164,7 +167,6 @@ const backOneStepBLDC = () => {
   if (bldcPower) { setBldcPower(null); return; }
   if (bldcFrame) { setBldcFrame(null); return; }
   if (bldcCategory) { setBldcCategory(null); return; }
-  // ถ้าไม่มีอะไรจะถอยแล้ว ค่อยกลับ Home
   handleBackUniversal();
 };
 
