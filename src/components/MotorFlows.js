@@ -511,7 +511,8 @@ export function generateBLDCModelCode(state) {
     return 'K';
   })();
 
-  const head = `${bldcFrame}${bldcPower}-${bldcVoltage}-${bldcGearType}-${bldcSpeed}${optionSeg}`;
+  const frameCode = (bldcFrame.match(/^Z\dBLD/) || [''])[0];
+  const head = `${frameCode}${bldcPower}-${bldcVoltage}-${bldcGearType}-${bldcSpeed}${optionSeg}`;
   const tail = `${series}${base}${String(bldcRatio).replace(/\.0$/,'')}${suffix}`;
   return `${head}-${tail}`;
 }
