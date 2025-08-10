@@ -1428,22 +1428,22 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           )}
 
           {/* Step 4: Voltage = 220V AC (fix) */}
-          {bldcHEType && bldcPower && (
+          {bldcHEType && bldcFrame && bldcPower && (
             <Section title="Step 4: Voltage">
               <Btn active={bldcVoltage === '220'} onClick={() => update('bldcVoltage','220')}>220V AC</Btn>
             </Section>
           )}
 
           {/* Step 5: Speed (15S,20S,30S,40S) */}
-          {bldcHEType && bldcVoltage === '220' && (
-            <Section title="Step 5: Speed code" note="15S=1500rpm • 20S=2000rpm • 30S=3000rpm • 40S=4000rpm">
-              {['15S','20S','30S','40S'].map(s => (
-                <Btn key={s} active={bldcSpeed === s} onClick={() => update('bldcSpeed', s)}>
-                  {s}<div className="text-xs">{speedInfo[s]}</div>
-                </Btn>
-              ))}
-            </Section>
-          )}
+{bldcHEType && bldcFrame && bldcPower && bldcVoltage === '220' && (
+  <Section title="Step 5: Speed code" note="15S=1500rpm • 20S=2000rpm • 30S=3000rpm • 40S=4000rpm">
+    {['15S','20S','30S','40S'].map(s => (
+      <Btn key={s} active={bldcSpeed === s} onClick={() => update('bldcSpeed', s)}>
+        {s}<div className="text-xs">{speedInfo[s]}</div>
+      </Btn>
+    ))}
+  </Section>
+)}
 
           {/* Step 6 / 7: ตาม S / SF / SL */}
           {/* S: เลือก Ratio ใน Step 6 (มีกรณีพิเศษ) */}
