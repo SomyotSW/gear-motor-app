@@ -15,6 +15,7 @@ import F2A from './assets/hypoid/F2A.gif';
 import F2H from './assets/hypoid/F2H.gif';
 import F3A from './assets/hypoid/F3A.gif';
 import F3H from './assets/hypoid/F3H.gif';
+import hourglass from './assets/hourglass.gif';
 
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -425,7 +426,7 @@ const handleDownload = () => {
         className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
         onClick={handleBack}
       >
-        กลับไปเลือกใหม่
+        Home
       </button>
     </div>
   </>
@@ -473,7 +474,7 @@ const handleDownload = () => {
         className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
         onClick={handleBack}
       >
-        กลับไปเลือกใหม่
+        Home
       </button>
     </div>
   </>
@@ -532,7 +533,7 @@ const handleDownload = () => {
           onClick={() => setShowForm(true)}
           className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow"
         >
-          ยืนยันและขอรหัสดาวน์โหลด
+          Download 3D
         </button>
         <button
           onClick={goHomeFromBLDC}
@@ -593,7 +594,7 @@ const handleDownload = () => {
         className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
         onClick={handleBackUniversal}
       >
-        กลับไปเลือกใหม่
+        Home
       </button>
     </div>
   </>
@@ -602,7 +603,7 @@ const handleDownload = () => {
 
 {showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
-            <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
+            <h3 className="text-lg font-semibold mb-4">อีกนิดเดียว กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
 
             <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
             <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
@@ -621,7 +622,7 @@ const handleDownload = () => {
               <button onClick={handleDownload} disabled={!userInfo.name || !userInfo.phone || !userInfo.company || !userInfo.email || isDownloading} className={`w-full py-2 rounded text-white font-semibold transition ${isDownloading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg'}`}>
                 {isDownloading ? 'กำลังดาวน์โหลด...' : 'ยืนยันและรับไฟล์'}
               </button>
-              {isDownloading && (<img src="/assets/hourglass.gif" alt="loading" className="w-8 h-8 absolute -top-10 right-0 animate-spin" />)}
+              {isDownloading && (<img src={hourglass} alt="loading" className="w-8 h-8 absolute -top-10 right-0 animate-spin" />)}
             </div>
           </div>
         )}
