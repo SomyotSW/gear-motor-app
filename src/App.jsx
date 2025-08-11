@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode } from './components/MotorFlows.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
@@ -413,24 +413,66 @@ const getFileUrl = () => {
   return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
 };
 
+const thaiTitleRef = useRef(null);
+
+useEffect(() => {
+  const setW = () => {
+    if (!thaiTitleRef.current) return;
+    const w = thaiTitleRef.current.offsetWidth;
+    thaiTitleRef.current.style.setProperty('--title-w', `${w}px`);
+  };
+  setW();
+  window.addEventListener('resize', setW);
+  return () => window.removeEventListener('resize', setW);
+}, []);
+
 
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center blur-sm z-0" style={{ backgroundImage: `url(${bgImage})` }}></div>
-      <div className="relative z-10 p-6 text-gray-900">
+            <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none" />
+      <div className="relative z-10 p-6 text-gray-900 max-w-6xl mx-auto">
         {!selectedProduct && (
           <>
-            <h1
-  className="
-    text-5xl
-    font-bold
-    mb-5
-    drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]
-    text-3d-blink
-  "
->
-  SAS 3D.STEP
-</h1>
+            {/* Container สำหรับวิ่งซ้าย-ขวา */}
+<div className="relative w-full overflow-hidden my-2">
+  {/* แถบที่วิ่ง */}
+  <div
+    ref={thaiTitleRef}
+    className="
+      inline-flex items-center gap-3
+      font-extrabold drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] text-3d-blink
+      text-3xl sm:text-4xl md:text-5xl
+      whitespace-nowrap
+    "
+    style={{ animation: "thai-slide-x 10s ease-in-out infinite" }}
+  >
+    <span role="img" aria-label="Thai flag">🇹🇭</span>
+
+    {/* ข้อความสีธงชาติไทย (แดง-ขาว-น้ำเงิน-ขาว-แดง) */}
+    <span
+      className="bg-clip-text text-transparent"
+      style={{
+        backgroundImage:
+          "linear-gradient(180deg, #A51931 0%, #A51931 20%, #F4F5F8 20%, #F4F5F8 40%, #2D2A4A 40%, #2D2A4A 60%, #F4F5F8 60%, #F4F5F8 80%, #A51931 80%, #A51931 100%)"
+      }}
+    >
+      SAS 3D.STEP
+    </span>
+
+    <span role="img" aria-label="Thai flag">🇹🇭</span>
+  </div>
+</div>
+
+<style>{`
+@keyframes thai-slide-x {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(calc(100vw - var(--title-w) - 32px)); }
+  100% { transform: translateX(0); }
+}
+`}</style>
+
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {productList.map((p) => (
                 <div

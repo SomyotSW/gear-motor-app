@@ -1,6 +1,6 @@
 // MotorFlows.js
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
@@ -1445,39 +1445,78 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 
           {/* Step 5: Gear Type (ตาม Frame) — Nol */}
 {bldcVoltage && bldcCategory === 'BLDCGearmotor' && (
-  <Section title="Step 5: Gear Type (ตาม Frame)">
-    {(frameGearOptions[bldcFrame] || []).map(gt => {
-      // map รูปเฉพาะ GN/GNL ตามที่มีไฟล์
+  <Section title="Step 5: Gear Type (ตาม Frame)" className="max-w-5xl mx-auto">
+    {(() => {
+      const options  = (frameGearOptions[bldcFrame] || []);    // เช่น ['GN','GNL'] หรือมีอื่น ๆ
+      const selected = bldcGearType;
+      const others   = options.filter(gt => gt !== selected);
+
       const imgMap = { GN: GNBLDCNolImg, GNL: GNLBLDCNolImg };
-      const img = imgMap[gt];
+      const renderItem = (gt, dim) => {
+        const img = imgMap[gt];
+        if (img) {
+          return (
+            <ChoiceCard
+              key={gt}
+              img={img}
+              label={gt}
+              active={gt === selected}
+              className={dim ? "opacity-40 hover:opacity-70" : ""}
+              onClick={() => update('bldcGearType', gt)}
+            />
+          );
+        }
+        // (กรณีไม่มีรูป เช่น GU/GUL)
+        return (
+          <Btn
+            key={gt}
+            active={gt === selected}
+            onClick={() => update('bldcGearType', gt)}
+          >
+            <span className={["inline-block transition-all duration-300", dim ? "opacity-40 hover:opacity-70" : ""].join(" ")}>
+              {gt}
+            </span>
+          </Btn>
+        );
+      };
 
-      // ใช้ state เดิม bldcGearType เป็นตัวชี้ “ตัวที่ถูกเลือก”
-      const isActive = bldcGearType === gt;
-      const isHidden = !!bldcGearType && bldcGearType !== gt; // มีตัวเลือกแล้ว → ตัวอื่นจาง/เลื่อน
+      return (
+        <div className="space-y-4">
+          {/* ปุ่ม “ที่เลือก” โชว์เดี่ยวตรงกลาง */}
+          {selected && (
+            <motion.div
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.22 }}
+              className="flex justify-center"
+            >
+              {renderItem(selected, false)}
+            </motion.div>
+          )}
 
-      return img ? (
-        <ChoiceCard
-          key={gt}
-          img={img}
-          label={gt}
-          active={isActive}
-          hidden={isHidden}
-          onClick={() => update('bldcGearType', gt)}
-        />
-      ) : (
-        // ถ้าเป็น GU/GUL (ยังไม่มีรูป) → ใช้ปุ่มเดิม แต่ใส่เอฟเฟกต์จางเหมือนกัน
-        <Btn
-          key={gt}
-          active={isActive}
-          onClick={() => update('bldcGearType', gt)}
-        >
-          <span className={[
-            "transition-all duration-500 ease-out inline-block",
-            isHidden ? "opacity-0 translate-x-3 pointer-events-none" : "opacity-100 translate-x-0"
-          ].join(" ")}>{gt}</span>
-        </Btn>
+          {/* ปุ่มอื่น ๆ: จางลงแต่ยังคลิกได้ */}
+          <div className="flex flex-wrap justify-center gap-4">
+            {(selected ? others : options).map(gt => (
+              <motion.div key={gt} layout>
+                {renderItem(gt, !!selected)}
+              </motion.div>
+            ))}
+          </div>
+
+          {selected && (
+            <div className="text-center">
+              <button
+                onClick={() => update('bldcGearType', null)}
+                className="px-3 py-1 rounded-lg bg-white/90 shadow hover:bg-white"
+              >
+                เปลี่ยนตัวเลือก (GN / GNL)
+              </button>
+            </div>
+          )}
+        </div>
       );
-    })}
+    })()}
   </Section>
 )}
 
@@ -1526,24 +1565,67 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
         <>
           {/* Step 1 (HE): เลือกซีรีส์ — ใช้ภาพ S / SF / SL */}
 {/* Step 1 (HE): เลือกซีรีส์ */}
-<Section title="Step 1 (HE): เลือกซีรีส์">
-  {[
-    { img: SHIBLDCImg, label: 'S' },
-    { img: SFHIBLDCImg, label: 'SF' },
-    { img: SLHIBLDCImg, label: 'SL' }
-  ].map(({ img, label }) => (
-    <ChoiceCard
-      key={label}
-      img={img}
-      label={label}
-      active={state.bldcSelectedImage === label}
-      hidden={state.bldcSelectedImage && state.bldcSelectedImage !== label}
-      onClick={() => { setState.setBldcSelectedImage(label); update('bldcHEType', label); }}
-    />
-  ))}
+<Section title="Step 1 (HE): เลือกซีรีส์" className="max-w-5xl mx-auto">
+  {(() => {
+    const items = [
+      { label: 'S',  img: SHIBLDCImg  },
+      { label: 'SF', img: SFHIBLDCImg },
+      { label: 'SL', img: SLHIBLDCImg },
+    ];
+    const selected = bldcHEType;
+    const others   = items.filter(i => i.label !== selected);
+
+    return (
+      <div className="space-y-4">
+        {/* ปุ่ม “ที่เลือก” โชว์เดี่ยวตรงกลาง */}
+        {selected && (
+          <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.22 }}
+            className="flex justify-center"
+          >
+            <ChoiceCard
+              key={`sel-${selected}`}
+              img={items.find(i => i.label === selected)?.img}
+              label={selected}
+              active
+              onClick={() => update('bldcHEType', selected)}
+            />
+          </motion.div>
+        )}
+
+        {/* ปุ่มอื่น ๆ: จางลงแต่ยังคลิกได้ */}
+        <div className="flex flex-wrap justify-center gap-4">
+          {(selected ? others : items).map(({ label, img }) => (
+            <motion.div key={label} layout>
+              <ChoiceCard
+                img={img}
+                label={label}
+                active={label === selected}
+                className={selected && label !== selected ? "opacity-40 hover:opacity-70" : ""}
+                onClick={() => update('bldcHEType', label)}
+              />
+            </motion.div>
+          ))}
+        </div>
+
+        {selected && (
+          <div className="text-center">
+            <button
+              onClick={() => update('bldcHEType', null)}
+              className="px-3 py-1 rounded-lg bg-white/90 shadow hover:bg-white"
+            >
+              เปลี่ยนตัวเลือก (S / SF / SL)
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  })()}
 </Section>
 
-          {/* Step 2: Frame (ตาม HE type) */}
           {/* Step 2: Frame (ตาม HE type) */}
 {bldcHEType && (
   <Section title="Step 2: เลือก Frame Size (HE)">
