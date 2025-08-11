@@ -1137,7 +1137,7 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) =>
   <button
     onClick={onClick}
     className={[
-      "relative group w-56 h-48 rounded-2xl overflow-hidden",
+      "relative group w-200 h-100 rounded-2xl overflow-hidden",
       "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
       "transition-all duration-500 ease-out transform-gpu", // ✅ ใช้ transition-all เพื่อให้เลื่อน/จาง
       "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
