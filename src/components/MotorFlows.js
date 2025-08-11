@@ -1141,7 +1141,7 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "", anim
   <motion.button
     onClick={onClick}
     className={[
-      "relative group w-64 h-48 rounded-2xl overflow-hidden",
+      "relative group w-[600px] h-[400px] rounded-2xl overflow-hidden",
       "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
       "transition-all duration-500 ease-out transform-gpu",
       "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
