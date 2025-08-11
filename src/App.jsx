@@ -345,22 +345,26 @@ const handleDownload = async () => {
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
   const rkfsState = { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower, rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub };
   const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower, setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub };
-  // ใช้โดเมน raw.githubusercontent.com + encodeURIComponent เฉพาะชื่อไฟล์
+
 const getFileUrl = () => {
   if (!selectedModel) return '#';
 
-  // เคส RKFS: แทน ratio ด้วย 'XXX' ก่อนตั้งชื่อไฟล์
+  // 👉 RKFS ใช้ไฟล์ที่ ratio เป็น XXX เสมอ
   if (selectedProduct === 'RKFS Series') {
     const parts = selectedModel.split('-');
-    if (parts.length === 8) parts[4] = 'XXX';
-    // same-origin, ไม่ต้อง encode ทั้งพาธ
-    const fileName = `${parts.join('-')}.STEP`;
-    return `/model/${fileName}`;
+    // ตัวอย่างรุ่น: R67-YE3-7.5-4P-15-M5-180-3
+    // index:          0   1   2   3  4  5  6   7
+    // ไฟล์จริงใช้:   R67-YE3-7.5-4P-XXX-M5-180-3.STEP
+    if (parts.length >= 8) {
+      parts[4] = 'XXX';
+      const fileName = `${parts.join('-')}.STEP`;
+      return `/model/${encodeURIComponent(fileName)}?v=${Date.now()}`;
+    }
   }
 
-  return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}`;
+  // กรณีอื่น ๆ ใช้ชื่อรุ่นตรงตัว
+  return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
 };
-
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center blur-sm z-0" style={{ backgroundImage: `url(${bgImage})` }}></div>
