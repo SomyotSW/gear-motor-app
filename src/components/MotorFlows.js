@@ -116,8 +116,9 @@ import RRImg from '../assets/hypoid/RR.png';
 
 import BLDCGearmotorImg from '../assets/bldc/BLDCGearmotor.png';
 import HighefficiencyBLDCGearmotorImg from '../assets/bldc/HighefficiencyBLDCGearmotor.png';
-import GNLBLDCNolImg from '../assets/bldc/GNLBLDCNol.png';
+
 import GNBLDCNolImg from '../assets/bldc/GNBLDCNol.png';
+import GNLBLDCNolImg from '../assets/bldc/GNLBLDCNol.png';
 import SHIBLDCImg from '../assets/bldc/SHIBLDC.png';
 import SFHIBLDCImg from '../assets/bldc/SFHIBLDC.png';
 import SLHIBLDCImg from '../assets/bldc/SLHIBLDC.png';
@@ -1447,9 +1448,12 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 {bldcVoltage && bldcCategory === 'BLDCGearmotor' && (
   <Section title="Step 5: Gear Type (ตาม Frame)">
     {(frameGearOptions[bldcFrame] || []).map(gt => {
-      const imgMap = { GN: GNBLDCNolImg, GNL: GNLBLDCNolImg };
+      const imgMap = {
+        GN: GNBLDCNolImg,
+        GNL: GNLBLDCNolImg
+      };
       const img = imgMap[gt];
-      return img ? (
+      return (
         <ChoiceCard
           key={gt}
           img={img}
@@ -1457,11 +1461,6 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           active={bldcGearType === gt}
           onClick={() => update('bldcGearType', gt)}
         />
-      ) : (
-        // เผื่อกรณี frame เป็น GU/GUL ซึ่งไม่ได้ส่งรูปมา → fallback เป็นปุ่มข้อความเดิม
-        <Btn key={gt} active={bldcGearType === gt} onClick={() => update('bldcGearType', gt)}>
-          {gt}
-        </Btn>
       );
     })}
   </Section>
@@ -1511,14 +1510,16 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       {bldcCategory === 'HighefficiencyBLDCGearmotor' && (
         <>
           {/* Step 1 (HE): เลือกซีรีส์ — ใช้ภาพ S / SF / SL */}
+{/* Step 1 (HE): เลือกซีรีส์ */}
 <Section title="Step 1 (HE): เลือกซีรีส์">
   <ChoiceCard
     img={SHIBLDCImg}
     label="S"
-    subtitle="GV • Ratio 5–200 (Z3: +360, Z7: ≤50)"
+    subtitle="GV • Ratio 5–200 (Z3:+360, Z7:≤50)"
     active={bldcHEType === 'S'}
     onClick={() => {
       update('bldcHEType','S');
+      // reset chain
       update('bldcFrame', null);
       update('bldcPower', null);
       update('bldcSpeed', null);
@@ -1526,6 +1527,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       update('bldcSFDiameter', null);
     }}
   />
+
   <ChoiceCard
     img={SFHIBLDCImg}
     label="SF"
@@ -1540,10 +1542,11 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       update('bldcSFDiameter', null);
     }}
   />
+
   <ChoiceCard
     img={SLHIBLDCImg}
     label="SL"
-    subtitle="GSL • Ratio 5–50 (Z7: +100)"
+    subtitle="GSL • Ratio 5–50 (Z7:+100)"
     active={bldcHEType === 'SL'}
     onClick={() => {
       update('bldcHEType','SL');
