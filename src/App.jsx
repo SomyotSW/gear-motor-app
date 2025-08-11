@@ -146,7 +146,11 @@ const [bldcSelectedImage, setBldcSelectedImage] = useState(null);
 // [ADD-BLDC-HIGH] สำหรับ High-efficiency
 const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
 const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
+const bldcMotorType   = bldcCategory;
+const setBldcMotorType = setBldcCategory;
 
+const bldcGearHead     = bldcGearType;
+const setBldcGearHead  = setBldcGearType;
 
 // [ADD-BLDC] เคลียร์ค่า BLDC ทั้งหมด
 const resetBLDC = () => {
@@ -554,19 +558,18 @@ const getFileUrl = () => {
   {
     bldcCategory, bldcFrame, bldcPower, bldcVoltage,
     bldcGearType, bldcSpeed, bldcOption, bldcRatio,
-    bldcHEType, bldcSFDiameter, bldcSelectedImage             // [ADD-BLDC-HIGH]
+    bldcHEType, bldcSFDiameter, bldcSelectedImage, // [ADD-BLDC-HIGH]
   },
   {
     setBldcCategory, setBldcFrame, setBldcPower, setBldcVoltage,
     setBldcGearType, setBldcSpeed, setBldcOption, setBldcRatio,
-    setBldcHEType, setBldcSFDiameter, setBldcSelectedImage      // [ADD-BLDC-HIGH]
+    setBldcHEType, setBldcSFDiameter, setBldcSelectedImage, // [ADD-BLDC-HIGH]
   },
   (modelCode) => {
     const models = Array.isArray(modelCode) ? modelCode : [modelCode];
     setModelCodeList(models);
     setSelectedModel(models[0]);
   },
-    onConfirm,
   goHomeFromBLDC,
   backOneStepBLDC
 )}
