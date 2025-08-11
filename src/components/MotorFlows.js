@@ -1132,20 +1132,28 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   );
 }
 
+// [ADD] spring animation
+import { motion } from "framer-motion";
+
 // [ADD-BLDC-IMG] Card ปุ่มรูป 3D + เด้งตอน hover
+// เดิม: const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
 const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
-  <button
+  <motion.button
     onClick={onClick}
     className={[
-      "relative group w-[600px] h-[400px] rounded-2xl overflow-hidden",
+      "relative group w-[500px] h-[400px] rounded-2xl overflow-hidden",
       "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
-      "transition-all duration-500 ease-out transform-gpu", // ✅ ใช้ transition-all เพื่อให้เลื่อน/จาง
+      "transition-all duration-500 ease-out transform-gpu",
       "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
       "active:scale-[0.99] active:translate-y-0.5",
       "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none",
       active ? "ring-4 ring-blue-400" : "ring-0",
-      className // ✅ ต่อคลาสพิเศษจากภายนอก
+      className
     ].join(" ")}
+    // ✅ ทำให้ reposition ลื่น ๆ เวลาเปลี่ยนสถานะ
+    layout
+    // ✅ ค่ามาตรฐาน spring (เด้งกำลังดี)
+    transition={{ layout: { type: "spring", stiffness: 420, damping: 28, bounce: 0.22 } }}
     aria-label={label}
   >
     <img
@@ -1160,7 +1168,7 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) =>
     </div>
     {/* ไฮไลต์นูนเบา ๆ */}
     <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/20 rounded-full blur-2xl pointer-events-none group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-  </button>
+  </motion.button>
 );
 
 // [ADD-BLDC] BLDC Gear Motor Flow (updated with High-efficiency)
@@ -1311,32 +1319,35 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
   {(() => {
     const isNormal = bldcCategory === 'BLDCGearmotor';
     const isHE     = bldcCategory === 'HighefficiencyBLDCGearmotor';
+    const selected = isNormal || isHE;
 
-    // ถ้าเลือก BLDC → ให้ปุ่ม High-efficiency เลื่อน/จางหาย
-    const heVanishClass = isNormal
-      ? "opacity-0 translate-x-6 scale-95 pointer-events-none"
-      : "opacity-100 translate-x-0";
-
-    // ถ้าเลือก High-efficiency → ให้ปุ่ม BLDC เลื่อน/จางหาย
-    const normalVanishClass = isHE
-      ? "opacity-0 -translate-x-6 scale-95 pointer-events-none"
-      : "opacity-100 translate-x-0";
+    // คอนฟิก spring และดีเลย์ตอน "กลับมาแสดง"
+    const spring = { type: "spring", stiffness: 420, damping: 28, bounce: 0.22 };
 
     return (
-      <>
+      <div className="relative flex items-center justify-center gap-6 min-h-[14rem] w-full">
+
+        {/* BLDC (Normal) */}
         <ThumbCard
           img={BLDCGearmotorImg}
           label="BLDCGearmotor"
           subtitle="DC 24/36/48V • GN/GU"
           active={isNormal}
-          className={normalVanishClass}
+          className=""
+          // ✅ เคลื่อนไหวด้วย Framer Motion
+          animate={{
+            opacity: isHE ? 0.18 : 1,          // ถ้าอีกฝั่งถูกเลือก → จาง
+            x: isHE ? -28 : 0,                 // เลื่อนซ้ายตอนถูกลดความสำคัญ
+            scale: isNormal ? 1.06 : 1.0,      // การ์ดที่ถูกเลือกขยายเล็กน้อย
+            zIndex: isNormal ? 10 : 0
+          }}
+          transition={{ ...spring, delay: isNormal ? 0.08 : 0 }} // ตอน "กลับมาเป็นตัวที่เลือก" ใส่ดีเลย์นิด ๆ
           onClick={() => {
             update('bldcCategory','BLDCGearmotor');
-            // reset he เฉพาะที่จำเป็น
+            // reset เฉพาะสาย HE และส่วนที่เกี่ยว
             update('bldcHEType', null);
             update('bldcSFDiameter', null);
-            update('bldcVoltage', null); // ให้เลือก 24/36/48 เอง
-            // เคลียร์สายโฟลว์ร่วม
+            update('bldcVoltage', null);
             update('bldcFrame', null);
             update('bldcPower', null);
             update('bldcGearType', null);
@@ -1346,18 +1357,24 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           }}
         />
 
+        {/* High-efficiency */}
         <ThumbCard
           img={HighefficiencyBLDCGearmotorImg}
           label="Highefficiency BLDCGearmotor"
           subtitle="AC 220V • S / SF / SL"
           active={isHE}
-          className={heVanishClass}
+          animate={{
+            opacity: isNormal ? 0.18 : 1,      // ถ้าอีกฝั่งถูกเลือก → จาง
+            x: isNormal ? 28 : 0,              // เลื่อนขวาตอนถูกลดความสำคัญ
+            scale: isHE ? 1.06 : 1.0,
+            zIndex: isHE ? 10 : 0
+          }}
+          transition={{ ...spring, delay: isHE ? 0.08 : 0 }}   // ตอน "กลับมาเป็นตัวที่เลือก" ใส่ดีเลย์นิด ๆ
           onClick={() => {
             update('bldcCategory','HighefficiencyBLDCGearmotor');
-            update('bldcVoltage','220'); // fixed
+            update('bldcVoltage','220');
             update('bldcHEType', null);
             update('bldcSFDiameter', null);
-            // เคลียร์สายโฟลว์ร่วม
             update('bldcFrame', null);
             update('bldcPower', null);
             update('bldcGearType', null);
@@ -1366,7 +1383,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
             update('bldcRatio', null);
           }}
         />
-      </>
+      </div>
     );
   })()}
 </Section>
