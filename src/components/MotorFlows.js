@@ -114,6 +114,9 @@ import HRFImg from '../assets/hypoid/HRF.png';
 import RLImg from '../assets/hypoid/RL.png';
 import RRImg from '../assets/hypoid/RR.png';
 
+import BLDCGearmotorImg from '../assets/bldc/BLDCGearmotor.png';
+import HighefficiencyBLDCGearmotorImg from '../assets/bldc/HighefficiencyBLDCGearmotor.png';
+
 
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
@@ -1129,6 +1132,36 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   );
 }
 
+// [ADD-BLDC-IMG] Card ปุ่มรูป 3D + เด้งตอน hover
+const ThumbCard = ({ img, label, subtitle, active, onClick }) => (
+  <button
+    onClick={onClick}
+    className={[
+      "relative group w-48 h-40 rounded-2xl overflow-hidden",
+      "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
+      "transition-transform duration-300 transform-gpu",
+      "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
+      "active:scale-[0.99] active:translate-y-0.5",
+      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none",
+      active ? "ring-4 ring-blue-400" : "ring-0"
+    ].join(" ")}
+    aria-label={label}
+  >
+    <img
+      src={img}
+      alt={label}
+      className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:rotate-[2deg] group-hover:scale-110"
+      draggable={false}
+    />
+    <div className="absolute bottom-0 left-0 right-0 p-2 text-center bg-gradient-to-t from-black/50 to-transparent">
+      <div className="text-white font-semibold drop-shadow">{label}</div>
+      {subtitle && <div className="text-white/90 text-xs drop-shadow mt-0.5">{subtitle}</div>}
+    </div>
+    {/* ไฮไลต์นูนเบา ๆ */}
+    <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/20 rounded-full blur-2xl pointer-events-none group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+  </button>
+);
+
 // [ADD-BLDC] BLDC Gear Motor Flow (updated with High-efficiency)
 // ==============================
 export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
@@ -1273,25 +1306,48 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       </div>
 
       {/* Step 1: เลือกประเภท BLDC (Normal vs High-efficiency) */}
-      <Section title="Step 1: เลือกประเภท">
-        <Btn active={bldcCategory === 'BLDCGearmotor'} onClick={() => {
-          update('bldcCategory','BLDCGearmotor');
-          // reset he
-          update('bldcHEType', null);
-          update('bldcSFDiameter', null);
-          update('bldcVoltage', null); // ให้ผู้ใช้เลือก 24/36/48 เอง
-        }}>BLDCGearmotor</Btn>
+<Section title="Step 1: เลือกประเภท">
+  <ThumbCard
+    img={BLDCGearmotorImg}
+    label="BLDCGearmotor"
+    subtitle="DC 24V/36V/48V • GN/GU"
+    active={bldcCategory === 'BLDCGearmotor'}
+    onClick={() => {
+      update('bldcCategory','BLDCGearmotor');
+      // reset he เฉพาะที่จำเป็น
+      update('bldcHEType', null);
+      update('bldcSFDiameter', null);
+      update('bldcVoltage', null); // ให้ผู้ใช้เลือก 24/36/48 เอง
+      // เคลียร์สายโฟลว์เดิม
+      update('bldcFrame', null);
+      update('bldcPower', null);
+      update('bldcGearType', null);
+      update('bldcSpeed', null);
+      update('bldcOption', null);
+      update('bldcRatio', null);
+    }}
+  />
 
-        <Btn active={bldcCategory === 'HighefficiencyBLDCGearmotor'} onClick={() => {
-          update('bldcCategory','HighefficiencyBLDCGearmotor'); 
-          // ตั้งค่าเริ่มต้นตามสเปค HE: โวลต์ 220 AC, ล้างค่าปุ่ม normal
-          update('bldcVoltage','220');
-          update('bldcOption', null);
-          update('bldcGearType', null);
-          update('bldcHEType', null);
-          update('bldcSFDiameter', null);
-        }}>HighefficiencyBLDCGearmotor</Btn>
-      </Section>
+  <ThumbCard
+    img={HighefficiencyBLDCGearmotorImg}
+    label="Highefficiency BLDCGearmotor"
+    subtitle="AC 220V • S / SF / SL"
+    active={bldcCategory === 'HighefficiencyBLDCGearmotor'}
+    onClick={() => {
+      update('bldcCategory','HighefficiencyBLDCGearmotor');
+      update('bldcVoltage','220');     // fixed 220V AC
+      update('bldcHEType', null);
+      update('bldcSFDiameter', null);
+      // เคลียร์สายโฟลว์เดิม
+      update('bldcFrame', null);
+      update('bldcPower', null);
+      update('bldcGearType', null);
+      update('bldcSpeed', null);
+      update('bldcOption', null);
+      update('bldcRatio', null);
+    }}
+  />
+</Section>
 
       {/* --------- Normal BLDC flow (เหมือนเดิม) --------- */}
       {bldcCategory === 'BLDCGearmotor' && (
