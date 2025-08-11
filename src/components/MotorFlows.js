@@ -1174,17 +1174,19 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "", anim
   </motion.button>
 );
 
+// ---- State สำหรับ Step ----
+const [selectedImage, setSelectedImage] = useState(null);
+
 // [ADD] การ์ดรูปสำหรับตัวเลือก (ขนาดกะทัดรัด)
-const ChoiceCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
+const ChoiceCard = ({ img, label, subtitle, active, onClick, hidden }) => (
   <button
     onClick={onClick}
     className={[
-      "relative group w-[300px] h-[200] rounded-xl overflow-hidden",
+      "relative group w-[300px] h-[200px] rounded-xl overflow-hidden",
       "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.18)]",
-      "transition-all duration-300 ease-out transform-gpu",
-      "hover:-translate-y-0.5 hover:scale-[1.02]",
-      active ? "ring-4 ring-blue-400" : "ring-0",
-      className
+      "transition-all duration-500 ease-out transform-gpu",
+      hidden ? "opacity-0 translate-x-10 pointer-events-none" : "opacity-100 translate-x-0",
+      active ? "ring-4 ring-blue-400 scale-105" : "hover:-translate-y-0.5 hover:scale-[1.02]"
     ].join(" ")}
     aria-label={label}
   >
@@ -1200,6 +1202,7 @@ const ChoiceCard = ({ img, label, subtitle, active, onClick, className = "" }) =
     </div>
   </button>
 );
+
 
 // [ADD-BLDC] BLDC Gear Motor Flow (updated with High-efficiency)
 // ==============================
@@ -1444,23 +1447,39 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
             </Section>
           )}
 
-          {/* Step 5: Gear Type (ตาม Frame) — ใช้ภาพสำหรับ GN/GNL */}
+          {/* Step 5: Gear Type (ตาม Frame) — Nol */}
 {bldcVoltage && bldcCategory === 'BLDCGearmotor' && (
   <Section title="Step 5: Gear Type (ตาม Frame)">
     {(frameGearOptions[bldcFrame] || []).map(gt => {
-      const imgMap = {
-        GN: GNBLDCNolImg,
-        GNL: GNLBLDCNolImg
-      };
+      // map รูปเฉพาะ GN/GNL ตามที่มีไฟล์
+      const imgMap = { GN: GNBLDCNolImg, GNL: GNLBLDCNolImg };
       const img = imgMap[gt];
-      return (
+
+      // ใช้ state เดิม bldcGearType เป็นตัวชี้ “ตัวที่ถูกเลือก”
+      const isActive = bldcGearType === gt;
+      const isHidden = !!bldcGearType && bldcGearType !== gt; // มีตัวเลือกแล้ว → ตัวอื่นจาง/เลื่อน
+
+      return img ? (
         <ChoiceCard
           key={gt}
           img={img}
           label={gt}
-          active={bldcGearType === gt}
+          active={isActive}
+          hidden={isHidden}
           onClick={() => update('bldcGearType', gt)}
         />
+      ) : (
+        // ถ้าเป็น GU/GUL (ยังไม่มีรูป) → ใช้ปุ่มเดิม แต่ใส่เอฟเฟกต์จางเหมือนกัน
+        <Btn
+          key={gt}
+          active={isActive}
+          onClick={() => update('bldcGearType', gt)}
+        >
+          <span className={[
+            "transition-all duration-500 ease-out inline-block",
+            isHidden ? "opacity-0 translate-x-3 pointer-events-none" : "opacity-100 translate-x-0"
+          ].join(" ")}>{gt}</span>
+        </Btn>
       );
     })}
   </Section>
@@ -1512,51 +1531,23 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           {/* Step 1 (HE): เลือกซีรีส์ — ใช้ภาพ S / SF / SL */}
 {/* Step 1 (HE): เลือกซีรีส์ */}
 <Section title="Step 1 (HE): เลือกซีรีส์">
-  <ChoiceCard
-    img={SHIBLDCImg}
-    label="S"
-    subtitle="GV • Ratio 5–200 (Z3:+360, Z7:≤50)"
-    active={bldcHEType === 'S'}
-    onClick={() => {
-      update('bldcHEType','S');
-      // reset chain
-      update('bldcFrame', null);
-      update('bldcPower', null);
-      update('bldcSpeed', null);
-      update('bldcRatio', null);
-      update('bldcSFDiameter', null);
-    }}
-  />
-
-  <ChoiceCard
-    img={SFHIBLDCImg}
-    label="SF"
-    subtitle="GS • เลือกเพลาก่อน Ratio"
-    active={bldcHEType === 'SF'}
-    onClick={() => {
-      update('bldcHEType','SF');
-      update('bldcFrame', null);
-      update('bldcPower', null);
-      update('bldcSpeed', null);
-      update('bldcRatio', null);
-      update('bldcSFDiameter', null);
-    }}
-  />
-
-  <ChoiceCard
-    img={SLHIBLDCImg}
-    label="SL"
-    subtitle="GSL • Ratio 5–50 (Z7:+100)"
-    active={bldcHEType === 'SL'}
-    onClick={() => {
-      update('bldcHEType','SL');
-      update('bldcFrame', null);
-      update('bldcPower', null);
-      update('bldcSpeed', null);
-      update('bldcRatio', null);
-      update('bldcSFDiameter', null);
-    }}
-  />
+  {[
+    { img: SHIBLDCImg, label: 'S' },
+    { img: SFHIBLDCImg, label: 'SF' },
+    { img: SLHIBLDCImg, label: 'SL' }
+  ].map(({ img, label }) => (
+    <ChoiceCard
+      key={label}
+      img={img}
+      label={label}
+      active={selectedImage === label}
+      hidden={selectedImage && selectedImage !== label}
+      onClick={() => {
+        setSelectedImage(label);
+        update('bldcHEType', label);
+      }}
+    />
+  ))}
 </Section>
 
           {/* Step 2: Frame (ตาม HE type) */}
