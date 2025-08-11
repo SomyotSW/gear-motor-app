@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode } from './components/MotorFlows.js';
+import { AnimatePresence, motion } from 'framer-motion';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
@@ -17,6 +18,40 @@ import F3A from './assets/hypoid/F3A.gif';
 import F3H from './assets/hypoid/F3H.gif';
 import hourglass from './assets/hourglass.gif';
 
+
+function ComingSoonOverlay() {
+  return (
+    <div className="relative h-[60vh] grid place-items-center">
+      <style>{`
+        @keyframes bwSlide {
+          0%   { background-position:   0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position:   0% 50%; }
+        }
+      `}</style>
+      <div
+        className="
+          text-center select-none
+          text-5xl sm:text-6xl md:text-7xl font-extrabold
+          drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]
+          opacity-90
+          blur-[0.5px]
+          bg-clip-text text-transparent
+        "
+        style={{
+          backgroundImage:
+            'linear-gradient(90deg, rgba(255,255,255,1), rgba(0,0,0,0.9), rgba(255,255,255,1))',
+          backgroundSize: '200% 100%',
+          animation: 'bwSlide 3s ease-in-out infinite'
+        }}
+      >
+        Cooming soon ........
+      </div>
+    </div>
+  );
+}
+
+
 function App() {
 useEffect(() => {
   const onErr = e => console.error('GlobalError:', e.error || e.message);
@@ -31,6 +66,7 @@ useEffect(() => {
 }, []);
 
 
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modelCodeList, setModelCodeList] = useState([]);
   const [selectedModel, setSelectedModel] = useState(null);
@@ -42,9 +78,16 @@ useEffect(() => {
   const [acPower, setAcPower] = useState(null);
   const [acSpeedAdjust, setAcSpeedAdjust] = useState(null);
   const [acVoltage, setAcVoltage] = useState(null);
-  const [acOption, setAcOption] = useState(null);
+  const [acOption, setAcOption] = useState([]); // จะสะดวกสุด
   const [acGearHead, setAcGearHead] = useState(null);
   const [acRatio, setAcRatio] = useState(null);
+    const [acOptionalConfirmed, setAcOptionalConfirmed] = useState(false);
+
+  const isACOptionalStep = !!(acMotorType && acPower && acVoltage && !acGearHead) && !acOptionalConfirmed;
+   // จาก Optional → ไปหัวข้อถัดไป (Gear Head)
+  const handleACNextFromOptional = () => {
+  document.getElementById('ac-step-5')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Hypoid Gear Flow states
   const [hypoidType, setHypoidType] = useState(null);             // F2 / F3
@@ -364,10 +407,24 @@ const handleDownload = async () => {
     setRkfsMounting(null);
   };
 
-  const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio };
-  const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
+  const acState   = { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio, acOptionalConfirmed };
+    const acSetters = { setAcMotorType, setAcPower, setAcVoltage, setAcOption, setAcGearHead, setAcRatio, setAcOptionalConfirmed };
   const rkfsState = { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower, rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub };
   const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower, setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub };
+   
+
+    const resetAC = () => {
+  setAcMotorType(null);
+  setAcPower(null);
+  setAcVoltage(null);
+  setAcOption([]);            // แนะนำให้เริ่มเป็น [] เลย
+  setAcGearHead(null);
+  setAcRatio(null);
+    setAcOptionalConfirmed(false);
+  setSelectedModel(null);
+  setModelCodeList([]);
+  setShowForm(false);
+  setAcOptionalConfirmed(false);
  
   const bldcState = {
     bldcMotorType,
@@ -425,6 +482,7 @@ useEffect(() => {
   window.addEventListener('resize', setW);
   return () => window.removeEventListener('resize', setW);
 }, []);
+
 
 
   return (
@@ -486,6 +544,14 @@ useEffect(() => {
               ))}
             </div>
           </>
+        )}
+        {selectedProduct === 'AC Gear Motor' && isACOptionalStep && !showForm && (
+        <button
+          onClick={handleACNextFromOptional}
+          className="fixed bottom-4 right-4 z-50 px-4 py-2 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl active:translate-y-0.5"
+        >
+        ถัดไป →
+        </button> 
         )}
 
         {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
@@ -592,7 +658,7 @@ useEffect(() => {
 {selectedProduct === 'BLDC Gear Motor' && !selectedModel && (
   <>
     <div className="flex justify-between items-center mt-6">
-      <h2 className="text-xl font-bold">BLDC Gear Motor Selection</h2>
+      <h2 className="text-xl font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">BLDC Gear Motor Selection</h2>
       <button className="text-blue-600 hover:underline" onClick={goHomeFromBLDC}>Home</button>
     </div>
 
@@ -709,6 +775,27 @@ useEffect(() => {
   </>
 )}
 
+{[
+  'DC Gear Motor',
+  'SPN Series',
+  'P Planetary Gearbox',
+  'Servo Driver and Speed Controller',
+  'SRV Worm Gear'
+].includes(selectedProduct) && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+        {selectedProduct}
+      </h2>
+      <button className="text-blue-600 hover:underline" onClick={handleBack}>
+        Home
+      </button>
+    </div>
+
+    <ComingSoonOverlay />
+  </>
+)}
+
 
 {showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
@@ -740,6 +827,7 @@ useEffect(() => {
       </div>
     </div>
   );
+}
 }
 
 export default App;
