@@ -331,20 +331,24 @@ const handleDownload = () => {
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
   const rkfsState = { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower, rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub };
   const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower, setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub };
-  const getFileUrl = () => {
+  // ใช้โดเมน raw.githubusercontent.com + encodeURIComponent เฉพาะชื่อไฟล์
+const getFileUrl = () => {
   if (!selectedModel) return '#';
 
-  // ถ้าเป็น RKFS ให้แปลง ratio → 'XXX'
+  const base = 'https://raw.githubusercontent.com/SomyotSW/gear-motor-app/main/src/assets/model/';
+
+  // กรณี RKFS: แทนตำแหน่ง ratio ด้วย 'XXX' ก่อนต่อชื่อไฟล์
   if (selectedProduct === 'RKFS Series') {
     const parts = selectedModel.split('-');
     if (parts.length === 8) {
       parts[4] = 'XXX';
-      return `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${parts.join('-')}.STEP`;
+      const fileName = `${parts.join('-')}.STEP`;
+      return `${base}${encodeURIComponent(fileName)}`;
     }
   }
 
-  // อื่น ๆ ปกติ
-  return `https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${selectedModel}.STEP`;
+  // อื่น ๆ
+  return `${base}${encodeURIComponent(`${selectedModel}.STEP`)}`;
 };
 
   return (
