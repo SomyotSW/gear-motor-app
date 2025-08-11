@@ -1137,11 +1137,11 @@ import { motion } from "framer-motion";
 
 // [ADD-BLDC-IMG] Card ปุ่มรูป 3D + เด้งตอน hover
 // เดิม: const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
-const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
+const ThumbCard = ({ img, label, subtitle, active, onClick, className = "", animate, transition }) => (
   <motion.button
     onClick={onClick}
     className={[
-      "relative group w-[500px] h-[400px] rounded-2xl overflow-hidden",
+      "relative group w-64 h-48 rounded-2xl overflow-hidden",
       "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
       "transition-all duration-500 ease-out transform-gpu",
       "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
@@ -1150,10 +1150,9 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) =>
       active ? "ring-4 ring-blue-400" : "ring-0",
       className
     ].join(" ")}
-    // ✅ ทำให้ reposition ลื่น ๆ เวลาเปลี่ยนสถานะ
     layout
-    // ✅ ค่ามาตรฐาน spring (เด้งกำลังดี)
-    transition={{ layout: { type: "spring", stiffness: 420, damping: 28, bounce: 0.22 } }}
+    animate={animate}
+    transition={transition}
     aria-label={label}
   >
     <img
@@ -1166,7 +1165,6 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) =>
       <div className="text-white font-semibold drop-shadow">{label}</div>
       {subtitle && <div className="text-white/90 text-xs drop-shadow mt-0.5">{subtitle}</div>}
     </div>
-    {/* ไฮไลต์นูนเบา ๆ */}
     <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/20 rounded-full blur-2xl pointer-events-none group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
   </motion.button>
 );
@@ -1317,43 +1315,37 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       {/* Step 1: เลือกประเภท BLDC (Normal vs High-efficiency) */}
 <Section title="Step 1: เลือกประเภท">
   {(() => {
-    const isNormal = bldcCategory === 'BLDCGearmotor';
-    const isHE     = bldcCategory === 'HighefficiencyBLDCGearmotor';
-    const selected = isNormal || isHE;
-
-    // คอนฟิก spring และดีเลย์ตอน "กลับมาแสดง"
-    const spring = { type: "spring", stiffness: 420, damping: 28, bounce: 0.22 };
+    const isNormal = bldcCategory === "BLDCGearmotor";
+    const isHE     = bldcCategory === "HighefficiencyBLDCGearmotor";
+    const spring   = { type: "spring", stiffness: 420, damping: 28, bounce: 0.22 };
 
     return (
       <div className="relative flex items-center justify-center gap-6 min-h-[14rem] w-full">
-
         {/* BLDC (Normal) */}
         <ThumbCard
           img={BLDCGearmotorImg}
           label="BLDCGearmotor"
           subtitle="DC 24/36/48V • GN/GU"
           active={isNormal}
-          className=""
-          // ✅ เคลื่อนไหวด้วย Framer Motion
           animate={{
-            opacity: isHE ? 0.18 : 1,          // ถ้าอีกฝั่งถูกเลือก → จาง
-            x: isHE ? -28 : 0,                 // เลื่อนซ้ายตอนถูกลดความสำคัญ
-            scale: isNormal ? 1.06 : 1.0,      // การ์ดที่ถูกเลือกขยายเล็กน้อย
+            opacity: isHE ? 0.15 : 1,     // ถ้าอีกฝั่งถูกเลือก → จาง
+            x: isHE ? -28 : 0,            // เลื่อนซ้ายตอนเป็นรอง
+            scale: isNormal ? 1.06 : 1.0,
             zIndex: isNormal ? 10 : 0
           }}
-          transition={{ ...spring, delay: isNormal ? 0.08 : 0 }} // ตอน "กลับมาเป็นตัวที่เลือก" ใส่ดีเลย์นิด ๆ
+          transition={{ ...spring, delay: isNormal ? 0.08 : 0 }}
           onClick={() => {
-            update('bldcCategory','BLDCGearmotor');
-            // reset เฉพาะสาย HE และส่วนที่เกี่ยว
-            update('bldcHEType', null);
-            update('bldcSFDiameter', null);
-            update('bldcVoltage', null);
-            update('bldcFrame', null);
-            update('bldcPower', null);
-            update('bldcGearType', null);
-            update('bldcSpeed', null);
-            update('bldcOption', null);
-            update('bldcRatio', null);
+            update("bldcCategory","BLDCGearmotor");
+            // reset chain
+            update("bldcHEType", null);
+            update("bldcSFDiameter", null);
+            update("bldcVoltage", null);
+            update("bldcFrame", null);
+            update("bldcPower", null);
+            update("bldcGearType", null);
+            update("bldcSpeed", null);
+            update("bldcOption", null);
+            update("bldcRatio", null);
           }}
         />
 
@@ -1364,23 +1356,23 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           subtitle="AC 220V • S / SF / SL"
           active={isHE}
           animate={{
-            opacity: isNormal ? 0.18 : 1,      // ถ้าอีกฝั่งถูกเลือก → จาง
-            x: isNormal ? 28 : 0,              // เลื่อนขวาตอนถูกลดความสำคัญ
+            opacity: isNormal ? 0.15 : 1,
+            x: isNormal ? 28 : 0,         // เลื่อนขวาตอนเป็นรอง
             scale: isHE ? 1.06 : 1.0,
             zIndex: isHE ? 10 : 0
           }}
-          transition={{ ...spring, delay: isHE ? 0.08 : 0 }}   // ตอน "กลับมาเป็นตัวที่เลือก" ใส่ดีเลย์นิด ๆ
+          transition={{ ...spring, delay: isHE ? 0.08 : 0 }}
           onClick={() => {
-            update('bldcCategory','HighefficiencyBLDCGearmotor');
-            update('bldcVoltage','220');
-            update('bldcHEType', null);
-            update('bldcSFDiameter', null);
-            update('bldcFrame', null);
-            update('bldcPower', null);
-            update('bldcGearType', null);
-            update('bldcSpeed', null);
-            update('bldcOption', null);
-            update('bldcRatio', null);
+            update("bldcCategory","HighefficiencyBLDCGearmotor");
+            update("bldcVoltage","220");
+            update("bldcHEType", null);
+            update("bldcSFDiameter", null);
+            update("bldcFrame", null);
+            update("bldcPower", null);
+            update("bldcGearType", null);
+            update("bldcSpeed", null);
+            update("bldcOption", null);
+            update("bldcRatio", null);
           }}
         />
       </div>
