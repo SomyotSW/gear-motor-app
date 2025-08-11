@@ -1,6 +1,6 @@
 // MotorFlows.js
 import React, { useState } from 'react';
-import { motion } from "framer-motion";
+import { motion } from 'framer-motion';
 import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
