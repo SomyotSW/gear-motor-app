@@ -1133,17 +1133,18 @@ export function renderRKFSFlow(state, setState, onConfirm) {
 }
 
 // [ADD-BLDC-IMG] Card ปุ่มรูป 3D + เด้งตอน hover
-const ThumbCard = ({ img, label, subtitle, active, onClick }) => (
+const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
   <button
     onClick={onClick}
     className={[
-      "relative group w-48 h-40 rounded-2xl overflow-hidden",
+      "relative group w-56 h-48 rounded-2xl overflow-hidden",
       "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
-      "transition-transform duration-300 transform-gpu",
+      "transition-all duration-500 ease-out transform-gpu", // ✅ ใช้ transition-all เพื่อให้เลื่อน/จาง
       "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
       "active:scale-[0.99] active:translate-y-0.5",
       "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none",
-      active ? "ring-4 ring-blue-400" : "ring-0"
+      active ? "ring-4 ring-blue-400" : "ring-0",
+      className // ✅ ต่อคลาสพิเศษจากภายนอก
     ].join(" ")}
     aria-label={label}
   >
@@ -1307,46 +1308,67 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 
       {/* Step 1: เลือกประเภท BLDC (Normal vs High-efficiency) */}
 <Section title="Step 1: เลือกประเภท">
-  <ThumbCard
-    img={BLDCGearmotorImg}
-    label="BLDCGearmotor"
-    subtitle="DC 24V/36V/48V • GN/GU"
-    active={bldcCategory === 'BLDCGearmotor'}
-    onClick={() => {
-      update('bldcCategory','BLDCGearmotor');
-      // reset he เฉพาะที่จำเป็น
-      update('bldcHEType', null);
-      update('bldcSFDiameter', null);
-      update('bldcVoltage', null); // ให้ผู้ใช้เลือก 24/36/48 เอง
-      // เคลียร์สายโฟลว์เดิม
-      update('bldcFrame', null);
-      update('bldcPower', null);
-      update('bldcGearType', null);
-      update('bldcSpeed', null);
-      update('bldcOption', null);
-      update('bldcRatio', null);
-    }}
-  />
+  {(() => {
+    const isNormal = bldcCategory === 'BLDCGearmotor';
+    const isHE     = bldcCategory === 'HighefficiencyBLDCGearmotor';
 
-  <ThumbCard
-    img={HighefficiencyBLDCGearmotorImg}
-    label="Highefficiency BLDCGearmotor"
-    subtitle="AC 220V • S / SF / SL"
-    active={bldcCategory === 'HighefficiencyBLDCGearmotor'}
-    onClick={() => {
-      update('bldcCategory','HighefficiencyBLDCGearmotor');
-      update('bldcVoltage','220');     // fixed 220V AC
-      update('bldcHEType', null);
-      update('bldcSFDiameter', null);
-      // เคลียร์สายโฟลว์เดิม
-      update('bldcFrame', null);
-      update('bldcPower', null);
-      update('bldcGearType', null);
-      update('bldcSpeed', null);
-      update('bldcOption', null);
-      update('bldcRatio', null);
-    }}
-  />
+    // ถ้าเลือก BLDC → ให้ปุ่ม High-efficiency เลื่อน/จางหาย
+    const heVanishClass = isNormal
+      ? "opacity-0 translate-x-6 scale-95 pointer-events-none"
+      : "opacity-100 translate-x-0";
+
+    // ถ้าเลือก High-efficiency → ให้ปุ่ม BLDC เลื่อน/จางหาย
+    const normalVanishClass = isHE
+      ? "opacity-0 -translate-x-6 scale-95 pointer-events-none"
+      : "opacity-100 translate-x-0";
+
+    return (
+      <>
+        <ThumbCard
+          img={BLDCGearmotorImg}
+          label="BLDCGearmotor"
+          subtitle="DC 24/36/48V • GN/GU"
+          active={isNormal}
+          className={normalVanishClass}
+          onClick={() => {
+            update('bldcCategory','BLDCGearmotor');
+            // reset he เฉพาะที่จำเป็น
+            update('bldcHEType', null);
+            update('bldcSFDiameter', null);
+            update('bldcVoltage', null); // ให้เลือก 24/36/48 เอง
+            // เคลียร์สายโฟลว์ร่วม
+            update('bldcFrame', null);
+            update('bldcPower', null);
+            update('bldcGearType', null);
+            update('bldcSpeed', null);
+            update('bldcOption', null);
+            update('bldcRatio', null);
+          }}
+        />
+
+        <ThumbCard
+          img={HighefficiencyBLDCGearmotorImg}
+          label="Highefficiency BLDCGearmotor"
+          subtitle="AC 220V • S / SF / SL"
+          active={isHE}
+          className={heVanishClass}
+          onClick={() => {
+            update('bldcCategory','HighefficiencyBLDCGearmotor');
+            update('bldcVoltage','220'); // fixed
+            update('bldcHEType', null);
+            update('bldcSFDiameter', null);
+            // เคลียร์สายโฟลว์ร่วม
+            update('bldcFrame', null);
+            update('bldcPower', null);
+            update('bldcGearType', null);
+            update('bldcSpeed', null);
+            update('bldcOption', null);
+            update('bldcRatio', null);
+          }}
+        />
+      </>
+    );
+  })()}
 </Section>
 
       {/* --------- Normal BLDC flow (เหมือนเดิม) --------- */}
