@@ -268,43 +268,57 @@ const handleSendVerificationCode = () => {
   });
 };
 
-// ✅ ฟังก์ชันกดยืนยันและรับไฟล์
-const handleDownload = () => {
+// ✅ ฟังก์ชันกดยืนยันและรับไฟล์ (เวอร์ชัน Blob + บังคับดาวน์โหลด)
+const handleDownload = async () => {
   if (emailCodeInput !== emailVerifiedCode) {
     toast.error("❌ รหัสยืนยันไม่ถูกต้อง");
     return;
   }
 
   // ✅ ส่งข้อมูลลูกค้าเข้าอีเมล Somyot
-  emailjs.send(
-    'service_s30eakb',           // ✅ Service ID ของคุณ
-    'template_4vqperj',     // ✅ Template ส่งข้อมูลเข้าอีเมลคุณ
-    {
-      name: userInfo.name,
-      phone: userInfo.phone,
-      email: userInfo.email,
-      company: userInfo.company,
-      model: selectedModel
-    },
-    'J6kLpbLcieCe2cKzU'          // ✅ Public Key
-  )
-  .then(() => {
+  try {
+    await emailjs.send(
+      'service_s30eakb',
+      'template_4vqperj',
+      {
+        name: userInfo.name,
+        phone: userInfo.phone,
+        email: userInfo.email,
+        company: userInfo.company,
+        model: selectedModel
+      },
+      'J6kLpbLcieCe2cKzU'
+    );
     toast.success("✅ ส่งข้อมูลเรียบร้อยแล้ว");
-  })
-  .catch(() => {
+  } catch (e) {
     toast.error("❌ ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่");
-  });
+    // ไม่ต้อง return — ให้ลองดาวน์โหลดต่อได้
+  }
 
-  // ✅ ดำเนินการดาวน์โหลด .STEP
+  // ✅ ดาวน์โหลดไฟล์ .STEP แบบเสถียร
   setIsDownloading(true);
-  setTimeout(() => {
-    const link = document.createElement('a');
-    link.href = getFileUrl();
-    link.download = `${selectedModel}.STEP`;
-    link.click();
+  try {
+    const url = getFileUrl(); // คืน URL ที่ประกอบไว้แล้ว (local หรือ GitHub raw)
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = `${selectedModel}.STEP`; // ชื่อไฟล์ที่อยากให้เซฟ
+    document.body.appendChild(a);  // 👈 ช่วยให้ทำงานได้ดีขึ้นบน Firefox/Safari
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch (err) {
+    // Fallback: เปิดแท็บใหม่ให้ผู้ใช้เซฟเอง (กันกรณี browser บล็อค)
+    window.open(getFileUrl(), '_blank', 'noopener,noreferrer');
+  } finally {
     setIsDownloading(false);
     setShowForm(false);
-  }, 2000);
+  }
 };
 
   const handleBack = () => {
@@ -335,20 +349,16 @@ const handleDownload = () => {
 const getFileUrl = () => {
   if (!selectedModel) return '#';
 
-  const base = 'https://raw.githubusercontent.com/SomyotSW/gear-motor-app/main/src/assets/model/';
-
-  // กรณี RKFS: แทนตำแหน่ง ratio ด้วย 'XXX' ก่อนต่อชื่อไฟล์
+  // เคส RKFS: แทน ratio ด้วย 'XXX' ก่อนตั้งชื่อไฟล์
   if (selectedProduct === 'RKFS Series') {
     const parts = selectedModel.split('-');
-    if (parts.length === 8) {
-      parts[4] = 'XXX';
-      const fileName = `${parts.join('-')}.STEP`;
-      return `${base}${encodeURIComponent(fileName)}`;
-    }
+    if (parts.length === 8) parts[4] = 'XXX';
+    // same-origin, ไม่ต้อง encode ทั้งพาธ
+    const fileName = `${parts.join('-')}.STEP`;
+    return `/model/${fileName}`;
   }
 
-  // อื่น ๆ
-  return `${base}${encodeURIComponent(`${selectedModel}.STEP`)}`;
+  return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}`;
 };
 
   return (
