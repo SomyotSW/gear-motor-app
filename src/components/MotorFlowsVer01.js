@@ -237,35 +237,38 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const codes = generateModelCode(acState);
 
   return (
-    <div className="space-y-6 mt-6">
-      {/* Motor Type Selection */}
-      {!acMotorType && (
-        <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-  Motor Type
-                    </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { label: 'Induction Motor', img: InductionImg },
-              { label: 'Reversible Motor', img: ReversibleImg },
-              { label: 'Variable Speed Motor', img: VariableImg }
-            ].map(({ label, img }) => (
-              <button
-  		key={label}
-  		onClick={() => update('acMotorType', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
-            ))}
-          </div>
-                    <p className="text-sm text-gray-600 mt-2">
-            Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
-          </p>
+  <div className="space-y-6 mt-6">
+    {/* Motor Type Selection */}
+    {!acMotorType && (
+      <>
+        <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+          Motor Type
+        </h3>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {[
+            { label: 'Induction Motor', img: InductionImg },
+            { label: 'Reversible Motor', img: ReversibleImg },
+            { label: 'Variable Speed Motor', img: VariableImg }
+          ].map(({ label, img }) => (
+            <button
+              key={label}
+              onClick={() => update('acMotorType', label)}
+              className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 active:scale-105"
+            >
+              <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+              <span className="text-sm font-semibold">{label}</span>
+            </button>
+          ))}
         </div>
-      )}
+
+        <p className="text-sm text-gray-600 mt-2">
+          Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
+        </p>
+      </>
+    )}
+  </div>
+);
 
       {/* Power Selection */}
       {acMotorType && !acPower && (
@@ -1533,13 +1536,13 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
     { img: SLHIBLDCImg, label: 'SL' }
   ].map(({ img, label }) => (
     <ChoiceCard
-      key={label}
-      img={img}
-      label={label}
-      active={state.bldcSelectedImage === label}
-      hidden={state.bldcSelectedImage && state.bldcSelectedImage !== label}
-      onClick={() => { setState.setBldcSelectedImage(label); update('bldcHEType', label); }}
-    />
+  key={label}
+  img={img}
+  label={label}
+  active={bldcHEType === label}
+  hidden={!!bldcHEType && bldcHEType !== label}
+  onClick={() => update('bldcHEType', label)}
+/>
   ))}
 </Section>
 

@@ -18,6 +18,19 @@ import F3H from './assets/hypoid/F3H.gif';
 import hourglass from './assets/hourglass.gif';
 
 function App() {
+useEffect(() => {
+  const onErr = e => console.error('GlobalError:', e.error || e.message);
+  const onRej = e => console.error('Unhandled:', e.reason);
+
+  window.addEventListener('error', onErr);
+  window.addEventListener('unhandledrejection', onRej);
+  return () => {
+    window.removeEventListener('error', onErr);
+    window.removeEventListener('unhandledrejection', onRej);
+  };
+}, []);
+
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modelCodeList, setModelCodeList] = useState([]);
   const [selectedModel, setSelectedModel] = useState(null);
@@ -129,6 +142,7 @@ const [bldcGearType, setBldcGearType] = useState(null);
 const [bldcSpeed, setBldcSpeed] = useState(null);
 const [bldcOption, setBldcOption] = useState(null);
 const [bldcRatio, setBldcRatio] = useState(null);
+const [bldcSelectedImage, setBldcSelectedImage] = useState(null);
 // [ADD-BLDC-HIGH] สำหรับ High-efficiency
 const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
 const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
@@ -144,6 +158,11 @@ const resetBLDC = () => {
   setBldcSpeed(null);
   setBldcOption(null);
   setBldcRatio(null);
+
+  // ✅ เพิ่มเติม เพื่อกัน state ค้าง
+  setBldcSelectedImage(null);
+  setBldcHEType(null);
+  setBldcSFDiameter(null);
 };
 
 // [ADD-BLDC] Back ถอยทีละสเตป
@@ -345,6 +364,26 @@ const handleDownload = async () => {
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
   const rkfsState = { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower, rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub };
   const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower, setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub };
+ 
+  const bldcState = {
+    bldcMotorType,
+    bldcPower,
+    bldcVoltage,
+    bldcOption,
+    bldcGearHead,
+    bldcRatio,
+    bldcSelectedImage
+  };
+
+  const bldcSetters = {
+    setBldcMotorType,
+    setBldcPower,
+    setBldcVoltage,
+    setBldcOption,
+    setBldcGearHead,
+    setBldcRatio,
+    setBldcSelectedImage
+  };
 
 const getFileUrl = () => {
   if (!selectedModel) return '#';
@@ -515,18 +554,19 @@ const getFileUrl = () => {
   {
     bldcCategory, bldcFrame, bldcPower, bldcVoltage,
     bldcGearType, bldcSpeed, bldcOption, bldcRatio,
-    bldcHEType, bldcSFDiameter            // [ADD-BLDC-HIGH]
+    bldcHEType, bldcSFDiameter, bldcSelectedImage             // [ADD-BLDC-HIGH]
   },
   {
     setBldcCategory, setBldcFrame, setBldcPower, setBldcVoltage,
     setBldcGearType, setBldcSpeed, setBldcOption, setBldcRatio,
-    setBldcHEType, setBldcSFDiameter      // [ADD-BLDC-HIGH]
+    setBldcHEType, setBldcSFDiameter, setBldcSelectedImage      // [ADD-BLDC-HIGH]
   },
   (modelCode) => {
     const models = Array.isArray(modelCode) ? modelCode : [modelCode];
     setModelCodeList(models);
     setSelectedModel(models[0]);
   },
+    onConfirm,
   goHomeFromBLDC,
   backOneStepBLDC
 )}
