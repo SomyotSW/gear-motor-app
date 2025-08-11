@@ -361,6 +361,11 @@ const getFileUrl = () => {
     }
   }
 
+// ✅ BLDC: ใช้ชื่อรุ่นตรง = <ModelCode>.STEP
+  if (selectedProduct === 'BLDC Gear Motor') {
+    return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
+  }
+
   // อื่น ๆ ใช้ชื่อรุ่นตรงตัว
   return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
 };

@@ -116,7 +116,11 @@ import RRImg from '../assets/hypoid/RR.png';
 
 import BLDCGearmotorImg from '../assets/bldc/BLDCGearmotor.png';
 import HighefficiencyBLDCGearmotorImg from '../assets/bldc/HighefficiencyBLDCGearmotor.png';
-
+import GNLBLDCNolImg from '../assets/bldc/GNLBLDCNol.png';
+import GNBLDCNolImg from '../assets/bldc/GNBLDCNol.png';
+import SHIBLDCImg from '../assets/bldc/SHIBLDC.png';
+import SFHIBLDCImg from '../assets/bldc/SFHIBLDC.png';
+import SLHIBLDCImg from '../assets/bldc/SLHIBLDC.png';
 
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
@@ -1141,7 +1145,7 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "", anim
   <motion.button
     onClick={onClick}
     className={[
-      "relative group w-[600px] h-[400px] rounded-2xl overflow-hidden",
+      "relative group w-[500px] h-[300px] rounded-2xl overflow-hidden",
       "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
       "transition-all duration-500 ease-out transform-gpu",
       "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
@@ -1167,6 +1171,33 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "", anim
     </div>
     <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/20 rounded-full blur-2xl pointer-events-none group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
   </motion.button>
+);
+
+// [ADD] การ์ดรูปสำหรับตัวเลือก (ขนาดกะทัดรัด)
+const ChoiceCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
+  <button
+    onClick={onClick}
+    className={[
+      "relative group w-[300px] h-[200] rounded-xl overflow-hidden",
+      "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.18)]",
+      "transition-all duration-300 ease-out transform-gpu",
+      "hover:-translate-y-0.5 hover:scale-[1.02]",
+      active ? "ring-4 ring-blue-400" : "ring-0",
+      className
+    ].join(" ")}
+    aria-label={label}
+  >
+    <img
+      src={img}
+      alt={label}
+      className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+      draggable={false}
+    />
+    <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center bg-gradient-to-t from-black/50 to-transparent">
+      <div className="text-white text-sm font-semibold drop-shadow">{label}</div>
+      {subtitle && <div className="text-white/90 text-[10px]">{subtitle}</div>}
+    </div>
+  </button>
 );
 
 // [ADD-BLDC] BLDC Gear Motor Flow (updated with High-efficiency)
@@ -1412,14 +1443,29 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
             </Section>
           )}
 
-          {/* Step 5: Gear Type */}
-          {bldcVoltage && (
-            <Section title="Step 5: Gear Type (ตาม Frame)">
-              {(frameGearOptions[bldcFrame] || []).map(gt => (
-                <Btn key={gt} active={bldcGearType === gt} onClick={() => update('bldcGearType', gt)}>{gt}</Btn>
-              ))}
-            </Section>
-          )}
+          {/* Step 5: Gear Type (ตาม Frame) — ใช้ภาพสำหรับ GN/GNL */}
+{bldcVoltage && bldcCategory === 'BLDCGearmotor' && (
+  <Section title="Step 5: Gear Type (ตาม Frame)">
+    {(frameGearOptions[bldcFrame] || []).map(gt => {
+      const imgMap = { GN: GNBLDCNolImg, GNL: GNLBLDCNolImg };
+      const img = imgMap[gt];
+      return img ? (
+        <ChoiceCard
+          key={gt}
+          img={img}
+          label={gt}
+          active={bldcGearType === gt}
+          onClick={() => update('bldcGearType', gt)}
+        />
+      ) : (
+        // เผื่อกรณี frame เป็น GU/GUL ซึ่งไม่ได้ส่งรูปมา → fallback เป็นปุ่มข้อความเดิม
+        <Btn key={gt} active={bldcGearType === gt} onClick={() => update('bldcGearType', gt)}>
+          {gt}
+        </Btn>
+      );
+    })}
+  </Section>
+)}
 
           {/* Step 6: Speed */}
           {bldcGearType && (
@@ -1464,20 +1510,51 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       {/* --------- [ADD-BLDC-HIGH] High-efficiency flow --------- */}
       {bldcCategory === 'HighefficiencyBLDCGearmotor' && (
         <>
-          {/* Step 1 (ในโหมด HE): S / SF / SL */}
-          <Section title="Step 1 (HE): เลือกซีรีส์">
-            {['S','SF','SL'].map(t => (
-              <Btn key={t} active={bldcHEType === t} onClick={() => {
-                update('bldcHEType', t);
-                // reset chain
-                update('bldcFrame', null);
-                update('bldcPower', null);
-                update('bldcSpeed', null);
-                update('bldcRatio', null);
-                update('bldcSFDiameter', null);
-              }}>{t}</Btn>
-            ))}
-          </Section>
+          {/* Step 1 (HE): เลือกซีรีส์ — ใช้ภาพ S / SF / SL */}
+<Section title="Step 1 (HE): เลือกซีรีส์">
+  <ChoiceCard
+    img={SHIBLDCImg}
+    label="S"
+    subtitle="GV • Ratio 5–200 (Z3: +360, Z7: ≤50)"
+    active={bldcHEType === 'S'}
+    onClick={() => {
+      update('bldcHEType','S');
+      update('bldcFrame', null);
+      update('bldcPower', null);
+      update('bldcSpeed', null);
+      update('bldcRatio', null);
+      update('bldcSFDiameter', null);
+    }}
+  />
+  <ChoiceCard
+    img={SFHIBLDCImg}
+    label="SF"
+    subtitle="GS • เลือกเพลาก่อน Ratio"
+    active={bldcHEType === 'SF'}
+    onClick={() => {
+      update('bldcHEType','SF');
+      update('bldcFrame', null);
+      update('bldcPower', null);
+      update('bldcSpeed', null);
+      update('bldcRatio', null);
+      update('bldcSFDiameter', null);
+    }}
+  />
+  <ChoiceCard
+    img={SLHIBLDCImg}
+    label="SL"
+    subtitle="GSL • Ratio 5–50 (Z7: +100)"
+    active={bldcHEType === 'SL'}
+    onClick={() => {
+      update('bldcHEType','SL');
+      update('bldcFrame', null);
+      update('bldcPower', null);
+      update('bldcSpeed', null);
+      update('bldcRatio', null);
+      update('bldcSFDiameter', null);
+    }}
+  />
+</Section>
 
           {/* Step 2: Frame (ตาม HE type) */}
           {/* Step 2: Frame (ตาม HE type) */}
