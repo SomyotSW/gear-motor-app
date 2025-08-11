@@ -1,5 +1,6 @@
 // MotorFlows.js
 import React, { useState } from 'react';
+import { motion } from "framer-motion";
 import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
@@ -1137,9 +1138,6 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   );
 }
 
-// [ADD] spring animation
-import { motion } from "framer-motion";
-
 // [ADD-BLDC-IMG] Card ปุ่มรูป 3D + เด้งตอน hover
 // เดิม: const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
 const ThumbCard = ({ img, label, subtitle, active, onClick, className = "", animate, transition }) => (
@@ -1178,17 +1176,17 @@ const ThumbCard = ({ img, label, subtitle, active, onClick, className = "", anim
 const [selectedImage, setSelectedImage] = useState(null);
 
 // [ADD] การ์ดรูปสำหรับตัวเลือก (ขนาดกะทัดรัด)
-const ChoiceCard = ({ img, label, subtitle, active, onClick, hidden }) => (
+const ChoiceCard = ({ img, label, subtitle, active, onClick, hidden, className = "" }) => (
   <button
     onClick={onClick}
     className={[
-      "relative group w-[300px] h-[200px] rounded-xl overflow-hidden",
+      "relative group w-[300px] h-[200px] rounded-xl overflow-hidden", // ✅ h-[200px]
       "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.18)]",
       "transition-all duration-500 ease-out transform-gpu",
       hidden ? "opacity-0 translate-x-10 pointer-events-none" : "opacity-100 translate-x-0",
-      active ? "ring-4 ring-blue-400 scale-105" : "hover:-translate-y-0.5 hover:scale-[1.02]"
+      active ? "ring-4 ring-blue-400 scale-105" : "hover:-translate-y-0.5 hover:scale-[1.02]",
+      className
     ].join(" ")}
-    aria-label={label}
   >
     <img
       src={img}
