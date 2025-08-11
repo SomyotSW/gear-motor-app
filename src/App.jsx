@@ -52,6 +52,29 @@ function ComingSoonOverlay() {
 }
 
 
+export function ErrorBoundary({ children }) {
+  const [err, setErr] = React.useState(null);
+  React.useEffect(() => {
+    const onErr = e => setErr(e.error || e.message || String(e));
+    const onRej = e => setErr(e.reason || String(e));
+    window.addEventListener('error', onErr);
+    window.addEventListener('unhandledrejection', onRej);
+    return () => {
+      window.removeEventListener('error', onErr);
+      window.removeEventListener('unhandledrejection', onRej);
+    };
+  }, []);
+  if (err) {
+    return (
+      <pre style={{color:'#fff',background:'#c00',padding:16,whiteSpace:'pre-wrap'}}>
+        {String(err.stack || err)}
+      </pre>
+    );
+  }
+  return children;
+}
+
+
 function App() {
 useEffect(() => {
   const onErr = e => console.error('GlobalError:', e.error || e.message);
@@ -425,6 +448,7 @@ const handleDownload = async () => {
   setModelCodeList([]);
   setShowForm(false);
   setAcOptionalConfirmed(false);
+  };
  
   const bldcState = {
     bldcMotorType,
@@ -483,13 +507,18 @@ useEffect(() => {
   return () => window.removeEventListener('resize', setW);
 }, []);
 
-
-
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center blur-sm z-0" style={{ backgroundImage: `url(${bgImage})` }}></div>
-            <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none" />
-      <div className="relative z-10 p-6 text-gray-900 max-w-6xl mx-auto">
+  <div className="relative min-h-screen overflow-hidden">
+    <div
+      className="absolute inset-0 bg-cover bg-center blur-sm z-0"
+      style={{ backgroundImage: `url(${bgImage})` }}
+    ></div>
+
+    {selectedProduct && (
+      <div className="absolute inset-0 z-0 bg-black/45 pointer-events-none" />
+    )}
+
+    <div className="relative z-10 p-6 text-gray-900 max-w-6xl mx-auto">
         {!selectedProduct && (
           <>
             {/* Container สำหรับวิ่งซ้าย-ขวา */}
@@ -828,6 +857,6 @@ useEffect(() => {
     </div>
   );
 }
-}
+
 
 export default App;
