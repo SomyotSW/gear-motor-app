@@ -349,22 +349,23 @@ const handleDownload = async () => {
 const getFileUrl = () => {
   if (!selectedModel) return '#';
 
-  // 👉 RKFS ใช้ไฟล์ที่ ratio เป็น XXX เสมอ
+  // 👉 RKFS ใช้ placeholder ทั้ง Ratio=XXX และ Mounting=XX
   if (selectedProduct === 'RKFS Series') {
     const parts = selectedModel.split('-');
-    // ตัวอย่างรุ่น: R67-YE3-7.5-4P-15-M5-180-3
-    // index:          0   1   2   3  4  5  6   7
-    // ไฟล์จริงใช้:   R67-YE3-7.5-4P-XXX-M5-180-3.STEP
     if (parts.length >= 8) {
-      parts[4] = 'XXX';
+      parts[4] = 'XXX'; // Ratio
+      parts[5] = 'XX';  // Mounting
       const fileName = `${parts.join('-')}.STEP`;
+      // same-origin (public/model) + กัน cache
       return `/model/${encodeURIComponent(fileName)}?v=${Date.now()}`;
     }
   }
 
-  // กรณีอื่น ๆ ใช้ชื่อรุ่นตรงตัว
+  // อื่น ๆ ใช้ชื่อรุ่นตรงตัว
   return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
 };
+
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center blur-sm z-0" style={{ backgroundImage: `url(${bgImage})` }}></div>

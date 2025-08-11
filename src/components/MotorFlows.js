@@ -1073,9 +1073,9 @@ export function renderRKFSFlow(state, setState, onConfirm) {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
               {[
                 { sub: "X", img: CXImg },
-                { sub: "2", img: C1Img },
-                { sub: "3", img: C2Img },
-                { sub: "4", img: C3Img }
+                { sub: "1", img: C1Img },
+                { sub: "2", img: C2Img },
+                { sub: "3", img: C3Img }
               ].map(({ sub, img }) => (
                 <button
                   key={sub}
