@@ -22,6 +22,8 @@ import S1Img from '../assets/rkfs/4Series/1S.png';
 
 import RImg from '../assets/rkfs/R.png';
 import RFImg from '../assets/rkfs/RF.png';
+import RXImg from '../assets/rkfs/RX.png';
+import RXFImg from '../assets/rkfs/RXF.png';
 import RMImg from '../assets/rkfs/RM.png';
 
 import KImg from '../assets/rkfs/K.png';
@@ -879,7 +881,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {designOptions[rkfsSeries].map(design => {
               const imageMap = {
-                R: { R: RImg, RF: RFImg, RM: RMImg },
+                R: { R: RImg, RF: RFImg, RX: RXImg, RXF: RXFImg, RM: RMImg },
                 K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg, KF: KFImg },
                 F: { F: FImg, FA: FAImg, FAF: FAFImg, FAZ: FAZImg, FF: FFImg },
                 S: { S: SImg, SA: SAImg, SAF: SAFImg, SAT: SATImg, SAZ: SAZImg }
