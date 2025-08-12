@@ -73,9 +73,11 @@ import C3Img from '../assets/rkfs/C3.png';
 
 
 import GBKImg from '../assets/ac/Gearhead/K.png';
+import GBKlowImg from '../assets/ac/Gearhead/Klow.png';
 import GBKBImg from '../assets/ac/Gearhead/KB.png';
 import GBRCImg from '../assets/ac/Gearhead/RC.png';
 import GBRTImg from '../assets/ac/Gearhead/RT.png';
+
 
 import W10Img from '../assets/ac/flame/10W.png';
 import W15Img from '../assets/ac/flame/15W.png';
@@ -150,13 +152,15 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   const optionMap = {
     'With Fan': 'F',
     'With Terminal Box': 'T',
-    'With Force cooling Fan': 'FF',
+    'With Force Cooling Fan': 'FF',
     'With Electromagnetic Brake': 'M',
-    'With Thermal Protection': 'P'
+    'With Thermal Protection': 'P',
+    'Standard': ''
   };
 
   const gearHeadMap = {
     'SQUARE BOX WITH WING': 'K',
+    'SQUARE BOX (Low)': 'K',
     'SQUARE BOX': 'KB',
     'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'RC',
     'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
@@ -165,7 +169,7 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   const motorMap = {
     'Induction Motor': 'IK',
     'Reversible Motor': 'RK',
-    'Variable Speed Motor': 'IK' // ด้านหน้าใช้ IK เหมือนกัน
+    'Variable Speed Motor': 'IK' // ด้านหน้ายังใช้ IK เหมือนเดิม
   };
 
   const powerMap = {
@@ -184,39 +188,45 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   const gearCode = gearHeadMap[acGearHead];
   const motorCode = motorMap[acMotorType];
   const powerCode = powerMap[acPower];
-  const term = optionMap[acOption] || '';
+  const term = optionMap[acOption] ?? '';
   const num = acPower.replace('W AC Motor', '');
 
   if (!phase || !gearCode || !motorCode || !powerCode || !num) return null;
 
-  // ตรวจสอบว่าเป็น Variable Speed Motor หรือไม่
   const isVariable = acMotorType === 'Variable Speed Motor';
   const frontSuffixGN = isVariable ? 'RGN' : 'GN';
   const frontSuffixGU = isVariable ? 'RGU' : 'GU';
 
-
-
   const results = [];
 
   if (['10', '15', '25', '40'].includes(num)) {
+    // ทั้งหมดใช้ตระกูล GN ที่ท้ายเป็น ...K/RC/RT ตาม gearCode
     const front = `${powerCode}${motorCode}${num}${frontSuffixGN}-${phase}${term}`;
-    const end = `${powerCode}GN${acRatio}${gearCode}`;
+    const end   = `${powerCode}GN${acRatio}${gearCode}`;
     results.push(`${front}-${end}`);
   } else if (num === '60') {
     const frontGN = `${powerCode}${motorCode}${num}${frontSuffixGN}-${phase}${term}`;
     const frontGU = `${powerCode}${motorCode}${num}${frontSuffixGU}-${phase}${term}`;
-    const endGN = `${powerCode}GN${acRatio}${gearCode}`;
-    const endGU = `${powerCode}GU${acRatio}${gearCode}`;
-    results.push(`${frontGN}-${endGN}`);
-    results.push(`${frontGU}-${endGU}`);
+    const endGN   = `${powerCode}GN${acRatio}${gearCode}`;
+    const endGU   = `${powerCode}GU${acRatio}${gearCode}`;
+
+    // 60W: ถ้าเลือก KB -> ออกตระกูล GU (+KB), ถ้าอย่างอื่น -> GN
+    if (acGearHead === 'SQUARE BOX') {
+      results.push(`${frontGU}-${endGU}`);  // ตัวอย่าง: 5IK60GU-CF-5GU50KB
+    } else {
+      results.push(`${frontGN}-${endGN}`);  // ตัวอย่าง: 5IK60GN-CF-5GN50K
+    }
   } else {
+    // ขนาดอื่น ๆ เดิม ๆ
     const front = `${powerCode}${motorCode}${num}${frontSuffixGU}-${phase}${term}`;
-    const end = `${powerCode}GU${acRatio}${gearCode}`;
+    const end   = `${powerCode}GU${acRatio}${gearCode}`;
     results.push(`${front}-${end}`);
   }
 
   return results;
 }
+
+
 // Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
 export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
@@ -261,7 +271,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
                              </button>
             ))}
           </div>
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
             Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
           </p>
         </div>
@@ -330,18 +340,18 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
 	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
   Motor Optional
                     </h3>
-          <p className="text-sm text-red-600 mt-3">
+          <p className="text-red-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
             **AC Motor 60W-200W จำเป็นต้องเลือกปุ่ม "With Fan" แทน Standard
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
+              { label: 'Standard', img: StdImg },
               { label: 'With Fan', img: FanImg },
               { label: 'With Terminal Box', img: TmbImg },
               { label: 'With Electromagnetic Brake', img: EmbImg },
               { label: 'With Force Cooling Fan', img: FcfImg },
-              { label: 'With Thermal Protector', img: TmpImg },
-              { label: 'Standard', img: StdImg }
+              { label: 'With Thermal Protector', img: TmpImg }
             ].map(({ label, img }) => (
               <button
   		key={label}
@@ -354,7 +364,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
                              </button>
             ))}
           </div>
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
             **หากไม่ต้องการ Option เสริม เลือกปุ่ม "STANDARD"ได้เลยครับ
           </p>
         </div>
@@ -363,27 +373,69 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       {/* Gearhead Selection */}
       {acOption && !acGearHead && (
         <div>
-	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-  Gear Type
-                    </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { label: 'SQUARE BOX WITH WING', img: GBKImg },
-              { label: 'SQUARE BOX', img: GBKBImg },
-              { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: GBRCImg },
-              { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg }
-            ].map(({ label, img }) => (
-              <button
-  		key={label}
-  		onClick={() => update('acGearHead', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
-            ))}
-          </div>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+            Gear Type
+          </h3>
+
+          {/*
+            เงื่อนไขตามที่กำหนด:
+            - 10W  : แสดงเฉพาะ Klow (ใช้ภาพ GBKlowImg) -> โค้ด K
+            - 15W  : แสดงเฉพาะ Klow -> โค้ด K
+            - 25W  : แสดง Klow + RC + RT
+            - 40W  : แสดง Klow + RC + RT
+            - 60W  : แสดง Klow + KB + RC + RT   (Klow = K แทน GBK เดิม)
+          */}
+          {(() => {
+            const gearOptionsByPower = () => {
+              switch (acPower) {
+                case '10W AC Motor':
+                case '15W AC Motor':
+                  return [
+                    { label: 'SQUARE BOX (Low)', img: GBKlowImg },
+                  ];
+                case '25W AC Motor':
+                case '40W AC Motor':
+                  return [
+                    { label: 'SQUARE BOX (Low)', img: GBKlowImg },
+                    { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: GBRCImg },
+                    { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg },
+                  ];
+                case '60W AC Motor':
+                  return [
+                    { label: 'SQUARE BOX (Low)', img: GBKlowImg },  // ใช้แทน GBK เดิม
+                    { label: 'SQUARE BOX', img: GBKBImg },
+                    { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: GBRCImg },
+                    { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg },
+                  ];
+                default:
+                  // คงค่าเดิมไว้สำหรับขนาดอื่นๆ (เพื่อไม่กระทบ flow เดิม)
+                  return [
+                    { label: 'SQUARE BOX WITH WING', img: GBKImg },
+                    { label: 'SQUARE BOX', img: GBKBImg },
+                    { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: GBRCImg },
+                    { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg },
+                  ];
+              }
+            };
+
+            const options = gearOptionsByPower();
+
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {options.map(({ label, img }) => (
+                  <button
+                    key={label}
+                    onClick={() => update('acGearHead', label)}
+                    className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
+                               transform hover:-translate-y-1 active:scale-105"
+                  >
+                    <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+                    <span className="text-sm font-semibold">{label}</span>
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -394,10 +446,11 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   Ratio Selection
                     </h3>
           <div className="flex flex-wrap gap-2 justify-center">
-	    <p className="text-sm text-white-600 mt-2">
-            สูตรการหาความเร็วรอบ ( rpm ) = ความเร็วรอบมอเตอร์ / อัตราทด : 
+	    <p className="text-red-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+            สูตรการหาความเร็วรอบ ( rpm ) = ความเร็วรอบมอเตอร์ / อัตราทด : </p>
+            <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
             : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 
-            : 1500 / 30 = 50 rpm , จะได้ความเร็วรอบจาก Gear Head = 30 รอบ/นาที 
+            : 1500 / 30 = 50 rpm หรือได้ความเร็วรอบจากปลายเพลาหัวเกียร์ = 30 รอบ/นาที 
           </p>
             {[3,3.6,5,6,7.5,9,12.5,15,18,25,30,36,50,60,75,90,100,120,150,180,200].map(ratio => (
               <button

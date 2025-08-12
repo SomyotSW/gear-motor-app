@@ -641,7 +641,7 @@ const getFileUrl = () => {
 {selectedProduct === 'BLDC Gear Motor' && !selectedModel && (
   <>
     <div className="flex justify-between items-center mt-6">
-      <h2 className="text-xl font-bold">BLDC Gear Motor Selection</h2>
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">BLDC Gear Selection</h2>
       <button className="text-blue-600 hover:underline" onClick={goHomeFromBLDC}>Home</button>
     </div>
 
