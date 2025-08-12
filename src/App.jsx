@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode } from './components/MotorFlows.js';
-import { AnimatePresence, motion } from 'framer-motion';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
@@ -18,78 +17,7 @@ import F3A from './assets/hypoid/F3A.gif';
 import F3H from './assets/hypoid/F3H.gif';
 import hourglass from './assets/hourglass.gif';
 
-
-function ComingSoonOverlay() {
-  return (
-    <div className="relative h-[60vh] grid place-items-center">
-      <style>{`
-        @keyframes bwSlide {
-          0%   { background-position:   0% 50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position:   0% 50%; }
-        }
-      `}</style>
-      <div
-        className="
-          text-center select-none
-          text-5xl sm:text-6xl md:text-7xl font-extrabold
-          drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]
-          opacity-90
-          blur-[0.5px]
-          bg-clip-text text-transparent
-        "
-        style={{
-          backgroundImage:
-            'linear-gradient(90deg, rgba(255,255,255,1), rgba(0,0,0,0.9), rgba(255,255,255,1))',
-          backgroundSize: '200% 100%',
-          animation: 'bwSlide 3s ease-in-out infinite'
-        }}
-      >
-        Cooming soon ........
-      </div>
-    </div>
-  );
-}
-
-
-export function ErrorBoundary({ children }) {
-  const [err, setErr] = React.useState(null);
-  React.useEffect(() => {
-    const onErr = e => setErr(e.error || e.message || String(e));
-    const onRej = e => setErr(e.reason || String(e));
-    window.addEventListener('error', onErr);
-    window.addEventListener('unhandledrejection', onRej);
-    return () => {
-      window.removeEventListener('error', onErr);
-      window.removeEventListener('unhandledrejection', onRej);
-    };
-  }, []);
-  if (err) {
-    return (
-      <pre style={{color:'#fff',background:'#c00',padding:16,whiteSpace:'pre-wrap'}}>
-        {String(err.stack || err)}
-      </pre>
-    );
-  }
-  return children;
-}
-
-
 function App() {
-useEffect(() => {
-  const onErr = e => console.error('GlobalError:', e.error || e.message);
-  const onRej = e => console.error('Unhandled:', e.reason);
-
-  window.addEventListener('error', onErr);
-  window.addEventListener('unhandledrejection', onRej);
-  return () => {
-    window.removeEventListener('error', onErr);
-    window.removeEventListener('unhandledrejection', onRej);
-  };
-}, []);
-
-
-
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modelCodeList, setModelCodeList] = useState([]);
   const [selectedModel, setSelectedModel] = useState(null);
@@ -101,16 +29,9 @@ useEffect(() => {
   const [acPower, setAcPower] = useState(null);
   const [acSpeedAdjust, setAcSpeedAdjust] = useState(null);
   const [acVoltage, setAcVoltage] = useState(null);
-  const [acOption, setAcOption] = useState([]); // จะสะดวกสุด
+  const [acOption, setAcOption] = useState(null);
   const [acGearHead, setAcGearHead] = useState(null);
   const [acRatio, setAcRatio] = useState(null);
-    const [acOptionalConfirmed, setAcOptionalConfirmed] = useState(false);
-
-  const isACOptionalStep = !!(acMotorType && acPower && acVoltage && !acGearHead) && !acOptionalConfirmed;
-   // จาก Optional → ไปหัวข้อถัดไป (Gear Head)
-  const handleACNextFromOptional = () => {
-  document.getElementById('ac-step-5')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
 
   // Hypoid Gear Flow states
   const [hypoidType, setHypoidType] = useState(null);             // F2 / F3
@@ -208,15 +129,10 @@ const [bldcGearType, setBldcGearType] = useState(null);
 const [bldcSpeed, setBldcSpeed] = useState(null);
 const [bldcOption, setBldcOption] = useState(null);
 const [bldcRatio, setBldcRatio] = useState(null);
-const [bldcSelectedImage, setBldcSelectedImage] = useState(null);
 // [ADD-BLDC-HIGH] สำหรับ High-efficiency
 const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
 const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
-const bldcMotorType   = bldcCategory;
-const setBldcMotorType = setBldcCategory;
 
-const bldcGearHead     = bldcGearType;
-const setBldcGearHead  = setBldcGearType;
 
 // [ADD-BLDC] เคลียร์ค่า BLDC ทั้งหมด
 const resetBLDC = () => {
@@ -228,11 +144,6 @@ const resetBLDC = () => {
   setBldcSpeed(null);
   setBldcOption(null);
   setBldcRatio(null);
-
-  // ✅ เพิ่มเติม เพื่อกัน state ค้าง
-  setBldcSelectedImage(null);
-  setBldcHEType(null);
-  setBldcSFDiameter(null);
 };
 
 // [ADD-BLDC] Back ถอยทีละสเตป
@@ -430,45 +341,10 @@ const handleDownload = async () => {
     setRkfsMounting(null);
   };
 
-  const acState   = { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio, acOptionalConfirmed };
-    const acSetters = { setAcMotorType, setAcPower, setAcVoltage, setAcOption, setAcGearHead, setAcRatio, setAcOptionalConfirmed };
+  const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio };
+  const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
   const rkfsState = { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower, rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub };
   const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower, setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub };
-   
-
-    const resetAC = () => {
-  setAcMotorType(null);
-  setAcPower(null);
-  setAcVoltage(null);
-  setAcOption([]);            // แนะนำให้เริ่มเป็น [] เลย
-  setAcGearHead(null);
-  setAcRatio(null);
-    setAcOptionalConfirmed(false);
-  setSelectedModel(null);
-  setModelCodeList([]);
-  setShowForm(false);
-  setAcOptionalConfirmed(false);
-  };
- 
-  const bldcState = {
-    bldcMotorType,
-    bldcPower,
-    bldcVoltage,
-    bldcOption,
-    bldcGearHead,
-    bldcRatio,
-    bldcSelectedImage
-  };
-
-  const bldcSetters = {
-    setBldcMotorType,
-    setBldcPower,
-    setBldcVoltage,
-    setBldcOption,
-    setBldcGearHead,
-    setBldcRatio,
-    setBldcSelectedImage
-  };
 
 const getFileUrl = () => {
   if (!selectedModel) return '#';
@@ -494,93 +370,81 @@ const getFileUrl = () => {
   return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
 };
 
-const thaiTitleRef = useRef(null);
-
-useEffect(() => {
-  const setW = () => {
-    if (!thaiTitleRef.current) return;
-    const w = thaiTitleRef.current.offsetWidth;
-    thaiTitleRef.current.style.setProperty('--title-w', `${w}px`);
-  };
-  setW();
-  window.addEventListener('resize', setW);
-  return () => window.removeEventListener('resize', setW);
-}, []);
 
   return (
   <div className="relative min-h-screen overflow-hidden">
-    <div
-      className="absolute inset-0 bg-cover bg-center blur-sm z-0"
-      style={{ backgroundImage: `url(${bgImage})` }}
-    ></div>
+    {/* BG หรู + เบลอ + ไล่เฉด */}
+    <div className="absolute inset-0 z-0">
+      <div
+        className="absolute inset-0 bg-cover bg-center blur-md scale-[1.02]"
+        style={{ backgroundImage: `url(${bgImage})` }}
+      />
+      {/* ไล่เฉดให้ดูแพงขึ้น */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-black/40" />
+      {/* ทับมืดเมื่อเข้าเพจสินค้า */}
+      {selectedProduct && <div className="absolute inset-0 bg-black/45" />}
+    </div>
 
-    {selectedProduct && (
-      <div className="absolute inset-0 z-0 bg-black/45 pointer-events-none" />
-    )}
+    {/* คอนเทนต์ทั้งหมดเหนือ BG */}
+    <div className="relative z-10">
 
-    <div className="relative z-10 p-6 text-gray-900 max-w-6xl mx-auto">
+      {/* เนื้อหา */}
+      <div className="relative z-10 p-6 max-w-6xl mx-auto text-gray-900">
         {!selectedProduct && (
           <>
-            {/* Container สำหรับวิ่งซ้าย-ขวา */}
-<div className="relative w-full overflow-hidden my-2">
-  {/* แถบที่วิ่ง */}
-  <div
-    ref={thaiTitleRef}
-    className="
-      inline-flex items-center gap-3
-      font-extrabold drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] text-3d-blink
-      text-3xl sm:text-4xl md:text-5xl
-      whitespace-nowrap
-    "
-    style={{ animation: "thai-slide-x 10s ease-in-out infinite" }}
-  >
-    <span role="img" aria-label="Thai flag">🇹🇭</span>
+            <h1
+              className="
+                text-5xl font-extrabold mb-5
+                tracking-wide text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.95)]
+              "
+            >
+              SAS 3D.STEP
+            </h1>
 
-    {/* ข้อความสีธงชาติไทย (แดง-ขาว-น้ำเงิน-ขาว-แดง) */}
-    <span
-      className="bg-clip-text text-transparent"
-      style={{
-        backgroundImage:
-          "linear-gradient(180deg, #A51931 0%, #A51931 20%, #F4F5F8 20%, #F4F5F8 40%, #2D2A4A 40%, #2D2A4A 60%, #F4F5F8 60%, #F4F5F8 80%, #A51931 80%, #A51931 100%)"
-      }}
-    >
-      SAS 3D.STEP
-    </span>
-
-    <span role="img" aria-label="Thai flag">🇹🇭</span>
-  </div>
-</div>
-
-<style>{`
-@keyframes thai-slide-x {
-  0%   { transform: translateX(0); }
-  50%  { transform: translateX(calc(100vw - var(--title-w) - 32px)); }
-  100% { transform: translateX(0); }
-}
-`}</style>
-
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
               {productList.map((p) => (
-                <div
+                <button
                   key={p.name}
-                  className="cursor-pointer hover:scale-105 transition text-center bg-white bg-opacity-90 rounded-xl shadow-lg p-2"
+                  type="button"
                   onClick={() => setSelectedProduct(p.name)}
+                  className="
+                    group relative w-full overflow-hidden text-left
+                    rounded-2xl
+                    bg-white/80 backdrop-blur-md
+                    shadow-[0_8px_20px_rgba(0,0,0,0.25)]
+                    border border-white/20
+                    transition
+                    hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(0,0,0,0.35)]
+                    active:translate-y-0.5 active:shadow-[0_6px_14px_rgba(0,0,0,0.25)]
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+                    p-0
+                  "
                 >
-                  <img src={p.image} alt={p.name} className="w-full h-48 sm:h-56 md:h-64 object-contain" />
-                  <p className="mt-3 font-semibold text-black">{p.name}</p>
-                </div>
+                  {/* เงาสะท้อนบาง ๆ เพิ่มมิติ */}
+                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-60 group-hover:opacity-70 transition" />
+
+                  <div className="flex flex-col h-full">
+                    {/* โซนรูป: คุมสัดส่วน + เด้งตอน hover */}
+                    <div className="aspect-[4/3] grid place-items-center bg-white/50">
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="max-h-[70%] max-w-[85%] object-contain transition group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+
+                    {/* ชื่อสินค้า */}
+                    <div className="px-4 py-3 bg-white/80 backdrop-blur-sm border-t border-white/30">
+                      <p className="font-semibold text-gray-900 tracking-wide">
+                        {p.name}
+                      </p>
+                    </div>
+                  </div>
+                </button>
               ))}
             </div>
           </>
-        )}
-        {selectedProduct === 'AC Gear Motor' && isACOptionalStep && !showForm && (
-        <button
-          onClick={handleACNextFromOptional}
-          className="fixed bottom-4 right-4 z-50 px-4 py-2 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl active:translate-y-0.5"
-        >
-        ถัดไป →
-        </button> 
         )}
 
         {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
@@ -687,7 +551,7 @@ useEffect(() => {
 {selectedProduct === 'BLDC Gear Motor' && !selectedModel && (
   <>
     <div className="flex justify-between items-center mt-6">
-      <h2 className="text-xl font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">BLDC Gear Motor Selection</h2>
+      <h2 className="text-xl font-bold">BLDC Gear Motor Selection</h2>
       <button className="text-blue-600 hover:underline" onClick={goHomeFromBLDC}>Home</button>
     </div>
 
@@ -695,12 +559,12 @@ useEffect(() => {
   {
     bldcCategory, bldcFrame, bldcPower, bldcVoltage,
     bldcGearType, bldcSpeed, bldcOption, bldcRatio,
-    bldcHEType, bldcSFDiameter, bldcSelectedImage, // [ADD-BLDC-HIGH]
+    bldcHEType, bldcSFDiameter            // [ADD-BLDC-HIGH]
   },
   {
     setBldcCategory, setBldcFrame, setBldcPower, setBldcVoltage,
     setBldcGearType, setBldcSpeed, setBldcOption, setBldcRatio,
-    setBldcHEType, setBldcSFDiameter, setBldcSelectedImage, // [ADD-BLDC-HIGH]
+    setBldcHEType, setBldcSFDiameter      // [ADD-BLDC-HIGH]
   },
   (modelCode) => {
     const models = Array.isArray(modelCode) ? modelCode : [modelCode];
@@ -804,27 +668,6 @@ useEffect(() => {
   </>
 )}
 
-{[
-  'DC Gear Motor',
-  'SPN Series',
-  'P Planetary Gearbox',
-  'Servo Driver and Speed Controller',
-  'SRV Worm Gear'
-].includes(selectedProduct) && !selectedModel && !showForm && (
-  <>
-    <div className="flex justify-between items-center mt-6">
-      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-        {selectedProduct}
-      </h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBack}>
-        Home
-      </button>
-    </div>
-
-    <ComingSoonOverlay />
-  </>
-)}
-
 
 {showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
@@ -855,8 +698,8 @@ useEffect(() => {
         <ToastContainer position="top-center" autoClose={3000} />
       </div>
     </div>
+      </div>
   );
 }
-
 
 export default App;

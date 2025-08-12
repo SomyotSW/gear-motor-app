@@ -1,6 +1,6 @@
 // MotorFlows.js
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
 import DCImg from '../assets/dc/dc.png';
@@ -219,7 +219,8 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
 }
 // Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
 export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
-  const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
+  const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio, acOptionalConfirmed } = acState;
+    const { setAcOptionalConfirmed } = acSetters;
   const [selectedModel, setSelectedModel] = useState(null);
 
   const update = (key, value) => {
@@ -229,12 +230,35 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       acVoltage: acSetters.setAcVoltage,
       acOption: acSetters.setAcOption,
       acGearHead: acSetters.setAcGearHead,
-      acRatio: acSetters.setAcRatio
+      acRatio: acSetters.setAcRatio,
+            acOptionalConfirmed: acSetters.setAcOptionalConfirmed
     };
     setterMap[key]?.(value);
   };
 
   const codes = generateModelCode(acState);
+
+  const OptionButton = ({ label, selected, onClick }) => (
+  <button
+    onClick={onClick}
+    aria-pressed={selected}
+    className={[
+      "relative select-none rounded-2xl px-3 py-2 min-w-[56px]",
+      "text-sm font-semibold transition-all duration-150 ease-out",
+      selected
+        ? "bg-gradient-to-b from-gray-200 to-gray-100 text-gray-900 " +
+          "shadow-[inset_0_2px_6px_rgba(0,0,0,0.35),inset_0_-2px_0_rgba(255,255,255,0.6)] " +
+          "ring-2 ring-green-400 border-2 border-green-500"
+        : "bg-gradient-to-b from-white to-gray-100 text-gray-800 " +
+          "shadow-[0_6px_0_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.2)] " +
+          "hover:shadow-[0_8px_0_rgba(0,0,0,0.25),0_3px_6px_rgba(0,0,0,0.25)]",
+      "active:translate-y-0.5 active:shadow-[0_3px_0_rgba(0,0,0,0.25),0_1px_2px_rgba(0,0,0,0.2)]",
+      "before:absolute before:inset-x-1 before:top-0 before:h-px before:bg-white/60 before:rounded-t-xl",
+    ].join(" ")}
+  >
+    {label}
+  </button>
+);
 
   return (
     <div className="space-y-6 mt-6">
@@ -261,9 +285,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
                              </button>
             ))}
           </div>
-                    <p className="text-sm text-gray-600 mt-2">
-            Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
-          </p>
+          <p className="text-sm font-bold text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)] mt-4 animate-pulse">
+  Variable Speed motor ความเร็วรอบ 90–1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
+</p>
         </div>
       )}
 
@@ -325,43 +349,80 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       )}
 
       {/* Optional Selection */}
-      {acVoltage && !acOption && (
-        <div>
-	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-  Motor Optional
-                    </h3>
-          <p className="text-sm text-red-600 mt-3">
-            **AC Motor 60W-200W จำเป็นต้องเลือกปุ่ม "With Fan" แทน Standard
-          </p>
+{acVoltage && !acOptionalConfirmed && (
+  <div>
+    <h3 id="ac-step-4" className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      Motor Optional
+    </h3>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { label: 'With Fan', img: FanImg },
-              { label: 'With Terminal Box', img: TmbImg },
-              { label: 'With Electromagnetic Brake', img: EmbImg },
-              { label: 'With Force Cooling Fan', img: FcfImg },
-              { label: 'With Thermal Protector', img: TmpImg },
-              { label: 'Standard', img: StdImg }
-            ].map(({ label, img }) => (
-              <button
-  		key={label}
-  		onClick={() => update('acOption', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
-            ))}
-          </div>
-                    <p className="text-sm text-gray-600 mt-2">
-            **หากไม่ต้องการ Option เสริม เลือกปุ่ม "STANDARD"ได้เลยครับ
-          </p>
-        </div>
-      )}
+    <p className="text-sm font-extrabold text-red-600 mt-3 mb-4 animate-pulse drop-shadow-[0_1px_0_rgba(255,255,255,0.6)] [text-shadow:0_1px_0_rgba(255,255,255,0.7),0_2px_4px_rgba(0,0,0,0.45)]">
+      **AC Motor 60W-200W จำเป็นต้องเลือกปุ่ม "With Fan" แทน Standard
+    </p>
+
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {[
+        { label: 'Standard', img: StdImg },
+        { label: 'With Fan', img: FanImg },
+        { label: 'With Terminal Box', img: TmbImg },
+        { label: 'With Electromagnetic Brake', img: EmbImg },
+        { label: 'With Force Cooling Fan', img: FcfImg },
+        { label: 'With Thermal Protector', img: TmpImg },
+      ].map(({ label, img }) => {
+        const curr = Array.isArray(acOption) ? acOption : [];
+        const selected = curr.includes(label);
+
+        return (
+          <button
+            key={label}
+            onClick={() => {
+              const curr = Array.isArray(acOption) ? acOption : [];
+              let next;
+              if (selected) {
+                // กดซ้ำ = ยกเลิกเลือก
+                next = curr.filter(o => o !== label);
+              } else {
+                // เพิ่มได้สูงสุด 5 รายการ
+                if (curr.length >= 5) return;
+                next = [...curr, label];
+              }
+              update('acOption', next); // เก็บเป็น array เพื่อนำไปใช้หน้า Model code
+            }}
+            className={[
+              "relative flex flex-col items-center rounded-xl p-3 bg-white",
+              "shadow-md hover:shadow-xl transition transform hover:-translate-y-1 active:scale-105",
+              selected ? "ring-2 ring-green-400 border-2 border-green-500" : ""
+            ].join(" ")}
+          >
+            <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+            <span className="text-sm font-semibold">{label}</span>
+          </button>
+        );
+      })}
+    </div>
+
+    <p className="text-sm text-gray-200 mt-2">
+      **หากไม่ต้องการ Option เสริม เลือกปุ่ม "Standard" ได้เลยครับ
+    </p>
+
+    {/* ปุ่มถัดไป: โชว์เฉพาะหน้า Optional → ไป Step 5 (Gear Head) */}
+    <button
+      onClick={() => {
+        setAcOptionalConfirmed(true);  // ✅ กดถัดไป
+        // เลื่อนไปล่างไปที่หัวข้อ Gear Type ด้วย (ถ้ามี id)
+        setTimeout(() => {
+          document.getElementById('ac-step-5')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+      }}
+      className="fixed bottom-4 right-4 z-50 px-4 py-2 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl active:translate-y-0.5"
+    >
+      ถัดไป →
+    </button>
+  </div>
+)}
 
       {/* Gearhead Selection */}
-      {acOption && !acGearHead && (
+      {acOptionalConfirmed && !acGearHead && (
         <div>
 	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
   Gear Type
@@ -394,7 +455,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   Ratio Selection
                     </h3>
           <div className="flex flex-wrap gap-2 justify-center">
-	    <p className="text-sm text-white-600 mt-2">
+	    <p className="text-sm font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)] mt-2">
             สูตรการหาความเร็วรอบ ( rpm ) = ความเร็วรอบมอเตอร์ / อัตราทด : 
             : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 
             : 1500 / 30 = 50 rpm , จะได้ความเร็วรอบจาก Gear Head = 30 รอบ/นาที 
@@ -561,6 +622,27 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
     return `${type}-${gearType}${ratio}${direction}-${power}-${supply}${optCode}`;
   };
 
+   const KeyButton = ({ label, isActive, onClick }) => (
+  <button
+    onClick={onClick}
+    aria-pressed={isActive}
+    className={[
+      "relative select-none rounded-2xl px-3 py-2 min-w-[56px]",
+      "text-sm font-semibold transition-all duration-150 ease-out",
+      // พื้นผิวแบบคีย์บอร์ด (นูน)
+      isActive
+        ? "bg-gradient-to-b from-gray-200 to-gray-100 text-gray-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.35),inset_0_-2px_0_rgba(255,255,255,0.6)]"
+        : "bg-gradient-to-b from-white to-gray-100 text-gray-800 shadow-[0_6px_0_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_0_rgba(0,0,0,0.25),0_3px_6px_rgba(0,0,0,0.25)]",
+      // เอฟเฟกต์ยุบตอนคลิก
+      "active:translate-y-0.5 active:shadow-[0_3px_0_rgba(0,0,0,0.25),0_1px_2px_rgba(0,0,0,0.2)]",
+      // ขอบบางด้านบนให้ดูเงา
+      "before:absolute before:inset-x-1 before:top-0 before:h-px before:bg-white/60 before:rounded-t-xl",
+    ].join(" ")}
+  >
+    {label}
+  </button>
+);
+
   return (
     <div className="space-y-6">
       {/* Step 1 */}
@@ -610,16 +692,21 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       )}
 
       {/* Step 3 */}
-      {type && gearType && !ratio && (
-        <div>
-          <h3 className="font-semibold text-white drop-shadow mb-2">Ratio</h3>
-          <div className="grid grid-cols-4 gap-2">
-            {[10,15,20,25,30,40,50,60,80,100,120,160,200,240].map(r => (
-              <button key={r} onClick={() => update('ratio', r)} className="button">{r}</button>
-            ))}
-          </div>
-        </div>
-      )}
+{type && gearType && !ratio && (
+  <div>
+    <h3 className="font-semibold text-white drop-shadow mb-2">Ratio</h3>
+    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2 place-items-center">
+      {[10,15,20,25,30,40,50,60,80,100,120,160,200,240].map((r) => (
+        <KeyButton
+          key={r}
+          label={r}
+          isActive={ratio === r}
+          onClick={() => update('ratio', r)}
+        />
+      ))}
+    </div>
+  </div>
+)}
 
       {/* Step 4 */}
       {type && ratio && !direction && (
@@ -652,47 +739,55 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       )}
 
       {/* Step 5 */}
-      {type && direction && !power && (
-        <div>
-          <h3 className="font-semibold text-white drop-shadow mb-2">Motor Power</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {(type === 'F2'
-              ? [15,25,40,60,90]
-              : [100,200,400,750,1500,2200]).map(p => (
-                <button key={p} onClick={() => update('power', p)} className="button">{p}W</button>
-              ))}
-          </div>
-        </div>
-      )}
+{type && direction && !power && (
+  <div>
+    <h3 className="font-semibold text-white drop-shadow mb-2">Motor Power</h3>
+    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2 place-items-center">
+      {(type === 'F2' ? [15,25,40,60,90] : [100,200,400,750,1500,2200]).map((p) => (
+        <KeyButton
+          key={p}
+          label={`${p}W`}
+          isActive={power === p}
+          onClick={() => update('power', p)}
+        />
+      ))}
+    </div>
+  </div>
+)}
 
       {/* Step 6 */}
-      {power && !supply && (
-        <div>
-          <h3 className="font-semibold text-white drop-shadow mb-2">Power Supply</h3>
-          <div className="flex flex-wrap gap-2">
-            {(type === 'F2'
-              ? ['C','A','S','S3']
-              : ['S']).map(s => (
-                <button key={s} onClick={() => update('supply', s)} className="button">{s}</button>
-              ))}
-          </div>
-        </div>
-      )}
+{power && !supply && (
+  <div>
+    <h3 className="font-semibold text-white drop-shadow mb-2">Power Supply</h3>
+    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 place-items-center">
+      {(type === 'F2' ? ['C','A','S','S3'] : ['S']).map((s) => (
+        <KeyButton
+          key={s}
+          label={s}
+          isActive={supply === s}
+          onClick={() => update('supply', s)}
+        />
+      ))}
+    </div>
+  </div>
+)}
 
-      {/* Step 7 */}
-      {supply && (
-        <div>
-          <h3 className="font-semibold text-white drop-shadow mb-2">Motor Optional</h3>
-          <div className="flex gap-3">
-            {['B','F','P'].map(opt => (
-              <button
-                key={opt}
-                className={`button ${optional.includes(opt) ? 'bg-blue-700 text-white' : ''}`}
-                onClick={() => toggleOptional(opt)}>{opt}</button>
-            ))}
-          </div>
-        </div>
-      )}
+{/* Step 7 */}
+{supply && (
+  <div>
+    <h3 className="font-semibold text-white drop-shadow mb-2">Motor Optional</h3>
+    <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 place-items-center">
+      {['B','F','P'].map((opt) => (
+        <KeyButton
+          key={opt}
+          label={opt}
+          isActive={optional?.includes(opt)}
+          onClick={() => toggleOptional(opt)}
+        />
+      ))}
+    </div>
+  </div>
+)}
 
       {/* Final Confirm */}
       {supply && (
@@ -1209,8 +1304,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
     bldcSpeed, bldcOption, bldcRatio,
     // [ADD-BLDC-HIGH] ใหม่:
     bldcHEType,     // 'S' | 'SF' | 'SL'  (ใช้เมื่อ bldcCategory === 'HighefficiencyBLDCGearmotor')
-    bldcSFDiameter,  // '12'|'14'|'15'|'16'|'20'|'25'  (เฉพาะโหมด SF)
-    bldcSelectedImage
+    bldcSFDiameter  // '12'|'14'|'15'|'16'|'20'|'25'  (เฉพาะโหมด SF)
   } = state;
 
   const update = (key, value) => {
@@ -1446,39 +1540,78 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 
           {/* Step 5: Gear Type (ตาม Frame) — Nol */}
 {bldcVoltage && bldcCategory === 'BLDCGearmotor' && (
-  <Section title="Step 5: Gear Type (ตาม Frame)">
-    {(frameGearOptions[bldcFrame] || []).map(gt => {
-      // map รูปเฉพาะ GN/GNL ตามที่มีไฟล์
+  <Section title="Step 5: Gear Type (ตาม Frame)" className="max-w-5xl mx-auto">
+    {(() => {
+      const options  = (frameGearOptions[bldcFrame] || []);    // เช่น ['GN','GNL'] หรือมีอื่น ๆ
+      const selected = bldcGearType;
+      const others   = options.filter(gt => gt !== selected);
+
       const imgMap = { GN: GNBLDCNolImg, GNL: GNLBLDCNolImg };
-      const img = imgMap[gt];
+      const renderItem = (gt, dim) => {
+        const img = imgMap[gt];
+        if (img) {
+          return (
+            <ChoiceCard
+              key={gt}
+              img={img}
+              label={gt}
+              active={gt === selected}
+              className={dim ? "opacity-40 hover:opacity-70" : ""}
+              onClick={() => update('bldcGearType', gt)}
+            />
+          );
+        }
+        // (กรณีไม่มีรูป เช่น GU/GUL)
+        return (
+          <Btn
+            key={gt}
+            active={gt === selected}
+            onClick={() => update('bldcGearType', gt)}
+          >
+            <span className={["inline-block transition-all duration-300", dim ? "opacity-40 hover:opacity-70" : ""].join(" ")}>
+              {gt}
+            </span>
+          </Btn>
+        );
+      };
 
-      // ใช้ state เดิม bldcGearType เป็นตัวชี้ “ตัวที่ถูกเลือก”
-      const isActive = bldcGearType === gt;
-      const isHidden = !!bldcGearType && bldcGearType !== gt; // มีตัวเลือกแล้ว → ตัวอื่นจาง/เลื่อน
+      return (
+        <div className="space-y-4">
+          {/* ปุ่ม “ที่เลือก” โชว์เดี่ยวตรงกลาง */}
+          {selected && (
+            <motion.div
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.22 }}
+              className="flex justify-center"
+            >
+              {renderItem(selected, false)}
+            </motion.div>
+          )}
 
-      return img ? (
-        <ChoiceCard
-          key={gt}
-          img={img}
-          label={gt}
-          active={isActive}
-          hidden={isHidden}
-          onClick={() => update('bldcGearType', gt)}
-        />
-      ) : (
-        // ถ้าเป็น GU/GUL (ยังไม่มีรูป) → ใช้ปุ่มเดิม แต่ใส่เอฟเฟกต์จางเหมือนกัน
-        <Btn
-          key={gt}
-          active={isActive}
-          onClick={() => update('bldcGearType', gt)}
-        >
-          <span className={[
-            "transition-all duration-500 ease-out inline-block",
-            isHidden ? "opacity-0 translate-x-3 pointer-events-none" : "opacity-100 translate-x-0"
-          ].join(" ")}>{gt}</span>
-        </Btn>
+          {/* ปุ่มอื่น ๆ: จางลงแต่ยังคลิกได้ */}
+          <div className="flex flex-wrap justify-center gap-4">
+            {(selected ? others : options).map(gt => (
+              <motion.div key={gt} layout>
+                {renderItem(gt, !!selected)}
+              </motion.div>
+            ))}
+          </div>
+
+          {selected && (
+            <div className="text-center">
+              <button
+                onClick={() => update('bldcGearType', null)}
+                className="px-3 py-1 rounded-lg bg-white/90 shadow hover:bg-white"
+              >
+                เปลี่ยนตัวเลือก (GN / GNL)
+              </button>
+            </div>
+          )}
+        </div>
       );
-    })}
+    })()}
   </Section>
 )}
 
@@ -1527,27 +1660,67 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
         <>
           {/* Step 1 (HE): เลือกซีรีส์ — ใช้ภาพ S / SF / SL */}
 {/* Step 1 (HE): เลือกซีรีส์ */}
-<Section title="Step 1 (HE): เลือกซีรีส์">
-  {[
-    { img: SHIBLDCImg, label: 'S' },
-    { img: SFHIBLDCImg, label: 'SF' },
-    { img: SLHIBLDCImg, label: 'SL' }
-  ].map(({ img, label }) => (
-    <ChoiceCard
-      key={label}
-      img={img}
-      label={label}
-      active={bldcSelectedImage === label}
-      hidden={!!bldcSelectedImage && bldcSelectedImage !== label}
-      onClick={() => {
-        update('bldcSelectedImage', label);
-        update('bldcHEType', label);
-      }}
-    />
-  ))}
+<Section title="Step 1 (HE): เลือกซีรีส์" className="max-w-5xl mx-auto">
+  {(() => {
+    const items = [
+      { label: 'S',  img: SHIBLDCImg  },
+      { label: 'SF', img: SFHIBLDCImg },
+      { label: 'SL', img: SLHIBLDCImg },
+    ];
+    const selected = bldcHEType;
+    const others   = items.filter(i => i.label !== selected);
+
+    return (
+      <div className="space-y-4">
+        {/* ปุ่ม “ที่เลือก” โชว์เดี่ยวตรงกลาง */}
+        {selected && (
+          <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.22 }}
+            className="flex justify-center"
+          >
+            <ChoiceCard
+              key={`sel-${selected}`}
+              img={items.find(i => i.label === selected)?.img}
+              label={selected}
+              active
+              onClick={() => update('bldcHEType', selected)}
+            />
+          </motion.div>
+        )}
+
+        {/* ปุ่มอื่น ๆ: จางลงแต่ยังคลิกได้ */}
+        <div className="flex flex-wrap justify-center gap-4">
+          {(selected ? others : items).map(({ label, img }) => (
+            <motion.div key={label} layout>
+              <ChoiceCard
+                img={img}
+                label={label}
+                active={label === selected}
+                className={selected && label !== selected ? "opacity-40 hover:opacity-70" : ""}
+                onClick={() => update('bldcHEType', label)}
+              />
+            </motion.div>
+          ))}
+        </div>
+
+        {selected && (
+          <div className="text-center">
+            <button
+              onClick={() => update('bldcHEType', null)}
+              className="px-3 py-1 rounded-lg bg-white/90 shadow hover:bg-white"
+            >
+              เปลี่ยนตัวเลือก (S / SF / SL)
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  })()}
 </Section>
 
-          {/* Step 2: Frame (ตาม HE type) */}
           {/* Step 2: Frame (ตาม HE type) */}
 {bldcHEType && (
   <Section title="Step 2: เลือก Frame Size (HE)">
