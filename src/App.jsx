@@ -53,6 +53,14 @@ function App() {
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
 
+const COMING_SOON = new Set([
+  'DC Gear Motor',
+  'SPN Series',
+  'P Planetary Gearbox',
+  'Servo Drive and Speed controller',
+  'SRV Worm Gear',
+]);
+
 const handleBackUniversal = () => {
   if (selectedProduct === 'RKFS Series') {
     handleBackWithReset();
@@ -392,60 +400,142 @@ const getFileUrl = () => {
       <div className="relative z-10 p-6 max-w-6xl mx-auto text-gray-900">
         {!selectedProduct && (
           <>
-            <h1
-              className="
-                text-5xl font-extrabold mb-5
-                tracking-wide text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.95)]
-              "
-            >
-              SAS 3D.STEP
-            </h1>
+            {/* Title: Thai-flag gradient + waving */}
+<div className="mb-6">
+  <div className="mx-auto w-full max-w-5xl">
+    <svg
+      viewBox="0 0 1200 240"
+      className="w-full h-[120px] md:h-[145px] lg:h-[165px] select-none"
+      preserveAspectRatio="xMidYMid meet"
+      aria-label="SAS 3D.STEP"
+    >
+      <defs>
+        {/* แถบธงไทยแบบแม่นยำ 1:1:2:1:1 (สูงรวม 240 → 40/40/80/40/40) */}
+        <pattern id="thaiFlagPattern" patternUnits="userSpaceOnUse" width="1200" height="240">
+          <rect x="0" y="0"   width="1200" height="40"  fill="#EF2B2D" />  {/* แดงบน */}
+          <rect x="0" y="40"  width="1200" height="40"  fill="#FFFFFF" />  {/* ขาว */}
+          <rect x="0" y="80"  width="1200" height="80"  fill="#00247D" />  {/* น้ำเงินกว้าง */}
+          <rect x="0" y="160" width="1200" height="40"  fill="#FFFFFF" />  {/* ขาว */}
+          <rect x="0" y="200" width="1200" height="40"  fill="#EF2B2D" />  {/* แดงล่าง */}
+        </pattern>
+
+        {/* คลื่นลมให้ตัวอักษรโบกไสว */}
+        <filter id="wavy" x="-10%" y="-30%" width="120%" height="160%">
+          <feTurbulence type="turbulence" baseFrequency="0.015 0.08" numOctaves="2" seed="3" result="noise">
+            <animate attributeName="baseFrequency" dur="6s" values="0.015 0.08; 0.020 0.10; 0.015 0.08" repeatCount="indefinite" />
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G">
+            <animate attributeName="scale" dur="6s" values="9; 14; 9" repeatCount="indefinite" />
+          </feDisplacementMap>
+        </filter>
+      </defs>
+
+      {/* เส้นนอกดำโปร่งช่วยให้อ่านชัด */}
+      <text
+        x="50%" y="50%"
+        textAnchor="middle" dominantBaseline="central"
+        fontFamily="sans-serif" fontWeight="900" fontSize="178"
+        fill="none" stroke="rgba(239,43,45,0.6)" strokeWidth="10" strokeLinejoin="round"
+        style={{ letterSpacing: '0.05em' }}
+      >
+        SAS 3D.STEP
+      </text>
+
+      {/* เติมลายธงด้วย pattern + โบก */}
+      <text
+        x="50%" y="50%"
+        textAnchor="middle" dominantBaseline="central"
+        fontFamily="sans-serif" fontWeight="900" fontSize="178"
+        fill="url(#thaiFlagPattern)" filter="url(#wavy)"
+        style={{ letterSpacing: '0.05em' }}
+      >
+        SAS 3D.STEP
+      </text>
+    </svg>
+  </div>
+</div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
               {productList.map((p) => (
                 <button
-                  key={p.name}
-                  type="button"
-                  onClick={() => setSelectedProduct(p.name)}
-                  className="
-                    group relative w-full overflow-hidden text-left
-                    rounded-2xl
-                    bg-white/80 backdrop-blur-md
-                    shadow-[0_8px_20px_rgba(0,0,0,0.25)]
-                    border border-white/20
-                    transition
-                    hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(0,0,0,0.35)]
-                    active:translate-y-0.5 active:shadow-[0_6px_14px_rgba(0,0,0,0.25)]
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
-                    p-0
-                  "
-                >
-                  {/* เงาสะท้อนบาง ๆ เพิ่มมิติ */}
-                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-60 group-hover:opacity-70 transition" />
+  key={p.name}
+  type="button"
+  onClick={() => setSelectedProduct(p.name)}
+  className="
+    group relative w-full overflow-hidden text-left
+    rounded-2xl
+    bg-white/80 backdrop-blur-md
+    shadow-[0_8px_20px_rgba(0,0,0,0.25)]
+    border border-white/20
+    transition
+    hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(0,0,0,0.35)]
+    active:translate-y-0.5 active:shadow-[0_6px_14px_rgba(0,0,0,0.25)]
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+    p-0
+    tilt-card
+  "
+>
+  {/* เงาสะท้อนบาง ๆ ที่มีอยู่เดิม */}
+  <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-60 group-hover:opacity-70 transition" />
 
-                  <div className="flex flex-col h-full">
-                    {/* โซนรูป: คุมสัดส่วน + เด้งตอน hover */}
-                    <div className="aspect-[4/3] grid place-items-center bg-white/50">
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        className="max-h-[70%] max-w-[85%] object-contain transition group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
+  {/* เพิ่มแสงวิ่งหรู ๆ */}
+  <span className="sheen-layer"></span>
 
-                    {/* ชื่อสินค้า */}
-                    <div className="px-4 py-3 bg-white/80 backdrop-blur-sm border-t border-white/30">
-                      <p className="font-semibold text-gray-900 tracking-wide">
-                        {p.name}
-                      </p>
-                    </div>
-                  </div>
-                </button>
+  {/* เพิ่มขอบเรืองแสงนุ่ม ๆ */}
+  <span className="glow-layer"></span>
+
+  <div className="flex flex-col h-full">
+    <div className="aspect-[4/3] grid place-items-center bg-white/50">
+      <img
+        src={p.image}
+        alt={p.name}
+        className="card-image max-h-[70%] max-w-[85%] object-contain"
+        loading="lazy"
+      />
+    </div>
+
+    <div className="px-4 py-3 bg-white/80 backdrop-blur-sm border-t border-white/30">
+      <p className="font-semibold text-gray-900 tracking-wide">
+        {p.name}
+      </p>
+    </div>
+  </div>
+</button>
               ))}
             </div>
           </>
         )}
+
+
+{selectedProduct && COMING_SOON.has(selectedProduct) && (
+  <>
+    {/* ปุ่ม Home มุมขวาบน */}
+    <div className="fixed top-4 right-4 z-20">
+      <button
+        type="button"
+        onClick={() => setSelectedProduct(null)}
+        className="px-4 py-2 rounded-xl bg-white/90 text-black font-semibold shadow hover:shadow-lg transition"
+        aria-label="Home"
+        title="Home"
+      >
+        Home
+      </button>
+    </div>
+
+    {/* หน้าประกาศ Coming soon */}
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="text-center select-none">
+        <div className="bw-text font-black tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]
+                        text-[64px] md:text-[84px] lg:text-[96px]">
+          Coming soon
+        </div>
+        <div className="mt-2 text-white/90 text-[10px] md:text-[11px]">
+          แล้วพบกันเร็วๆนี้.....
+        </div>
+      </div>
+    </div>
+  </>
+)}
 
         {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
           <>

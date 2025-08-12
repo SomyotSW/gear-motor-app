@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -10,4 +14,70 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* ====== Hover Luxe Effects (no Tailwind config needed) ====== */
+.tilt-card{
+  transform: translateY(0) rotateX(0) rotateY(0);
+  transition: transform .35s ease, box-shadow .35s ease, filter .35s ease;
+  will-change: transform, box-shadow, filter;
+  transform-style: preserve-3d;
+}
+
+.tilt-card:hover{
+  transform: translateY(-6px) rotateX(2deg) rotateY(-2deg);
+  filter: saturate(1.06);
+  box-shadow:
+    0 16px 32px rgba(0,0,0,.35),
+    0 4px 16px rgba(0,0,0,.25);
+}
+
+/* แสงวิ่งแบบหรู (sheen) */
+@keyframes sheen {
+  0%   { background-position: -150% 0; }
+  100% { background-position: 150% 0; }
+}
+.sheen-layer{
+  position:absolute; inset:0; pointer-events:none;
+  background: linear-gradient(75deg, transparent 45%, rgba(255,255,255,.35) 50%, transparent 55%);
+  background-size: 200% 100%;
+  opacity: 0; transition: opacity .35s ease;
+}
+.tilt-card:hover .sheen-layer{ opacity: .9; animation: sheen 1.1s ease forwards; }
+
+/* ขอบเรืองแสงนุ่ม ๆ */
+.glow-layer{
+  position:absolute; inset:-1px; pointer-events:none; border-radius: inherit;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.25), inset 0 0 0 1px rgba(255,255,255,.1);
+  transition: box-shadow .35s ease, opacity .35s ease;
+  opacity: .8;
+}
+.tilt-card:hover .glow-layer{
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.45),
+    0 10px 30px rgba(80,150,255,.18),
+    inset 0 0 0 1px rgba(255,255,255,.2);
+  opacity: 1;
+}
+
+/* รูปเด้งนิด ๆ ขณะ hover */
+.card-image{
+  transition: transform .35s ease;
+  will-change: transform;
+}
+.tilt-card:hover .card-image{ transform: scale(1.06) translateZ(0); }
+
+
+/* ===== Coming soon: ข้อความไล่เฉดขาว-ดำสลับ ===== */
+@keyframes bwGradientSwap {
+  0%   { --c1: #ffffff; --c2: #000000; }
+  50%  { --c1: #000000; --c2: #ffffff; }
+  100% { --c1: #ffffff; --c2: #000000; }
+}
+.bw-text {
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  animation: bwGradientSwap 3.2s ease-in-out infinite;
 }

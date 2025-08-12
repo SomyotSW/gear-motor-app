@@ -2,6 +2,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
+import './index.css';
 
 // ✅ ใส่คอมโพเนนต์ ErrorBoundary ไว้เหนือการใช้งาน
 function ErrorBoundary({ children }) {
