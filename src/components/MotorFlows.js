@@ -79,7 +79,10 @@ import GBKlowImg from '../assets/ac/Gearhead/Klow.png';
 import GBKBImg from '../assets/ac/Gearhead/KB.png';
 import GBRCImg from '../assets/ac/Gearhead/RC.png';
 import GBRTImg from '../assets/ac/Gearhead/RT.png';
-
+import K3D  from '../assets/3Dgif/K3D.gif';
+import KB3D from '../assets/3Dgif/KB3D.gif';
+import RC3D from '../assets/3Dgif/RC3D.gif';
+import RT3D from '../assets/3Dgif/RT3D.gif';
 
 import W10Img from '../assets/ac/flame/10W.png';
 import W15Img from '../assets/ac/flame/15W.png';
@@ -156,6 +159,7 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
     'With Terminal Box': 'T',
     'With Force Cooling Fan': 'FF',
     'With Electromagnetic Brake': 'M',
+    'With Thermal Protector': 'P',
     'With Thermal Protection': 'P',
     'Standard': ''
   };
@@ -168,10 +172,21 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
     'RIGHT ANGLE GEAR/SOLID SHAFT': 'RT'
   };
 
+  // แปลงชื่อหัวเกียร์ → ไฟล์ GIF
+const getGearGif = () => {
+  // label ที่ใช้ในแอปของคุณ
+  if (acGearHead === 'RIGHT ANGLE GEAR/HOLLOW SHAFT') return RC3D; // RC
+  if (acGearHead === 'RIGHT ANGLE GEAR/SOLID SHAFT')  return RT3D; // RT
+  if (acGearHead === 'SQUARE BOX')                    return KB3D; // KB
+  if (acGearHead === 'SQUARE BOX (Low)')              return KB3D; // Klow → ใช้ KB3D ตามที่สั่ง
+  if (acGearHead === 'SQUARE BOX WITH WING')          return K3D;  // K
+  return null;
+};
+
   const motorMap = {
     'Induction Motor': 'IK',
     'Reversible Motor': 'RK',
-    'Variable Speed Motor': 'IK' // ด้านหน้ายังใช้ IK เหมือนเดิม
+    'Variable Speed Motor': 'IK'
   };
 
   const powerMap = {
@@ -190,36 +205,46 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
   const gearCode = gearHeadMap[acGearHead];
   const motorCode = motorMap[acMotorType];
   const powerCode = powerMap[acPower];
-  const term = optionMap[acOption] ?? '';
-  const num = acPower.replace('W AC Motor', '');
 
+  // ✅ รองรับ acOption เป็น array (multi-select)
+  let term = '';
+  if (Array.isArray(acOption)) {
+    const cleaned = acOption.includes('Standard') ? [] : acOption;
+    term = cleaned.map(opt => optionMap[opt] ?? '').join('');
+  } else {
+    term = optionMap[acOption] ?? '';
+  }
+
+  const num = acPower.replace('W AC Motor', '').trim();
   if (!phase || !gearCode || !motorCode || !powerCode || !num) return null;
 
-  const isVariable = acMotorType === 'Variable Speed Motor';
-  const frontSuffixGN = isVariable ? 'RGN' : 'GN';
-  const frontSuffixGU = isVariable ? 'RGU' : 'GU';
+  const isVariable     = acMotorType === 'Variable Speed Motor';
+  const frontSuffixGN  = isVariable ? 'RGN' : 'GN';
+  const frontSuffixGU  = isVariable ? 'RGU' : 'GU';
 
   const results = [];
 
   if (['10', '15', '25', '40'].includes(num)) {
-    // ทั้งหมดใช้ตระกูล GN ที่ท้ายเป็น ...K/RC/RT ตาม gearCode
     const front = `${powerCode}${motorCode}${num}${frontSuffixGN}-${phase}${term}`;
     const end   = `${powerCode}GN${acRatio}${gearCode}`;
     results.push(`${front}-${end}`);
   } else if (num === '60') {
     const frontGN = `${powerCode}${motorCode}${num}${frontSuffixGN}-${phase}${term}`;
     const frontGU = `${powerCode}${motorCode}${num}${frontSuffixGU}-${phase}${term}`;
-    const endGN   = `${powerCode}GN${acRatio}${gearCode}`;
-    const endGU   = `${powerCode}GU${acRatio}${gearCode}`;
 
-    // 60W: ถ้าเลือก KB -> ออกตระกูล GU (+KB), ถ้าอย่างอื่น -> GN
-    if (acGearHead === 'SQUARE BOX') {
-      results.push(`${frontGU}-${endGU}`);  // ตัวอย่าง: 5IK60GU-CF-5GU50KB
+    if (gearCode === 'RC' || gearCode === 'RT') {
+      // 60W + RC/RT → 1 บรรทัด (GU เท่านั้น)
+      const end = `${powerCode}GU${acRatio}${gearCode}`;
+      results.push(`${frontGU}-${end}`);
     } else {
-      results.push(`${frontGN}-${endGN}`);  // ตัวอย่าง: 5IK60GN-CF-5GN50K
+      // 60W + K/KB → 2 บรรทัดให้เลือก
+      const endGN = `${powerCode}GN${acRatio}K`;
+      const endGU = `${powerCode}GU${acRatio}KB`;
+      results.push(`${frontGN}-${endGN}`);
+      results.push(`${frontGU}-${endGU}`);
     }
   } else {
-    // ขนาดอื่น ๆ เดิม ๆ
+    // อื่น ๆ → GU family
     const front = `${powerCode}${motorCode}${num}${frontSuffixGU}-${phase}${term}`;
     const end   = `${powerCode}GU${acRatio}${gearCode}`;
     results.push(`${front}-${end}`);
@@ -232,7 +257,14 @@ export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, a
 // Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
 export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
+
   const [selectedModel, setSelectedModel] = useState(null);
+
+  // Optional (multi-select + confirm)
+  const [optSelected, setOptSelected] = useState(
+    Array.isArray(acOption) ? acOption : (acOption ? [acOption] : [])
+  );
+  const [optConfirmed, setOptConfirmed] = useState(!!acOption);
 
   const update = (key, value) => {
     const setterMap = {
@@ -247,15 +279,52 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   };
 
   const codes = generateModelCode(acState);
+   // เลือก GIF ตามหัวเกียร์ที่กำลังเลือกอยู่
+const gifForHead = (() => {
+  if (acGearHead === 'RIGHT ANGLE GEAR/HOLLOW SHAFT') return RC3D; // RC
+  if (acGearHead === 'RIGHT ANGLE GEAR/SOLID SHAFT')  return RT3D; // RT
+  if (acGearHead === 'SQUARE BOX')                    return KB3D; // KB
+  if (acGearHead === 'SQUARE BOX (Low)')              return KB3D; // Klow ใช้ KB3D
+  if (acGearHead === 'SQUARE BOX WITH WING')          return K3D;  // K
+  return null;
+})();
+
+  // --- Optional lists/filters ---
+  const smallPowers = ['10W AC Motor','15W AC Motor','25W AC Motor','40W AC Motor'];
+  const highPowers  = ['60W AC Motor','90W AC Motor','120W AC Motor','140W AC Motor','200W AC Motor'];
+
+  const baseOptions = [
+    { label: 'Standard', img: StdImg },
+    { label: 'With Fan', img: FanImg },
+    { label: 'With Terminal Box', img: TmbImg },
+    { label: 'With Electromagnetic Brake', img: EmbImg },
+    { label: 'With Force Cooling Fan', img: FcfImg },
+    { label: 'With Thermal Protector', img: TmpImg }
+  ];
+
+  const optionalList = baseOptions.filter(o => {
+    if (o.label === 'With Fan' && smallPowers.includes(acPower)) return false;  // ⬅️ ซ่อน With Fan (10–40W)
+    if (o.label === 'Standard' && highPowers.includes(acPower)) return false;   // ⬅️ ซ่อน Standard (60–200W)
+    return true;
+  });
+
+  const toggleOpt = (label) => {
+    setOptSelected(prev => {
+      if (label === 'Standard') return ['Standard'];
+      const base = prev.includes('Standard') ? [] : [...prev];
+      if (base.includes(label)) return base.filter(x => x !== label);
+      if (base.length >= 5) return base; // สูงสุด 5
+      return [...base, label];
+    });
+  };
+  const isSelected = (label) => optSelected.includes(label);
 
   return (
     <div className="space-y-6 mt-6">
-      {/* Motor Type Selection */}
+      {/* Motor Type */}
       {!acMotorType && (
         <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-  Motor Type
-                    </h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Motor Type</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: 'Induction Motor', img: InductionImg },
@@ -263,28 +332,25 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               { label: 'Variable Speed Motor', img: VariableImg }
             ].map(({ label, img }) => (
               <button
-  		key={label}
-  		onClick={() => update('acMotorType', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
+                key={label}
+                onClick={() => update('acMotorType', label)}
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 active:scale-105"
+              >
+                <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
             ))}
           </div>
-                    <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+          <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
             Variable Speed motor ความเร็วรอบ 90-1350 rpm จำเป็นต้องมี Speed controller ควบคุม (SAS Model: UX52..W)
           </p>
         </div>
       )}
 
-      {/* Power Selection */}
+      {/* Power */}
       {acMotorType && !acPower && (
         <div>
-	    <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-  Power Motor
-                    </h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Power Motor</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: '10W AC Motor', img: W10Img },
@@ -298,103 +364,101 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               { label: '200W AC Motor', img: W200Img }
             ].map(({ label, img }) => (
               <button
-  		key={label}
-  		onClick={() => update('acPower', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
+                key={label}
+                onClick={() => update('acPower', label)}
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 active:scale-105"
+              >
+                <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Voltage Selection */}
+      {/* Voltage */}
       {acPower && !acVoltage && (
         <div>
-	    <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-  Voltage
-                    </h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Voltage</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: '1Phase220V AC 50Hz', img: SingleImg },
               { label: '3Phase220V AC 50Hz', img: ThreeImg }
             ].map(({ label, img }) => (
               <button
-  		key={label}
-  		onClick={() => update('acVoltage', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
+                key={label}
+                onClick={() => update('acVoltage', label)}
+                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 active:scale-105"
+              >
+                <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Optional Selection */}
-      {acVoltage && !acOption && (
+      {/* Optional (multi-select + next) */}
+      {acPower && acVoltage && !optConfirmed && !acGearHead && (
         <div>
-	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-  Motor Optional
-                    </h3>
-          <p className="text-red-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-            **AC Motor 60W-200W จำเป็นต้องเลือกปุ่ม "With Fan" แทน Standard
-          </p>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Motor Optional</h3>
+
+          {smallPowers.includes(acPower) ? (
+            <p className="text-white/80 mb-2">รุ่น {acPower} ไม่ต้องใช้พัดลม</p>
+          ) : (
+            <p className="text-red-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+              **AC Motor 60W-200W ควรเลือกปุ่ม "With Fan"
+            </p>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { label: 'Standard', img: StdImg },
-              { label: 'With Fan', img: FanImg },
-              { label: 'With Terminal Box', img: TmbImg },
-              { label: 'With Electromagnetic Brake', img: EmbImg },
-              { label: 'With Force Cooling Fan', img: FcfImg },
-              { label: 'With Thermal Protector', img: TmpImg }
-            ].map(({ label, img }) => (
+            {optionalList.map(({ label, img }) => (
               <button
-  		key={label}
-  		onClick={() => update('acOption', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
+                key={label}
+                onClick={() => toggleOpt(label)}
+                className={
+                  "flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition " +
+                  "transform hover:-translate-y-1 active:scale-105 " +
+                  (isSelected(label) ? "ring-4 ring-green-500" : "")
+                }
+              >
+                <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+                <span className="text-sm font-semibold">{label}</span>
+              </button>
             ))}
           </div>
-                    <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-            **หากไม่ต้องการ Option เสริม เลือกปุ่ม "STANDARD"ได้เลยครับ
-          </p>
+
+          <div className="mt-4 text-xs text-white/80">
+            เลือกได้สูงสุด 5 ตัวเลือก (ถ้ามี "Standard" จะถือว่าไม่มี Option อื่น)
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={() => {
+                const finalSel = optSelected.length
+                  ? optSelected
+                  : (highPowers.includes(acPower) ? ['With Fan'] : ['Standard']);
+                update('acOption', finalSel);
+                setOptConfirmed(true);
+              }}
+              className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              ถัดไป
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Gearhead Selection */}
-      {acOption && !acGearHead && (
+      {/* Gear Type (มีปุ่มย้อนกลับล่างซ้าย) */}
+      {acOption && optConfirmed && !acGearHead && (
         <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-            Gear Type
-          </h3>
-
-          {/*
-            เงื่อนไขตามที่กำหนด:
-            - 10W  : แสดงเฉพาะ Klow (ใช้ภาพ GBKlowImg) -> โค้ด K
-            - 15W  : แสดงเฉพาะ Klow -> โค้ด K
-            - 25W  : แสดง Klow + RC + RT
-            - 40W  : แสดง Klow + RC + RT
-            - 60W  : แสดง Klow + KB + RC + RT   (Klow = K แทน GBK เดิม)
-          */}
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Gear Type</h3>
           {(() => {
             const gearOptionsByPower = () => {
               switch (acPower) {
                 case '10W AC Motor':
                 case '15W AC Motor':
-                  return [
-                    { label: 'SQUARE BOX (Low)', img: GBKlowImg },
-                  ];
+                  return [{ label: 'SQUARE BOX (Low)', img: GBKlowImg }];
                 case '25W AC Motor':
                 case '40W AC Motor':
                   return [
@@ -404,13 +468,12 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
                   ];
                 case '60W AC Motor':
                   return [
-                    { label: 'SQUARE BOX (Low)', img: GBKlowImg },  // ใช้แทน GBK เดิม
+                    { label: 'SQUARE BOX (Low)', img: GBKlowImg },
                     { label: 'SQUARE BOX', img: GBKBImg },
                     { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: GBRCImg },
                     { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg },
                   ];
                 default:
-                  // คงค่าเดิมไว้สำหรับขนาดอื่นๆ (เพื่อไม่กระทบ flow เดิม)
                   return [
                     { label: 'SQUARE BOX WITH WING', img: GBKImg },
                     { label: 'SQUARE BOX', img: GBKBImg },
@@ -419,41 +482,51 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
                   ];
               }
             };
-
             const options = gearOptionsByPower();
 
             return (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {options.map(({ label, img }) => (
+              <div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {options.map(({ label, img }) => (
+                    <button
+                      key={label}
+                      onClick={() => update('acGearHead', label)}
+                      className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 active:scale-105"
+                    >
+                      <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+                      <span className="text-sm font-semibold">{label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-4">
                   <button
-                    key={label}
-                    onClick={() => update('acGearHead', label)}
-                    className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-                               transform hover:-translate-y-1 active:scale-105"
+                    onClick={() => {
+                      update('acGearHead', null);
+                      setOptConfirmed(false);
+                    }}
+                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                   >
-                    <img src={img} alt={label} className="h-64 mb-2 object-contain" />
-                    <span className="text-sm font-semibold">{label}</span>
+                    ย้อนกลับ
                   </button>
-                ))}
+                </div>
               </div>
             );
           })()}
         </div>
       )}
 
-      {/* Ratio Selection */}
+      {/* Ratio */}
       {acGearHead && !acRatio && (
         <div>
-	  <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-  Ratio Selection
-                    </h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Ratio Selection</h3>
           <div className="flex flex-wrap gap-2 justify-center">
-	    <p className="text-red-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-            สูตรการหาความเร็วรอบ ( rpm ) = ความเร็วรอบมอเตอร์ / อัตราทด : </p>
+            <p className="text-red-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+              สูตรการหาความเร็วรอบ ( rpm ) = ความเร็วรอบมอเตอร์ / อัตราทด :
+            </p>
             <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-            : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 
-            : 1500 / 30 = 50 rpm หรือได้ความเร็วรอบจากปลายเพลาหัวเกียร์ = 30 รอบ/นาที 
-          </p>
+              : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 : 1500 / 30 = 50 rpm
+            </p>
             {[3,3.6,5,6,7.5,9,12.5,15,18,25,30,36,50,60,75,90,100,120,150,180,200].map(ratio => (
               <button
                 key={ratio}
@@ -467,16 +540,35 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
         </div>
       )}
 
-      {/* Final Summary and Download */}
+      {/* Final */}
       {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && (
         <div className="text-center space-y-4 mt-6">
           <h2 className="text-2xl font-bold text-blue-700">
             {Array.isArray(codes) ? codes.join(', ') : codes}
           </h2>
+                    {/* iPhone frame + GIF เกียร์ (กึ่งกลางหน้าจอ) */}
+    {gifForHead && (
+      <div className="mt-6 flex justify-center">
+        {/* กรอบ iPhone */}
+        <div className="relative w-[280px] h-[560px] rounded-[3rem] bg-black p-4 shadow-2xl ring-1 ring-white/10">
+          {/* Notch */}
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-b-2xl" />
+          {/* หน้าจอ */}
+          <div className="w-full h-full rounded-[2rem] overflow-hidden bg-white">
+            <img
+              src={gifForHead}
+              alt="Gear 3D preview"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+      </div>
+    )}
           <div>
             <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
             <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
           </div>
+
           {Array.isArray(codes) && (
             <div className="flex flex-col items-center space-y-2">
               {codes.map((code, idx) => (
@@ -493,6 +585,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
               ))}
             </div>
           )}
+
           <button
             onClick={() => {
               const finalCode = Array.isArray(codes) ? selectedModel : codes;
@@ -502,6 +595,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
           >
             เสร็จสิ้น
           </button>
+
           <FinalResult
             modelCode={Array.isArray(codes) ? selectedModel : codes}
             downloadLink={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${Array.isArray(codes) ? selectedModel : codes}.STEP`}

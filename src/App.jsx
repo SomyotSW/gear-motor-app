@@ -245,6 +245,16 @@ const onConfirm = (modelCode) => {
     }
   }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
 
+   // เลือก GIF ตามหัวเกียร์ที่ผู้ใช้เลือก (ใช้ state acGearHead จาก App.jsx)
+const gearGifForHead = () => {
+  if (acGearHead === 'RIGHT ANGLE GEAR/HOLLOW SHAFT') return RC3D; // RC
+  if (acGearHead === 'RIGHT ANGLE GEAR/SOLID SHAFT')  return RT3D; // RT
+  if (acGearHead === 'SQUARE BOX')                    return KB3D; // KB
+  if (acGearHead === 'SQUARE BOX (Low)')              return KB3D; // Klow ใช้ KB3D
+  if (acGearHead === 'SQUARE BOX WITH WING')          return K3D;  // K
+  return null;
+};
+
   const generate6DigitCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
   // ✅ ฟังก์ชันส่งรหัสยืนยันไปยังอีเมลของลูกค้า
@@ -573,7 +583,6 @@ const getFileUrl = () => {
   <>
     <div className="text-center mt-10 space-y-4">
       <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
-      <p className="text-blue-200 font-medium mb-2">เลือกรุ่นที่ต้องการดาวน์โหลด:</p>
       {modelCodeList.map((code, idx) => (
         <div key={idx} className="flex justify-center items-center space-x-2">
           <input
@@ -587,6 +596,39 @@ const getFileUrl = () => {
         </div>
       ))}
     </div>
+        {/* iPad frame + GIF เกียร์ (กึ่งกลางหน้าจอ) */}
+{(() => {
+  const gif = gearGifForHead();
+  if (!gif) return null;
+
+  return (
+    <div className="mt-6 flex justify-center">
+      {/* กรอบ iPad */}
+      <div className="
+        relative
+        w-[800px] h-[600px]        /* ขนาดหลัก iPad 4:3 */
+        sm:w-[720px] sm:h-[540px]  /* เล็กลงเล็กน้อยบนจอแคบ */
+        md:w-[900px] md:h-[675px]  /* ขยายบนจอกว้าง */
+        bg-black p-6 rounded-[2rem] shadow-2xl ring-1 ring-white/10
+      ">
+        {/* กล้องหน้า (center camera) */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2">
+          <span className="block w-3 h-3 rounded-full bg-black ring-2 ring-white/20" />
+          <span className="block w-2 h-2 rounded-full bg-black ring-2 ring-white/15" />
+        </div>
+
+        {/* หน้าจอ iPad */}
+        <div className="w-full h-full rounded-[1.5rem] overflow-hidden bg-white">
+          <img
+            src={gif}
+            alt="Gear 3D preview"
+            className="w-full h-full object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  );
+})()}
 
     <div className="flex justify-center items-center gap-4 mt-4">
       <button
