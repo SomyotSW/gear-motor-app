@@ -81,3 +81,40 @@ code {
   color: transparent;
   animation: bwGradientSwap 3.2s ease-in-out infinite;
 }
+
+/* ===== 3D Luxe Title (Blue–Sky–Gray–White gradient swap) ===== */
+@keyframes luxBlueSwap {
+  0%   { --c1:#cfe9ff; --c2:#e6f1ff; --c3:#9ec5fe; --c4:#4a6fae; }
+  50%  { --c1:#f5f7fa; --c2:#d7e3f3; --c3:#8fb2e6; --c4:#6d87b7; }
+  100% { --c1:#e9f3ff; --c2:#c7dcff; --c3:#a4c8ff; --c4:#486a9c; }
+}
+
+.lux-3d-text{
+  /* พื้นผิวไล่เฉด + แอนิเมชัน */
+  --c1:#cfe9ff; --c2:#e6f1ff; --c3:#9ec5fe; --c4:#4a6fae;
+  background: linear-gradient(90deg, var(--c1), var(--c2), var(--c3), var(--c4));
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  animation: luxBlueSwap 6s ease-in-out infinite alternate;
+
+  /* ฟอร์มตัวอักษร */
+  font-weight: 900; letter-spacing: .02em;
+
+  /* Emboss + เงานุ่ม ดูแพง */
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.65),         /* ขอบบนวาบ */
+    0 -1px 0 rgba(0,0,0,.06),              /* ขอบล่างจม */
+    0 2px 2px rgba(0,0,0,.10),             /* เงาใกล้ */
+    0 10px 24px rgba(0,0,0,.22);           /* เงาหลัก */
+
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,.18));
+}
+
+.lux-3d-subtitle{
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: rgba(255,255,255,.85);
+  text-shadow: 0 1px 2px rgba(0,0,0,.25);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.10));
+}

@@ -401,6 +401,7 @@ const getFileUrl = () => {
         {!selectedProduct && (
           <>
             {/* Title: Thai-flag gradient + waving */}
+{/* Title: Lux 3D gradient (replace the old Thai-flag block with this) */}
 <div className="mb-6">
   <div className="mx-auto w-full max-w-5xl">
     <svg
@@ -410,44 +411,58 @@ const getFileUrl = () => {
       aria-label="SAS 3D.STEP"
     >
       <defs>
-        {/* แถบธงไทยแบบแม่นยำ 1:1:2:1:1 (สูงรวม 240 → 40/40/80/40/40) */}
-        <pattern id="thaiFlagPattern" patternUnits="userSpaceOnUse" width="1200" height="240">
-          <rect x="0" y="0"   width="1200" height="40"  fill="#EF2B2D" />  {/* แดงบน */}
-          <rect x="0" y="40"  width="1200" height="40"  fill="#FFFFFF" />  {/* ขาว */}
-          <rect x="0" y="80"  width="1200" height="80"  fill="#00247D" />  {/* น้ำเงินกว้าง */}
-          <rect x="0" y="160" width="1200" height="40"  fill="#FFFFFF" />  {/* ขาว */}
-          <rect x="0" y="200" width="1200" height="40"  fill="#EF2B2D" />  {/* แดงล่าง */}
-        </pattern>
+        {/* ไล่เฉดโทน น้ำเงิน–ฟ้า–เทา–ขาว พร้อม animation สลับสี */}
+        <linearGradient id="luxGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#e2efff">
+            <animate attributeName="stop-color" values="#e2efff;#d1e9ff;#e2efff" dur="6s" repeatCount="indefinite" />
+          </stop>
+          <stop offset="35%" stopColor="#93c5fd">
+            <animate attributeName="stop-color" values="#93c5fd;#60a5fa;#93c5fd" dur="6s" repeatCount="indefinite" />
+          </stop>
+          <stop offset="70%" stopColor="#cbd5e1">
+            <animate attributeName="stop-color" values="#cbd5e1;#e5e7eb;#cbd5e1" dur="6s" repeatCount="indefinite" />
+          </stop>
+          <stop offset="100%" stopColor="#ffffff">
+            <animate attributeName="stop-color" values="#ffffff;#f8fafc;#ffffff" dur="6s" repeatCount="indefinite" />
+          </stop>
+        </linearGradient>
 
-        {/* คลื่นลมให้ตัวอักษรโบกไสว */}
-        <filter id="wavy" x="-10%" y="-30%" width="120%" height="160%">
-          <feTurbulence type="turbulence" baseFrequency="0.015 0.08" numOctaves="2" seed="3" result="noise">
-            <animate attributeName="baseFrequency" dur="6s" values="0.015 0.08; 0.020 0.10; 0.015 0.08" repeatCount="indefinite" />
-          </feTurbulence>
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G">
-            <animate attributeName="scale" dur="6s" values="9; 14; 9" repeatCount="indefinite" />
-          </feDisplacementMap>
+        {/* เงาทิ้งตัวนุ่ม ๆ ใต้ตัวอักษร */}
+        <filter id="luxShadow" x="-20%" y="-20%" width="140%" height="160%">
+          <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="rgba(0,0,0,0.35)" />
+        </filter>
+
+        {/* Emboss/นูนเงาไฮไลท์ให้ดูเป็นโลหะหรู ๆ */}
+        <filter id="emboss" x="-20%" y="-20%" width="140%" height="160%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="blur" />
+          <feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.5" specularExponent="20" lighting-color="#ffffff" result="spec">
+            <fePointLight x="-5000" y="-10000" z="20000" />
+          </feSpecularLighting>
+          <feComposite in="spec" in2="SourceAlpha" operator="in" result="specMask" />
+          <feComposite in="SourceGraphic" in2="specMask" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
         </filter>
       </defs>
 
-      {/* เส้นนอกดำโปร่งช่วยให้อ่านชัด */}
+      {/* เงาหลัก */}
       <text
-        x="50%" y="50%"
-        textAnchor="middle" dominantBaseline="central"
-        fontFamily="sans-serif" fontWeight="900" fontSize="178"
-        fill="none" stroke="rgba(239,43,45,0.6)" strokeWidth="10" strokeLinejoin="round"
-        style={{ letterSpacing: '0.05em' }}
+        x="50%" y="65%"
+        textAnchor="middle" dominantBaseline="middle"
+        fontFamily="Inter, ui-sans-serif, system-ui"
+        fontWeight="900" fontSize="118"
+        fill="url(#luxGradient)"
+        filter="url(#luxShadow)"
       >
         SAS 3D.STEP
       </text>
 
-      {/* เติมลายธงด้วย pattern + โบก */}
+      {/* ชั้นนูน/ไฮไลท์ */}
       <text
-        x="50%" y="50%"
-        textAnchor="middle" dominantBaseline="central"
-        fontFamily="sans-serif" fontWeight="900" fontSize="178"
-        fill="url(#thaiFlagPattern)" filter="url(#wavy)"
-        style={{ letterSpacing: '0.05em' }}
+        x="50%" y="65%"
+        textAnchor="middle" dominantBaseline="middle"
+        fontFamily="Inter, ui-sans-serif, system-ui"
+        fontWeight="900" fontSize="118"
+        fill="url(#luxGradient)"
+        filter="url(#emboss)"
       >
         SAS 3D.STEP
       </text>
