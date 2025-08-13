@@ -143,6 +143,55 @@ import SHIBLDCImg from '../assets/bldc/SHIBLDC.png';
 import SFHIBLDCImg from '../assets/bldc/SFHIBLDC.png';
 import SLHIBLDCImg from '../assets/bldc/SLHIBLDC.png';
 
+  /**
+ * แปลง Model code → ชื่อไฟล์สำหรับดาวน์โหลด (ไม่รวม .step)
+ * รองรับ Nol (แรงดัน 24) และ HE (แรงดัน 220) ตามกติกาที่ผู้ใช้ให้
+ * @param {string} modelCode เช่น "Z4BLD60-24-GN-30S-4GN20K"
+ * @returns {string|null} ชื่อไฟล์ (ไม่รวม .step) เช่น "Z4BLD60-XX-GN-XXX-4GNXXK"
+ */
+function mapBLDCDownloadFilename(modelCode) {
+  if (typeof modelCode !== 'string') return null;
+  const raw = modelCode.trim();
+  if (!raw) return null;
+
+  // แยก 5 ส่วนแรกเท่านั้น (กันกรณีมีขีดเกินมาในส่วนท้าย)
+  const parts = raw.split('-');
+  if (parts.length < 5) return null;
+  const [p0, p1, p2, p3, p4] = parts.slice(0, 5);
+
+  // === Nol: รองรับแรงดัน 24, 36, 48 ===
+  if (['24', '36', '48'].includes(p1)) {
+    // p4: รีเซ็ตตัวเลขกลางของแพทเทิร์น (เลข+GN|GU)(ตัวเลข)(อักษร) → ใส่ "XX"
+    const replacedP4 = p4.replace(
+      /^((?:\d+GN|\d+GU))(\d+)([A-Za-z]+)$/,
+      (_m, head, _num, tail) => `${head}XX${tail}`
+    );
+
+    // ตามกติกา: p1 → "XX", p3 → "XXX"
+    return `${p0}-XX-${p2}-XXX-${replacedP4}`;
+  }
+
+  // === HE: แรงดัน 220 ===
+  if (p1 === '220') {
+    // คง p0,p1,p2,p4 และเปลี่ยน p3 → "XXX"
+    return `${p0}-${p1}-${p2}-XXX-${p4}`;
+  }
+
+  // นอกเหนือจากเงื่อนไขที่กำหนด
+  return null;
+}
+
+/**
+ * สร้าง URL ดาวน์โหลด (รวม .step) จาก modelCode
+ * @param {string} modelCode
+ * @param {string} basePath เส้นทางโฟลเดอร์ไฟล์บนเว็บ (ดีฟอลต์: /model)
+ */
+function mapBLDCDownloadURL(modelCode, basePath = '/model') {
+  const name = mapBLDCDownloadFilename(modelCode);
+  return name ? `${basePath}/${name}.step` : null;
+}
+
+
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
   { name: 'DC Gear Motor', image: DCImg },
@@ -1603,20 +1652,33 @@ const ChoiceCard = ({
       type="button"
       onClick={onClick}
       className={[
-        "relative group w-[300px] h-[200px] rounded-xl overflow-hidden",
+        "relative group w-[320px] h-[280px] rounded-xl overflow-hidden",
         "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.18)]",
         "transition-all duration-500 ease-out transform-gpu",
+        "focus:outline-none focus:ring-0",
         hidden ? "opacity-0 translate-x-10 pointer-events-none" : "opacity-100 translate-x-0",
-        active ? "ring-4 ring-blue-400 scale-105" : "hover:-translate-y-0.5 hover:scale-[1.02]",
+        active
+          ? "bg-blue-500 text-white ring-4 ring-blue-500 border-2 border-blue-500 scale-105"
+          : "hover:-translate-y-0.5 hover:scale-[1.02] border border-transparent",
         className
       ].join(" ")}
-      style={{ WebkitTapHighlightColor: "transparent" }}
+      style={{
+        WebkitTapHighlightColor: "transparent",
+        outline: "none",
+        boxSizing: "border-box",
+                margin: "4px"
+      }}
     >
       <img
         src={img}
         alt={label}
         className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 pointer-events-none select-none"
         draggable={false}
+        style={{
+          border: "none",
+          outline: "none",
+          transform: active ? "scale(1.06)" : "scale(1.02)"
+        }}
       />
       <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center bg-gradient-to-t from-black/50 to-transparent">
         <div className="text-white text-sm font-semibold drop-shadow">{label}</div>
@@ -1874,35 +1936,50 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 {bldcVoltage && bldcCategory === 'BLDCGearmotor' && (
   <Section title="Step 5: Gear Type (ตาม Frame)">
     {(frameGearOptions[bldcFrame] || []).map(gt => {
-      // map รูปเฉพาะ GN/GNL ตามที่มีไฟล์
-      const imgMap = { GN: GNBLDCNolImg, GNL: GNLBLDCNolImg };
+      // map รูป: GU ใช้ GN, GUL ใช้ GNL
+      const imgMap = { 
+        GN: GNBLDCNolImg, 
+        GNL: GNLBLDCNolImg,
+        GU: GNBLDCNolImg,
+        GUL: GNLBLDCNolImg
+      };
       const img = imgMap[gt];
 
-      // ใช้ state เดิม bldcGearType เป็นตัวชี้ “ตัวที่ถูกเลือก”
-      const isActive = bldcGearType === gt;
-      const isHidden = !!bldcGearType && bldcGearType !== gt; // มีตัวเลือกแล้ว → ตัวอื่นจาง/เลื่อน
+      const isActive = (bldcGearType || '').trim().toUpperCase() === gt.trim().toUpperCase();
 
-      return img ? (
-        <ChoiceCard
-          key={gt}
-          img={img}
-          label={gt}
-          active={isActive}
-          hidden={isHidden}
-          onClick={() => update('bldcGearType', gt)}
-        />
-      ) : (
-        // ถ้าเป็น GU/GUL (ยังไม่มีรูป) → ใช้ปุ่มเดิม แต่ใส่เอฟเฟกต์จางเหมือนกัน
-        <Btn
-          key={gt}
-          active={isActive}
+      const wrapperStyle = {
+        transform: isActive ? 'scale(1)' : 'scale(0.5)',
+        opacity:   isActive ? 1 : 0.5,
+        transition: isActive
+          ? 'opacity 320ms ease'
+          : 'transform 340ms cubic-bezier(0.22, 0.68, 0, 1.0), opacity 320ms ease',
+        animation: isActive ? 'popOvershoot 380ms cubic-bezier(0.22, 0.68, 0, 1.0)' : 'none',
+        borderRadius: '14px',
+        padding: '4px',
+        cursor: 'pointer',
+        willChange: 'transform, opacity'
+      };
+
+      return (
+        <div 
+          key={gt} 
+          className="inline-block" 
+          style={wrapperStyle} 
           onClick={() => update('bldcGearType', gt)}
         >
-          <span className={[
-            "transition-all duration-500 ease-out inline-block",
-            isHidden ? "opacity-0 translate-x-3 pointer-events-none" : "opacity-100 translate-x-0"
-          ].join(" ")}>{gt}</span>
-        </Btn>
+          {img ? (
+            <ChoiceCard
+              img={img}
+              label={gt}         // ✅ label จะเป็น GU/GUL ตามจริง
+              active={isActive}
+              onClick={() => update('bldcGearType', gt)}
+            />
+          ) : (
+            <Btn active={isActive} onClick={() => update('bldcGearType', gt)}>
+              <span className="inline-block">{gt}</span>
+            </Btn>
+          )}
+        </div>
       );
     })}
   </Section>
@@ -1954,38 +2031,58 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           {/* Step 1 (HE): เลือกซีรีส์ — ใช้ภาพ S / SF / SL */}
 {/* Step 1 (HE): Gear Type */}
 <Section title="BLDC High Efficiency Voltage : Gear Type">
-  <div
-    className="bldc-group"
-    data-selected={(bldcSelectedImage || '').toString().trim().toUpperCase()}
-  >
+  <div className="bldc-group">
     {[
-      { img: SHIBLDCImg,  label: 'S'  },
-      { img: SFHIBLDCImg, label: 'SF' },
-      { img: SLHIBLDCImg, label: 'SL' }
-    ].map(({ img, label }) => {
-      const norm = label.trim().toUpperCase();
-      return (
-        <div key={norm} className="bldc-item" data-label={norm}>
-          <ChoiceCard
-            img={img}
-            label={norm}
-            active={(bldcSelectedImage || '').trim().toUpperCase() === norm}
-            onClick={() => {
-              const v = norm; // S / SF / SL (ตรงกับ CSS)
-              update('bldcSelectedImage', v);
-              update('bldcHEType', v);
-            }}
-          />
-        </div>
-      );
-    })}
+  { img: SHIBLDCImg,  label: 'S'  },
+  { img: SFHIBLDCImg, label: 'SF' },
+  { img: SLHIBLDCImg, label: 'SL' }
+].map(({ img, label }) => {
+  const norm = label.trim().toUpperCase();
+  const isActive = (bldcHEType || '').trim().toUpperCase() === norm;
+
+  return (
+    <div
+      key={norm}
+      className="bldc-item"
+      data-label={norm}
+      style={{
+        /* ย่อ/จางปุ่มที่ไม่ได้เลือก แต่ยังคลิกได้ */
+        transform: isActive ? 'scale(1)' : 'scale(0.5)',
+        opacity:   isActive ? 1 : 0.5,
+
+        /* ให้ inactive ย่อ/ขยายลื่น ๆ, active ใช้อนิเมชัน overshoot */
+        transition: isActive
+          ? 'opacity 320ms ease'
+          : 'transform 340ms cubic-bezier(0.22, 0.68, 0, 1.0), opacity 320ms ease',
+        animation:  isActive ? 'popOvershoot 380ms cubic-bezier(0.22, 0.68, 0, 1.0)' : 'none',
+
+        /* สไตล์เสริมทั่วไป */
+        borderRadius: '14px',
+        padding: '4px',
+        cursor: 'pointer',
+        willChange: 'transform, opacity'
+      }}
+      onClick={() => {
+        const v = norm;
+        update('bldcHEType', v);
+        if (typeof setBldcHEType === 'function') setBldcHEType(v);
+      }}
+    >
+      <ChoiceCard img={img} label={norm} active={isActive} />
+    </div>
+  );
+})}
   </div>
+
+  {/* DEBUG ชั่วคราว: ดูว่าค่าเปลี่ยนไหม (ลบออกได้) */}
+  {/* <pre style={{color:'#fff',fontWeight:'bold'}}>bldcHEType={String(bldcHEType)}</pre> */}
 </Section>
+
 
           {/* Step 2: Frame (ตาม HE type) */}
           {/* Step 2: Frame (ตาม HE type) */}
 {bldcHEType && (
-  <Section title="Step 2: เลือก Frame Size (HE)">
+  <Section title=" Frame Size ">
     {Object.keys(HE_framePower[bldcHEType] || {}).map(fr => (   // << เพิ่ม || {}
       <Btn key={fr} active={bldcFrame === fr} onClick={() => {
         update('bldcFrame', fr);
@@ -2010,7 +2107,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 
           {/* Step 3: Power */}
           {bldcHEType && bldcFrame && (
-            <Section title="Step 3: เลือกกำลัง (W)">
+            <Section title="Power Motor (W)">
               {(HE_framePower[bldcHEType][bldcFrame] || []).map(p => (
                 <Btn key={p} active={bldcPower === p} onClick={() => update('bldcPower', p)}>{p}W</Btn>
               ))}
@@ -2019,14 +2116,14 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 
           {/* Step 4: Voltage = 220V AC (fix) */}
           {bldcHEType && bldcFrame && bldcPower && (
-            <Section title="Step 4: Voltage">
+            <Section title="Voltage">
               <Btn active={bldcVoltage === '220'} onClick={() => update('bldcVoltage','220')}>220V AC</Btn>
             </Section>
           )}
 
           {/* Step 5: Speed (15S,20S,30S,40S) */}
 {bldcHEType && bldcFrame && bldcPower && bldcVoltage === '220' && (
-  <Section title="Step 5: Speed code" note="15S=1500rpm • 20S=2000rpm • 30S=3000rpm • 40S=4000rpm">
+  <Section title="Output Speed Motor" note="• 15S=1500rpm    • 20S=2000rpm    • 30S=3000rpm(**Standard)    • 40S=4000rpm">
     {['15S','20S','30S','40S'].map(s => (
       <Btn key={s} active={bldcSpeed === s} onClick={() => update('bldcSpeed', s)}>
         {s}<div className="text-xs">{speedInfo[s]}</div>
@@ -2038,7 +2135,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           {/* Step 6 / 7: ตาม S / SF / SL */}
           {/* S: เลือก Ratio ใน Step 6 (มีกรณีพิเศษ) */}
           {bldcHEType === 'S' && bldcSpeed && (
-            <Section title="Step 6: Ratio">
+            <Section title="Ratio">
               {HE_S_ratiosForFrame(bldcFrame).map(r => (
                 <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
               ))}
@@ -2048,7 +2145,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
           {/* SF: Step 6 เลือก Shaft Diameter, Step 7 เลือก Ratio */}
           {bldcHEType === 'SF' && bldcSpeed && (
             <>
-              <Section title="Step 6: Diameter Output Shaft">
+              <Section title="Diameter Output Shaft">
                 {(HE_SF_diameterByFrame[bldcFrame] || []).map(d => (
                   <Btn key={d.label} active={bldcSFDiameter === d.v} onClick={() => update('bldcSFDiameter', d.v)}>
                     {d.label}
@@ -2056,7 +2153,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
                 ))}
               </Section>
               {bldcSFDiameter && (
-                <Section title="Step 7: Ratio">
+                <Section title="Ratio">
                   {HE_SF_ratios.map(r => (
                     <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
                   ))}
@@ -2067,7 +2164,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 
           {/* SL: เลือก Ratio ใน Step 6 (มีกรณีพิเศษ Z7) */}
           {bldcHEType === 'SL' && bldcSpeed && (
-            <Section title="Step 6: Ratio">
+            <Section title="Ratio">
               {HE_SL_ratiosForFrame(bldcFrame).map(r => (
                 <Btn key={r} active={String(bldcRatio)===String(r)} onClick={() => update('bldcRatio', r)}>{r}</Btn>
               ))}

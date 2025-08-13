@@ -119,27 +119,47 @@ code {
   filter: drop-shadow(0 4px 8px rgba(0,0,0,.10));
 }
 
-/* BLDC HE: group-based dim effect */
+/* === BLDC HE: dim/scale other cards when one is selected === */
 .bldc-group {
   display: flex;
-  gap: 0.75rem;         /* ปรับระยะห่างตามต้องการ */
-  flex-wrap: wrap;      /* เผื่อย่อแล้วจัดบรรทัดใหม่ */
+  gap: 0.75rem;
+  flex-wrap: wrap;
   align-items: center;
 }
 
 .bldc-item {
-  display: inline-block;  /* เพื่อให้ scale จากกรอบของตัวเอง */
+  display: inline-block;
   transition: transform 300ms cubic-bezier(.22,.61,.36,1),
               opacity 300ms cubic-bezier(.22,.61,.36,1);
   will-change: transform, opacity;
 }
 
-/* เมื่อเลือก S → ย่อ/จางทุกการ์ดที่ไม่ใช่ S */
+/* เลือก S → การ์ดอื่นย่อครึ่ง + จาง */
 .bldc-group[data-selected="S"]  > .bldc-item:not([data-label="S"]),
-/* เมื่อเลือก SF → ย่อ/จางทุกการ์ดที่ไม่ใช่ SF */
+/* เลือก SF → การ์ดอื่นย่อครึ่ง + จาง */
 .bldc-group[data-selected="SF"] > .bldc-item:not([data-label="SF"]),
-/* เมื่อเลือก SL → ย่อ/จางทุกการ์ดที่ไม่ใช่ SL */
+/* เลือก SL → การ์ดอื่นย่อครึ่ง + จาง */
 .bldc-group[data-selected="SL"] > .bldc-item:not([data-label="SL"]) {
   transform: scale(0.5);
   opacity: 0.5;
+}
+
+/* === Highlight card when selected === */
+.bldc-item {
+  border-radius: 14px;
+  transition: box-shadow 200ms ease, background-color 200ms ease, transform 150ms ease;
+}
+
+.bldc-item.bldc-active {
+  background: rgba(34,197,94,.10);               /* เขียวใส */
+  box-shadow: 0 0 0 2px #22c55e inset,           /* เส้นเขียวด้านใน */
+              0 8px 20px rgba(34,197,94,.25);    /* เงาเขียวอ่อน */
+  transform: translateY(-1px);
+}
+
+/* Overshoot pop */
+@keyframes popOvershoot {
+  0%   { transform: scale(0.92); }
+  60%  { transform: scale(1.10); } /* เด้งเกินนิดนึง */
+  100% { transform: scale(1.00); }
 }

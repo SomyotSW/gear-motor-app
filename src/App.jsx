@@ -52,7 +52,7 @@ function App() {
     const [rkfsMounting, setRkfsMounting] = useState(null);
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
-        const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
+    const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
 
 const COMING_SOON = new Set([
   'DC Gear Motor',
@@ -143,6 +143,7 @@ const [bldcOption, setBldcOption] = useState(null);
 const [bldcRatio, setBldcRatio] = useState(null);
 // [ADD-BLDC-HIGH] สำหรับ High-efficiency
 const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
+const [bldcSelectedImage, setBldcSelectedImage] = useState(null); // 'S' | 'SF' | 'SL'
 const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
 
 
@@ -457,7 +458,7 @@ const getFileUrl = () => {
         {/* Emboss/นูนเงาไฮไลท์ให้ดูเป็นโลหะหรู ๆ */}
         <filter id="emboss" x="-20%" y="-20%" width="140%" height="160%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="blur" />
-          <feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.5" specularExponent="20" lighting-color="#ffffff" result="spec">
+          <feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.5" specularExponent="20" lightingColor="#ffffff" result="spec">
             <fePointLight x="-5000" y="-10000" z="20000" />
           </feSpecularLighting>
           <feComposite in="spec" in2="SourceAlpha" operator="in" result="specMask" />
@@ -723,6 +724,7 @@ const getFileUrl = () => {
   {
     setBldcCategory, setBldcFrame, setBldcPower, setBldcVoltage,
     setBldcGearType, setBldcSpeed, setBldcOption, setBldcRatio,
+        setBldcSelectedImage,
     setBldcHEType, setBldcSFDiameter      // [ADD-BLDC-HIGH]
   },
   (modelCode) => {
