@@ -1771,7 +1771,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       </div>
 
       {/* Step 1: เลือกประเภท BLDC (Normal vs High-efficiency) */}
-<Section title="Step 1: เลือกประเภท">
+<Section title="SAS BLDC Gear Motor">
   {(() => {
     const isNormal = bldcCategory === "BLDCGearmotor";
     const isHE     = bldcCategory === "HighefficiencyBLDCGearmotor";
@@ -1952,25 +1952,34 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
       {bldcCategory === 'HighefficiencyBLDCGearmotor' && (
         <>
           {/* Step 1 (HE): เลือกซีรีส์ — ใช้ภาพ S / SF / SL */}
-{/* Step 1 (HE): เลือกซีรีส์ */}
-<Section title="Step 1 (HE): เลือกซีรีส์">
-  {[
-    { img: SHIBLDCImg, label: 'S' },
-    { img: SFHIBLDCImg, label: 'SF' },
-    { img: SLHIBLDCImg, label: 'SL' }
-  ].map(({ img, label }) => (
-    <ChoiceCard
-      key={label}
-      img={img}
-      label={label}
-      active={bldcSelectedImage === label}
-      hidden={!!bldcSelectedImage && bldcSelectedImage !== label}
-      onClick={() => {
-        update('bldcSelectedImage', label);
-        update('bldcHEType', label);
-      }}
-    />
-  ))}
+{/* Step 1 (HE): Gear Type */}
+<Section title="BLDC High Efficiency Voltage : Gear Type">
+  <div
+    className="bldc-group"
+    data-selected={(bldcSelectedImage || '').toString().trim().toUpperCase()}
+  >
+    {[
+      { img: SHIBLDCImg,  label: 'S'  },
+      { img: SFHIBLDCImg, label: 'SF' },
+      { img: SLHIBLDCImg, label: 'SL' }
+    ].map(({ img, label }) => {
+      const norm = label.trim().toUpperCase();
+      return (
+        <div key={norm} className="bldc-item" data-label={norm}>
+          <ChoiceCard
+            img={img}
+            label={norm}
+            active={(bldcSelectedImage || '').trim().toUpperCase() === norm}
+            onClick={() => {
+              const v = norm; // S / SF / SL (ตรงกับ CSS)
+              update('bldcSelectedImage', v);
+              update('bldcHEType', v);
+            }}
+          />
+        </div>
+      );
+    })}
+  </div>
 </Section>
 
           {/* Step 2: Frame (ตาม HE type) */}
