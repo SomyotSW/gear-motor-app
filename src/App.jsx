@@ -52,6 +52,7 @@ function App() {
     const [rkfsMounting, setRkfsMounting] = useState(null);
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
+        const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
 
 const COMING_SOON = new Set([
   'DC Gear Motor',
@@ -75,7 +76,7 @@ const handleBackWithReset = () => {
   setSelectedModel(null);
   setModelCodeList([]);
   setShowForm(false);
-
+     
   // เฉพาะ RKFS
   rkfsSetters.setRkfsSeries(null);
   rkfsSetters.setRkfsDesign(null);
@@ -87,6 +88,7 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
+    setRkfsDesignSuffix(null);
 };
 
     const resetRKFSState = () => {
@@ -100,6 +102,7 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
+    setRkfsDesignSuffix(null); 
   setSelectedModel(null);
   setModelCodeList([]);
 };
@@ -115,6 +118,7 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
+    setRkfsDesignSuffix(null);
   setSelectedModel(null);
   setModelCodeList([]); // ถ้ามี
 };
@@ -361,8 +365,16 @@ const handleDownload = async () => {
 
   const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio };
   const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
-  const rkfsState = { rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower, rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub };
-  const rkfsSetters = { setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower, setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub };
+  const rkfsState = {
+  rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
+  rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub,
+  rkfsDesignSuffix,          // <-- เพิ่มบรรทัดนี้
+};
+  const rkfsSetters = {
+  setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower,
+  setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub,
+  setRkfsDesignSuffix,       // <-- เพิ่มบรรทัดนี้
+};
 
 const getFileUrl = () => {
   if (!selectedModel) return '#';

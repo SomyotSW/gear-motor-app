@@ -32,10 +32,22 @@ import KABImg from '../assets/rkfs/KAB.png';
 import KAFImg from '../assets/rkfs/KAF.png';
 import KATImg from '../assets/rkfs/KAT.png';
 import KAZImg from '../assets/rkfs/KAZ.png';
-import KFImg from '../assets/rkfs/KF.png';
 import KAAAImg from '../assets/rkfs/KAAA.png';
 import KAABImg from '../assets/rkfs/KAAB.png';
 import KAAABImg from '../assets/rkfs/KAAAB.png';
+
+import KXXAImg from '../assets/rkfs/KXXA.png';
+import KXXBImg from '../assets/rkfs/KXXB.png';
+import KXXABImg from '../assets/rkfs/KXXAB.png';
+import KAXXAImg from '../assets/rkfs/KAXXA.png';
+import KAXXBImg from '../assets/rkfs/KAXXB.png';
+import KATXXTImg from '../assets/rkfs/KATXXT.png';
+import SXXAImg from '../assets/rkfs/SXXA.png';
+import SXXBImg from '../assets/rkfs/SXXB.png';
+import SXXABImg from '../assets/rkfs/SXXAB.png';
+import SAXXAImg from '../assets/rkfs/SAXXA.png';
+import SAXXBImg from '../assets/rkfs/SAXXB.png';
+import SATXXTImg from '../assets/rkfs/SATXXT.png';;
 
 import SImg from '../assets/rkfs/S.png';
 import SAAAImg from '../assets/rkfs/SAAA.png';
@@ -865,17 +877,39 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     rkfsRatio,
     rkfsMounting,
     rkfsPosition,
-    rkfsPositionSub
+    rkfsPositionSub,
+    rkfsDesignSuffix
   } = state;
 
   const update = (key, value) => {
-    const setter = setState[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
-    if (setter) setter(value);
+  const setterMap = {
+    rkfsSeries:       setState.setRkfsSeries,
+    rkfsDesign:       setState.setRkfsDesign,
+    rkfsSize:         setState.setRkfsSize,
+    rkfsMotorType:    setState.setRkfsMotorType,
+    rkfsMotorPower:   setState.setRkfsMotorPower,
+    rkfsPole:         setState.setRkfsPole,
+    rkfsRatio:        setState.setRkfsRatio,
+    rkfsMounting:     setState.setRkfsMounting,
+    rkfsPosition:     setState.setRkfsPosition,
+    rkfsPositionSub:  setState.setRkfsPositionSub,
+    // ⬇️ เพิ่มบรรทัดนี้
+    rkfsDesignSuffix: setState.setRkfsDesignSuffix,
   };
+
+  if (setterMap[key]) {
+    setterMap[key](value);
+  }
+
+  // ⬇️ เคลียร์ suffix เมื่อผู้ใช้เปลี่ยน Series/Design กันค่าค้าง
+  if (key === 'rkfsSeries' || key === 'rkfsDesign') {
+    setState.setRkfsDesignSuffix(null);
+  }
+};
 
   const designOptions = {
     R: ["R", "RF", "RM", "RX", "RXF"],   // ⬅️ เพิ่ม RX, RXF
-    K: ["K", "KA", "KAB", "KAF", "KAT", "KAZ", "KF"],
+    K: ["K", "KA", "KAB", "KAF", "KAT", "KAZ" ],
     F: ["F", "FA", "FAF", "FAZ", "FF"],
     S: ["S", "SA", "SAF", "SAT", "SAZ"]
   };
@@ -1034,7 +1068,7 @@ const sSeriesPowerBySize = {
             {designOptions[rkfsSeries].map(design => {
               const imageMap = {
                 R: { R: RImg, RF: RFImg, RX: RXImg, RXF: RXFImg, RM: RMImg },
-                K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg, KF: KFImg },
+                K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg },
                 F: { F: FImg, FA: FAImg, FAF: FAFImg, FAZ: FAZImg, FF: FFImg },
                 S: { S: SImg, SA: SAImg, SAF: SAFImg, SAT: SATImg, SAZ: SAZImg }
               };
@@ -1334,100 +1368,263 @@ const sSeriesPowerBySize = {
         </>
       )}
 
-      {/* Step 10: Confirm */}
-      {rkfsPositionSub && (
-        <>
-          <div className="text-center mt-6 space-y-4">
-            <h3 className="text-lg font-bold">Model Code</h3>
-            <p className="text-xl text-blue-700 font-semibold">
-              {`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`}
-            </p>
-            <button
-              onClick={() =>
-                onConfirm(
-                  `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}`
-                )
-              }
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow"
-            >
-              ✅ เสร็จสิ้นพร้อมดาวน์โหลด 3D Model
-            </button>
-            <div className="mt-4">
-              <button
-                onClick={() => update("rkfsPositionSub", null)}
-                className="text-blue-600 underline"
-              >
-                ← ย้อนกลับ
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  );
-}
+      {/* Step 9.3: Design code (เฉพาะ K / S Series) */}
+{rkfsSeries && rkfsDesign && rkfsPosition && rkfsPositionSub && (rkfsSeries === 'K' || rkfsSeries === 'S') && (
+  <div className="mt-6">
+    <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      Step 9.3 — Design code
+    </h3>
 
-// [ADD-BLDC-IMG] Card ปุ่มรูป 3D + เด้งตอน hover
-// เดิม: const ThumbCard = ({ img, label, subtitle, active, onClick, className = "" }) => (
-const ThumbCard = ({ img, label, subtitle, active, onClick, className = "", animate, transition }) => (
-  <motion.button
-    onClick={onClick}
-    className={[
-      "relative group w-[500px] h-[300px] rounded-2xl overflow-hidden",
-      "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
-      "transition-all duration-500 ease-out transform-gpu",
-      "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
-      "active:scale-[0.99] active:translate-y-0.5",
-      "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none",
-      active ? "ring-4 ring-blue-400" : "ring-0",
-      className
-    ].join(" ")}
-    layout
-    animate={animate}
-    transition={transition}
-    aria-label={label}
-  >
-    <img
-      src={img}
-      alt={label}
-      className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:rotate-[2deg] group-hover:scale-110"
-      draggable={false}
-    />
-    <div className="absolute bottom-0 left-0 right-0 p-2 text-center bg-gradient-to-t from-black/50 to-transparent">
-      <div className="text-white font-semibold drop-shadow">{label}</div>
-      {subtitle && <div className="text-white/90 text-xs drop-shadow mt-0.5">{subtitle}</div>}
-    </div>
-    <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/20 rounded-full blur-2xl pointer-events-none group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-  </motion.button>
-);
+    {(() => {
+      const selected = state.rkfsDesignSuffix; // ใช้ state เดิมที่เราอัปเดตใน Step 9.3
+      const pick = (val) => update('rkfsDesignSuffix', val);
 
-
-// [ADD] การ์ดรูปสำหรับตัวเลือก (ขนาดกะทัดรัด)
-const ChoiceCard = ({ img, label, subtitle, active, onClick, hidden, className = "" }) => (
+      // ปุ่มภาพ 3D (ภาพอยู่กึ่งกลาง, กดเลือกได้, ไฮไลท์ตอนเลือก)
+      const Card = ({ img, code, label }) => (
   <button
-    onClick={onClick}
+    type="button"
+    onClick={() => {
+      update('rkfsDesignSuffix', code);
+      // เลื่อนไป Step 10 ให้ผู้ใช้เห็น Model Code ทันที
+      setTimeout(() => {
+        document.getElementById('rkfs-confirm-step')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 0);
+    }}
     className={[
-      "relative group w-[300px] h-[200px] rounded-xl overflow-hidden", // ✅ h-[200px]
-      "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.18)]",
-      "transition-all duration-500 ease-out transform-gpu",
-      hidden ? "opacity-0 translate-x-10 pointer-events-none" : "opacity-100 translate-x-0",
-      active ? "ring-4 ring-blue-400 scale-105" : "hover:-translate-y-0.5 hover:scale-[1.02]",
-      className
+      "group w-64 h-64 sm:w-68 sm:h-68",
+      "rounded-2xl border bg-white shadow-md",
+      "hover:shadow-xl transition transform hover:-translate-y-0.5 active:scale-95",
+      "flex flex-col items-center justify-center",
+      state.rkfsDesignSuffix === code
+        ? "ring-4 ring-blue-500 border-blue-300"
+        : "ring-1 ring-gray-200 border-gray-200",
     ].join(" ")}
+    style={{ WebkitTapHighlightColor: 'transparent' }}
   >
     <img
       src={img}
       alt={label}
-      className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+      className="w-64 h-64 object-contain pointer-events-none select-none"
       draggable={false}
     />
-    <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center bg-gradient-to-t from-black/50 to-transparent">
-      <div className="text-white text-sm font-semibold drop-shadow">{label}</div>
-      {subtitle && <div className="text-white/90 text-[10px]">{subtitle}</div>}
-    </div>
+    <span className="text-red-700 font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      {label}
+    </span>
   </button>
 );
 
+      // ---------- K-Series ----------
+      if (rkfsSeries === 'K') {
+        // K → แสดง A / B / AB
+        if (rkfsDesign === 'K') {
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
+              <Card img={KXXAImg}  code="A"  label="KXXA (A)"  />
+              <Card img={KXXBImg}  code="B"  label="KXXB (B)"  />
+              <Card img={KXXABImg} code="AB" label="KXXAB (AB)" />
+            </div>
+          );
+        }
+
+        // KA, KAB, KAF, KAZ → แสดง A / B
+        if (['KA', 'KAB', 'KAF', 'KAZ'].includes(rkfsDesign)) {
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
+              <Card img={KAXXAImg} code="A" label="KAXXA (A)" />
+              <Card img={KAXXBImg} code="B" label="KAXXB (B)" />
+            </div>
+          );
+        }
+
+        // KAT → ต้องกด T ก่อน แล้วค่อยเลือก A/B → ได้ TA / TB
+        if (rkfsDesign === 'KAT') {
+          // ยังไม่ได้กด T
+          if (!['T', 'TA', 'TB'].includes(selected)) {
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-center">
+                <Card img={KATXXTImg} code="T" label="KATXXT (T)" />
+              </div>
+            );
+          }
+          // กด T แล้ว → เลือก A/B ต่อ (ใช้รูป KAXXA/KAXXB) → เก็บเป็น TA / TB
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
+              <Card img={KAXXAImg} code="TA" label="KAXXA (TA)" />
+              <Card img={KAXXBImg} code="TB" label="KAXXB (TB)" />
+            </div>
+          );
+        }
+      }
+
+      // ---------- S-Series ----------
+      if (rkfsSeries === 'S') {
+        // S → แสดง A / B / AB
+        if (rkfsDesign === 'S') {
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 justify-items-center">
+              <Card img={SXXAImg}  code="A"  label="A"  />
+              <Card img={SXXBImg}  code="B"  label="B"  />
+              <Card img={SXXABImg} code="AB" label="AB" />
+            </div>
+          );
+        }
+
+        // SA, SAF, SAZ → แสดง A / B
+        if (['SA', 'SAF', 'SAZ'].includes(rkfsDesign)) {
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
+              <Card img={SAXXAImg} code="A" label="SAXXA (A)" />
+              <Card img={SAXXBImg} code="B" label="SAXXB (B)" />
+            </div>
+          );
+        }
+
+        // SAT → ต้องกด T ก่อน แล้วค่อยเลือก A/B → ได้ TA / TB
+        if (rkfsDesign === 'SAT') {
+          if (!['T', 'TA', 'TB'].includes(selected)) {
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-center">
+                <Card img={SATXXTImg} code="T" label="SATXXT (T)" />
+              </div>
+            );
+          }
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
+              <Card img={SAXXAImg} code="TA" label="SAXXA (TA)" />
+              <Card img={SAXXBImg} code="TB" label="SAXXB (TB)" />
+            </div>
+          );
+        }
+      }
+
+      // อื่น ๆ ไม่แสดง
+      return null;
+    })()}
+  </div>
+)}
+
+      {/* Step 10: Confirm */}
+{rkfsPositionSub && (
+  <div id="rkfs-confirm-step" className="text-center mt-6 space-y-4">
+    <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code</h3>
+
+    <p className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      {`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`}
+    </p>
+
+    <button
+      type="button"
+      onClick={() =>
+        onConfirm(
+          `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`
+        )
+      }
+      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow"
+    >
+      ✅ เสร็จสิ้นพร้อมดาวน์โหลด 3D Model
+    </button>
+
+    <div className="mt-4">
+      <button
+        type="button"
+        onClick={() => update('rkfsPositionSub', null)}
+        className="text-blue-600 underline"
+      >
+        ← ย้อนกลับ
+      </button>
+    </div>
+  </div>
+)}
+</>
+);  
+}     
+
+
+// [ADD-BLDC-IMG] Card ปุ่มรูป 3D + เด้งตอน hover (อยู่ นอกทุกฟังก์ชัน)
+const ThumbCard = ({
+  img,
+  label,
+  subtitle,
+  active,
+  onClick,
+  className = "",
+  animate,
+  transition
+}) => {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      className={[
+        "relative group w-[500px] h-[300px] rounded-2xl overflow-hidden",
+        "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
+        "transition-all duration-500 ease-out transform-gpu",
+        "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",
+        "active:scale-[0.99] active:translate-y-0.5",
+        "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none",
+        active ? "ring-4 ring-blue-400" : "ring-0",
+        className
+      ].join(" ")}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
+      animate={animate}
+      transition={transition}
+      aria-label={label}
+      style={{ WebkitTapHighlightColor: "transparent" }}
+    >
+      <img
+        src={img}
+        alt={label}
+        className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:rotate-[2deg] group-hover:scale-110 pointer-events-none select-none"
+        draggable={false}
+      />
+      <div className="absolute bottom-0 left-0 right-0 p-2 text-center bg-gradient-to-t from-black/50 to-transparent">
+        <div className="text-white font-semibold drop-shadow">{label}</div>
+        {subtitle && <div className="text-white/90 text-xs drop-shadow mt-0.5">{subtitle}</div>}
+      </div>
+      <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/20 rounded-full blur-2xl pointer-events-none group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+    </motion.button>
+  );
+};
+
+// [ADD] การ์ดรูปสำหรับตัวเลือก (ขนาดกะทัดรัด) — นอกทุกฟังก์ชัน
+const ChoiceCard = ({
+  img,
+  label,
+  subtitle,
+  active,
+  onClick,
+  hidden,
+  className = ""
+}) => {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "relative group w-[300px] h-[200px] rounded-xl overflow-hidden",
+        "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.18)]",
+        "transition-all duration-500 ease-out transform-gpu",
+        hidden ? "opacity-0 translate-x-10 pointer-events-none" : "opacity-100 translate-x-0",
+        active ? "ring-4 ring-blue-400 scale-105" : "hover:-translate-y-0.5 hover:scale-[1.02]",
+        className
+      ].join(" ")}
+      style={{ WebkitTapHighlightColor: "transparent" }}
+    >
+      <img
+        src={img}
+        alt={label}
+        className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 pointer-events-none select-none"
+        draggable={false}
+      />
+      <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center bg-gradient-to-t from-black/50 to-transparent">
+        <div className="text-white text-sm font-semibold drop-shadow">{label}</div>
+        {subtitle && <div className="text-white/90 text-[10px]">{subtitle}</div>}
+      </div>
+    </button>
+  );
+};
 
 // [ADD-BLDC] BLDC Gear Motor Flow (updated with High-efficiency)
 // ==============================
