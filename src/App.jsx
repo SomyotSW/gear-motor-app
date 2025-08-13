@@ -17,6 +17,41 @@ import F3A from './assets/hypoid/F3A.gif';
 import F3H from './assets/hypoid/F3H.gif';
 import hourglass from './assets/hourglass.gif';
 
+// ====== Utilities: BLDC filename mapper ======
+function mapBLDCDownloadFilename(modelCode) {
+  if (typeof modelCode !== 'string') return null;
+  const raw = modelCode.trim();
+  if (!raw) return null;
+
+  const parts = raw.split('-');
+  if (parts.length < 5) return null;
+  const [p0, p1, p2, p3, p4] = parts.slice(0, 5);
+
+  // Nol: รองรับแรงดัน 24/36/48 → p1=XX, p3=XXX, และรีเซ็ตตัวเลขกลางในพาร์ตท้ายเป็น "XX"
+  if (['24', '36', '48'].includes(p1)) {
+    const replacedP4 = p4.replace(
+      /^((?:\d+GN|\d+GU))(\d+)([A-Za-z]+)$/,
+      (_m, head, _num, tail) => `${head}XX${tail}`
+    );
+    return `${p0}-XX-${p2}-XXX-${replacedP4}`;
+  }
+
+  // HE: 220 → คง p0,p1,p2,p4; เปลี่ยน p3 เป็น "XXX"
+  if (p1 === '220') {
+    return `${p0}-${p1}-${p2}-XXX-${p4}`;
+  }
+
+  return null;
+}
+
+function mapBLDCDownloadURL(modelCode) {
+  const name = mapBLDCDownloadFilename(modelCode);
+  if (!name) return null;
+  const base = (typeof process !== 'undefined' && process.env && process.env.PUBLIC_URL) || '';
+  return `${base}/model/${encodeURIComponent(name)}.STEP`;
+}
+
+
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modelCodeList, setModelCodeList] = useState([]);
@@ -321,27 +356,40 @@ const handleDownload = async () => {
   // ✅ ดาวน์โหลดไฟล์ .STEP แบบเสถียร
   setIsDownloading(true);
   try {
-    const url = getFileUrl(); // คืน URL ที่ประกอบไว้แล้ว (local หรือ GitHub raw)
-    const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const url = getFileUrl(); // ตอนนี้ getFileUrl() map ชื่อ BLDC ให้แล้ว
 
-    const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.download = `${selectedModel}.STEP`; // ชื่อไฟล์ที่อยากให้เซฟ
-    document.body.appendChild(a);  // 👈 ช่วยให้ทำงานได้ดีขึ้นบน Firefox/Safari
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(objectUrl);
-  } catch (err) {
-    // Fallback: เปิดแท็บใหม่ให้ผู้ใช้เซฟเอง (กันกรณี browser บล็อค)
-    window.open(getFileUrl(), '_blank', 'noopener,noreferrer');
-  } finally {
-    setIsDownloading(false);
-    setShowForm(false);
+  // 1) เช็กก่อนว่าไฟล์มีจริง
+  let head = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+  if (!head.ok) {
+    // บาง dev server ไม่รองรับ HEAD -> ลอง GET ตรวจ content-type
+    const probe = await fetch(url, { method: 'GET', cache: 'no-store' });
+    if (!probe.ok) throw new Error(`HTTP ${probe.status}`);
+    const ct = probe.headers.get('content-type') || '';
+    if (ct.includes('text/html')) throw new Error('Not a STEP file (got HTML)'); // กันไฟล์ 330B
   }
+
+  // 2) ดาวน์โหลดจริง
+  const real = await fetch(url, { method: 'GET', cache: 'no-store' });
+  if (!real.ok) throw new Error(`HTTP ${real.status}`);
+  const blob = await real.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = `${selectedModel}.STEP`; // ใช้ชื่อที่ผู้ใช้คุ้น (ModelCode.STEP)
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
+} catch (err) {
+  console.error('Download check failed:', err);
+  toast.error('ไฟล์ไม่พบใน /public/model หรือชื่อไม่ตรงกับที่ map ได้');
+  // ถ้าอยากคง fallback เดิมไว้: เปิดแท็บใหม่ให้เซฟเองก็ได้
+  // window.open(getFileUrl(), '_blank', 'noopener,noreferrer');
+} finally {
+  setIsDownloading(false);
+  setShowForm(false);
+}
 };
 
   const handleBack = () => {
@@ -392,10 +440,13 @@ const getFileUrl = () => {
     }
   }
 
-// ✅ BLDC: ใช้ชื่อรุ่นตรง = <ModelCode>.STEP
-  if (selectedProduct === 'BLDC Gear Motor') {
-    return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
-  }
+ // ✅ BLDC: ใช้ชื่อไฟล์ที่ map แล้ว (ไม่ใช่ <ModelCode>.STEP ตรงๆ)
+if (selectedProduct === 'BLDC Gear Motor') {
+  const mapped = mapBLDCDownloadFilename(selectedModel);
+  if (!mapped) return '#';
+  const base = (typeof process !== 'undefined' && process.env && process.env.PUBLIC_URL) || '';
+  return `${base}/model/${encodeURIComponent(mapped)}.STEP?v=${Date.now()}`;
+}
 
   // อื่น ๆ ใช้ชื่อรุ่นตรงตัว
   return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;

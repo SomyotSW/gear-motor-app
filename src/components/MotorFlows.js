@@ -143,55 +143,6 @@ import SHIBLDCImg from '../assets/bldc/SHIBLDC.png';
 import SFHIBLDCImg from '../assets/bldc/SFHIBLDC.png';
 import SLHIBLDCImg from '../assets/bldc/SLHIBLDC.png';
 
-  /**
- * แปลง Model code → ชื่อไฟล์สำหรับดาวน์โหลด (ไม่รวม .step)
- * รองรับ Nol (แรงดัน 24) และ HE (แรงดัน 220) ตามกติกาที่ผู้ใช้ให้
- * @param {string} modelCode เช่น "Z4BLD60-24-GN-30S-4GN20K"
- * @returns {string|null} ชื่อไฟล์ (ไม่รวม .step) เช่น "Z4BLD60-XX-GN-XXX-4GNXXK"
- */
-function mapBLDCDownloadFilename(modelCode) {
-  if (typeof modelCode !== 'string') return null;
-  const raw = modelCode.trim();
-  if (!raw) return null;
-
-  // แยก 5 ส่วนแรกเท่านั้น (กันกรณีมีขีดเกินมาในส่วนท้าย)
-  const parts = raw.split('-');
-  if (parts.length < 5) return null;
-  const [p0, p1, p2, p3, p4] = parts.slice(0, 5);
-
-  // === Nol: รองรับแรงดัน 24, 36, 48 ===
-  if (['24', '36', '48'].includes(p1)) {
-    // p4: รีเซ็ตตัวเลขกลางของแพทเทิร์น (เลข+GN|GU)(ตัวเลข)(อักษร) → ใส่ "XX"
-    const replacedP4 = p4.replace(
-      /^((?:\d+GN|\d+GU))(\d+)([A-Za-z]+)$/,
-      (_m, head, _num, tail) => `${head}XX${tail}`
-    );
-
-    // ตามกติกา: p1 → "XX", p3 → "XXX"
-    return `${p0}-XX-${p2}-XXX-${replacedP4}`;
-  }
-
-  // === HE: แรงดัน 220 ===
-  if (p1 === '220') {
-    // คง p0,p1,p2,p4 และเปลี่ยน p3 → "XXX"
-    return `${p0}-${p1}-${p2}-XXX-${p4}`;
-  }
-
-  // นอกเหนือจากเงื่อนไขที่กำหนด
-  return null;
-}
-
-/**
- * สร้าง URL ดาวน์โหลด (รวม .step) จาก modelCode
- * @param {string} modelCode
- * @param {string} basePath เส้นทางโฟลเดอร์ไฟล์บนเว็บ (ดีฟอลต์: /model)
- */
-function mapBLDCDownloadURL(modelCode, basePath = '/model') {
-  const name = mapBLDCDownloadFilename(modelCode);
-  return name ? `${basePath}/${name}.step` : null;
-}
-
-
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
   { name: 'DC Gear Motor', image: DCImg },
