@@ -17,6 +17,12 @@ import F3A from './assets/hypoid/F3A.gif';
 import F3H from './assets/hypoid/F3H.gif';
 import hourglass from './assets/hourglass.gif';
 
+import GNGUGIF from './assets/bldc/GNGUGIF.gif';
+import GNLGULGIF from './assets/bldc/GNLGULGIF.gif';
+import SGIF from './assets/bldc/SGIF.gif';
+import SFGIF from './assets/bldc/SFGIF.gif';
+import SLGIF from './assets/bldc/SLGIF.gif';
+
 // ====== Utilities: BLDC filename mapper ======
 function mapBLDCDownloadFilename(modelCode) {
   if (typeof modelCode !== 'string') return null;
@@ -44,6 +50,33 @@ function mapBLDCDownloadFilename(modelCode) {
   return null;
 }
 
+// ====== BLDC HE (SF/SL) static filename mapper by prefix ======
+ function mapBLDCHEStaticFilename(modelCode, heType) {
+   if (typeof modelCode !== 'string' || !modelCode) return null;
+   const prefix = modelCode.split('-')[0]; // e.g. "Z2BLD60"
+   if (!prefix) return null;
+
+   const MAP_SF = {
+     'Z2BLD60':  '60-60W-220V-SF2',
+     'Z4BLD120': '80-120W-220V-SF2',
+     'Z5BLD200': '90-200W-220V-SF2',
+     'Z6BLD400': '104-400W-220V-SF2',
+   };
+
+   const MAP_SL = {
+     'Z2BLD100':  '60SL-100W',
+     'Z4BLD200':  '80SL-200W',
+     'Z5BLD400':  '90SL-400W',
+     'Z6BLD750':  '100SL-750',
+     'Z7BLD1100': '100SL-1100',
+   };
+
+   if (heType === 'SF') return MAP_SF[prefix] || null;
+   if (heType === 'SL') return MAP_SL[prefix] || null;
+   return null; // ไม่แตะ S
+ }
+
+
 function mapBLDCDownloadURL(modelCode) {
   const name = mapBLDCDownloadFilename(modelCode);
   if (!name) return null;
@@ -51,6 +84,50 @@ function mapBLDCDownloadURL(modelCode) {
   return `${base}/model/${encodeURIComponent(name)}.STEP`;
 }
 
+ // ====== BLDC Nol (GN/GNL/GU/GUL) static filename mapping by prefix ======
+ function mapBLDCNolStaticFilename(modelCode, gearType) {
+   if (typeof modelCode !== 'string' || !modelCode) return null;
+   const prefix = modelCode.split('-')[0]; // e.g. "Z5BLD90"
+   if (!prefix) return null;
+
+   const MAP_GN = {
+     'Z2BLD15':'Z2BLD15W2GNK','Z2BLD25':'Z2BLD25W2GNK',
+     'Z3BLD30':'Z3BLD30W3GNK','Z3BLD40':'Z3BLD40W3GNK',
+     'Z4BLD40':'Z4BLD40W4GNK','Z4BLD60':'Z4BLD60W4GNK',
+     'Z5BLD60':'Z5BLD60W5GNK','Z5BLD90':'Z5BLD90W5GNK','Z5BLD120':'Z5BLD120W5GNK',
+     'Z6BLD200':'Z6BLD200W6GNK','Z6BLD400':'Z6BLD400W6GNK',
+   };
+
+   const MAP_GNL = {
+     'Z2BLD15':'Z2BLD15W2GNL','Z2BLD25':'Z2BLD25W2GNL',
+     'Z3BLD30':'Z3BLD30W3GNL','Z3BLD40':'Z3BLD40W3GNL',
+     'Z4BLD40':'Z4BLD40W4GNL','Z4BLD60':'Z4BLD60W4GNL',
+     'Z5BLD60':'Z5BLD60W5GUL','Z5BLD90':'Z5BLD90W5GUL','Z5BLD120':'Z5BLD120W5GUL',
+     'Z6BLD200':'Z6BLD200W6GUL','Z6BLD400':'Z6BLD400W6GUL',
+   };
+
+   const MAP_GU = {
+     'Z2BLD15':'Z2BLD15W2GUK','Z2BLD25':'Z2BLD25W2GUK',
+     'Z3BLD30':'Z3BLD30W3GUK','Z3BLD40':'Z3BLD40W3GUK',
+     'Z4BLD40':'Z4BLD40W4GUK','Z4BLD60':'Z4BLD60W4GUK',
+     'Z5BLD60':'Z5BLD60W5GUK','Z5BLD90':'Z5BLD90W5GUK','Z5BLD120':'Z5BLD120W5GUK',
+     'Z6BLD200':'Z6BLD200W6GUK','Z6BLD400':'Z6BLD400W6GUK',
+   };
+
+   const MAP_GUL = {
+     'Z2BLD15':'Z2BLD15W2GUL','Z2BLD25':'Z2BLD25W2GUL',
+     'Z3BLD30':'Z3BLD30W3GUL','Z3BLD40':'Z3BLD40W3GUL',
+     'Z4BLD40':'Z4BLD40W4GUL','Z4BLD60':'Z4BLD60W4GUL',
+     'Z5BLD60':'Z5BLD60W5GUL','Z5BLD90':'Z5BLD90W5GUL','Z5BLD120':'Z5BLD120W5GUL',
+     'Z6BLD200':'Z6BLD200W6GUL','Z6BLD400':'Z6BLD400W6GUL',
+   };
+
+   if (gearType === 'GN')  return MAP_GN[prefix]  || null;
+   if (gearType === 'GNL') return MAP_GNL[prefix] || null;
+   if (gearType === 'GU')  return MAP_GU[prefix]  || null;
+   if (gearType === 'GUL') return MAP_GUL[prefix] || null;
+   return null;
+ }
 
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -294,6 +371,34 @@ const gearGifForHead = () => {
   if (acGearHead === 'SQUARE BOX WITH WING')          return K3D;  // K
   return null;
 };
+ // เลือก GIF สำหรับ BLDC:
+ // - HE: S → SGIF, SF → SFGIF, SL → SLGIF
+ // - Nol: GN/GU → GNGUGIF (ชุดเดียวกัน), GNL/GUL → GNLGULGIF (ชุดเดียวกัน)
+ const bldcGifForModel = () => {
+   // กลุ่ม HE มาก่อน (มี bldcHEType เป็น 'S' | 'SF' | 'SL')
+   if (bldcHEType === 'S')  return SGIF;
+   if (bldcHEType === 'SF') return SFGIF;
+   if (bldcHEType === 'SL') return SLGIF;
+
+   // กลุ่ม Nol → อ่านจาก state หรือดึงจากชื่อรุ่นกันพลาด
+   if (!selectedModel) return null;
+   const m = selectedModel.match(/-(GUL|GNL|GU|GN)-/);
+   const gear = bldcGearType || (m ? m[1] : null);
+   if (!gear) return null;
+
+   if (gear === 'GN'  || gear === 'GU')  return GNGUGIF;   // GN/GU ใช้ชุดเดียวกัน
+   if (gear === 'GNL' || gear === 'GUL') return GNLGULGIF; // GNL/GUL ใช้ชุดเดียวกัน
+   return null;
+ };
+
+// เลือก GIF สำหรับ Hypoid จาก state: hypoidType(F2/F3) + hypoidGearType(H/A)
+const hypoidGif = () => {
+   if (hypoidType === 'F2' && hypoidGearType === 'A') return F2A;
+   if (hypoidType === 'F2' && hypoidGearType === 'H') return F2H;
+   if (hypoidType === 'F3' && hypoidGearType === 'A') return F3A;
+   if (hypoidType === 'F3' && hypoidGearType === 'H') return F3H;
+   return null;
+ };
 
   const generate6DigitCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -370,9 +475,14 @@ const handleDownload = async () => {
 
   // 2) ดาวน์โหลดจริง
   const real = await fetch(url, { method: 'GET', cache: 'no-store' });
-  if (!real.ok) throw new Error(`HTTP ${real.status}`);
-  const blob = await real.blob();
-  const objectUrl = URL.createObjectURL(blob);
+if (!real.ok) throw new Error(`HTTP ${real.status}`);
+const blob = await real.blob();
+const realCT = real.headers.get('content-type') || '';
+if (realCT.includes('text/html') || blob.size < 1024) {
+   throw new Error('Not a STEP file (fallback HTML or too small)');
+ }
+const objectUrl = URL.createObjectURL(blob);
+
 
   const a = document.createElement('a');
   a.href = objectUrl;
@@ -440,14 +550,26 @@ const getFileUrl = () => {
     }
   }
 
- // ✅ BLDC: ใช้ชื่อไฟล์ที่ map แล้ว (ไม่ใช่ <ModelCode>.STEP ตรงๆ)
-if (selectedProduct === 'BLDC Gear Motor') {
-  const mapped = mapBLDCDownloadFilename(selectedModel);
-  if (!mapped) return '#';
-  const base = (typeof process !== 'undefined' && process.env && process.env.PUBLIC_URL) || '';
-  return `${base}/model/${encodeURIComponent(mapped)}.STEP?v=${Date.now()}`;
-}
+ if (selectedProduct === 'BLDC Gear Motor') {
+   const base = (typeof process !== 'undefined' && process.env && process.env.PUBLIC_URL) || '';
 
+   // ดึงชนิดเกียร์จาก Model Code (-GUL|-GU|-GNL|-GN-) เผื่อ state ไม่ตรง
+   const m = selectedModel.match(/-(GUL|GU|GNL|GN)-/);
+   const gearFromModel = m ? m[1] : null;
+   const effectiveGear  = bldcGearType || gearFromModel;
+   const withSTEP = (name) => name.endsWith('.STEP') ? name : `${name}.STEP`;
+
+   // Nol: GN/GNL/GU/GUL → map เป็นชื่อไฟล์คงที่ตาม prefix
+   if (effectiveGear) {
+     const nol = mapBLDCNolStaticFilename(selectedModel, effectiveGear);
+     if (nol) return `${base}/model/${encodeURIComponent(withSTEP(nol))}?v=${Date.now()}`;
+   }
+
+   // เดิม (normalizer 24/36/48/220) — ใช้เป็น fallback
+   const mapped = mapBLDCDownloadFilename(selectedModel);
+   if (mapped) return `${base}/model/${encodeURIComponent(withSTEP(mapped))}?v=${Date.now()}`;
+   return '#';
+ }
   // อื่น ๆ ใช้ชื่อรุ่นตรงตัว
   return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
 };
@@ -710,7 +832,7 @@ if (selectedProduct === 'BLDC Gear Motor') {
     </div>
   </>
 )}
-  {selectedProduct === 'Hypoid Gear' && !selectedModel && !showForm && (
+  {selectedProduct === 'Hypoid Gear' && !showForm && (
   <>
     <div className="flex justify-between items-center mt-6">
       <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Hypoid Gear Selection</h2>
@@ -721,43 +843,59 @@ if (selectedProduct === 'BLDC Gear Motor') {
       setModelCodeList(models);
       setSelectedModel(models[0]);
     })}
-  </>
-)}
-{selectedProduct === 'Hypoid Gear' && selectedModel && !showForm && (
-  <>
-    <div className="text-center mt-10 space-y-4">
-      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
-      <p className="text-blue-200 font-medium mb-2">เลือกรุ่นที่ต้องการดาวน์โหลด:</p>
-      {modelCodeList.map((code, idx) => (
-        <div key={idx} className="flex justify-center items-center space-x-2">
-          <input
-            type="radio"
-            name="modelSelect"
-            value={code}
-            checked={selectedModel === code}
-            onChange={() => setSelectedModel(code)}
-          />
-          <label className="text-white drop-shadow">{code}</label>
-        </div>
-      ))}
-    </div>
+   {/* [HYP] ผลลัพธ์อยู่หน้าเดียวกับการเลือก (เหมือน BLDC) */}
+    {modelCodeList?.length > 0 && (
+      <>
+        {/* iPad frame + GIF (Hypoid) */}
+        {(() => {
+          const gif = hypoidGif();
+          if (!gif) return null;
+          return (
+            <div className="mt-6 flex justify-center">
+              {/* กรอบ iPad */}
+              <div className="
+                relative
+                w-[800px] h-[600px]
+                sm:w-[720px] sm:h-[540px]
+                md:w-[900px] md:h-[675px]
+                bg-black p-6 rounded-[2rem] shadow-2xl ring-1 ring-white/10
+              ">
+                {/* กล้องหน้า */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                  <span className="block w-3 h-3 rounded-full bg-black ring-2 ring-white/20" />
+                  <span className="block w-2 h-2 rounded-full bg-black ring-2 ring-white/15" />
+                </div>
+                {/* หน้าจอ iPad */}
+                <div className="w-full h-full rounded-[1.5rem] overflow-hidden bg-white">
+                  <img src={gif} alt="Hypoid preview" className="w-full h-full object-contain" />
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
-    <div className="flex justify-center items-center gap-4 mt-4">
-      <button
-        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => setShowForm(true)}
-      >
-        Download 3D
-      </button>
-      <button
-        className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
-        onClick={handleBack}
-      >
-        Home
-      </button>
-    </div>
+        <div className="flex justify-center items-center gap-4 mt-4">
+          <button
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => setShowForm(true)}
+          >
+            Download 3D
+          </button>
+          <button
+            className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
+            onClick={handleBack}
+          >
+            Home
+          </button>
+        </div>
+      </>
+    )}
   </>
 )}
+
+
+
+
 
 {selectedProduct === 'BLDC Gear Motor' && !selectedModel && (
   <>
@@ -807,7 +945,33 @@ if (selectedProduct === 'BLDC Gear Motor') {
           <label className="text-white/90">{code}</label>
         </div>
       ))}
-
+            {/* iPad frame + GIF (BLDC) */}
+ {(() => {
+   const gif = bldcGifForModel();
+   if (!gif) return null;
+   return (
+     <div className="mt-6 flex justify-center">
+       {/* กรอบ iPad */}
+       <div className="
+         relative
+         w-[800px] h-[600px]
+         sm:w-[720px] sm:h-[540px]
+         md:w-[900px] md:h-[675px]
+         bg-black p-6 rounded-[2rem] shadow-2xl ring-1 ring-white/10
+       ">
+         {/* กล้องหน้า */}
+         <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2">
+           <span className="block w-3 h-3 rounded-full bg-black ring-2 ring-white/20" />
+           <span className="block w-2 h-2 rounded-full bg-black ring-2 ring-white/15" />
+         </div>
+         {/* หน้าจอ iPad */}
+         <div className="w-full h-full rounded-[1.5rem] overflow-hidden bg-white">
+           <img src={gif} alt="BLDC preview" className="w-full h-full object-contain" />
+         </div>
+       </div>
+     </div>
+   );
+ })()}
       <div className="mt-6 flex gap-3 justify-center">
         <button
           onClick={() => setShowForm(true)}
@@ -848,7 +1012,6 @@ if (selectedProduct === 'BLDC Gear Motor') {
   <>
     <div className="text-center mt-10 space-y-4">
       <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code:</h2>
-      <p className="text-blue-200 font-medium mb-2">เลือกรุ่นที่ต้องการดาวน์โหลด:</p>
       {modelCodeList.map((code, idx) => (
         <div key={idx} className="flex justify-center items-center space-x-2">
           <input

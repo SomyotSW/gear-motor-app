@@ -121,6 +121,9 @@ import InductionImg from '../assets/ac/induction.png';
 import ReversibleImg from '../assets/ac/reversible.png';
 import VariableImg from '../assets/ac/variable.png';
 
+import BGH1Img from '../assets/hypoid/BGH1.png';
+import BGH2Img from '../assets/hypoid/BGH2.png';
+import BGH3Img from '../assets/hypoid/BGH3.png';
 import F2Img from '../assets/hypoid/F2.png';
 import F3Img from '../assets/hypoid/F3.png';
 import F23HImg from '../assets/hypoid/F23H.png';
@@ -728,20 +731,21 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {!type && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Gear Motor Type</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols1 gap-7 sm:gap-8">
             {[
-              { label: 'F2 Series', img: F2Img },
-              { label: 'F3 Series', img: F3Img }
+              { label: 'F2', img: F2Img },
+              { label: 'F3', img: F3Img }
             ].map(({ label, img }) => (
-              <button
-  		key={label}
-  		onClick={() => update('type', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
+              <ThumbCard
+                key={label}
+                img={img}
+                label={label}
+                /* กรณี label เป็น 'F2 Series'/'F3 Series' ให้จับจากข้อความ */
+                active={type === (label.includes('F2') ? 'F2' : 'F3')}
+                onClick={() => update('type', label.includes('F2') ? 'F2' : 'F3')}
+                /* ย่อขนาดให้พอดีกับกริด */
+                className="w-[340px] h-[300px]"
+              />
             ))}
           </div>
         </div>
@@ -751,20 +755,30 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {type && !gearType && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Gear Type</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols1 gap-7 sm:gap-8">
             {[
               { label: 'A', img: F23AImg },
               { label: 'H', img: F23HImg }
             ].map(({ label, img }) => (
-              <button
-  		key={label}
-  		onClick={() => update('gearType', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
+              <motion.button
+                key={label}
+                whileHover={{ y: -4, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={(e) => {
+                  const el = e.currentTarget;       // กัน SyntheticEvent pooling
+                  if (!el) return;
+                  // รีสตาร์ทแอนิเมชันไล่สี (ซ้าย→ขวา)
+                  el.classList.remove('is-active');
+                  void el.offsetWidth;              // reflow
+                  el.classList.add('is-active');
+                  // ให้เห็นเอฟเฟกต์ก่อน แล้วค่อยไป Step ถัดไป
+                  setTimeout(() => update('gearType', label), 550);
+                }}
+                className="btn-sweep"
+              >
+                <img src={img} alt={label} className="btn-sweep-img" />
+                <span className="btn-sweep-label">{label}</span>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -774,9 +788,34 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {type && gearType && !ratio && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Ratio</h3>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {[10,15,20,25,30,40,50,60,80,100,120,160,200,240].map(r => (
-              <button key={r} onClick={() => update('ratio', r)} className="button">{r}</button>
+              <motion.button
+                key={r}
+                onClick={() => update('ratio', r)}
+                whileHover={{ y: -1, scale: 1.53 }}
+                whileTap={{ scale: 1.57 }}
+                className="
+                  group relative overflow-hidden
+                  rounded-2xl px-5 py-5
+                  bg-gradient-to-br from-emerald-200 via-emerald-300 to-emerald-200
+                  text-emerald-900 font-extrabold text-xl tracking-wide
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_20px_rgba(16,185,129,0.25)]
+                  ring-1 ring-emerald-400/60 hover:ring-emerald-500/70
+                  transition-all
+                "
+              >
+                <span className="relative z-10">{r}</span>
+                {/* sheen */}
+                <span className="pointer-events-none absolute -top-1/2 left-0 w-full h-full
+                                 bg-gradient-to-b from-white/60 via-white/20 to-transparent
+                                 translate-y-0 group-hover:translate-y-1/3
+                                 transition-transform duration-500 ease-out" />
+                {/* bottom glow edge */}
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1
+                                 bg-gradient-to-r from-transparent via-white/60 to-transparent
+                                 opacity-70" />
+              </motion.button>
             ))}
           </div>
         </div>
@@ -797,15 +836,25 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
               { label: 'RL', img: RLImg },
               { label: 'RR', img: RRImg }
             ].map(({ label, img }) => (
-              <button
-  		key={label}
-  		onClick={() => update('direction', label)}
-  		className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition 
-             		transform hover:-translate-y-1 active:scale-105"
-	             >
-  		<img src={img} alt={label} className="h-64 mb-2 object-contain" />
-  		<span className="text-sm font-semibold">{label}</span>
-                             </button>
+              <motion.button
+                key={label}
+                whileHover={{ y: -4, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={(e) => {
+                  const el = e.currentTarget;       // กัน SyntheticEvent pooling
+                  if (!el) return;
+                  // รีสตาร์ทแอนิเมชันไล่สี (ซ้าย→ขวา)
+                  el.classList.remove('is-active');
+                  void el.offsetWidth;              // reflow
+                  el.classList.add('is-active');
+                  // ให้เห็นเอฟเฟกต์ก่อน แล้วค่อยไป Step ถัดไป
+                  setTimeout(() => update('direction', label), 550);
+                }}
+                className="btn-sweep"
+              >
+                <img src={img} alt={label} className="btn-sweep-img" />
+                <span className="btn-sweep-label">{label}</span>
+              </motion.button>
             ))}
           </div>
 
@@ -816,12 +865,32 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {type && direction && !power && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Motor Power</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {(type === 'F2'
-              ? [15,25,40,60,90]
-              : [100,200,400,750,1500,2200]).map(p => (
-                <button key={p} onClick={() => update('power', p)} className="button">{p}W</button>
-              ))}
+        <div className="grid grid-cols-3 gap-3">
+            {(type === 'F2' ? [15,25,40,60,90] : [100,200,400,750,1500,2200]).map(p => (
+              <motion.button
+                key={p}
+                whileHover={{ y: -4, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={(e) => {
+   const el = e.currentTarget;                 // เก็บ element กัน SyntheticEvent pooling
+   if (!el) return;
+   // รีสตาร์ทแอนิเมชัน spark + ไล่สีซ้าย→ขวา
+   el.classList.remove('spark', 'is-active');
+   void el.offsetWidth;                        // reflow
+   el.classList.add('spark', 'is-active');
+   // รอให้เอฟเฟกต์เล่นจบแล้วค่อยไป Step ถัดไป
+   setTimeout(() => {
+     el.classList.remove('spark', 'is-active');
+     update('power', p);                       // <-- ย้ายมาไว้หลัง 600ms
+   }, 600);
+ }}
+                className="btn-3d-dark"
+              >
+                <span className="btn-3d-label">{p}W</span>
+                {/* เอฟเฟกต์สะเก็ดไฟฟ้า */}
+                <span className="spark-burst" aria-hidden="true"></span>
+              </motion.button>
+            ))}
           </div>
         </div>
       )}
@@ -830,12 +899,30 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {power && !supply && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Power Supply</h3>
-          <div className="flex flex-wrap gap-2">
-            {(type === 'F2'
-              ? ['C','A','S','S3']
-              : ['S']).map(s => (
-                <button key={s} onClick={() => update('supply', s)} className="button">{s}</button>
-              ))}
+          <div className="flex flex-wrap gap-3">
+            {(type === 'F2' ? ['C','A','S','S3'] : ['S']).map(s => (
+              <motion.button
+                key={s}
+                whileHover={{ y: -4, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={(e) => {
+                  const el = e.currentTarget;     // จับ element กัน SyntheticEvent pooling
+                  if (!el) return;
+                  // รีสตาร์ทแอนิเมชันไล่สีซ้าย→ขวา
+                  el.classList.remove('is-active');
+                  void el.offsetWidth;            // reflow
+                  el.classList.add('is-active');
+                  // ให้เห็นเอฟเฟกต์ก่อน แล้วค่อยไป Step ถัดไป
+                  setTimeout(() => {
+                    el.classList.remove('is-active');
+                    update('supply', s);
+                  }, 550);
+                }}
+                className="btn-3d-green"
+              >
+                <span className="btn-3d-label">{s}</span>
+              </motion.button>
+            ))}
           </div>
         </div>
       )}
@@ -844,13 +931,32 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {supply && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Motor Optional</h3>
-          <div className="flex gap-3">
-            {['B','F','P'].map(opt => (
-              <button
-                key={opt}
-                className={`button ${optional.includes(opt) ? 'bg-blue-700 text-white' : ''}`}
-                onClick={() => toggleOptional(opt)}>{opt}</button>
-            ))}
+          <div className="flex flex-wrap gap-3">
+            {['B','F','P'].map(opt => {
+              const isOn = optional.includes(opt);
+              return (
+                <motion.button
+                  key={opt}
+                  whileHover={{ y: -3, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={(e) => {
+                    const el = e.currentTarget;           // กัน SyntheticEvent pooling
+                    if (!el) return;
+                    // เล่นเอฟเฟกต์ไล่สีซ้าย→ขวา ก่อนค่อย toggle
+                    el.classList.remove('is-active');
+                    void el.offsetWidth;                  // reflow
+                    el.classList.add('is-active');
+                    setTimeout(() => {
+                      el.classList.remove('is-active');
+                      toggleOptional(opt);
+                    }, 450);
+                  }}
+                  className={`btn-3d-green ${isOn ? 'is-on' : ''}`}
+                >
+                  <span className="btn-3d-label">{opt}</span>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1555,9 +1661,18 @@ const ThumbCard = ({
   return (
     <motion.button
       type="button"
-      onClick={onClick}
+      onClick={(e) => {
+         const el = e.currentTarget;               // กัน SyntheticEvent pooling
+         if (el) {
+           el.classList.remove('is-active');
+           void el.offsetWidth;                    // reflow เพื่อรีสตาร์ทแอนิเมชัน
+           el.classList.add('is-active');          // 🔋 เริ่มไล่สีเขียวซ้าย→ขวา
+         }
+         setTimeout(() => { onClick && onClick(e); }, 550);
+       }}
       className={[
         "relative group w-[500px] h-[300px] rounded-2xl overflow-hidden",
+        "thumb-sweep",
         "bg-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(0,0,0,0.18)]",
         "transition-all duration-500 ease-out transform-gpu",
         "hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_16px_40px_rgba(0,0,0,0.28)]",

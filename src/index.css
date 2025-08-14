@@ -163,3 +163,239 @@ code {
   60%  { transform: scale(1.10); } /* เด้งเกินนิดนึง */
   100% { transform: scale(1.00); }
 }
+
+/* === 3D Dark Button (Hypoid Step 5) === */
+.btn-3d-dark{
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%;
+  padding: 1.25rem 1rem;
+  border-radius: 1rem;
+  color: #e5e7eb; /* text-gray-200 */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), transparent 30%),
+    linear-gradient(180deg, #2b2f36, #1f2329); /* dark steel */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    0 8px 18px rgba(0,0,0,0.35),
+    0 1px 0 rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform .18s ease, box-shadow .25s ease, border-color .25s ease;
+  will-change: transform, box-shadow;
+  overflow: hidden;
+}
+
+.btn-3d-dark:hover{
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    0 14px 26px rgba(0,0,0,0.45),
+    0 0 0 2px rgba(125, 211, 252, 0.10);
+  border-color: rgba(125, 211, 252, 0.35);
+}
+
+/* edge glow on hover */
+.btn-3d-dark::before{
+  content:"";
+  position:absolute; inset: -1px;
+  border-radius: 1rem;
+  background: radial-gradient(120% 60% at 50% 0%,
+              rgba(125,211,252,0.35), rgba(125,211,252,0.15) 40%, transparent 60%);
+  opacity: 0; transition: opacity .25s ease; pointer-events: none;
+}
+.btn-3d-dark:hover::before{ opacity: .9; }
+
+/* label */
+.btn-3d-label{ position: relative; z-index: 4; font-weight: 800; letter-spacing: .03em; font-size: 1.125rem; }
+
+/* 🔋 ไล่สีเขียวซ้าย→ขวา เมื่อคลิก */
+.btn-3d-dark.is-active::after{
+  content:"";
+  position:absolute; top:0; bottom:0; left:-110%; width:120%;
+  border-radius: 1rem;
+  background: linear-gradient(90deg,
+              rgba(110,231,183,0.15) 0%,
+              rgba(16,185,129,0.35) 35%,
+              rgba(16,185,129,0.35) 65%,
+              rgba(110,231,183,0.15) 100%);
+  mix-blend-mode: screen;
+  filter: blur(0.2px);
+  animation: sweepL2R 650ms ease-out forwards;
+  pointer-events: none;
+}
+@keyframes sweepL2R{
+  from { transform: translateX(0); }
+  to   { transform: translateX(210%); }
+}
+
+/* ✨ สะเก็ดไฟฟ้าหลังคลิก */
+.spark-burst{
+  position: absolute; inset: -6px; pointer-events: none; z-index: 5;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(255,255,255,.85) 0 3px, transparent 4px),
+    radial-gradient(circle at -5% 40%,  rgba(125,211,252,.95) 0 3px, transparent 4px),
+    radial-gradient(circle at 105% 55%, rgba(125,211,252,.95) 0 3px, transparent 4px),
+    radial-gradient(circle at 30% 110%, rgba(255,255,255,.85) 0 3px, transparent 4px),
+    radial-gradient(circle at 70% 100%, rgba(125,211,252,.95) 0 3px, transparent 4px);
+  transform: scale(.8);
+  filter: drop-shadow(0 0 6px rgba(125,211,252,.7));
+}
+
+@keyframes electricBurst {
+  0%   { opacity:.95; transform: scale(.75) rotate(0deg);   filter: drop-shadow(0 0 6px rgba(125,211,252,.9)); }
+  60%  { opacity:.6;  transform: scale(1.2) rotate(20deg);  filter: drop-shadow(0 0 10px rgba(125,211,252,.8)); }
+  100% { opacity:0;   transform: scale(1.6) rotate(35deg);  filter: drop-shadow(0 0 0 rgba(125,211,252,0)); }
+}
+
+.btn-3d-dark.spark .spark-burst{
+  animation: electricBurst 550ms ease-out forwards;
+}
+
+/* === Sweep Button (Step 4 Direction) === */
+.btn-sweep{
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 100%;
+  padding: 0.75rem; /* p-3 */
+  border-radius: 0.75rem; /* rounded-xl */
+  background: #ffffff;
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+  border: 1px solid rgba(0,0,0,0.06);
+  transition: transform .18s ease, box-shadow .25s ease, border-color .25s ease;
+  overflow: hidden;
+}
+.btn-sweep:hover{
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 24px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.85);
+}
+
+/* เนื้อใน: รูป + label */
+.btn-sweep-img{
+  height: 16rem; /* h-64 */
+  margin-bottom: 0.5rem; /* mb-2 */
+  object-fit: contain;
+  position: relative; z-index: 2;
+}
+.btn-sweep-label{
+  font-size: .875rem; /* text-sm */
+  font-weight: 600;    /* font-semibold */
+  position: relative; z-index: 2;
+}
+
+/* ไล่สีเขียวอ่อนจากซ้าย→ขวา เมื่อคลิก */
+.btn-sweep.is-active::after{
+  content:"";
+  position:absolute; top:0; bottom:0; left:-110%; width:120%;
+  border-radius: inherit;
+  background: linear-gradient(90deg,
+              rgba(110,231,183,0.10) 0%,
+              rgba(16,185,129,0.28) 35%,
+              rgba(16,185,129,0.28) 65%,
+              rgba(110,231,183,0.10) 100%);
+  mix-blend-mode: multiply;
+  animation: sweepL2R 550ms ease-out forwards;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ถ้ายังไม่มี keyframes นี้ในไฟล์ ให้คงบล็อกนี้ไว้ */
+@keyframes sweepL2R{
+  from { transform: translateX(0); }
+  to   { transform: translateX(210%); }
+}
+
+
+/* === 3D Green Button (ใช้ร่วม Step 6/7) === */
+.btn-3d-green{
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 84px;
+  padding: .9rem 1rem;
+  border-radius: 1rem;
+  color: #065f46; /* emerald-900 */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.15) 28%, transparent 32%),
+    linear-gradient(180deg, #bbf7d0, #a7f3d0);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.85),
+    0 10px 20px rgba(16,185,129,0.25),
+    0 1px 0 rgba(255,255,255,0.6);
+  border: 1px solid rgba(16,185,129,0.35);
+  transition: transform .18s ease, box-shadow .25s ease, border-color .25s ease;
+  will-change: transform, box-shadow;
+  overflow: hidden;
+}
+.btn-3d-green:hover{
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    0 16px 28px rgba(16,185,129,0.35),
+    0 0 0 2px rgba(16,185,129,0.18);
+  border-color: rgba(16,185,129,0.55);
+}
+/* sheen ขอบบน */
+.btn-3d-green::before{
+  content:""; position:absolute; inset:-1px; border-radius:1rem;
+  background: radial-gradient(120% 60% at 50% 0%,
+              rgba(255,255,255,0.65), rgba(255,255,255,0.25) 40%, transparent 60%);
+  opacity:.0; transition: opacity .25s ease; pointer-events:none;
+}
+.btn-3d-green:hover::before{ opacity:.9; }
+
+/* label */
+.btn-3d-label{ position: relative; z-index: 2; font-weight: 800; letter-spacing: .03em; font-size: 1.05rem; }
+
+/* ไล่สีเขียวเข้มซ้าย→ขวา เมื่อคลิก */
+.btn-3d-green.is-active::after{
+  content:"";
+  position:absolute; top:0; bottom:0; left:-110%; width:120%;
+  border-radius: 1rem;
+  background: linear-gradient(90deg,
+              rgba(167,243,208,0.12) 0%,
+              rgba(16,185,129,0.45) 35%,
+              rgba(16,185,129,0.45) 65%,
+              rgba(167,243,208,0.12) 100%);
+  mix-blend-mode: multiply;
+  animation: sweepL2R 550ms ease-out forwards;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* สถานะ 'เลือกแล้ว' แบบหรู (คงอยู่) */
+.btn-3d-green.is-on{
+  color: #064e3b;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.16) 28%, transparent 32%),
+    linear-gradient(180deg, #34d399, #10b981); /* emerald-400 → emerald-500 */
+  border-color: rgba(16,185,129,0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.92),
+    0 16px 28px rgba(16,185,129,0.40),
+    0 0 0 2px rgba(16,185,129,0.22);
+}
+
+/* —— Sweep overlay for ThumbCard —— */
+.thumb-sweep.is-active::after{
+  content:"";
+  position:absolute; top:0; bottom:0; left:-110%; width:120%;
+  border-radius: inherit;
+  background: linear-gradient(90deg,
+              rgba(167,243,208,0.12) 0%,
+              rgba(16,185,129,0.45) 35%,
+              rgba(16,185,129,0.45) 65%,
+              rgba(167,243,208,0.12) 100%);
+  mix-blend-mode: multiply;
+  animation: sweepL2R 550ms ease-out forwards;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes sweepL2R{
+  from { transform: translateX(0); }
+  to   { transform: translateX(210%); }
+}
