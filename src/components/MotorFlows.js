@@ -444,7 +444,7 @@ const gifForHead = (() => {
           </div>
 
           <div className="mt-4 text-xs text-white/80">
-            เลือกได้สูงสุด 5 ตัวเลือก (ถ้ามี "Standard" จะถือว่าไม่มี Option อื่น)
+            เลือกได้สูงสุด 5 ตัวเลือก (หากไม่ต้องการ Optionsเสริม : เลือก"With FAN")
           </div>
 
           <div className="flex justify-end mt-4">
@@ -456,7 +456,7 @@ const gifForHead = (() => {
                 update('acOption', finalSel);
                 setOptConfirmed(true);
               }}
-              className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-5 py-2 bg-green-400 text-white rounded hover:bg-green-200"
             >
               ถัดไป
             </button>
@@ -542,6 +542,8 @@ const gifForHead = (() => {
             <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
               : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 : 1500 / 30 = 50 rpm
             </p>
+            <p>-------------------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+            
             {[3,3.6,5,6,7.5,9,12.5,15,18,25,30,36,50,60,75,90,100,120,150,180,200].map(ratio => (
               <button
                 key={ratio}
@@ -719,6 +721,15 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
     if (!optional.includes(opt)) update('optional', [...optional, opt]);
     else update('optional', optional.filter(o => o !== opt));
   };
+    // 🔙 ย้อนกลับทีละสเตป (เรียงจากท้ายไปต้น)
+const backOneStep = () => {
+  if (supply)    return update('supply', null);
+  if (power)     return update('power', null);
+  if (direction) return update('direction', null);
+  if (ratio)     return update('ratio', null);
+  if (gearType)  return update('gearType', null);
+  if (type)      return update('type', null);
+};
 
   const generateModelCode = () => {
     const optCode = optional.join('');
@@ -780,6 +791,11 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
                 <span className="btn-sweep-label">{label}</span>
               </motion.button>
             ))}
+                        <div className="mt-4">
+  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+    ย้อนกลับ
+  </button>
+</div>
           </div>
         </div>
       )}
@@ -817,6 +833,11 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
                                  opacity-70" />
               </motion.button>
             ))}
+                       <div className="mt-4">
+  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+    ย้อนกลับ
+  </button>
+</div>
           </div>
         </div>
       )}
@@ -856,6 +877,11 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
                 <span className="btn-sweep-label">{label}</span>
               </motion.button>
             ))}
+                       <div className="mt-4">
+  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+    ย้อนกลับ
+  </button>
+</div>
           </div>
 
         </div>
@@ -891,6 +917,11 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
                 <span className="spark-burst" aria-hidden="true"></span>
               </motion.button>
             ))}
+                       <div className="mt-4">
+  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+    ย้อนกลับ
+  </button>
+</div>
           </div>
         </div>
       )}
@@ -923,6 +954,11 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
                 <span className="btn-3d-label">{s}</span>
               </motion.button>
             ))}
+                       <div className="mt-4">
+  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+    ย้อนกลับ
+  </button>
+</div>
           </div>
         </div>
       )}
@@ -965,7 +1001,12 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
       {supply && (
         <div className="pt-4">
           <h4 className="text-white">Model Code: <strong>{generateModelCode()}</strong></h4>
-          <button className="mt-4 button bg-green-600" onClick={() => onConfirm(generateModelCode())}>เสร็จสิ้น</button>
+          <button className="px-1 py-2 bg-green-300 rounded hover:bg-green-500" onClick={() => onConfirm(generateModelCode())}>เสร็จสิ้น</button>
+          <div className="mt-2">
+  <button onClick={backOneStep} className="px-1 py-2 bg-gray-200 rounded hover:bg-gray-300">
+    ย้อนกลับ
+  </button>
+</div>
         </div>
       )}
     </div>
@@ -1892,12 +1933,6 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
   // ---------------- RENDER ----------------
   return (
     <>
-      {/* Header controls: Home / Back */}
-      <div className="flex items-center justify-between mt-6">
-        <button onClick={onHome} className="px-3 py-1.5 rounded-lg bg-white hover:bg-white/90 shadow">Home</button>
-        <button onClick={onBack} className="px-3 py-1.5 rounded-lg bg-white hover:bg-white/90 shadow">ย้อนกลับ</button>
-      </div>
-
       {/* Step 1: เลือกประเภท BLDC (Normal vs High-efficiency) */}
 <Section title="SAS BLDC Gear Motor">
   {(() => {

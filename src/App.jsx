@@ -177,8 +177,11 @@ const COMING_SOON = new Set([
 const handleBackUniversal = () => {
   if (selectedProduct === 'RKFS Series') {
     handleBackWithReset();
+  } else if (selectedProduct === 'Hypoid Gear') {
+    // [ADD-HYPOID] ปุ่ม Home เดิมกดแล้วให้รีเซ็ต Hypoid + กลับหน้า Product
+    handleHypoidHome();
   } else {
-    handleBack(); // ใช้อันเดิมสำหรับ Product อื่น
+    handleBack(); // เดิม
   }
 };
 
@@ -324,6 +327,26 @@ const hypoidSetters = {
   setPower: setHypoidPower,
   setSupply: setHypoidSupply,
   setOptional: setHypoidOptional
+};
+
+// [ADD-HYPOID] รีเซ็ต Hypoid + กลับหน้า Product รวม (เรียกใช้จาก "ปุ่ม Home เดิม")
+const handleHypoidHome = () => {
+  // เคลียร์ค่าเฉพาะ Hypoid
+  setHypoidType(null);
+  setHypoidGearType(null);
+  setHypoidRatio(null);
+  setHypoidDirection(null);
+  setHypoidPower(null);
+  setHypoidSupply(null);
+  setHypoidOptional([]);
+
+  // เคลียร์ผลลัพธ์กลาง
+  setModelCodeList([]);
+  setSelectedModel(null);
+  setShowForm(false);
+
+  // กลับหน้า Product รวม
+  setSelectedProduct(null);
 };
 
 const onConfirm = (modelCode) => {
@@ -751,8 +774,8 @@ const getFileUrl = () => {
         {selectedProduct === 'AC Gear Motor' && !selectedModel && !showForm && (
           <>
             <div className="flex justify-between items-center mt-6">
-              <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">AC Gear Motor Selection</h2>
-              <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+              <h2 className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">AC Gear Motor Selection</h2>
+              <button className="text-green-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]" onClick={handleBack}>Home</button>
             </div>
             <ACMotorFlow
               acState={acState}
@@ -835,8 +858,19 @@ const getFileUrl = () => {
   {selectedProduct === 'Hypoid Gear' && !showForm && (
   <>
     <div className="flex justify-between items-center mt-6">
-      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Hypoid Gear Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+      <h2 className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Hypoid Gear Selection</h2>
+      <button
+  onClick={() => {
+    if (selectedProduct === 'Hypoid Gear') {
+      handleHypoidHome();  // [ADD-HYPOID]
+    } else {
+      // โค้ดเดิมที่คุณใช้สำหรับ Home
+      handleBackUniversal(); // หรือฟังก์ชันที่คุณมีอยู่
+    }
+  }}
+className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Home
+</button>
     </div>
     {renderHypoidGearFlow(hypoidState, hypoidSetters, (modelCode) => {
       const models = Array.isArray(modelCode) ? modelCode : [modelCode];
@@ -900,8 +934,8 @@ const getFileUrl = () => {
 {selectedProduct === 'BLDC Gear Motor' && !selectedModel && (
   <>
     <div className="flex justify-between items-center mt-6">
-      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">BLDC Gear Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={goHomeFromBLDC}>Home</button>
+      <h2 className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">BLDC Gear Selection</h2>
+      <button className="text-green-600 hover:underline" onClick={goHomeFromBLDC}>Home</button>
     </div>
 
     {renderBLDCGearFlow(
