@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode } from './components/MotorFlows.js';
+import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode } from './components/MotorFlows.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import ANL from './assets/ANL.gif';
+import ANR from './assets/ANR.gif';
 
 import K3D from './assets/3Dgif/K3D.gif';
 import KB3D from './assets/3Dgif/KB3D.gif';
@@ -261,6 +263,36 @@ const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
 const [bldcSelectedImage, setBldcSelectedImage] = useState(null); // 'S' | 'SF' | 'SL'
 const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
 
+// [ADD-PLANETARY-STATE]  ⬅️ src/App.jsx (ใน App component, โซน useState เดิม)
+const [planetGroup, setPlanetGroup] = useState(null);         // Step1
+const [planetSeries, setPlanetSeries] = useState(null);       // Step2
+const [planetSize, setPlanetSize] = useState(null);           // Step3
+const [planetShaftDir, setPlanetShaftDir] = useState(null);   // Step3.1 (ZT เท่านั้น)
+const [planetRatio, setPlanetRatio] = useState(null);         // Step4
+const [planetBacklash, setPlanetBacklash] = useState(null);   // Step5
+const [planetInputType, setPlanetInputType] = useState(null); // Step6
+
+// [ADD-PLANETARY-MAPPERS]  ⬅️ src/App.jsx (ถัดจาก state ของ Planetary)
+const planetState = {
+  group: planetGroup,
+  series: planetSeries,
+  size: planetSize,
+  shaftDir: planetShaftDir,
+  ratio: planetRatio,
+  backlash: planetBacklash,
+  inputType: planetInputType,
+};
+
+const planetSetters = {
+  setGroup: setPlanetGroup,
+  setSeries: setPlanetSeries,
+  setSize: setPlanetSize,
+  setShaftDir: setPlanetShaftDir,
+  setRatio: setPlanetRatio,
+  setBacklash: setPlanetBacklash,
+  setInputType: setPlanetInputType,
+};
+
 
 // [ADD-BLDC] เคลียร์ค่า BLDC ทั้งหมด
 const resetBLDC = () => {
@@ -348,6 +380,29 @@ const handleHypoidHome = () => {
   // กลับหน้า Product รวม
   setSelectedProduct(null);
 };
+
+// [ADD-PLANETARY-RESET]  ⬅️ src/App.jsx (โซน handler/reset เดิม)
+const resetPlanetary = () => {
+  setPlanetGroup(null);
+  setPlanetSeries(null);
+  setPlanetSize(null);
+  setPlanetShaftDir(null);
+  setPlanetRatio(null);
+  setPlanetBacklash(null);
+  setPlanetInputType(null);
+};
+
+// [ADD-PLANETARY-HOME]  ⬅️ src/App.jsx (โซน handler/back/home เดิม)
+const handlePlanetaryHome = () => {
+  resetPlanetary();
+  // เคลียร์ผลลัพธ์กลาง (ใช้ state เดิมของคุณ)
+  setModelCodeList([]);
+  setSelectedModel(null);
+  setShowForm(false);
+  // กลับหน้า Product รวม
+  setSelectedProduct(null);
+};
+
 
 const onConfirm = (modelCode) => {
   const models = Array.isArray(modelCode) ? modelCode : [modelCode];
@@ -619,76 +674,105 @@ const getFileUrl = () => {
       <div className="relative z-10 p-6 max-w-6xl mx-auto text-gray-900">
         {!selectedProduct && (
           <>
-            {/* Title: Thai-flag gradient + waving */}
-{/* Title: Lux 3D gradient (replace the old Thai-flag block with this) */}
+{/* Title: Lux 3D gradient + GIF flanks */}
 <div className="mb-6">
   <div className="mx-auto w-full max-w-5xl">
-    <svg
-      viewBox="0 0 1200 240"
-      className="w-full h-[120px] md:h-[145px] lg:h-[165px] select-none"
-      preserveAspectRatio="xMidYMid meet"
-      aria-label="SAS 3D.STEP"
-    >
-      <defs>
-        {/* ไล่เฉดโทน น้ำเงิน–ฟ้า–เทา–ขาว พร้อม animation สลับสี */}
-        <linearGradient id="luxGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#e2efff">
-            <animate attributeName="stop-color" values="#e2efff;#d1e9ff;#e2efff" dur="6s" repeatCount="indefinite" />
-          </stop>
-          <stop offset="35%" stopColor="#93c5fd">
-            <animate attributeName="stop-color" values="#93c5fd;#60a5fa;#93c5fd" dur="6s" repeatCount="indefinite" />
-          </stop>
-          <stop offset="70%" stopColor="#cbd5e1">
-            <animate attributeName="stop-color" values="#cbd5e1;#e5e7eb;#cbd5e1" dur="6s" repeatCount="indefinite" />
-          </stop>
-          <stop offset="100%" stopColor="#ffffff">
-            <animate attributeName="stop-color" values="#ffffff;#f8fafc;#ffffff" dur="6s" repeatCount="indefinite" />
-          </stop>
-        </linearGradient>
+    <div className="flex items-center justify-center gap-4 md:gap-6 lg:gap-8">
+      {/* GIF ซ้าย — สูงกว่าตัวอักษรนิดหน่อย */}
+      <img
+        src={ANL}
+        alt="Left accent"
+        className="h-[132px] md:h-[160px] lg:h-[180px] object-contain select-none"
+        draggable="false"
+        aria-hidden="true"
+      />
 
-        {/* เงาทิ้งตัวนุ่ม ๆ ใต้ตัวอักษร */}
-        <filter id="luxShadow" x="-20%" y="-20%" width="140%" height="160%">
-          <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="rgba(0,0,0,0.35)" />
-        </filter>
-
-        {/* Emboss/นูนเงาไฮไลท์ให้ดูเป็นโลหะหรู ๆ */}
-        <filter id="emboss" x="-20%" y="-20%" width="140%" height="160%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="blur" />
-          <feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.5" specularExponent="20" lightingColor="#ffffff" result="spec">
-            <fePointLight x="-5000" y="-10000" z="20000" />
-          </feSpecularLighting>
-          <feComposite in="spec" in2="SourceAlpha" operator="in" result="specMask" />
-          <feComposite in="SourceGraphic" in2="specMask" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
-        </filter>
-      </defs>
-
-      {/* เงาหลัก */}
-      <text
-        x="50%" y="65%"
-        textAnchor="middle" dominantBaseline="middle"
-        fontFamily="Inter, ui-sans-serif, system-ui"
-        fontWeight="900" fontSize="118"
-        fill="url(#luxGradient)"
-        filter="url(#luxShadow)"
+      {/* SVG Title กลาง */}
+      <svg
+        viewBox="0 0 1200 240"
+        className="w-auto h-[120px] md:h-[145px] lg:h-[165px] select-none"
+        preserveAspectRatio="xMidYMid meet"
+        aria-label="SAS 3D.STEP"
       >
-        SAS 3D.STEP
-      </text>
+        <defs>
+          {/* ไล่เฉดโทน น้ำเงิน–ฟ้า–เทา–ขาว พร้อม animation กวาดซ้าย↔ขวา */}
+          {/* อิง viewBox กว้าง 1200 เพื่อให้กวาดครอบคลุมถึงคำว่า STEP */}
+          <linearGradient
+            id="luxGradient"
+            x1="0" y1="0" x2="1200" y2="0"
+            gradientUnits="userSpaceOnUse"
+            spreadMethod="pad"
+          >
+            <stop offset="0%"   stopColor="#dbeafe" />
+            <stop offset="35%"  stopColor="#60a5fa" />
+            <stop offset="70%"  stopColor="#94a3b8" />
+            <stop offset="100%" stopColor="#ffffff" />
+            <animateTransform
+              attributeName="gradientTransform"
+              attributeType="XML"
+              type="translate"
+              values="-600 0; 600 0; -600 0"
+              keyTimes="0;0.5;1"
+              dur="4s"
+              begin="0s"
+              calcMode="linear"
+              restart="always"
+              repeatCount="indefinite"
+            />
+          </linearGradient>
 
-      {/* ชั้นนูน/ไฮไลท์ */}
-      <text
-        x="50%" y="65%"
-        textAnchor="middle" dominantBaseline="middle"
-        fontFamily="Inter, ui-sans-serif, system-ui"
-        fontWeight="900" fontSize="118"
-        fill="url(#luxGradient)"
-        filter="url(#emboss)"
-      >
-        SAS 3D.STEP
-      </text>
-    </svg>
+          {/* เงาทิ้งตัวนุ่ม ๆ ใต้ตัวอักษร */}
+          <filter id="luxShadow" x="-20%" y="-20%" width="140%" height="160%">
+            <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="rgba(0,0,0,0.35)" />
+          </filter>
+
+          {/* Emboss/นูนเงาไฮไลท์ให้ดูเป็นโลหะหรู ๆ */}
+          <filter id="emboss" x="-20%" y="-20%" width="140%" height="160%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="blur" />
+            <feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.5" specularExponent="20" lightingColor="#ffffff" result="spec">
+              <fePointLight x="-5000" y="-10000" z="20000" />
+            </feSpecularLighting>
+            <feComposite in="spec" in2="SourceAlpha" operator="in" result="specMask" />
+            <feComposite in="SourceGraphic" in2="specMask" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+          </filter>
+        </defs>
+
+        {/* เงาหลัก */}
+        <text
+          x="50%" y="65%"
+          textAnchor="middle" dominantBaseline="middle"
+          fontFamily="Inter, ui-sans-serif, system-ui"
+          fontWeight="900" fontSize="118"
+          fill="url(#luxGradient)"
+          filter="url(#luxShadow)"
+        >
+          SAS 3D.STEP
+        </text>
+
+        {/* ชั้นนูน/ไฮไลท์ */}
+        <text
+          x="50%" y="65%"
+          textAnchor="middle" dominantBaseline="middle"
+          fontFamily="Inter, ui-sans-serif, system-ui"
+          fontWeight="900" fontSize="118"
+          fill="url(#luxGradient)"
+          filter="url(#emboss)"
+        >
+          SAS 3D.STEP
+        </text>
+      </svg>
+
+      {/* GIF ขวา — สูงกว่าตัวอักษรนิดหน่อย */}
+      <img
+        src={ANR}
+        alt="Right accent"
+        className="h-[132px] md:h-[160px] lg:h-[180px] object-contain select-none"
+        draggable="false"
+        aria-hidden="true"
+      />
+    </div>
   </div>
 </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
               {productList.map((p) => (
                 <button
@@ -927,6 +1011,26 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   </>
 )}
 
+{/* [ADD-PLANETARY-VIEW] */}
+{selectedProduct === 'Planetary Gear' && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-yellow-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+        Planetary Gear Selection
+      </h2>
+      <button className="text-yellow-600 hover:underline" onClick={handlePlanetaryHome}>Home</button>
+    </div>
+
+    {renderPlanetaryGearFlow(planetState, planetSetters, (code) => {
+      const codes = Array.isArray(code) ? code : [code];
+      setModelCodeList(codes);
+      setSelectedModel(codes[0]);
+
+      // 👇 เพิ่มบรรทัดนี้เพื่อ “ไปหน้า Download 3D” ทันที
+      setShowForm(true);
+    })}
+  </>
+)}
 
 
 

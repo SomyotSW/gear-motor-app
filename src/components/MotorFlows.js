@@ -146,6 +146,42 @@ import SHIBLDCImg from '../assets/bldc/SHIBLDC.png';
 import SFHIBLDCImg from '../assets/bldc/SFHIBLDC.png';
 import SLHIBLDCImg from '../assets/bldc/SLHIBLDC.png';
 
+// [ADD-PLANETARY-IMG]
+import ZB_ZBR_ZE_ZER_HD_HDRSSeriesImg from '../assets/planetary/ZB-ZBR-ZE-ZER-HD-HDRSSeries.png';
+import ZDE_ZDF_ZDWE_ZDWF_ZDSSeriesImg from '../assets/planetary/ZDE-ZDF-ZDWE-ZDWF-ZDSSeries.png';
+import ZDR_ZDGF_ZDGSSeriesImg from '../assets/planetary/ZDR-ZDGF-ZDGSSeries.png';
+import ZPG_ZDPG_ZRS_AGVSeriesImg from '../assets/planetary/ZPG-ZDPG-ZRS-AGVSeries.png';
+import ZTSeriesImg from '../assets/planetary/ZTSeries.png';
+
+import ZBImg from '../assets/planetary/ZB.png';
+import ZBRImg from '../assets/planetary/ZBR.png';
+import ZEImg from '../assets/planetary/ZE.png';
+import ZERImg from '../assets/planetary/ZER.png';
+import HDImg from '../assets/planetary/HD.png';
+import HDRSImg from '../assets/planetary/HDRS.png';
+import ZDEImg from '../assets/planetary/ZDE.png';
+import ZDFImg from '../assets/planetary/ZDF.png';
+import ZDWEImg from '../assets/planetary/ZDWE.png';
+import ZDWFImg from '../assets/planetary/ZDWF.png';
+import ZDSImg from '../assets/planetary/ZDS.png';
+import ZDRImg from '../assets/planetary/ZDR.png';
+import ZDGFImg from '../assets/planetary/ZDGF.png';
+import ZPGImg from '../assets/planetary/ZPG.png';
+import ZRSImg from '../assets/planetary/ZRS.png';
+import ZDGSImg from '../assets/planetary/ZDGS.png';
+import ZDPGImg from '../assets/planetary/ZDPG.png';
+import AGVImg from '../assets/planetary/AGV.png';
+import ZTImg from '../assets/planetary/ZT.png';
+
+import ZTLImg from '../assets/planetary/ZTL.png'; // ใช้ในปุ่ม L1 (ZT) ถ้าคุณต้องการ
+import ZTL1Img from '../assets/planetary/ZTL1.png';
+import ZTR1Img from '../assets/planetary/ZTR1.png';
+import ZTHImg from '../assets/planetary/ZTH.png';
+import ZTFHImg from '../assets/planetary/ZTFH.png';
+import ZTFLImg from '../assets/planetary/ZTFL.png';
+import ZTFL1Img from '../assets/planetary/ZTFL1.png';
+import ZTFR1Img from '../assets/planetary/ZTFR1.png';
+
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
   { name: 'DC Gear Motor', image: DCImg },
@@ -2284,5 +2320,395 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
         </>
       )}
     </>
+  );
+}
+
+// =============== Planetary Gear (NEW) ===============
+
+export function generatePlanetaryModelCode(state) {  
+  const { series, size, ratio, backlash, inputType, shaftDir } = state;
+  if (!series || !size) return '';
+
+  
+
+  // ZT: (Series + Size + ShaftDir + Ratio + Backlash + Input)
+  if (series === 'ZT') {
+    if (!shaftDir || ratio == null || !backlash || !inputType) return '';
+    return `${series}${size}-${shaftDir}-${ratio}-${backlash}-${inputType}`;
+  }
+
+  // Others: (Series + Size + Ratio + Backlash + Input)
+  if (ratio == null || !backlash || !inputType) return '';
+  return `${series}${size}-${ratio}-${backlash}-${inputType}`;
+}
+
+export function renderPlanetaryGearFlow(planetState, planetSetters, onConfirm) {
+  const {
+    group,     // 1..5 (Step1)
+    series,    // ex. 'ZB','ZBR','ZE','ZER','HD','HDRS','ZDE','ZDF','ZDWE','ZDWF','ZDS','ZDR','ZDGF','ZDGS','ZPG','ZDPG','ZRS','AGV','ZT' (Step2)
+    size,      // ex. '060','115','20','75','095' ... (Step3)
+    shaftDir,  // ZT only: 'L','L1','R1','H','FH','FL','FL1','FR1' (Step3.1)
+    ratio,     // number/string per mapping (Step4)
+    backlash,  // 'P1' | 'P2' (Step5)
+    inputType  // 'S1' | 'S2' (Step6)
+  } = planetState;
+
+  // [ADD] หน่วงเวลาให้แสงกวาดจบก่อนเปลี่ยนสเตป (เฉพาะ Planetary)
+const sweepAnd = (e, doNext, delay = 1100) => {
+  if (typeof doNext !== 'function') return;
+  const btn = e && e.currentTarget;
+  if (btn && btn.classList) {
+    btn.classList.add('play-sweep');     // เริ่มกวาดจากซ้าย -> ขวา
+    setTimeout(() => {
+      btn.classList.remove('play-sweep'); // จบกวาด
+      doNext();                           // แล้วค่อยไปสเตปถัดไป
+    }, delay);
+  } else {
+    doNext();
+  }
+};
+
+  const update = (key, value) => {
+    const setter = planetSetters?.[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
+    if (setter) setter(value);
+  };
+
+  // ====== Step1: 5 ปุ่มภาพ (กลุ่ม Series) ======
+  const GROUPS = [
+    { id: 1, label: 'ZB/ZBR/ZE/ZER/HD/HDRS Series', img: ZB_ZBR_ZE_ZER_HD_HDRSSeriesImg },
+    { id: 2, label: 'ZDE/ZDF/ZDWE/ZDWF/ZDS Series', img: ZDE_ZDF_ZDWE_ZDWF_ZDSSeriesImg },
+    { id: 3, label: 'ZDR/ZDGF/ZDGS Series', img: ZDR_ZDGF_ZDGSSeriesImg },
+    { id: 4, label: 'ZPG/ZDPG/ZRS/AGV Series', img: ZPG_ZDPG_ZRS_AGVSeriesImg },
+    { id: 5, label: 'ZT Series', img: ZTSeriesImg },
+  ];
+
+  // ====== Step2: Series ตามกลุ่ม ======
+  const SERIES_BY_GROUP = {
+    1: ['ZB', 'ZBR', 'ZE', 'ZER', 'HD', 'HDRS'],
+    2: ['ZDE', 'ZDF', 'ZDWE', 'ZDWF', 'ZDS'],
+    3: ['ZDR', 'ZDGF', 'ZDGS'],
+    4: ['ZPG', 'ZDPG', 'ZRS', 'AGV'],
+    5: ['ZT'],
+  };
+
+  // ====== Step3: Gear head FLAME size ต่อ Series ======
+  const SIZES_BY_SERIES = {
+    // group 1
+    ZB:   ['042','060','090','115','142','180','220'],
+    ZBR:  ['060','090','115','142','180','220'],
+    ZE:   ['050','070','090','120','155','205','235'],
+    ZER:  ['070','090','120','155'],
+    HD:   ['064','090','110','140','200'],
+    HDRS:  ['064','090','110','140','200'],
+    // group 2
+    ZDE:  ['40','60','80','120','160'],
+    ZDF:  ['40','60','80','120','160'],
+    ZDWE: ['60','80','120','160'],
+    ZDWF: ['60','80','120','160'],
+    ZDS:  ['115','142','190'],
+    // group 3
+    ZDR:  ['52','78','98','125'],
+    ZDGF: ['60','90','120','170'],
+    ZDGS: ['60','90','120','170'],
+    // group 4
+    ZPG:  ['20','32','50'],
+    ZDPG: ['20','32','50'],
+    ZRS:  ['60','75','100','140'],
+    AGV:  ['95','115','090'],
+    // group 5
+    ZT:   ['075','090','110','140'],
+  };
+
+  // ====== Step4: Ratio ต่อ Series (AGV พิเศษแยกตาม size) ======
+  const RATIOS_BY_SERIES = {
+    ZB:   [3,4,5,6,7,8,10,15,16,20,25,30,35,40,45,50,60,70,80,90,100],
+    ZBR:  [3,4,5,6,7,8,9,10,14,20,25,30,35,40,45,50,60,70,80,90,100,120,140,160,180,200],
+    ZE:   [3,4,5,6,7,8,9,10,15,20,25,30,35,40,45,50,60,70,80,90,100],
+    ZER:  [3,4,5,6,7,8,9,10,14,20,25,30,35,40,45,50,60,70,80,90,100,120,140,160,180,200],
+    HD:   [4,5,7,10,20,25,30,35,50,70,100],
+    HDRS:  [4,5,7,10,20,25,30,35,50,70,100,140,200],
+    ZDE:  [3,4,5,8,9,10,12,15,16,20,25,32,40,60,64,80,100,120,160,200,256,320,512],
+    ZDF:  [3,4,5,8,9,10,12,15,16,20,25,32,40,60,64,80,100,120,160,200,256,320,512],
+    ZDWE: [3,4,5,8,9,10,12,15,16,20,25,32,40,60,64,80,100,120,160,200,256,320,512],
+    ZDWF: [3,4,5,8,9,10,12,15,16,20,25,32,40,60,64,80,100,120,160,200,256,320,512],
+    ZDS:  [3,4,5,8,10,12,15,16,20,25,32,40,64,100],
+    ZDR:  [3,4,5,6,7,8,9,10,15,20,25,35,45,81],
+    ZDGF: [3,4,5,7,9,10,11,15,20,21,25,33,35,40,45,50,70,81,100],
+    ZDGS: [3,4,5,7,9,10,11,15,20,21,25,33,35,40,45,50,70,81,100],
+    ZPG:  [5,11,15,21,33,45],
+    ZDPG: [5,11,15,21,33,45],
+    ZRS:  [3,4,5,6,7,8,9,10,15,20,25,30,45,50,60,70,80,90,100],
+    // AGV: ขึ้นกับ size
+    AGV:  {
+      '95':  [5,6,7,8,9],
+      '115': [15,18,20,21,30],
+      '090': [80],
+    },
+    // ZT:
+    ZT:   [1,1.5,2,3,4,5,7,10,15,20,25,35,50],
+  };
+
+  const BACKLASH = ['P1', 'P2'];     // Step5
+  const INPUTS   = ['S1', 'S2'];     // Step6
+  const ZT_DIRS  = ['L','L1','R1','H','FH','FL','FL1','FR1']; // Step3.1
+
+  // 🔙 ถอยทีละสเตป (ปุ่ม Back เล็ก ลอยมุมซ้ายล่าง)
+  const backOneStep = () => {
+    if (inputType) return update('inputType', null);
+    if (backlash)  return update('backlash', null);
+    if (ratio != null) return update('ratio', null);
+    if (series === 'ZT' && shaftDir) return update('shaftDir', null);
+    if (size)      return update('size', null);
+    if (series)    return update('series', null);
+    if (group)     return update('group', null);
+  };
+
+  // สร้างโค้ด (ใช้รูปแบบที่คุณกำหนด)
+  const code = generatePlanetaryModelCode({ series, size, ratio, backlash, inputType, shaftDir });
+
+  // ====== UI ======
+  return (
+    <div className="space-y-6">
+      {/* Step 1: กลุ่ม Series (5 ปุ่มภาพ) */}
+{!group && (
+  <div>
+    <h3 className="font-semibold text-white drop-shadow mb-3">Planetary Gear — Series Group</h3>
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {GROUPS.map(g => (
+        <button
+          key={g.id}
+          onClick={(e) => sweepAnd(e, () => update('group', g.id))}
+          className="btn-sweep"
+        >
+          {g.img ? (
+            // ⬇️ เปลี่ยน h-40 -> h-56 md:h-64 (ภาพใหญ่ขึ้นพอดี)
+            <img src={g.img} alt={g.label} className="h-65 md:h-70 object-contain mx-auto card-image " />
+          ) : null}
+          <span className="btn-3d-label hover:bg-yellow-100 ">{g.label}</span>
+          <div className="btn-3d-sweep" />
+        </button>
+      ))}
+    </div>
+    {/* Step แรกไม่แสดง Back */}
+  </div>
+)}
+
+      {/* Step 2: เลือก Series ภายในกลุ่ม */}
+      {group && !series && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-3">Select Series</h3>
+          <div className="flex flex-wrap gap-3">
+            {SERIES_BY_GROUP[group]?.map(s => (
+              <button
+                key={s}
+                onClick={(e) => sweepAnd(e, () => update('series', s))}
+                className="btn-sweep" style={{ width: 'auto', display: 'inline-flex' }}
+                title={s}
+              >
+                {s === 'ZB'  && <img src={ZBImg}  alt="ZB"  className="h-48 md:h-56 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZBR' && <img src={ZBRImg} alt="ZBR" className="h-48 md:h-56 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZE'  && <img src={ZEImg}  alt="ZE"  className="h-48 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZER' && <img src={ZERImg} alt="ZER" className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'HD'  && <img src={HDImg}  alt="HD"  className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'HDRS'&& <img src={HDRSImg}alt="HDRS"className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDE' && <img src={ZDEImg} alt="ZDE" className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDF' && <img src={ZDFImg} alt="ZDF" className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDWE'&& <img src={ZDWEImg}alt="ZDWE"className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDWF'&& <img src={ZDWFImg}alt="ZDWF"className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDS' && <img src={ZDSImg} alt="ZDS" className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDR' && <img src={ZDRImg} alt="ZDR" className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDGF'&& <img src={ZDGFImg}alt="ZDGF"className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDGS'&& <img src={ZDGSImg}alt="ZDGS"className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZPG' && <img src={ZPGImg} alt="ZPG" className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZDPG'&& <img src={ZDPGImg}alt="ZDPG"className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZRS' && <img src={ZRSImg} alt="ZRS" className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'AGV' && <img src={AGVImg} alt="AGV" className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+          {s === 'ZT'  && <img src={ZTImg}  alt="ZT"  className="h-40 md:h-48 object-contain mx-auto mb-1 card-image" />}
+                <span className="btn-3d-label">{s}</span>
+                <div className="btn-3d-sweep" />
+              </button>
+            ))}
+          </div>
+
+          {/* Back ลอยมุมซ้ายล่าง */}
+          <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step 3: เลือก FLAME size */}
+      {group && series && !size && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-3">Gear head flame size</h3>
+          <div className="flex flex-wrap gap-2">
+            {(SIZES_BY_SERIES[series] || []).map(sz => (
+              <button
+                key={sz}
+                onClick={(e) => sweepAnd(e, () => update('size', sz))}
+                className="btn-sweep" style={{ width: 'auto', display: 'inline-flex' }}
+              >
+                <span className="btn-3d-label">{sz}</span>
+                <div className="btn-3d-sweep" />
+              </button>
+            ))}
+          </div>
+
+          {/* Back ลอยมุมซ้ายล่าง */}
+          <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step 3.1: ZT เท่านั้น → Shaft Direction */}
+      {group && series === 'ZT' && size && !shaftDir && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-3">Shaft Direction (ZT only)</h3>
+          <div className="flex flex-wrap gap-2">
+            {ZT_DIRS.map(d => (
+              <button
+                key={d}
+                onClick={(e) => sweepAnd(e, () => update('shaftDir', d))}
+                className="btn-sweep" style={{ width: 'auto', display: 'inline-flex' }}
+                title={d}
+              >
+                {/* ตัวอย่าง: แทรกรูปเฉพาะ L1 ถ้าคุณต้องการ */}
+                {d === 'L' && <img src={ZTLImg} alt="L" className="h-64 object-contain mx-auto mb-1 card-image" />}
+                {d === 'L1' && <img src={ZTL1Img} alt="L1" className="h-64 object-contain mx-auto mb-1 card-image" />}
+                {d === 'R1' && <img src={ZTR1Img} alt="R1" className="h-64 object-contain mx-auto mb-1 card-image" />}
+                {d === 'H' && <img src={ZTHImg} alt="H" className="h-64 object-contain mx-auto mb-1 card-image" />}
+                {d === 'FH' && <img src={ZTFHImg} alt="FH" className="h-64 object-contain mx-auto mb-1 card-image" />}
+                {d === 'FL' && <img src={ZTFLImg} alt="FL" className="h-64 object-contain mx-auto mb-1 card-image" />}
+                {d === 'FL1' && <img src={ZTFL1Img} alt="FL1" className="h-64 object-contain mx-auto mb-1 card-image" />}
+                {d === 'FR1' && <img src={ZTFR1Img} alt="FR1" className="h-64 object-contain mx-auto mb-1 card-image" />}
+                <span className="btn-3d-label hover:bg-yellow-300" >{d}</span>
+                <div className="btn-3d-sweep" />
+              </button>
+            ))}
+          </div>
+
+          {/* Back ลอยมุมซ้ายล่าง */}
+          <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step 4: Ratio */}
+      {group && series && size && (series !== 'ZT' || shaftDir) && ratio == null && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-3">Ratio</h3>
+          <div className="flex flex-wrap gap-2">
+            {(
+              series === 'AGV'
+                ? (RATIOS_BY_SERIES.AGV[size] || [])
+                : (RATIOS_BY_SERIES[series] || [])
+            ).map(r => (
+              <button
+                key={String(r)}
+                onClick={(e) => sweepAnd(e, () => update('ratio', r))}
+                className="btn-sweep" style={{ width: 'auto', display: 'inline-flex' }}
+              >
+                <span className="btn-3d-label">{r}</span>
+                <div className="btn-3d-sweep" />
+              </button>
+            ))}
+          </div>
+
+          {/* Back ลอยมุมซ้ายล่าง */}
+          <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step 5: Backlash */}
+      {group && series && size && (series !== 'ZT' || shaftDir) && ratio != null && !backlash && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-3">Backlash</h3>
+          <div className="flex flex-wrap gap-2">
+            {BACKLASH.map(b => (
+              <button
+                key={b}
+                onClick={(e) => sweepAnd(e, () => update('backlash', b))}
+                className="btn-sweep" style={{ width: 'auto', display: 'inline-flex' }}
+              >
+                <span className="btn-3d-label">{b} {b === 'P1' ? '(Low)' : '(Standard)'}</span>
+                <div className="btn-3d-sweep" />
+              </button>
+            ))}
+          </div>
+
+          {/* Back ลอยมุมซ้ายล่าง */}
+          <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step 6: Input shaft type */}
+      {group && series && size && (series !== 'ZT' || shaftDir) && ratio != null && backlash && !inputType && (
+        <div>
+          <h3 className="font-semibold text-white drop-shadow mb-3">Input shaft type</h3>
+          <div className="flex flex-wrap gap-2">
+            {INPUTS.map(i => (
+              <button
+                key={i}
+                onClick={(e) => sweepAnd(e, () => update('inputType', i))}
+                className="btn-sweep" style={{ width: 'auto', display: 'inline-flex' }}
+              >
+                <span className="btn-3d-label">{i}</span>
+                <div className="btn-3d-sweep" />
+              </button>
+            ))}
+          </div>
+
+          {/* Back ลอยมุมซ้ายล่าง */}
+          <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Final: แสดง Model Code + ปุ่มยืนยัน */}
+      {group && series && size && (series !== 'ZT' || shaftDir) && ratio != null && backlash && inputType && (
+        <div className="text-center space-y-4">
+          <h3 className="text-xl font-bold text-white drop-shadow">Model Code</h3>
+          <div className="font-mono text-lg text-white/90">{code}</div>
+
+          <button onClick={(e) => sweepAnd(e, () => onConfirm(code))} className="btn-sweep px-2 py-1 mx-auto"style={{ width: 'auto', display: 'inline-flex' }}>
+            <span className="btn-3d-label text-sm leading-none hover:bg-yellow-100">ยืนยันและไปหน้า Download 3D</span>
+            <div className="btn-3d-sweep" />
+          </button>
+
+          {/* Back ลอยมุมซ้ายล่าง */}
+          <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

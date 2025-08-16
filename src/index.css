@@ -399,3 +399,32 @@ code {
   from { transform: translateX(0); }
   to   { transform: translateX(210%); }
 }
+
+
+/* [ADD] Yellow click-sweep for btn-sweep */
+.btn-sweep {
+  position: relative;
+  overflow: hidden; /* ให้แสงอยู่ในปุ่ม */
+}
+
+/* แถบสวีกสีเหลือง (Planetary btn-sweep) */
+.btn-sweep .btn-3d-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 200, 0, 0.00) 0%,
+    rgba(255, 200, 0, 0.00) 22%,
+    rgba(255, 200, 0, 0.65) 40%,
+    rgba(255, 200, 0, 0.65) 60%, /* 🔆 ช่วงสว่าง “หนา” */
+    rgba(255, 200, 0, 0.00) 78%,
+    rgba(255, 200, 0, 0.00) 100%
+  );
+  transform: translateX(-120%);
+  transition: transform 950ms cubic-bezier(.22,.61,.36,1);
+}
+/* เล่นสวีกผ่านคลาสจาก JS */
+.btn-sweep.play-sweep .btn-3d-sweep {
+  transform: translateX(120%);               /* วิ่งจนสุดขวา */
+}
