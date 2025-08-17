@@ -428,3 +428,16 @@ code {
 .btn-sweep.play-sweep .btn-3d-sweep {
   transform: translateX(120%);               /* วิ่งจนสุดขวา */
 }
+
+
+/* ---- Servo buttons: blue sweep on click ---- */
+.sweep-container { position: relative; overflow: hidden; }
+.sweep-fill {
+  position: absolute;
+  top: 0; bottom: 0; left: 0; right: 100%;
+  background: linear-gradient(90deg, rgba(59,130,246,.15), rgba(59,130,246,.8));
+  animation: servo-sweep var(--servo-sweep-duration, 450ms) ease-out forwards;
+}
+@keyframes servo-sweep {
+  to { right: 0; }
+}

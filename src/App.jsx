@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode } from './components/MotorFlows.js';
+import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode } from './components/MotorFlows.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
@@ -24,6 +24,7 @@ import GNLGULGIF from './assets/bldc/GNLGULGIF.gif';
 import SGIF from './assets/bldc/SGIF.gif';
 import SFGIF from './assets/bldc/SFGIF.gif';
 import SLGIF from './assets/bldc/SLGIF.gif';
+
 
 // ====== Utilities: BLDC filename mapper ======
 function mapBLDCDownloadFilename(modelCode) {
@@ -170,11 +171,14 @@ async function handlePlanetaryDownload3D() {
   try {
     const res = await resolvePlanetaryStep(planetState); // ใช้ planetState ปัจจุบันของคุณ
     const fileName = res.filename || (res.url.split('/').pop() || 'model.STEP');
+        const modelCode = generatePlanetaryModelCode(planetState);
+        const downloadName = modelCode ? `${modelCode}.STEP` : fileName;
+       
 
     if (res.mode === 'href') {
       const a = document.createElement('a');
       a.href = res.url;
-      a.download = fileName;
+      a.download = downloadName;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -182,7 +186,7 @@ async function handlePlanetaryDownload3D() {
       const blobUrl = URL.createObjectURL(res.blob);
       const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = fileName;
+      a.download = downloadName;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -267,6 +271,27 @@ function App() {
   const [acOption, setAcOption] = useState(null);
   const [acGearHead, setAcGearHead] = useState(null);
   const [acRatio, setAcRatio] = useState(null);
+
+
+  // Hypoid Gear Flow states
+  const [svInertia,   setSvInertia]   = useState(null);  // A / H / G
+  const [svFlange,    setSvFlange]    = useState(null);  // 40 / 60 / 80 / 100 / 110 / 130 / 180
+  const [svVoltage,   setSvVoltage]   = useState(null);  // A (AC220) / B (AC380)
+  const [svPowerCode, setSvPowerCode] = useState(null);  // 01 / 02 / 08 / 10 / 12 / 15 / 18 / 20 / 30 / 80
+  const [svSpeed,     setSvSpeed]     = useState(null);  // B10 / B15 / B20 / B30
+  const [svOption,    setSvOption]    = useState(null);  // C / S / CE
+  const [svEncoder,   setSvEncoder]   = useState(null);  // 1 / 2 / 3 / 4
+  const [svOutput,    setSvOutput]    = useState(null);  // 0 / 2 / 6
+  // วางใต้กลุ่ม useState ด้านบน
+const servoState = {
+  svInertia, svFlange, svVoltage, svPowerCode,
+  svSpeed, svOption, svEncoder, svOutput,
+};
+
+const servoSetters = {
+  setSvInertia, setSvFlange, setSvVoltage, setSvPowerCode,
+  setSvSpeed, setSvOption, setSvEncoder, setSvOutput,
+};
 
   // Hypoid Gear Flow states
   const [hypoidType, setHypoidType] = useState(null);             // F2 / F3
@@ -667,10 +692,12 @@ const handleDownload = async () => {
       // ✅ Planetary Gear: ใช้ตัว resolver เฉพาะ เพื่อชี้ไฟล์จริงจาก /public/model
     if (selectedProduct === 'Planetary Gear') {
       const res = await resolvePlanetaryStep(planetState);
+            const modelCode = generatePlanetaryModelCode(planetState);
+            const downloadName = modelCode ? `${modelCode}.STEP` : (res.filename || 'model.STEP');
       if (res.mode === 'href') {
         const a = document.createElement('a');
         a.href = res.url;
-        a.download = res.filename || 'model.STEP';
+        a.download = downloadName;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -678,7 +705,7 @@ const handleDownload = async () => {
         const blobUrl = URL.createObjectURL(res.blob);
         const a = document.createElement('a');
         a.href = blobUrl;
-        a.download = res.filename || 'model.STEP';
+        a.download = downloadName;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -1092,6 +1119,41 @@ const getFileUrl = () => {
     </div>
   </>
 )}
+
+{/* ตัวอย่างการเรียก */}
+{selectedProduct === 'Servo Motor' && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-blue-600 font-bold mb-2 drop-shadow">Servo Motor Selection</h2>
+      <button
+  className="text-blue-600 hover:underline"
+  onClick={() => {
+    setSvInertia(null);
+    setSvFlange(null);
+    setSvVoltage(null);
+    setSvPowerCode(null);
+    setSvSpeed(null);
+    setSvOption(null);
+    setSvEncoder(null);
+    setSvOutput(null);
+    setSelectedModel(null);
+    setModelCodeList([]);
+    setShowForm(false);
+    setSelectedProduct(null);
+  }}
+ >Home</button>
+    </div>
+
+    {renderServoFlow(servoState, servoSetters, (modelCode) => {
+   const models = [modelCode];
+   setModelCodeList(models);
+   setSelectedModel(models[0]);
+   // ไปหน้าแบบฟอร์มเหมือน product อื่น
+   setShowForm(true);
+ })}
+  </>
+)}
+
   {selectedProduct === 'Hypoid Gear' && !showForm && (
   <>
     <div className="flex justify-between items-center mt-6">
@@ -1280,6 +1342,7 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
     </div>
   </>
 )}
+
 
 
 

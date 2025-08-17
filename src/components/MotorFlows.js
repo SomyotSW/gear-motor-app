@@ -153,6 +153,34 @@ import ZDR_ZDGF_ZDGSSeriesImg from '../assets/planetary/ZDR-ZDGF-ZDGSSeries.png'
 import ZPG_ZDPG_ZRS_AGVSeriesImg from '../assets/planetary/ZPG-ZDPG-ZRS-AGVSeries.png';
 import ZTSeriesImg from '../assets/planetary/ZTSeries.png';
 
+import ZRSGIF from '../assets/planetary/Gif/ZRSGIF.gif';
+import AGVGIF from '../assets/planetary/Gif/AGVGIF.gif';
+import HDGIF from '../assets/planetary/Gif/HDGIF.gif';
+import HDRSGIF from '../assets/planetary/Gif/HDRSGIF.gif';
+import ZBGIF from '../assets/planetary/Gif/ZBGIF.gif';
+import ZBRGIF from '../assets/planetary/Gif/ZBRGIF.gif';
+import ZDFGIF from '../assets/planetary/Gif/ZDFGIF.gif';
+import ZDEGIF from '../assets/planetary/Gif/ZDEGIF.gif';
+import ZDGFGIF from '../assets/planetary/Gif/ZDGFGIF.gif';
+import ZDGSGIF from '../assets/planetary/Gif/ZDGSGIF.gif';
+import ZDRGIF from '../assets/planetary/Gif/ZDRGIF.gif';
+import ZDSGIF from '../assets/planetary/Gif/ZDSGIF.gif';
+import ZDWEGIF from '../assets/planetary/Gif/ZDWEGIF.gif';
+import ZDWFGIF from '../assets/planetary/Gif/ZDWFGIF.gif';
+import ZEGIF from '../assets/planetary/Gif/ZEGIF.gif';
+import ZERGIF from '../assets/planetary/Gif/ZERGIF.gif';
+import ZDPGGIF from '../assets/planetary/Gif/ZDPGGIF.gif';
+import ZPGGIF from '../assets/planetary/Gif/ZPGGIF.gif';
+import ZTFHGIF from '../assets/planetary/Gif/ZTFHGIF.gif';
+import ZTFL1GIF from '../assets/planetary/Gif/ZTFL1GIF.gif';
+import ZTFLGIF from '../assets/planetary/Gif/ZTFLGIF.gif';
+import ZTFR1GIF from '../assets/planetary/Gif/ZTFR1GIF.gif';
+import ZTHGIF from '../assets/planetary/Gif/ZTHGIF.gif';
+import ZTL1GIF from '../assets/planetary/Gif/ZTL1GIF.gif';
+import ZTLGIF from '../assets/planetary/Gif/ZTLGIF.gif';
+import ZTR1GIF from '../assets/planetary/Gif/ZTR1GIF.gif';
+
+
 import ZBImg from '../assets/planetary/ZB.png';
 import ZBRImg from '../assets/planetary/ZBR.png';
 import ZEImg from '../assets/planetary/ZE.png';
@@ -181,6 +209,43 @@ import ZTFHImg from '../assets/planetary/ZTFH.png';
 import ZTFLImg from '../assets/planetary/ZTFL.png';
 import ZTFL1Img from '../assets/planetary/ZTFL1.png';
 import ZTFR1Img from '../assets/planetary/ZTFR1.png';
+
+import GImg from '../assets/servo/G.png';
+import AImg from '../assets/servo/A.png';
+import HImg from '../assets/servo/H.png';
+import F40Img from '../assets/servo/F40.png';
+import F60Img from '../assets/servo/F60.png';
+import F80Img from '../assets/servo/F80.png';
+import F100Img from '../assets/servo/F100.png';
+import F110Img from '../assets/servo/F110.png';
+import F130Img from '../assets/servo/F130.png';
+import F180Img from '../assets/servo/F180.png';
+import SV100Img from '../assets/servo/SV100.png';
+import SV200Img from '../assets/servo/SV200.png';
+import SV400Img from '../assets/servo/SV400.png';
+import SV750Img from '../assets/servo/SV750.png';
+import SV1000Img from '../assets/servo/SV1000.png';
+import SV1200Img from '../assets/servo/SV1200.png';
+import SV1500Img from '../assets/servo/SV1500.png';
+import SV1800Img from '../assets/servo/SV1800.png';
+import SV2000Img from '../assets/servo/SV2000.png';
+import SV3000Img from '../assets/servo/SV3000.png';
+import SV7500Img from '../assets/servo/SV7500.png';
+import OCImg from '../assets/servo/OC.png';
+import OSImg from '../assets/servo/OS.png';
+import OCEImg from '../assets/servo/OCE.png';
+
+import Gif100Img from '../assets/servo/Gif100.gif';
+import Gif100CEImg from '../assets/servo/Gif100CE.gif';
+import Gif200Img from '../assets/servo/Gif200.gif';
+import Gif200CEImg from '../assets/servo/Gif200CE.gif';
+import Gif750Img from '../assets/servo/Gif750.gif';
+import Gif750CEImg from '../assets/servo/Gif750CE.gif';
+import Gif1300Img from '../assets/servo/Gif1300.gif';
+import Gif1300CEImg from '../assets/servo/Gif1300CE.gif';
+import Gif7500Img from '../assets/servo/Gif7500.gif';
+import Gif7500CEImg from '../assets/servo/Gif7500CE.gif';
+
 
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
@@ -2694,7 +2759,55 @@ const sweepAnd = (e, doNext, delay = 1100) => {
         <div className="text-center space-y-4">
           <h3 className="text-xl font-bold text-white drop-shadow">Model Code</h3>
           <div className="font-mono text-lg text-white/90">{code}</div>
+                    {/* iPad frame + GIF (Planetary) */}
+    {(() => {
+      // เลือก GIF ตาม Series; กรณี ZT ต้องมี shaftDir
+      let gif = null;
+      if (series === 'ZT') {
+        if (!shaftDir) return null;
+        if (shaftDir === 'L')   gif = ZTLGIF;
+        else if (shaftDir === 'L1')  gif = ZTL1GIF;
+        else if (shaftDir === 'R1')  gif = ZTR1GIF;
+        else if (shaftDir === 'H')   gif = ZTHGIF;
+        else if (shaftDir === 'FH')  gif = ZTFHGIF;
+        else if (shaftDir === 'FL')  gif = ZTFLGIF;
+        else if (shaftDir === 'FL1') gif = ZTFL1GIF;
+        else if (shaftDir === 'FR1') gif = ZTFR1GIF;
+      } else {
+        const map = {
+          ZB: ZBGIF, ZBR: ZBRGIF, ZE: ZEGIF, ZER: ZERGIF,
+          HD: HDGIF, HDRS: HDRSGIF,
+          ZDE: ZDEGIF, ZDF: ZDFGIF, ZDWE: ZDWEGIF, ZDWF: ZDWFGIF,
+          ZDS: ZDSGIF, ZDR: ZDRGIF, ZDGF: ZDGFGIF, ZDGS: ZDGSGIF,
+          ZPG: ZPGGIF, ZDPG: ZDPGGIF, ZRS: ZRSGIF, AGV: AGVGIF,
+        };
+        gif = map[series] || null;
+      }
+      if (!gif) return null;
 
+      return (
+        <div className="mt-6 flex justify-center">
+          {/* กรอบ iPad */}
+          <div className="
+            relative
+            w-[800px] h-[600px]
+            sm:w-[720px] sm:h-[540px]
+            md:w-[900px] md:h-[675px]
+            bg-black p-6 rounded-[2rem] shadow-2xl ring-1 ring-white/10
+          ">
+            {/* กล้องหน้า */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              <span className="block w-3 h-3 rounded-full bg-black ring-2 ring-white/20" />
+              <span className="block w-2 h-2 rounded-full bg-black ring-2 ring-white/15" />
+            </div>
+            {/* หน้าจอ iPad */}
+            <div className="w-full h-full rounded-[1.5rem] overflow-hidden bg-white">
+              <img src={gif} alt="Planetary preview" className="w-full h-full object-contain" />
+            </div>
+          </div>
+        </div>
+      );
+    })()}
           <button onClick={(e) => sweepAnd(e, () => onConfirm(code))} className="btn-sweep px-2 py-1 mx-auto"style={{ width: 'auto', display: 'inline-flex' }}>
             <span className="btn-3d-label text-sm leading-none hover:bg-yellow-100">ยืนยันและไปหน้า Download 3D</span>
             <div className="btn-3d-sweep" />
@@ -2712,3 +2825,360 @@ const sweepAnd = (e, doNext, delay = 1100) => {
     </div>
   );
 }
+
+// ===== Servo: สร้าง Model Code =====
+export function generateServoModelCode(sv) {
+  const {
+    svInertia, svFlange, svVoltage, svPowerCode,
+    svSpeed, svOption, svEncoder, svOutput
+  } = sv || {};
+
+  if (!svInertia || !svFlange || !svVoltage || !svPowerCode || !svSpeed || !svOption || !svEncoder || !svOutput) {
+    return null;
+  }
+  // รูปแบบ: SM(Inertia)(Flange)-(Voltage)(Power)-(Speed)-(Option)-(Encoder)(Output)
+  // เช่น SMH40-A02-B20-CE-22
+  return `SM${svInertia}${svFlange}-${svVoltage}${svPowerCode}-${svSpeed}-${svOption}-${svEncoder}${svOutput}`;
+}
+
+// ===== Servo: เรนเดอร์ Flow ตาม Step ที่กำหนด =====
+export function renderServoFlow(state, setState, onConfirm) {
+  const {
+    svInertia, svFlange, svVoltage, svPowerCode,
+    svSpeed, svOption, svEncoder, svOutput
+  } = state;
+// คลิกแล้วไล่เฉดสีน้ำเงิน จากซ้ายไปขวา แล้วค่อย “ทำงาน”
+  const sweepAnd = (e, action) => {
+    const el = e.currentTarget;
+    if (!el) { action && action(); return; }
+    if (el.querySelector('.sweep-fill')) return; // กันคลิกซ้ำระหว่างวิ่ง
+    el.classList.add('sweep-container');
+    const span = document.createElement('span');
+    span.className = 'sweep-fill';
+    el.appendChild(span);
+    el.style.pointerEvents = 'none';
+    span.addEventListener('animationend', () => {
+      try { action && action(); }
+      finally {
+        el.style.pointerEvents = '';
+        if (span.parentNode) span.parentNode.removeChild(span);
+        el.classList.remove('sweep-container');
+      }
+    }, { once: true });
+  };
+
+  // เลือก GIF สำหรับแสดงใน iPad ใต้ Model code (Step9)
+// mapping ตาม Rate Power ที่คุณกำหนด + ถ้า Options=CE ให้ใช้ไฟล์ ...CE.gif
+const servoGifForSelection = () => {
+  if (!svPowerCode) return null;
+  const isCE = svOption === 'CE';
+
+  // กลุ่มกำลังที่ผูกกับ code:
+  // 01 -> 100W
+  // 02 -> 200W / 400W
+  // 08,10 -> 750W / 1kW
+  // 12,15,18,20,30 -> 1.2/1.5/1.8/2/3kW
+  // 80 -> 7.5kW
+  const code = svPowerCode;
+
+  if (code === '01') {
+    return isCE ? Gif100CEImg : Gif100Img;
+  }
+  if (code === '02') {
+    return isCE ? Gif200CEImg : Gif200Img; // ครอบคลุม 200/400W
+  }
+  if (code === '08' || code === '10') {
+    return isCE ? Gif750CEImg : Gif750Img; // 750W / 1kW
+  }
+  if (code === '12' || code === '15' || code === '18' || code === '20' || code === '30') {
+    return isCE ? Gif1300CEImg : Gif1300Img; // 1.2/1.5/1.8/2/3kW
+  }
+  if (code === '80') {
+    return isCE ? Gif7500CEImg : Gif7500Img; // 7.5kW
+  }
+  return null;
+};
+
+  const update = (key, value) => {
+    const setter = setState?.[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`];
+    if (setter) setter(value);
+  };
+
+  // Step4: mapping ปุ่มกำลังตาม Flange (ใช้ code ตามที่คุณให้มา)
+  const powerByFlange = {
+    '40' : [{ code: '01', label: '100W',  img: SV100Img }],
+    '60' : [
+      { code: '02', label: '200W', img: SV200Img },
+      { code: '02', label: '400W', img: SV400Img } // ตามที่คุณระบุว่าใช้ 02 ทั้งคู่
+    ],
+    '80' : [
+      { code: '08', label: '750W', img: SV750Img },
+      { code: '10', label: '1kW',  img: SV1000Img }
+    ],
+    '100': [
+      { code: '10', label: '1kW',  img: SV1000Img },
+      { code: '15', label: '1.5kW',img: SV1500Img }
+    ],
+    '110': [
+      { code: '12', label: '1.2kW',img: SV1200Img },
+      { code: '15', label: '1.5kW',img: SV1500Img },
+      { code: '18', label: '1.8kW',img: SV1800Img }
+    ],
+    '130': [
+      { code: '10', label: '1kW',  img: SV1000Img },
+      { code: '15', label: '1.5kW',img: SV1500Img },
+      { code: '18', label: '1.8kW',img: SV1800Img },
+      { code: '20', label: '2kW',  img: SV2000Img },
+      { code: '30', label: '3kW',  img: SV3000Img }
+    ],
+    '180': [{ code: '80', label: '7.5kW', img: SV7500Img }]
+  };
+
+  const code = generateServoModelCode(state);
+
+  // ปุ่มย้อนกลับ: เคลียร์ค่าตัวล่าสุดทีละสtep
+  const backOneStep = () => {
+    if (svOutput)      return update('svOutput', null);
+    if (svEncoder)     return update('svEncoder', null);
+    if (svOption)      return update('svOption', null);
+    if (svSpeed)       return update('svSpeed', null);
+    if (svPowerCode)   return update('svPowerCode', null);
+    if (svVoltage)     return update('svVoltage', null);
+    if (svFlange)      return update('svFlange', null);
+    if (svInertia)     return update('svInertia', null);
+  };
+
+  // ปุ่ม UI 3D (ถ้าคุณมี ThumbCard อยู่แล้ว ใช้ component เดิมเพื่อให้หน้าตาเหมือน flow อื่น)
+  const ImgBtn = ({ img, label, active, onClick, className, imageHeight = 'h-40' }) => (
+    <div
+      onClick={(e) => sweepAnd(e, onClick)}
+      className={`cursor-pointer rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-0.5 
+                  ring-1 ring-white/10 bg-white/90 overflow-hidden relative
+                  ${active ? 'outline outline-4 outline-yellow-300' : ''} ${className || ''}`}
+      title={label}
+    >
+      <img src={img} alt={label} className={`w-full ${imageHeight} object-contain bg-white`} />
+      <div className="text-center text-sm font-semibold p-2">{label}</div>
+    </div>
+  );
+
+  const PillBtn = ({ value, label, active, onClick }) => (
+    <button
+      onClick={(e) => sweepAnd(e, onClick)}
+      className={`px-4 py-2 rounded-full shadow-md transition relative overflow-hidden
+                  ${active ? 'bg-yellow-300 text-black' : 'bg-white/90 hover:bg-white'} `}
+    >
+      <span className="font-semibold">{label || value}</span>
+    </button>
+  );
+
+  return (
+    <>
+      {/* Step1: Inertia (A/H/G) */}
+      {!svInertia && (
+        <div className="space-y-3">
+          <h3 className="font-semibold text-white drop-shadow">Step 1 — Inertia</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <ImgBtn img={AImg} label="A" active={svInertia==='A'} onClick={() => update('svInertia','A')} imageHeight="h-56 md:h-72" />
+                   <ImgBtn img={HImg} label="H" active={svInertia==='H'} onClick={() => update('svInertia','H')} imageHeight="h-56 md:h-72" />
+                   <ImgBtn img={GImg} label="G" active={svInertia==='G'} onClick={() => update('svInertia','G')} imageHeight="h-56 md:h-72" />
+          </div>
+        </div>
+      )}
+
+      {/* Step2: Flange Size (แสดงเมื่อเลือก Inertia แล้ว) */}
+      {svInertia && !svFlange && (
+        <div className="mt-6 space-y-3">
+          <h3 className="font-semibold text-white drop-shadow">Step 2 — Flange Size</h3>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+            <ImgBtn img={F40Img}  label="40"  active={svFlange==='40'}  onClick={() => update('svFlange','40')}imageHeight="h-56 md:h-72" />
+            <ImgBtn img={F60Img}  label="60"  active={svFlange==='60'}  onClick={() => update('svFlange','60')}imageHeight="h-56 md:h-72" />
+            <ImgBtn img={F80Img}  label="80"  active={svFlange==='80'}  onClick={() => update('svFlange','80')}imageHeight="h-56 md:h-72" />
+            <ImgBtn img={F100Img} label="100" active={svFlange==='100'} onClick={() => update('svFlange','100')}imageHeight="h-56 md:h-72" />
+            <ImgBtn img={F110Img} label="110" active={svFlange==='110'} onClick={() => update('svFlange','110')}imageHeight="h-56 md:h-72" />
+            <ImgBtn img={F130Img} label="130" active={svFlange==='130'} onClick={() => update('svFlange','130')}imageHeight="h-56 md:h-72" />
+            <ImgBtn img={F180Img} label="180" active={svFlange==='180'} onClick={() => update('svFlange','180')}imageHeight="h-56 md:h-72" />
+          </div>
+                    <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step3: Rate Voltage */}
+      {svFlange && !svVoltage && (
+        <div className="mt-6 space-y-3">
+          <h3 className="font-semibold text-white drop-shadow">Step 3 — Rate Voltage</h3>
+          <div className="flex flex-wrap gap-3">
+            <PillBtn value="A" label="A : AC220" active={svVoltage==='A'} onClick={() => update('svVoltage','A')} />
+            <PillBtn value="B" label="B : AC380" active={svVoltage==='B'} onClick={() => update('svVoltage','B')} />
+          </div>
+                   <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step4: Rate Power (ขึ้นกับ Flange) */}
+      {svVoltage && !svPowerCode && (
+        <div className="mt-6 space-y-3">
+          <h3 className="font-semibold text-white drop-shadow">Step 4 — Rate Power</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {(powerByFlange[svFlange] || []).map(({code, label, img}) => (
+              <ImgBtn
+                key={code + label}
+                img={img}
+                label={`${code} : ${label}`}
+                active={svPowerCode === code}
+                onClick={() => update('svPowerCode', code)}
+                                imageHeight="h-56 md:h-72"
+              />
+            ))}
+          </div>
+                    <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step5: Rate Speed */}
+      {svPowerCode && !svSpeed && (
+        <div className="mt-6 space-y-3">
+          <h3 className="font-semibold text-white drop-shadow">Step 5 — Rate Speed</h3>
+          <div className="flex flex-wrap gap-3">
+            <PillBtn value="B10" label="B10 : 1000 rpm"  active={svSpeed==='B10'} onClick={() => update('svSpeed','B10')} />
+            <PillBtn value="B15" label="B15 : 1500 rpm"  active={svSpeed==='B15'} onClick={() => update('svSpeed','B15')} />
+            <PillBtn value="B20" label="B20 : 2000 rpm"  active={svSpeed==='B20'} onClick={() => update('svSpeed','B20')} />
+            <PillBtn value="B30" label="B30 : 3000 rpm"  active={svSpeed==='B30'} onClick={() => update('svSpeed','B30')} />
+          </div>
+                    <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step6: Options (C / S / CE) */}
+      {svSpeed && !svOption && (
+        <div className="mt-6 space-y-3">
+          <h3 className="font-semibold text-white drop-shadow">Step 6 — Options</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <ImgBtn img={OCImg}  label="C : Without brake"     active={svOption==='C'}  onClick={() => update('svOption','C')} imageHeight="h-56 md:h-72" />
+            <ImgBtn img={OSImg}  label="S : With oil seal"      active={svOption==='S'}  onClick={() => update('svOption','S')}imageHeight="h-56 md:h-72" />
+            <ImgBtn img={OCEImg} label="CE : With brake"        active={svOption==='CE'} onClick={() => update('svOption','CE')}imageHeight="h-56 md:h-72" />
+          </div>
+                     <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step7: Encoder */}
+      {svOption && !svEncoder && (
+        <div className="mt-6 space-y-3">
+          <h3 className="font-semibold text-white drop-shadow">Step 7 — Encoder</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <PillBtn value="1" label="1 : 17-bit inc., magnetic"   active={svEncoder==='1'} onClick={() => update('svEncoder','1')} />
+            <PillBtn value="2" label="2 : 17-bit abs., magnetic"   active={svEncoder==='2'} onClick={() => update('svEncoder','2')} />
+            <PillBtn value="3" label="3 : 23-bit optical"          active={svEncoder==='3'} onClick={() => update('svEncoder','3')} />
+            <PillBtn value="4" label="4 : 23-bit MT optical"       active={svEncoder==='4'} onClick={() => update('svEncoder','4')} />
+          </div>
+                    <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step8: Output Shaft */}
+      {svEncoder && !svOutput && (
+        <div className="mt-6 space-y-3">
+          <h3 className="font-semibold text-white drop-shadow">Step 8 — Output Shaft</h3>
+          <div className="flex flex-wrap gap-3">
+            <PillBtn value="0" label="0 : Flange output"                        active={svOutput==='0'} onClick={() => update('svOutput','0')} />
+            <PillBtn value="2" label="2 : Straight shaft, keyway, no thread"    active={svOutput==='2'} onClick={() => update('svOutput','2')} />
+            <PillBtn value="6" label="6 : Straight shaft, keyway, threaded"     active={svOutput==='6'} onClick={() => update('svOutput','6')} />
+          </div>
+                   <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+
+      {/* Step9: Model Code + ปุ่มยืนยัน */}
+      {svInertia && svFlange && svVoltage && svPowerCode && svSpeed && svOption && svEncoder && svOutput && (
+        <div className="text-center space-y-4 mt-8">
+          <h3 className="text-xl font-bold text-white drop-shadow">Model Code</h3>
+          <div className="font-mono text-lg text-white/90">{code}</div>
+          {/* iPad frame + GIF (Servo) ใต้ Model code */}
+     {(() => {
+       const gif = servoGifForSelection();
+       if (!gif) return null;
+       return (
+         <div className="mt-6 flex justify-center">
+           {/* กรอบ iPad */}
+           <div className="
+             relative
+             w-[800px] h-[600px]
+             sm:w-[720px] sm:h-[540px]
+             md:w-[900px] md:h-[675px]
+             bg-black p-6 rounded-[2rem] shadow-2xl ring-1 ring-white/10
+           ">
+             {/* กล้องหน้า */}
+             <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2">
+               <span className="block w-3 h-3 rounded-full bg-black ring-2 ring-white/20" />
+               <span className="block w-2 h-2 rounded-full bg-black ring-2 ring-white/15" />
+             </div>
+             {/* หน้าจอ iPad */}
+             <div className="w-full h-full rounded-[1.5rem] overflow-hidden bg-white">
+               <img src={gif} alt="Servo preview" className="w-full h-full object-contain" />
+             </div>
+           </div>
+         </div>
+       );
+     })()}
+          <button
+                    onClick={(e) => sweepAnd(e, () => onConfirm && onConfirm(code))}
+            className="btn-sweep px-2 py-1 mx-auto" style={{ width: 'auto', display: 'inline-flex' }}
+          >
+            <span className="btn-3d-label text-sm leading-none hover:bg-blue-600">Download 3D</span>
+            <div className="btn-3d-sweep" />
+          </button>
+
+          {/* Back ลอยมุมซ้ายล่างทุก Step */}
+          <button
+            onClick={backOneStep}
+            className="fixed bottom-4 left-4 z-50 px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+          >
+            ย้อนกลับ
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+
+
+
+
+
