@@ -78,6 +78,64 @@ function mapBLDCDownloadFilename(modelCode) {
    return null; // ไม่แตะ S
  }
 
+// [ADD-PLANETARY-DL-HEAD]
+async function headOk(url, minBytes = 1024) {
+  try {
+    const res = await fetch(url, { method: 'HEAD' });
+    if (!res.ok) return false;
+    const len = parseInt(res.headers.get('content-length') || '0', 10);
+    // ถ้า server ไม่ส่ง content-length ก็ถือว่าโอเค (บาง dev server ไม่มีหัวนี้)
+    return Number.isFinite(len) ? len >= minBytes : true;
+  } catch {
+    return false;
+  }
+}
+
+// [ADD-PLANETARY-DL-RESOLVE]
+async function resolvePlanetaryStepUrl(planetState) {
+  const { series, size, shaftDir } = planetState || {};
+  if (!series || !size) throw new Error('ข้อมูลไม่พอ: series/size');
+
+  const base = `${series}${String(size)}`;
+
+  // ZT: บังคับรูปแบบ {Series}{Size}-{ShaftDir}-1-001.STEP
+  if (series === 'ZT') {
+    if (!shaftDir) throw new Error('ZT ต้องมี Shaft Direction');
+    const fn = `${base}-${shaftDir}-1-001.STEP`;
+    const url = `${process.env.PUBLIC_URL}/model/${fn}`;
+    if (await headOk(url)) return url;
+    throw new Error(`ไม่พบไฟล์: ${fn}`);
+  }
+
+  // นอกเหนือจาก ZT:
+  // 1) ถ้ามี manifest.json ให้เช็กก่อน
+  const manifestUrl = `${process.env.PUBLIC_URL}/model/manifest.json`;
+  try {
+    const mr = await fetch(manifestUrl);
+    if (mr.ok) {
+      const map = await mr.json(); // { "ZB042": "ZB042-100T3.STEP", ... }
+      const mapped = map[base];
+      if (mapped) {
+        const mu = `${process.env.PUBLIC_URL}/model/${mapped}`;
+        if (await headOk(mu)) return mu;
+      }
+    }
+  } catch { /* ไม่มี manifest ก็ข้าม */ }
+
+  // 2) ไม่มี/ไม่ตรงใน manifest → ลองชื่อไฟล์พื้นฐานตามลำดับ
+  const candidates = [
+    `${base}.STEP`,
+    `${base}-100T3.STEP`, // ตัวอย่างที่คุณบอก
+  ];
+
+  for (const fn of candidates) {
+    const url = `${process.env.PUBLIC_URL}/model/${fn}`;
+    if (await headOk(url)) return url;
+  }
+
+  throw new Error(`ไม่พบไฟล์ 3D ของ ${base} ใน /public/model/`);
+}
+
 
 function mapBLDCDownloadURL(modelCode) {
   const name = mapBLDCDownloadFilename(modelCode);
@@ -403,6 +461,22 @@ const handlePlanetaryHome = () => {
   setSelectedProduct(null);
 };
 
+// [ADD-PLANETARY-DL-HANDLER]
+async function handlePlanetaryDownload3D() {
+  try {
+    const url = await resolvePlanetaryStepUrl(planetState);
+    const fileName = url.split('/').pop();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;      // บังคับให้เป็นการดาวน์โหลด ไม่ใช่เปิดหน้า
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (err) {
+    alert(err?.message || 'ไม่สามารถดาวน์โหลดไฟล์ 3D ได้');
+  }
+}
+
 
 const onConfirm = (modelCode) => {
   const models = Array.isArray(modelCode) ? modelCode : [modelCode];
@@ -689,8 +763,8 @@ const getFileUrl = () => {
 
       {/* SVG Title กลาง */}
       <svg
-        viewBox="0 0 1200 240"
-        className="w-auto h-[120px] md:h-[145px] lg:h-[165px] select-none"
+        viewBox="0 0 800 240"
+        className="w-auto h-[160px] md:h-[185px] lg:h-[195px] select-none"
         preserveAspectRatio="xMidYMid meet"
         aria-label="SAS 3D.STEP"
       >
@@ -699,7 +773,7 @@ const getFileUrl = () => {
           {/* อิง viewBox กว้าง 1200 เพื่อให้กวาดครอบคลุมถึงคำว่า STEP */}
           <linearGradient
             id="luxGradient"
-            x1="0" y1="0" x2="1200" y2="0"
+            x1="0" y1="0" x2="800" y2="0"
             gradientUnits="userSpaceOnUse"
             spreadMethod="pad"
           >
@@ -766,7 +840,7 @@ const getFileUrl = () => {
       <img
         src={ANR}
         alt="Right accent"
-        className="h-[132px] md:h-[160px] lg:h-[180px] object-contain select-none"
+        className="h-[142px] md:h-[170px] lg:h-[190px] object-contain select-none"
         draggable="false"
         aria-hidden="true"
       />
