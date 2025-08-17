@@ -78,62 +78,120 @@ function mapBLDCDownloadFilename(modelCode) {
    return null; // ไม่แตะ S
  }
 
-// [ADD-PLANETARY-DL-HEAD]
-async function headOk(url, minBytes = 1024) {
+// ===== helper: สร้าง URL แบบ absolute ไปยัง public/model =====
+const buildModelUrl = (fileName) => {
+  const base = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  return `${base}/model/${encodeURIComponent(fileName)}`;
+};
+
+// ===== check: HEAD ก่อน, ถ้าไม่ชัดเจนค่อย GET จริง ตรวจชนิด/ขนาด =====
+async function checkFileAvailable(fileName, minBytes = 256) {
+  const url = buildModelUrl(fileName);
+
+  // 1) HEAD (ถ้ารองรับและไม่ได้ตอบเป็น text/html ก็ใช้ลิงก์ตรงได้)
   try {
-    const res = await fetch(url, { method: 'HEAD' });
-    if (!res.ok) return false;
-    const len = parseInt(res.headers.get('content-length') || '0', 10);
-    // ถ้า server ไม่ส่ง content-length ก็ถือว่าโอเค (บาง dev server ไม่มีหัวนี้)
-    return Number.isFinite(len) ? len >= minBytes : true;
+    const head = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+    if (head.ok) {
+      const ct  = (head.headers.get('content-type') || '').toLowerCase();
+      const len = parseInt(head.headers.get('content-length') || '0', 10);
+      // dev server บางตัวไม่ส่ง content-length; ถ้าไม่ใช่ html ก็โอเค
+      if (!ct.includes('text/html') && (!Number.isFinite(len) || len >= minBytes)) {
+        return { mode: 'href', url, filename: fileName };
+      }
+      // ถ้าเป็น html/หรือขนาดน้อย → ตกไป GET เพื่อตรวจจริง
+    }
+  } catch { /* ตกไป GET */ }
+
+  // 2) GET จริง (กันเคส SPA fallback / HEAD ใช้ไม่ได้) + กัน cache
+  try {
+    const url2 = `${url}?t=${Date.now()}`;
+    const res = await fetch(url2, { method: 'GET', cache: 'no-store' });
+    if (!res.ok) return null;
+
+    const ct   = (res.headers.get('content-type') || '').toLowerCase();
+    const blob = await res.blob();
+    // ถ้าเป็น html ให้ถือว่าไม่ใช่ไฟล์ 3D
+    if (ct.includes('text/html')) return null;
+    if (blob.size < minBytes) return null;
+
+    // OK: ส่ง blob กลับเพื่อดาวน์โหลด
+    return { mode: 'blob', blob, url, filename: fileName };
   } catch {
-    return false;
+    return null;
   }
 }
 
-// [ADD-PLANETARY-DL-RESOLVE]
-async function resolvePlanetaryStepUrl(planetState) {
+// ===== map model → ชื่อไฟล์จริงตามเงื่อนไขคุณ แล้วเช็กว่ามีไฟล์จริง =====
+async function resolvePlanetaryStep(planetState) {
   const { series, size, shaftDir } = planetState || {};
   if (!series || !size) throw new Error('ข้อมูลไม่พอ: series/size');
 
-  const base = `${series}${String(size)}`;
+  const base = `${series}${String(size)}`;  // เช่น "ZB042"
 
-  // ZT: บังคับรูปแบบ {Series}{Size}-{ShaftDir}-1-001.STEP
+  // --- ZT: บังคับ {Series}{Size}-{ShaftDir}-1-001.STEP ---
   if (series === 'ZT') {
     if (!shaftDir) throw new Error('ZT ต้องมี Shaft Direction');
-    const fn = `${base}-${shaftDir}-1-001.STEP`;
-    const url = `${process.env.PUBLIC_URL}/model/${fn}`;
-    if (await headOk(url)) return url;
+    const fn = `${base}-${shaftDir}-1-001.STEP`;        // ex. ZT075-L-1-001.STEP
+    const ok = await checkFileAvailable(fn);
+    if (ok) return ok;
     throw new Error(`ไม่พบไฟล์: ${fn}`);
   }
 
-  // นอกเหนือจาก ZT:
-  // 1) ถ้ามี manifest.json ให้เช็กก่อน
-  const manifestUrl = `${process.env.PUBLIC_URL}/model/manifest.json`;
+  // --- ซีรีส์อื่น: ใช้ manifest ถ้ามี ---
+  const manifestUrl = buildModelUrl('manifest.json');
   try {
-    const mr = await fetch(manifestUrl);
+    const mr = await fetch(`${manifestUrl}?t=${Date.now()}`, { cache: 'no-store' });
     if (mr.ok) {
-      const map = await mr.json(); // { "ZB042": "ZB042-100T3.STEP", ... }
+      const map = await mr.json();                      // { "ZB042": "ZB042-100T3.STEP", ... }
       const mapped = map[base];
       if (mapped) {
-        const mu = `${process.env.PUBLIC_URL}/model/${mapped}`;
-        if (await headOk(mu)) return mu;
+        const ok = await checkFileAvailable(mapped);
+        if (ok) return ok;
       }
     }
-  } catch { /* ไม่มี manifest ก็ข้าม */ }
+  } catch { /* ไม่มี/อ่านไม่ได้ ก็ข้าม */ }
 
-  // 2) ไม่มี/ไม่ตรงใน manifest → ลองชื่อไฟล์พื้นฐานตามลำดับ
+  // --- ถ้าไม่มี manifest หรือไม่เจอ mapping → ลองชื่อพื้นฐานตามลำดับ ---
   const candidates = [
-    `${base}.STEP`,
-    `${base}-100T3.STEP`, // ตัวอย่างที่คุณบอก
+    `${base}.STEP`,            // eg. ZB042.STEP (ถ้ามี)
+    `${base}-100T3.STEP`,      // eg. ZB042-100T3.STEP (เห็นในโฟลเดอร์คุณ)
   ];
 
   for (const fn of candidates) {
-    const url = `${process.env.PUBLIC_URL}/model/${fn}`;
-    if (await headOk(url)) return url;
+    const ok = await checkFileAvailable(fn);
+    if (ok) return ok;
   }
 
   throw new Error(`ไม่พบไฟล์ 3D ของ ${base} ใน /public/model/`);
+}
+
+// ===== ปุ่ม "ยืนยันและรับไฟล์" ให้เรียกตัวนี้ =====
+async function handlePlanetaryDownload3D() {
+  try {
+    const res = await resolvePlanetaryStep(planetState); // ใช้ planetState ปัจจุบันของคุณ
+    const fileName = res.filename || (res.url.split('/').pop() || 'model.STEP');
+
+    if (res.mode === 'href') {
+      const a = document.createElement('a');
+      a.href = res.url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } else {
+      const blobUrl = URL.createObjectURL(res.blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    }
+  } catch (err) {
+    console.error('Download check failed:', err);
+    alert(err?.message || 'ไม่สามารถดาวน์โหลดไฟล์ 3D ได้');
+  }
 }
 
 
@@ -195,6 +253,11 @@ function App() {
   const [selectedModel, setSelectedModel] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
+    useEffect(() => {
+  if (typeof emailjs?.init === 'function') {
+    emailjs.init('J6kLpbLcieCe2cKzU'); // ใช้ Public Key เดิมของคุณ
+  }
+}, []);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const [acMotorType, setAcMotorType] = useState(null);
@@ -461,23 +524,6 @@ const handlePlanetaryHome = () => {
   setSelectedProduct(null);
 };
 
-// [ADD-PLANETARY-DL-HANDLER]
-async function handlePlanetaryDownload3D() {
-  try {
-    const url = await resolvePlanetaryStepUrl(planetState);
-    const fileName = url.split('/').pop();
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;      // บังคับให้เป็นการดาวน์โหลด ไม่ใช่เปิดหน้า
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } catch (err) {
-    alert(err?.message || 'ไม่สามารถดาวน์โหลดไฟล์ 3D ได้');
-  }
-}
-
-
 const onConfirm = (modelCode) => {
   const models = Array.isArray(modelCode) ? modelCode : [modelCode];
   setModelCodeList(models);
@@ -491,7 +537,7 @@ const onConfirm = (modelCode) => {
       acPower &&
       acVoltage &&
       acOption &&
-      acGearHead &&
+      acGearHead &&	
       acRatio
     ) {
       const powerArray = acPower.split(',').map(p => p.trim());
@@ -578,8 +624,13 @@ const handleSendVerificationCode = () => {
   .then(() => {
     toast.success('✅ ส่งรหัสแล้ว กรุณาตรวจสอบอีเมลของคุณ');
   })
-  .catch(() => {
-    toast.error('❌ ส่งรหัสไม่สำเร็จ กรุณาลองใหม่');
+    .catch((err) => {
+         toast.error('❌ ส่งรหัสไม่สำเร็จ กรุณาลองใหม่');
+    // เฉพาะตอนพัฒนา (localhost) ให้โชว์โค้ดที่เพิ่งสุ่ม เพื่อทดสอบ flow ต่อได้ทันที
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      toast.info(`(DEV) รหัสยืนยันของคุณคือ: ${code}`);
+    }
+    // ถ้าต้องการดูสาเหตุจริง: console.log(err);
   });
 };
 
@@ -612,7 +663,30 @@ const handleDownload = async () => {
 
   // ✅ ดาวน์โหลดไฟล์ .STEP แบบเสถียร
   setIsDownloading(true);
-  try {
+  try { 
+      // ✅ Planetary Gear: ใช้ตัว resolver เฉพาะ เพื่อชี้ไฟล์จริงจาก /public/model
+    if (selectedProduct === 'Planetary Gear') {
+      const res = await resolvePlanetaryStep(planetState);
+      if (res.mode === 'href') {
+        const a = document.createElement('a');
+        a.href = res.url;
+        a.download = res.filename || 'model.STEP';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else if (res.mode === 'blob' && res.blob) {
+        const blobUrl = URL.createObjectURL(res.blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = res.filename || 'model.STEP';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      }
+      // ออกจากฟังก์ชันทันที (finally เดิมยังทำงาน: ปิดโหลด/ปิดฟอร์ม)
+      return;
+    }
   const url = getFileUrl(); // ตอนนี้ getFileUrl() map ชื่อ BLDC ให้แล้ว
 
   // 1) เช็กก่อนว่าไฟล์มีจริง
@@ -710,6 +784,11 @@ const getFileUrl = () => {
    const gearFromModel = m ? m[1] : null;
    const effectiveGear  = bldcGearType || gearFromModel;
    const withSTEP = (name) => name.endsWith('.STEP') ? name : `${name}.STEP`;
+      // HE (SF/SL) → ใช้ static filename ที่คุณ map ไว้อยู่แล้ว
+      if (bldcHEType === 'SF' || bldcHEType === 'SL') {
+       const heName = mapBLDCHEStaticFilename(selectedModel, bldcHEType);
+   if (heName) return `${base}/model/${encodeURIComponent(withSTEP(heName))}?v=${Date.now()}`;
+   }
 
    // Nol: GN/GNL/GU/GUL → map เป็นชื่อไฟล์คงที่ตาม prefix
    if (effectiveGear) {
