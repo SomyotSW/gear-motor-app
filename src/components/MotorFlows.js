@@ -246,6 +246,55 @@ import Gif1300CEImg from '../assets/servo/Gif1300CE.gif';
 import Gif7500Img from '../assets/servo/Gif7500.gif';
 import Gif7500CEImg from '../assets/servo/Gif7500CE.gif';
 
+// [ADD] HB images
+import HB1Img   from '../assets/hb/HB1.png';
+import ZDY1Img  from '../assets/hb/ZDY1.png';
+
+import HTypeImg from '../assets/hb/HType.png';
+import BTypeImg from '../assets/hb/BType.png';
+
+import HST1Img  from '../assets/hb/HST1.png';
+import HST2Img  from '../assets/hb/HST2.png';
+import HST3Img  from '../assets/hb/HST3.png';
+import HST4Img  from '../assets/hb/HST4.png';
+
+import BST2Img  from '../assets/hb/BST2.png';
+import BST3Img  from '../assets/hb/BST3.png';
+import BST4Img  from '../assets/hb/BST4.png';
+
+// Output shaft structure (H)
+import H__SImg  from '../assets/hb/H..S.png';
+import H__HImg  from '../assets/hb/H..H.png';
+import H__DImg  from '../assets/hb/H..D.png';
+import H__KImg  from '../assets/hb/H..K.png';
+import H__FImg  from '../assets/hb/H..F.png';
+
+// Output shaft structure (B)
+import B__SImg  from '../assets/hb/B..S.png';
+import B__HImg  from '../assets/hb/B..H.png';
+import B__DImg  from '../assets/hb/B..D.png';
+import B__DFImg from '../assets/hb/B..DF.png';
+import B__KImg  from '../assets/hb/B..K.png';
+import B__FImg  from '../assets/hb/B..F.png';
+
+// Mounting Position
+import HHORImg  from '../assets/hb/HHOR.png';
+import HVERImg  from '../assets/hb/HVER.png';
+import BHORImg  from '../assets/hb/BHOR.png';
+import BVERImg  from '../assets/hb/BVER.png';
+
+// ZDY / ZLY / … (Step 2)
+import ZDYImg   from '../assets/hb/ZDY.png';
+import ZLYImg   from '../assets/hb/ZLY.png';
+import ZSYImg   from '../assets/hb/ZSY.png';
+import ZFYImg   from '../assets/hb/ZFY.png';
+import DBYImg   from '../assets/hb/DBY.png';
+import DCYImg   from '../assets/hb/DCY.png';
+import DFYImg   from '../assets/hb/DFY.png';
+import DBYKImg  from '../assets/hb/DBYK.png';
+import DCYKImg  from '../assets/hb/DCYK.png';
+import DFYKImg  from '../assets/hb/DFYK.png';
+
 
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
@@ -3175,6 +3224,382 @@ const servoGifForSelection = () => {
       )}
     </>
   );
+}
+
+
+// === [ADD] HB: Model Code ===
+// รูปแบบ: (Series)(Stage)(Output)(Mounting)(Size)-(Ratio)-(ShaftDesign)
+// ตัวอย่าง: H3SH15-56-A , B2HH5-7.1-E , B2FV8-11.2-F
+export function generateHBModelCode(hbState) {
+  const {
+    hbSeries,          // 'HB' หรือ 'ZDYFAMILY' (กดจาก Step1)
+    hbHBType,          // 'H' | 'B' (เฉพาะเมื่อเลือก HB Series)
+    hbStage,           // 1..4 (H: 1–4, B: 2–4)
+    hbOutput,          // 'S'|'H'|'D'|'K'|'F'|'DF' (ตาม series/เงื่อนไข)
+    hbMount,           // 'H'|'V'
+    hbSize,            // เลข size ตาม step6
+    hbRatio,           // ค่าอัตราทดจาก step7
+    hbShaftDesign,     // 'A'..'I' (H), 'A'..'F' (B)
+    hbZdySelected      // กรณี ZDY/… (Step2 รายการ 10 ปุ่ม) – ยังไม่รวมลงรหัสจนกว่าจะสเปกฟอร์แมต
+  } = hbState || {};
+
+  // เฉพาะ HB Series สร้างโค้ดทันที
+  if (hbSeries === 'HB') {
+    if (!hbHBType || !hbStage || !hbOutput || !hbMount || !hbSize || !hbRatio || !hbShaftDesign) {
+      return null;
+    }
+    const seriesLetter = hbHBType; // 'H' หรือ 'B'
+    const stageStr     = String(hbStage);
+    const outStr       = hbOutput; // S/H/D/K/F/DF
+    const mountStr     = hbMount;  // H/V
+    const sizeStr      = String(hbSize);
+    const ratioStr     = String(hbRatio);
+    const designStr    = hbShaftDesign; // A..I หรือ A..F
+
+    return `${seriesLetter}${stageStr}${outStr}${mountStr}${sizeStr}-${ratioStr}-${designStr}`;
+  }
+
+  // ZDY/… Series: ยังรอข้อมูลรูปแบบโค้ด → คืน null ไปก่อน
+  return null;
+}
+
+// === [ADD] HB: Render Flow ===
+// Step 1 → Step 9 ตามสเปกผู้ใช้
+export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
+  const {
+    hbSeries, hbHBType, hbStage, hbOutput, hbMount,
+    hbSize, hbRatio, hbShaftDesign, hbZdySelected
+  } = hbState || {};
+
+  const update = (k, v) => {
+    const fn = hbSetters?.[`set${k.charAt(0).toUpperCase()}${k.slice(1)}`];
+    if (typeof fn === 'function') fn(v);
+  };
+
+// ===== Helpers: reset / back / home =====
+ const resetAll = () => {
+   update('hbSeries', null);
+   update('hbHBType', null);
+   update('hbStage', null);
+   update('hbOutput', null);
+   update('hbMount', null);
+   update('hbSize', null);
+   update('hbRatio', null);
+   update('hbShaftDesign', null);
+   update('hbZdySelected', null);
+ };
+
+ const goHome = () => {
+   resetAll();
+   if (typeof onHome === 'function') onHome(); // ให้ App.jsx พากลับหน้า Product + เคลียร์ state แบบ global
+ };
+
+ // ถอยกลับทีละขั้น (ลำดับย้อนกลับจาก Step9 → Step1)
+ const goBack = () => {
+   if (hbShaftDesign != null) return update('hbShaftDesign', null);
+   if (hbRatio != null)       return update('hbRatio', null);
+   if (hbSize != null)        return update('hbSize', null);
+   if (hbMount != null)       return update('hbMount', null);
+   if (hbOutput != null)      return update('hbOutput', null);
+   if (hbStage != null)       return update('hbStage', null);
+   if (hbHBType != null)      return update('hbHBType', null);
+   if (hbZdySelected != null) return update('hbZdySelected', null);
+   if (hbSeries != null)      return update('hbSeries', null);
+ };
+
+  // --- Utilities ---
+  const Tile = ({img, label, onClick}) => (
+    <button onClick={onClick} className="relative tilt-card bg-white rounded-xl p-3 shadow-md hover:shadow-2xl transition transform hover:-translate-y-1 active:scale-105">
+      <span className="sheen-layer"></span>
+      <span className="glow-layer"></span>
+      <img src={img} alt={label} className="h-64 w-64 object-contain card-image" />
+      <div className="mt-1 text-sm font-semibold">{label}</div>
+    </button>
+  );
+
+  // --- Step 1: เลือกตระกูล ---
+  if (!hbSeries) {
+    return (
+      <div className="space-y-4 mt-6">
+ {/* Top bar: Back/Home */}
+       <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+          Step 1 — เลือกกลุ่มซีรีส์
+        </h3>
+        <div className="grid grid-cols-2 gap-4 justify-items-center">
+          <Tile img={HB1Img}  label="HB Series" onClick={() => update('hbSeries','HB')} />
+          <Tile img={ZDY1Img} label="ZDY/ZLY/ZSY/…" onClick={() => update('hbSeries','ZDYFAMILY')} />
+        </div>
+      </div>
+    );
+  }
+
+  // --- Step 2: ถ้า HB Series → เลือก H/B | ถ้า ZDYFAMILY → แสดง 10 ปุ่ม ---
+  if (hbSeries === 'HB' && !hbHBType) {
+    return (
+      <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+          Step 2 — เลือก Series (HB)
+        </h3>
+        <div className="grid grid-cols-2 gap-4 justify-items-center">
+          <Tile img={HTypeImg} label="H Series" onClick={() => update('hbHBType','H')} />
+          <Tile img={BTypeImg} label="B Series" onClick={() => update('hbHBType','B')} />
+        </div>
+      </div>
+    );
+  }
+
+  if (hbSeries === 'ZDYFAMILY' && !hbZdySelected) {
+    const ZLIST = [
+      {k:'ZDY',img:ZDYImg},{k:'ZLY',img:ZLYImg},{k:'ZSY',img:ZSYImg},{k:'ZFY',img:ZFYImg},
+      {k:'DBY',img:DBYImg},{k:'DCY',img:DCYImg},{k:'DFY',img:DFYImg},
+      {k:'DBYK',img:DBYKImg},{k:'DCYK',img:DCYKImg},{k:'DFYK',img:DFYKImg},
+    ];
+    return (
+      <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow">Step 2 — เลือก Series (ZDY/ZLY/…)</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center">
+          {ZLIST.map(it => (
+            <Tile key={it.k} img={it.img} label={it.k} onClick={() => update('hbZdySelected',it.k)} />
+          ))}
+        </div>
+        <p className="text-white/80 mt-2">* กลุ่มนี้จะลงรายละเอียดเพิ่มเติมภายหลัง</p>
+      </div>
+    );
+  }
+
+  // --- Step 3: Stage of Gear ---
+  if (hbSeries === 'HB' && hbHBType && !hbStage) {
+    const HST = [
+      {label:'1 Stage', img:HST1Img, v:1},
+      {label:'2 Stage', img:HST2Img, v:2},
+      {label:'3 Stage', img:HST3Img, v:3},
+      {label:'4 Stage', img:HST4Img, v:4},
+    ];
+    const BST = [
+      {label:'2 Stage', img:BST2Img, v:2},
+      {label:'3 Stage', img:BST3Img, v:3},
+      {label:'4 Stage', img:BST4Img, v:4},
+    ];
+    const LIST = hbHBType === 'H' ? HST : BST;
+
+    return (
+      <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow">Step 3 — Stage of Gear</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">
+          {LIST.map(it => (
+            <Tile key={it.v} img={it.img} label={it.label} onClick={() => update('hbStage', it.v)} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Step 4: Output shaft structure ---
+  if (hbSeries === 'HB' && hbHBType && hbStage && !hbOutput) {
+    const isH = hbHBType === 'H';
+    const allow = isH
+      ? (hbStage === 1
+          ? [{k:'S',label:'S Solid shaft',img:H__SImg}] // H + 1Stage → S เท่านั้น
+          : [
+              {k:'S',label:'S Solid shaft',img:H__SImg},
+              {k:'H',label:'H Hollow shaft-Keyway',img:H__HImg},
+              {k:'D',label:'D Hollow shaft-Shrink disc',img:H__DImg},
+              {k:'K',label:'K Hollow shaft-Splined',img:H__KImg},
+              {k:'F',label:'F Hollow shaft-Keyway-Flange mounted',img:H__FImg},
+            ])
+      : [
+          {k:'S',label:'S Solid shaft',img:B__SImg},
+          {k:'H',label:'H Hollow shaft-Keyway',img:B__HImg},
+          {k:'D',label:'D Hollow shaft-Shrink disc',img:B__DImg},
+          {k:'DF',label:'DF Hollow shaft-Shrink disc with fan',img:B__DFImg},
+          {k:'K',label:'K Hollow shaft-Splined',img:B__KImg},
+          {k:'F',label:'F Hollow shaft-Keyway-Flange mounted',img:B__FImg},
+        ];
+
+    return (
+      <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow">Step 4 — Output shaft structure</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center">
+          {allow.map(it => (
+            <Tile key={it.k} img={it.img} label={it.label} onClick={() => update('hbOutput', it.k)} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Step 5: Mounting Position (H/V) ---
+  if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && !hbMount) {
+    const imgs = hbHBType === 'H'
+      ? [{k:'H',label:'H : Horizontal',img:HHORImg},{k:'V',label:'V : Vertical',img:HVERImg}]
+      : [{k:'H',label:'H : Horizontal',img:BHORImg},{k:'V',label:'V : Vertical',img:BVERImg}];
+
+    return (
+      <div className="space-y-4 mt-6">
+             <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow">Step 5 — Mounting Position</h3>
+        <div className="grid grid-cols-2 gap-4 justify-items-center">
+          {imgs.map(it => (
+            <Tile key={it.k} img={it.img} label={it.label} onClick={() => update('hbMount', it.k)} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Step 6: Gear Size (ตามเงื่อนไขที่ให้) ---
+  if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && !hbSize) {
+    let sizeList = [];
+    if (hbHBType === 'H') {
+      if (hbStage === 1) sizeList = [1,3,5,7,9,11,13,15,17,19];
+      if (hbStage === 2) sizeList = [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+      if (hbStage === 3) sizeList = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+      if (hbStage === 4) sizeList = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+    } else {
+      if (hbStage === 2) sizeList = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
+      if (hbStage === 3) sizeList = [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+      if (hbStage === 4) sizeList = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+    }
+    return (
+      <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow">Step 6 — Gear Size</h3>
+        <div className="flex flex-wrap gap-2">
+          {sizeList.map(s => (
+            <button key={s} onClick={() => update('hbSize', s)} className="px-4 py-2 rounded bg-white shadow hover:shadow-lg">{s}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Step 7: Ratio (ตามเงื่อนไขที่ให้) ---
+  if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize && !hbRatio) {
+    let ratioList = [];
+    if (hbHBType === 'H') {
+      if (hbStage === 1) ratioList = [1.25,1.4,1.6,1.8,2,2.24,2.5,2.8,3.15,3.55,4,4.5,5,5.6];
+      if (hbStage === 2) ratioList = [6.3,7.1,8,9,10,11.2,12.5,14,16,18,20,22.4,25,28];
+      if (hbStage === 3) ratioList = [22.4,25,28,31.5,35.5,40,45,50,56,63,71,80,90,100,112];
+      if (hbStage === 4) ratioList = [100,112,125,140,160,180,200,224,250,280,315,355,400,450];
+    } else {
+      if (hbStage === 2) ratioList = [5,5.6,6.3,7.1,8,9,10,11.2,12.5,14,16,18];
+      if (hbStage === 3) ratioList = [12.5,14,16,18,20,22.4,25,28,31.5,35.5,40,45,50,56,63,71,80,90];
+      if (hbStage === 4) ratioList = [80,90,100,112,125,140,160,180,200,224,250,280,315,355,400];
+    }
+    return (
+      <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow">Step 7 — Ratio</h3>
+        <div className="flex flex-wrap gap-2">
+          {ratioList.map(r => (
+            <button key={r} onClick={() => update('hbRatio', r)} className="px-4 py-2 rounded bg-blue-200 hover:bg-blue-400">{r}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Step 8: Shaft Design ---
+  if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize && hbRatio && !hbShaftDesign) {
+    const list = hbHBType === 'H'
+      ? ['A','B','C','D','E','F','G','H','I']
+      : ['A','B','C','D','E','F'];
+    return (
+      <div className="space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow">Step 8 — Shaft Design</h3>
+        <div className="flex flex-wrap gap-2">
+          {list.map(ch => (
+            <button key={ch} onClick={() => update('hbShaftDesign', ch)} className="px-4 py-2 rounded bg-white shadow hover:shadow-lg">{ch}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Step 9: Model Code + Final ---
+  if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize && hbRatio && hbShaftDesign) {
+    const code = generateHBModelCode(hbState);
+    const base = (typeof process !== 'undefined' && process.env && process.env.PUBLIC_URL) || '';
+    const downloadUrl = code ? `${base}/model/${encodeURIComponent(code)}.STEP` : null;
+
+    return (
+      <div className="text-center space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
+       </div>
+        <h2 className="text-2xl font-bold text-blue-700">{code}</h2>
+
+        <button
+          onClick={() => onConfirm && code && onConfirm(code)}
+          className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          เสร็จสิ้น
+        </button>
+
+        <FinalResult
+          modelCode={code}
+          downloadLink={downloadUrl}
+          onReset={() => {
+            update('hbSeries', null);
+            update('hbHBType', null);
+            update('hbStage', null);
+            update('hbOutput', null);
+            update('hbMount', null);
+            update('hbSize', null);
+            update('hbRatio', null);
+            update('hbShaftDesign', null);
+            update('hbZdySelected', null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // กรณี ZDYFAMILY เลือกแล้ว แต่ยังไม่มีสเปกถัดไป
+  if (hbSeries === 'ZDYFAMILY' && hbZdySelected) {
+    return (
+      <div className="space-y-4 mt-6">
+        <h3 className="text-white font-bold drop-shadow">คุณเลือก: {hbZdySelected}</h3>
+        <p className="text-white/80">* รอข้อมูลสเปกเพิ่มเติมเพื่อสร้างขั้นตอนต่อไป</p>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 

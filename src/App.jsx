@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode } from './components/MotorFlows.js';
+import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode } from './components/MotorFlows.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
@@ -314,6 +314,21 @@ const servoSetters = {
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
     const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
 
+// === [ADD] HB states ===
+const [hbSeries, setHbSeries] = useState(null);            // 'HB' | 'ZDYFAMILY'
+const [hbHBType, setHbHBType] = useState(null);            // 'H' | 'B' (เฉพาะ HB)
+const [hbStage, setHbStage] = useState(null);              // number
+const [hbOutput, setHbOutput] = useState(null);            // 'S'|'H'|'D'|'K'|'F'|'DF'
+const [hbMount, setHbMount] = useState(null);              // 'H'|'V'
+const [hbSize, setHbSize] = useState(null);                // number
+const [hbRatio, setHbRatio] = useState(null);              // number
+const [hbShaftDesign, setHbShaftDesign] = useState(null);  // 'A'..'I' or 'A'..'F'
+const [hbZdySelected, setHbZdySelected] = useState(null);  // 'ZDY', 'ZLY', ...
+
+const hbState = { hbSeries, hbHBType, hbStage, hbOutput, hbMount, hbSize, hbRatio, hbShaftDesign, hbZdySelected };
+const hbSetters = { setHbSeries, setHbHBType, setHbStage, setHbOutput, setHbMount, setHbSize, setHbRatio, setHbShaftDesign, setHbZdySelected };
+
+
 const COMING_SOON = new Set([
   'DC Gear Motor',
   'SPN Series',
@@ -352,6 +367,16 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
     setRkfsDesignSuffix(null);
+// [ADD] เคลียร์สถานะ HB ทั้งหมด
+  setHbSeries(null);
+  setHbHBType(null);
+  setHbStage(null);
+  setHbOutput(null);
+  setHbMount(null);
+  setHbSize(null);
+  setHbRatio(null);
+  setHbShaftDesign(null);
+  setHbZdySelected(null);
 };
 
     const resetRKFSState = () => {
@@ -1343,6 +1368,20 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   </>
 )}
 
+{selectedProduct === 'HB Gearbox Series' && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">HB Gearbox Selection</h2>
+      <button className="text-blue-600 hover:underline" onClick={handleBackUniversal}>Home</button>
+    </div>
+
+    {renderHBGearFlow(hbState, hbSetters, (modelCode) => {
+      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+      setModelCodeList(models);
+      setSelectedModel(models[0]);
+    }, handleBackUniversal)}
+  </>
+)}
 
 
 
@@ -1360,6 +1399,8 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
     })}
   </>
 )}
+
+
 
 {/* 🟩 RKFS Series หลังเลือก model แล้ว */}
 {selectedProduct === 'RKFS Series' && selectedModel && !showForm && (
