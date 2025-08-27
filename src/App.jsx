@@ -1437,14 +1437,27 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   <>
     <div className="flex justify-between items-center mt-6">
       <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">HB Gearbox Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBackUniversal}>Home</button>
+      <button className="text-blue-600 hover:underline" onClick={handleBackWithReset}>Home</button>
     </div>
-
-    {renderHBGearFlow(hbState, hbSetters, (modelCode) => {
-      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-      setModelCodeList(models);
-      setSelectedModel(models[0]);
-    }, handleBackUniversal)}
+{renderHBGearFlow(
+   hbState,
+   hbSetters,
+   // (onConfirm) — ถ้าคุณยังอยากให้กดไปหน้าสรุปเฉย ๆ ก็เก็บไว้ได้
+   (modelCode) => {
+     const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+     setModelCodeList(models);
+     setSelectedModel(models[0]);
+   },
+   // onHome → กลับหน้า Product รวม + reset ส่วนกลาง
+   handleBackUniversal,
+   // onDownload → ตั้งรุ่น + เปิดฟอร์มเหมือน product อื่น
+   (modelCode) => {
+     const models = [modelCode];
+     setModelCodeList(models);
+     setSelectedModel(modelCode);
+     setShowForm(true);        // ใช้ฟอร์มเดียวกับ product อื่น (ชื่อ/อีเมล/ฯลฯ)
+   }
+ )}
   </>
 )}
 

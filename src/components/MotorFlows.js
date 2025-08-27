@@ -3265,7 +3265,7 @@ export function generateHBModelCode(hbState) {
 
 // === [ADD] HB: Render Flow ===
 // Step 1 → Step 9 ตามสเปกผู้ใช้
-export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
+export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownload) {
   const {
     hbSeries, hbHBType, hbStage, hbOutput, hbMount,
     hbSize, hbRatio, hbShaftDesign, hbZdySelected
@@ -3308,31 +3308,43 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
  };
 
   // --- Utilities ---
-  const Tile = ({img, label, onClick}) => (
-    <button onClick={onClick} className="relative tilt-card bg-white rounded-xl p-3 shadow-md hover:shadow-2xl transition transform hover:-translate-y-1 active:scale-105">
-      <span className="sheen-layer"></span>
-      <span className="glow-layer"></span>
-      <img src={img} alt={label} className="h-64 w-64 object-contain card-image" />
-      <div className="mt-1 text-sm font-semibold">{label}</div>
-    </button>
-  );
+ const Tile = ({img, label, onClick, big}) => {
+   const [clicked, setClicked] = React.useState(false);
+
+   const handleClick = () => {
+     setClicked(true);
+     setTimeout(() => {
+       onClick && onClick();
+       setClicked(false);
+     }, 600); // รอ animation จบแล้วไป Step ต่อไป
+   };
+
+   return (
+     <button
+       onClick={handleClick}
+       className={`relative tilt-card hb-gradient-effect hb-click-animate rounded-xl p-4 shadow-md ${clicked ? 'clicked' : ''}`}
+     >
+       <span className="sheen-layer"></span>
+       <span className="glow-layer"></span>
+       <img
+         src={img}
+         alt={label}
+         className={`${big ? 'h-84 w-84' : 'h-68 w-68'} object-contain card-image`}
+       />
+       <div className="mt-2 text-base font-semibold">{label}</div>
+     </button>
+   );
+ };
 
   // --- Step 1: เลือกตระกูล ---
   if (!hbSeries) {
     return (
       <div className="space-y-4 mt-6">
- {/* Top bar: Back/Home */}
-       <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
-       </div>
-        <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-          Step 1 — เลือกกลุ่มซีรีส์
-        </h3>
-        <div className="grid grid-cols-2 gap-4 justify-items-center">
-          <Tile img={HB1Img}  label="HB Series" onClick={() => update('hbSeries','HB')} />
-          <Tile img={ZDY1Img} label="ZDY/ZLY/ZSY/…" onClick={() => update('hbSeries','ZDYFAMILY')} />
-        </div>
+        <h3 className="text-white font-bold mb-2 drop-shadow">Serier Selection</h3>
+        <div className="grid grid-cols-2 gap-5 justify-items-center">
+   <Tile img={HB1Img}  label="HB Series" onClick={() => update('hbSeries','HB')} big />
+   <Tile img={ZDY1Img} label="ZDY/ZLY/ZSY/…" onClick={() => update('hbSeries','ZDYFAMILY')} big />
+ </div>
       </div>
     );
   }
@@ -3343,10 +3355,9 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
       <div className="space-y-4 mt-6">
             <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-          Step 2 — เลือก Series (HB)
+          Series Selection H or B
         </h3>
         <div className="grid grid-cols-2 gap-4 justify-items-center">
           <Tile img={HTypeImg} label="H Series" onClick={() => update('hbHBType','H')} />
@@ -3366,7 +3377,6 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
       <div className="space-y-4 mt-6">
             <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 2 — เลือก Series (ZDY/ZLY/…)</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center">
@@ -3398,12 +3408,11 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
       <div className="space-y-4 mt-6">
             <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 3 — Stage of Gear</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">
           {LIST.map(it => (
-            <Tile key={it.v} img={it.img} label={it.label} onClick={() => update('hbStage', it.v)} />
+            <Tile key={it.v} img={it.img} label={it.label} onClick={() => update('hbStage', it.v)} big />
           ))}
         </div>
       </div>
@@ -3436,12 +3445,11 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
       <div className="space-y-4 mt-6">
             <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 4 — Output shaft structure</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center">
           {allow.map(it => (
-            <Tile key={it.k} img={it.img} label={it.label} onClick={() => update('hbOutput', it.k)} />
+            <Tile key={it.k} img={it.img} label={it.label} onClick={() => update('hbOutput', it.k)} big />
           ))}
         </div>
       </div>
@@ -3458,7 +3466,6 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
       <div className="space-y-4 mt-6">
              <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 5 — Mounting Position</h3>
         <div className="grid grid-cols-2 gap-4 justify-items-center">
@@ -3487,7 +3494,6 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
       <div className="space-y-4 mt-6">
             <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 6 — Gear Size</h3>
         <div className="flex flex-wrap gap-2">
@@ -3516,7 +3522,6 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
       <div className="space-y-4 mt-6">
             <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 7 — Ratio</h3>
         <div className="flex flex-wrap gap-2">
@@ -3537,7 +3542,6 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
       <div className="space-y-4 mt-6">
             <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 8 — Shaft Design</h3>
         <div className="flex flex-wrap gap-2">
@@ -3552,39 +3556,28 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome) {
   // --- Step 9: Model Code + Final ---
   if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize && hbRatio && hbShaftDesign) {
     const code = generateHBModelCode(hbState);
-    const base = (typeof process !== 'undefined' && process.env && process.env.PUBLIC_URL) || '';
-    const downloadUrl = code ? `${base}/model/${encodeURIComponent(code)}.STEP` : null;
-
-    return (
+        return (
       <div className="text-center space-y-4 mt-6">
             <div className="flex justify-between items-center">
          <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-         <button onClick={goHome} className="text-blue-300 hover:underline">Home</button>
        </div>
         <h2 className="text-2xl font-bold text-blue-700">{code}</h2>
-
-        <button
-          onClick={() => onConfirm && code && onConfirm(code)}
-          className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          เสร็จสิ้น
-        </button>
-
-        <FinalResult
-          modelCode={code}
-          downloadLink={downloadUrl}
-          onReset={() => {
-            update('hbSeries', null);
-            update('hbHBType', null);
-            update('hbStage', null);
-            update('hbOutput', null);
-            update('hbMount', null);
-            update('hbSize', null);
-            update('hbRatio', null);
-            update('hbShaftDesign', null);
-            update('hbZdySelected', null);
-          }}
-        />
+                <div className="flex flex-col items-center gap-3">
+         {/* ดาวน์โหลด → ให้ App เปิดฟอร์มเดียวกับ product อื่น */}
+         <button
+           onClick={() => onDownload && code && onDownload(code)}
+           className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+         >
+           ดาวน์โหลด 3D .STEP
+         </button>
+         {/* เสร็จสิ้น → กลับ Home และ reset HB */}
+         <button
+           onClick={goHome}
+           className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+         >
+           เสร็จสิ้น
+         </button>
+       </div>
       </div>
     );
   }
