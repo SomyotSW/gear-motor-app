@@ -166,6 +166,48 @@ async function resolvePlanetaryStep(planetState) {
   throw new Error(`ไม่พบไฟล์ 3D ของ ${base} ใน /public/model/`);
 }
 
+// === [ADD] Robust resolver สำหรับ BLDC (.STEP) ===
+async function resolveBLDCStep(modelCode) {
+  if (!modelCode || typeof modelCode !== 'string') {
+    throw new Error('ไม่พบรหัสรุ่น BLDC ที่จะดาวน์โหลด');
+  }
+
+  const candidates = [];
+
+  // 1) ชื่อที่ map ตาม logic เดิม (220 → XXX, 24/36/48 → XX กลาง):contentReference[oaicite:4]{index=4}
+  const mapped = mapBLDCDownloadFilename(modelCode);
+  if (mapped) candidates.push(`${mapped}.STEP`);
+
+  // 2) กรณี NOL: map แบบ static ตาม prefix + ชนิดเกียร์ (GN/GNL/GU/GUL):contentReference[oaicite:5]{index=5}
+  const type =
+    /GNL/.test(modelCode) ? 'GNL' :
+    /GUL/.test(modelCode) ? 'GUL' :
+    /GU/.test(modelCode)  ? 'GU'  :
+    /GN/.test(modelCode)  ? 'GN'  : null;
+  if (type) {
+    const nolStatic = mapBLDCNolStaticFilename(modelCode, type);
+    if (nolStatic) candidates.push(`${nolStatic}.STEP`);
+  }
+
+  // 3) กรณี HE แบบ SF/SL (ถ้ามีตัวอักษร SF/SL ในรหัส ให้ลอง map แบบ static):contentReference[oaicite:6]{index=6}
+  const heType = /SF/.test(modelCode) ? 'SF' : (/SL/.test(modelCode) ? 'SL' : null);
+  if (heType) {
+    const heStatic = mapBLDCHEStaticFilename(modelCode, heType);
+    if (heStatic) candidates.push(`${heStatic}.STEP`);
+  }
+
+  // 4) เผื่อไว้: ลองชื่อเท่ากับรหัสรุ่นตรง ๆ
+  candidates.push(`${modelCode}.STEP`);
+
+  // ==== เช็กทีละชื่อใน /public/model ด้วยหัวใจเดียวกับ Planetary ====:contentReference[oaicite:7]{index=7}
+  for (const name of candidates) {
+    const ok = await checkFileAvailable(name);
+    if (ok) return ok; // {mode:'href'|'blob', url|blob, filename}
+  }
+
+  throw new Error(`ไม่พบไฟล์ใน /public/model จากชื่อที่ลอง: ${candidates.join(' , ')}`);
+}
+
 // ===== ปุ่ม "ยืนยันและรับไฟล์" ให้เรียกตัวนี้ =====
 async function handlePlanetaryDownload3D() {
   try {
@@ -199,11 +241,34 @@ async function handlePlanetaryDownload3D() {
 }
 
 
-function mapBLDCDownloadURL(modelCode) {
-  const name = mapBLDCDownloadFilename(modelCode);
-  if (!name) return null;
-  const base = (typeof process !== 'undefined' && process.env && process.env.PUBLIC_URL) || '';
-  return `${base}/model/${encodeURIComponent(name)}.STEP`;
+// [ADD] ตัวอย่าง handler ดาวน์โหลด BLDC
+async function handleBLDCDownload(modelCode) {
+  try {
+    const res = await resolveBLDCStep(modelCode); // ใช้ตัวเช็กเดียวกับ Planetary
+    const fileName = res.filename || (res.url.split('/').pop() || 'model.STEP');
+
+    if (res.mode === 'href') {
+      const a = document.createElement('a');
+      a.href = res.url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } else {
+      const blobUrl = URL.createObjectURL(res.blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    }
+  } catch (err) {
+    console.error('BLDC download failed:', err);
+    // ข้อความนี้จะอธิบาย “ชื่อที่ลองแล้ว” ชัด ๆ เวลาแมพไม่เจอ
+    toast.error(err?.message || 'ไฟล์ไม่พบใน /public/model');
+  }
 }
 
  // ====== BLDC Nol (GN/GNL/GU/GUL) static filename mapping by prefix ======
