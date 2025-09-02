@@ -717,11 +717,19 @@ const hypoidGif = () => {
  };
 
   const generate6DigitCode = () => Math.floor(100000 + Math.random() * 900000).toString();
-
+  // ✅ ตรวจสอบเบอร์มือถือไทย: ต้องเป็นตัวเลข 10 หลัก และขึ้นต้น 06/08/09
+const isValidThaiMobile = (p) => /^(06|08|09)\d{8}$/.test((p || '').trim());
+  
   // ✅ ฟังก์ชันส่งรหัสยืนยันไปยังอีเมลของลูกค้า
 const handleSendVerificationCode = () => {
   if (!userInfo.email) {
     toast.warning("⚠️ กรุณากรอกอีเมลก่อนขอรหัส");
+    return;
+  }
+
+  // ★ เพิ่มบล็อกนี้
+  if (!isValidThaiMobile(userInfo.phone)) {
+    toast.warning("⚠️ กรุณากรอกเบอร์ 10 หลักของท่าน");
     return;
   }
 
@@ -1527,12 +1535,30 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
             <h3 className="text-lg font-semibold mb-4">อีกนิดเดียว กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
 
             <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-            <input type="text" placeholder="เบอร์ติดต่อ" value={userInfo.phone} onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })} className="w-full mb-2 p-2 border rounded" />
+            <input
+  type="text"
+  placeholder="เบอร์ติดต่อ"
+  value={userInfo.phone}
+  onChange={(e) => {
+    const v = (e.target.value || '').replace(/\D/g, '').slice(0, 10); // ★ ตัวเลขล้วน, จำกัด 10 หลัก
+    setUserInfo({ ...userInfo, phone: v });
+  }}
+  inputMode="numeric"               // ★ ช่วยเด้งคีย์บอร์ดตัวเลขบนมือถือ (ไม่กระทบโครงสร้าง)
+  className="w-full mb-2 p-2 border rounded"
+/>
             <input type="text" placeholder="ชื่อบริษัท" value={userInfo.company} onChange={(e) => setUserInfo({ ...userInfo, company: e.target.value })} className="w-full mb-2 p-2 border rounded" />
 
             <div className="flex mb-2 gap-2">
               <input type="email" placeholder="Email ติดต่อ" value={userInfo.email} onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })} className="flex-1 p-2 border rounded" />
-              <button type="button" onClick={handleSendVerificationCode} className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">ขอรหัส</button>
+              <button
+  type="button"
+  onClick={handleSendVerificationCode}
+  disabled={!userInfo.email || !isValidThaiMobile(userInfo.phone)}   // ★ เพิ่ม
+  title={!isValidThaiMobile(userInfo.phone) ? "กรอกเบอร์ 10 หลักขึ้นต้น 06/08/09" : ""}
+  className="bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  รับรหัส
+</button>
             </div>
 
             {codeSent && (
