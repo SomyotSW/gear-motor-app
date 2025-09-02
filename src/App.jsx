@@ -378,6 +378,7 @@ const servoSetters = {
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
     const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
+        const [rkfsInputSel, setRkfsInputSel] = useState(null); // Step 3.1 (With Motor / IEC / INPUT / SERVO)
 
 // === [ADD] HB states ===
 const [hbSeries, setHbSeries] = useState(null);            // 'HB' | 'ZDYFAMILY'
@@ -431,7 +432,9 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
+    rkfsSetters.setRkfsInputSel(null);
     setRkfsDesignSuffix(null);
+
 // [ADD] เคลียร์สถานะ HB ทั้งหมด
   setHbSeries(null);
   setHbHBType(null);
@@ -870,12 +873,14 @@ const objectUrl = URL.createObjectURL(blob);
   const rkfsState = {
   rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
   rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub,
-  rkfsDesignSuffix,          // <-- เพิ่มบรรทัดนี้
+  rkfsDesignSuffix,
+  rkfsInputSel,                // ★ เพิ่ม
 };
   const rkfsSetters = {
   setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower,
   setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub,
-  setRkfsDesignSuffix,       // <-- เพิ่มบรรทัดนี้
+  setRkfsDesignSuffix,
+  setRkfsInputSel,            // ★ เพิ่ม
 };
 
 const getFileUrl = () => {

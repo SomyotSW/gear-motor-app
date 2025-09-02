@@ -64,6 +64,23 @@ import FAFImg from '../assets/rkfs/FAF.png';
 import FAZImg from '../assets/rkfs/FAZ.png';
 import FFImg from '../assets/rkfs/FF.png';
 
+import RIECImg from '../assets/rkfs/RIEC.png';
+import RINPUTImg from '../assets/rkfs/RINPUT.png';
+import RSERVOImg from '../assets/rkfs/RSERVO.png';
+import RWMImg from '../assets/rkfs/RWM.png';
+import FIECImg from '../assets/rkfs/FIEC.png';
+import FINPUTImg from '../assets/rkfs/FINPUT.png';
+import FSERVOImg from '../assets/rkfs/FSERVO.png';
+import FWMImg from '../assets/rkfs/FWM.png';
+import SIECImg from '../assets/rkfs/SIEC.png';
+import SINPUTImg from '../assets/rkfs/SINPUT.png';
+import SSERVOImg from '../assets/rkfs/SSERVO.png';
+import SWMImg from '../assets/rkfs/SWM.png';
+import KIECImg from '../assets/rkfs/KIEC.png';
+import KINPUTImg from '../assets/rkfs/KINPUT.png';
+import KSERVOImg from '../assets/rkfs/KSERVO.png';
+import KWMImg from '../assets/rkfs/KWM.png';
+
 import YE3Img from '../assets/rkfs/YE3.png';
 import YE4Img from '../assets/rkfs/YE4.png';
 import YVPImg from '../assets/rkfs/YVP.png';
@@ -1175,7 +1192,8 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     rkfsMounting,
     rkfsPosition,
     rkfsPositionSub,
-    rkfsDesignSuffix
+    rkfsDesignSuffix,
+    rkfsInputSel 
   } = state;
 
   const update = (key, value) => {
@@ -1192,6 +1210,7 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     rkfsPositionSub:  setState.setRkfsPositionSub,
     // ⬇️ เพิ่มบรรทัดนี้
     rkfsDesignSuffix: setState.setRkfsDesignSuffix,
+        rkfsInputSel:     setState.setRkfsInputSel,
   };
 
   if (setterMap[key]) {
@@ -1423,9 +1442,73 @@ const sSeriesPowerBySize = {
           </div>
         </>
       )}
+      {/* Step 3.1: Input Selection */}
+{rkfsSize && !rkfsInputSel && (
+  <>
+    <h3 className="font-semibold text-white drop-shadow mb-3">
+      Step 3.1 — Input Selection
+    </h3>
+
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {(() => {
+        // เลือกชุดภาพตามซีรีส์
+        const opts =
+          rkfsSeries === 'R' ? [
+            { key: 'With Motor',    img: RWMImg },
+            { key: 'IEC Adaptor Motor',   img: RIECImg },
+            { key: 'INPUT Shaft', img: RINPUTImg },
+            { key: 'SERVO Adaptor', img: RSERVOImg },
+          ] :
+          rkfsSeries === 'F' ? [
+            { key: 'With Motor',    img: FWMImg },
+            { key: 'IEC Adaptor Motor',   img: FIECImg },
+            { key: 'INPUT Shaft', img: FINPUTImg },
+            { key: 'SERVO Adaptor', img: FSERVOImg },
+          ] :
+          rkfsSeries === 'S' ? [
+            { key: 'With Motor',    img: SWMImg },
+            { key: 'IEC Adaptor Motor',   img: SIECImg },
+            { key: 'INPUT Shaft', img: SINPUTImg },
+            { key: 'SERVO Adaptor', img: SSERVOImg },
+          ] : [
+            { key: 'With Motor',    img: KWMImg },   // K
+            { key: 'IEC Adaptor Motor',   img: KIECImg },
+            { key: 'INPUT Shaft', img: KINPUTImg },
+            { key: 'SERVO Adaptor', img: KSERVOImg },
+          ];
+
+        return opts.map(({ key, img }) => {
+          const isWM = key === 'With Motor'; // ตอนนี้ให้คลิกได้เฉพาะ WM ตามโจทย์
+          return (
+            <button
+              key={key}
+              onClick={() => { if (isWM) update('rkfsInputSel', 'With Motor'); }}
+              className={`rounded-2xl shadow-xl hover:shadow-2xl transform transition duration-300 bg-white
+                          ${isWM ? 'hover:-translate-y-2 cursor-pointer' : 'opacity-70 cursor-not-allowed'}`}
+              title={key}
+            >
+              <img src={img} alt={`${rkfsSeries}${key}`} className="w-full rounded-t-2xl" />
+              <p className="text-center py-2 font-semibold text-gray-800">{key}</p>
+            </button>
+          );
+        });
+      })()}
+    </div>
+
+    <div className="mt-6 text-center">
+      <button
+        onClick={() => { update('rkfsInputSel', null); update('rkfsSize', null); }}
+        className="text-blue-600 underline"
+      >
+        ← ย้อนกลับ
+      </button>
+    </div>
+  </>
+)}
+
 
       {/* Step 4: Motor Type */}
-      {rkfsSize && !rkfsMotorType && (
+      {rkfsSize && rkfsInputSel === 'With Motor' && !rkfsMotorType && (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
@@ -1450,7 +1533,7 @@ const sSeriesPowerBySize = {
           </div>
           <div className="mt-6 text-center">
             <button
-              onClick={() => update("rkfsSize", null)}
+              onClick={() => { update("rkfsInputSel", null); update("rkfsSize", null); }}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
