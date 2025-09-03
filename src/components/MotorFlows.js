@@ -312,6 +312,42 @@ import DBYKImg  from '../assets/hb/DBYK.png';
 import DCYKImg  from '../assets/hb/DCYK.png';
 import DFYKImg  from '../assets/hb/DFYK.png';
 
+// === SRV Worm Gear assets ===
+import SRVVImg   from '../assets/srv/SRVV.png';
+import SDRVImg   from '../assets/srv/SDRV.png';
+import SVFImg    from '../assets/srv/SVF.png';
+
+import SRVWMImg  from '../assets/srv/SRVWM.png';
+import SRVIECImg from '../assets/srv/SRVIEC.png';
+import SRVWSImg  from '../assets/srv/SRVWS.png';
+import SRVIImg   from '../assets/srv/SRVI.png';
+
+import InflangeImg from '../assets/srv/Inflange.png';
+import InshaftImg  from '../assets/srv/Inshaft.png';
+
+import DSImg   from '../assets/srv/DS.png';
+import DS1Img  from '../assets/srv/DS1.png';
+import DS2Img  from '../assets/srv/DS2.png';
+
+import SRVHollowImg from '../assets/srv/SRVHollow.png';
+import SRVFAImg from '../assets/srv/SRVFA.png';
+import SRVFAAImg from '../assets/srv/SRVFAA.png';
+import SRVFABImg from '../assets/srv/SRVFAB.png';
+import SRVFBImg from '../assets/srv/SRVFB.png';
+import SRVFBAImg from '../assets/srv/SRVFBA.png';
+import SRVFBBImg from '../assets/srv/SRVFBB.png';
+
+import SRVTImg from '../assets/srv/SRVT.png';
+import SRVTAImg from '../assets/srv/SRVTA.png';
+import SRVTBImg from '../assets/srv/SRVTB.png';
+
+import SRVMTImg   from '../assets/srv/SRVMT.png';
+import SDRVMTImg  from '../assets/srv/SDRVMT.png'; // ถ้าคุณมีไฟล์ SDRVMT.png จริง ให้เปลี่ยน path ตรงนี้ทีหลัง
+import SVFMTImg   from '../assets/srv/SVFMT.png';
+
+import B5Img    from '../assets/srv/B5.png';
+import B14TImg  from '../assets/srv/B14.png';
+
 
 export const productList = [
   { name: 'AC Gear Motor', image: ACImg },
@@ -3678,6 +3714,594 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
   return null;
 }
 
+// ============================
+// SRV Worm Gear Flow
+// ============================
+export function renderSRVFlow(state, setState, onConfirm) {
+  const {
+    // Step 1
+    srvSeries,              // 'SRV' | 'SDRV' | 'SVF'
+    // Step 2
+    srvSize,                // '025' | '030' | ... | '150' หรือ '025/030' ฯลฯ
+    // Step 3
+    srvInputSel,            // 'WM' | 'WS' | 'IS'  (With motor / With Servo motor / Input shaft)
+    // Step 3.1 (WM only)
+    srvPowerKW,             // '0.06' | '0.09' | ...
+    // Step 3.1.1 (WM only)
+    srvPole,                // '4P' | '6P'
+    // Step 3.1.2 (WM only)
+    srvIECMode,             // 'IEC' | 'IEC+Motor'
+    // Step 3.1.3 (all inputs require ratio)
+    srvRatio,               // '5' | '7.5' | ...
+    // Step 4
+    srvGearType,            // 'FA' | 'FB' | 'Hollow' | 'T'
+    srvGearTypeSub,         // 'A' | 'B' | null
+    // Step 5
+    srvShaftDesign,         // 'DS' | 'DS1' | 'DS2' | 'Hollow'
+    // Step 6
+    srvMounting,            // 'B3' | 'B8' | 'V5' | 'V6' | 'B6' | 'B7'
+    // Step 7
+    srvIECSize,             // 'B5' | 'B14'
+    // Step 8 (กรณีเลือก IEC+Motor เท่านั้น)
+    srvMotorType,           // 'YE3' | 'YE4' | 'YEJ' | 'YVP' | 'YVPEJ' | 'YB'
+    srvPosition,            // '0' | '90' | '180' | '270'
+    srvPositionSub          // 'X' | '2' | '3' | '4'
+  } = state;
+
+  const update = (key, value) => {
+    const setterMap = {
+      srvSeries: setState.setSrvSeries,
+      srvSize: setState.setSrvSize,
+      srvInputSel: setState.setSrvInputSel,
+      srvPowerKW: setState.setSrvPowerKW,
+      srvPole: setState.setSrvPole,
+      srvIECMode: setState.setSrvIECMode,
+      srvRatio: setState.setSrvRatio,
+      srvGearType: setState.setSrvGearType,
+      srvGearTypeSub: setState.setSrvGearTypeSub,
+      srvShaftDesign: setState.setSrvShaftDesign,
+      srvMounting: setState.setSrvMounting,
+      srvIECSize: setState.setSrvIECSize,
+      srvMotorType: setState.setSrvMotorType,
+      srvPosition: setState.setSrvPosition,
+      srvPositionSub: setState.setSrvPositionSub
+    };
+    if (setterMap[key]) setterMap[key](value);
+  };
+
+  // ---------- Data maps ----------
+  const sizeMap = {
+    SRV:  ["025","030","040","050","063","075","090","110","130","150"],
+    SDRV: ["025/030","025/040","030/040","030/050","030/063","040/075","040/090","050/110","063/130","063/150"],
+    SVF:  ["030","040","050","063","075","090","110","130","150"]
+  };
+
+  const powerBySize = {
+    "025": ["0.06","0.09"],
+    "030": ["0.06","0.09","0.12","0.18"],
+    "040": ["0.09","0.12","0.18","0.25","0.37"],
+    "050": ["0.12","0.18","0.25","0.37","0.55","0.75"],
+    "063": ["0.25","0.37","0.55","0.75","1.1","1.5"],
+    "075": ["0.25","0.37","0.55","0.75","1.1","1.5","2.2","3","4"],
+    "090": ["0.55","0.75","1.1","1.5","2.2","3","4"],
+    "110": ["0.55","0.75","1.1","1.5","2.2","3","4","5.5","7.5"],
+    "130": ["1.1","1.5","2.2","3","4","5.5","7.5"],
+    "150": ["2.2","3","4","5.5","7.5","11","15"]
+  };
+
+  const ratio12 = ["5","7.5","10","15","20","25","30","40","50","60","80","100"];
+  const ratio11 = ["7.5","10","15","20","25","30","40","50","60","80","100"];
+  const ratioBySize = {
+    "025": ratio12,
+    "030": ratio12,
+    "040": ratio11,
+    "050": ratio12,
+    "063": ratio12,
+    "075": ratio11,
+    "090": ratio12,
+    "110": ratio12,
+    "130": ratio11,
+    "150": ratio11
+  };
+
+  const floatingBack = (onClick) => (
+    <button
+      onClick={onClick}
+      className="fixed left-3 bottom-3 z-20 px-3 py-2 rounded-full shadow-xl bg-white/90 hover:bg-white transform hover:-translate-y-1 transition"
+    >
+      ← ย้อนกลับ
+    </button>
+  );
+
+  const Section = ({title, children}) => (
+    <div className="mt-6">
+      <h3 className="font-semibold text-white drop-shadow mb-3">{title}</h3>
+      {children}
+    </div>
+  );
+
+  // ---------- STEP 1 ----------
+  if (!srvSeries) {
+    return (
+      <>
+        <Section title="Step 1 — SRV Series">
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { key:'SRV',  img: SRVVImg,  label:'SRV'  },
+              { key:'SDRV', img: SDRVImg, label:'SDRV' },
+              { key:'SVF',  img: SVFImg,  label:'SVF'  },
+            ].map(({key,img,label}) => (
+              <button key={key}
+                onClick={() => update('srvSeries', key)}
+                className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
+              >
+                <img src={img} alt={label} className="w-full rounded-t-2xl"/>
+                <p className="text-center py-2 font-semibold text-gray-800">{label}</p>
+              </button>
+            ))}
+          </div>
+        </Section>
+      </>
+    );
+  }
+
+  // ---------- STEP 2 ----------
+  if (srvSeries && !srvSize) {
+    const sizes = sizeMap[srvSeries] || [];
+    return (
+      <>
+        <Section title="Step 2 — Size Gear">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            {sizes.map(sz => (
+              <button key={sz}
+                onClick={() => update('srvSize', sz)}
+                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-4 py-6 text-blue-800 font-bold border border-gray-300 hover:bg-blue-100"
+              >{sz}</button>
+            ))}
+          </div>
+        </Section>
+        {floatingBack(() => update('srvSeries', null))}
+      </>
+    );
+  }
+
+  // ---------- STEP 3 ----------
+  if (srvSize && !srvInputSel) {
+    return (
+      <>
+        <Section title="Step 3 — Input Power">
+          <div className="grid grid-cols-3 gap-4">
+            <button onClick={() => update('srvInputSel','WM')}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              <img src={SRVWMImg} alt="With motor" className="w-full rounded-t-2xl"/>
+              <p className="text-center py-2 font-semibold text-gray-800">With motor</p>
+            </button>
+            <button onClick={() => update('srvInputSel','WS')}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              <img src={SRVWSImg} alt="With Servo motor" className="w-full rounded-t-2xl"/>
+              <p className="text-center py-2 font-semibold text-gray-800">With Servo motor</p>
+            </button>
+            <button onClick={() => update('srvInputSel','IS')}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              <img src={SRVIImg} alt="Input shaft" className="w-full rounded-t-2xl"/>
+              <p className="text-center py-2 font-semibold text-gray-800">Input shaft</p>
+            </button>
+          </div>
+        </Section>
+        {floatingBack(() => update('srvSize', null))}
+      </>
+    );
+  }
+
+  // ---------- STEP 3.1 (WM only) ----------
+  if (srvInputSel === 'WM' && !srvPowerKW) {
+    const key = (srvSize || '').split('/')[0]; // เผื่อ SDRV เลือกคู่ ให้ยึด size แรกสำหรับ mapping power
+    const powers = powerBySize[key] || [];
+    return (
+      <>
+        <Section title="Step 3.1 — Power Motor (kW)">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+            {powers.map(p => (
+              <button key={p} onClick={() => update('srvPowerKW', p)}
+                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-4 py-6 font-semibold">
+                {p}
+              </button>
+            ))}
+          </div>
+        </Section>
+        {floatingBack(() => update('srvInputSel', null))}
+      </>
+    );
+  }
+
+  // ---------- STEP 3.1.1 (WM only) ----------
+  if (srvInputSel === 'WM' && srvPowerKW && !srvPole) {
+    return (
+      <>
+        <Section title="Step 3.1.1 — Motor Pole">
+          <div className="grid grid-cols-2 gap-4">
+            {['4P','6P'].map(p => (
+              <button key={p} onClick={() => update('srvPole', p)}
+                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-4 py-6 font-semibold">
+                {p === '4P' ? '4 Pole' : '6 Pole'}
+              </button>
+            ))}
+          </div>
+        </Section>
+        {floatingBack(() => update('srvPowerKW', null))}
+      </>
+    );
+  }
+
+  // ---------- STEP 3.1.2 (WM only) ----------
+  if (srvInputSel === 'WM' && srvPowerKW && srvPole && !srvIECMode) {
+    return (
+      <>
+        <Section title="Step 3.1.2 — IEC or IEC + Motor">
+          <div className="grid grid-cols-2 gap-4">
+            <button onClick={() => update('srvIECMode','IEC')}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              <img src={SRVIECImg} alt="IEC Adapter" className="w-full rounded-t-2xl"/>
+              <p className="text-center py-2 font-semibold text-gray-800">IEC Adapter</p>
+            </button>
+            <button onClick={() => update('srvIECMode','IEC+Motor')}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              <img src={SRVWMImg} alt="IEC Adapter + Motor" className="w-full rounded-t-2xl"/>
+              <p className="text-center py-2 font-semibold text-gray-800">IEC Adapter + Motor</p>
+            </button>
+          </div>
+        </Section>
+        {floatingBack(() => update('srvPole', null))}
+      </>
+    );
+  }
+
+  // ---------- STEP 3.1.3 — Ratio (สำหรับทุก input เสมอ) ----------
+  if (!srvRatio) {
+    const key = (srvSize || '').split('/')[0];
+    const ratios = ratioBySize[key] || ratio12;
+
+    // WS: แสดงปุ่ม Inflange + เลือก ratio
+    // IS: แสดงปุ่ม Inshaft + เลือก ratio
+    const extra = srvInputSel === 'WS'
+      ? <img src={InflangeImg} alt="Input Flange" className="w-40 mx-auto mb-4 rounded-xl shadow"/> 
+      : srvInputSel === 'IS'
+      ? <img src={InshaftImg} alt="Input shaft" className="w-40 mx-auto mb-4 rounded-xl shadow"/>
+      : null;
+
+    return (
+      <>
+        <Section title="Step 3.1.3 — Ratio">
+          {extra}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {ratios.map(r => (
+              <button key={r} onClick={() => update('srvRatio', r)}
+                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-3 py-4 font-semibold">
+                {r}
+              </button>
+            ))}
+          </div>
+        </Section>
+        {floatingBack(() => {
+          if (srvIECMode) return update('srvIECMode', null);
+          if (srvPole)     return update('srvPole', null);
+          if (srvPowerKW)  return update('srvPowerKW', null);
+          update('srvInputSel', null);
+        })}
+      </>
+    );
+  }
+
+  // ---------- STEP 4 — Gear Type ----------
+  if (!srvGearType) {
+    return (
+      <>
+        <Section title="Step 4 — Gear Type">
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              {k:'FA', label:'FA', img: SRVFAImg},
+              {k:'FB', label:'FB', img: SRVFBImg},
+              {k:'Hollow', label:'Hollow', img: SRVHollowImg},
+              {k:'T', label:'T', img: SRVTImg}
+            ].map(({k,label,img}) => (
+              <button key={k} onClick={() => update('srvGearType', k)}
+                className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+                {img ? <img src={img} alt={label} className="w-full rounded-t-2xl"/> : <div className="h-32 rounded-t-2xl flex items-center justify-center font-bold text-2xl">{label}</div>}
+                <p className="text-center py-2 font-semibold text-gray-800">{label}</p>
+              </button>
+            ))}
+          </div>
+        </Section>
+        {floatingBack(() => update('srvRatio', null))}
+      </>
+    );
+  }
+
+  // ---------- STEP 4 — Sub (เฉพาะ FA/FB/T) ----------
+if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !srvGearTypeSub) {
+  // เลือกรูป A/B ตามชนิดที่เลือก
+  const subImages =
+    srvGearType === 'FA'
+      ? [{ k: 'A', img: SRVFAAImg }, { k: 'B', img: SRVFABImg }]
+      : srvGearType === 'FB'
+      ? [{ k: 'A', img: SRVFBAImg }, { k: 'B', img: SRVFBBImg }]
+      : [{ k: 'A', img: SRVTAImg }, { k: 'B', img: SRVTBImg }]; // 'T'
+
+  return (
+    <>
+      <Section title="Step 4 — Sub Type">
+        <div className="grid grid-cols-2 gap-4">
+          {subImages.map(({ k, img }) => (
+            <button
+              key={k}
+              onClick={() => update('srvGearTypeSub', k)}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
+              title={k}
+            >
+              <img src={img} alt={`${srvGearType}${k}`} className="w-full rounded-t-2xl" />
+              <p className="text-center py-2 font-semibold text-gray-800">{k}</p>
+            </button>
+          ))}
+        </div>
+      </Section>
+      {floatingBack(() => update('srvGearType', null))}
+    </>
+  );
+}
+
+  // ---------- STEP 5 — Shaft Design ----------
+  if (!srvShaftDesign) {
+    return (
+      <>
+        <Section title="Step 5 — Shaft Design">
+          <div className="grid grid-cols-4 gap-4">
+            <button onClick={() => update('srvShaftDesign','DS')} className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"><img src={DSImg}  alt="DS"  className="w-full rounded-t-2xl"/><p className="text-center py-2 font-semibold">DS</p></button>
+            <button onClick={() => update('srvShaftDesign','DS1')} className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"><img src={DS1Img} alt="DS1" className="w-full rounded-t-2xl"/><p className="text-center py-2 font-semibold">DS1</p></button>
+            <button onClick={() => update('srvShaftDesign','DS2')} className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"><img src={DS2Img} alt="DS2" className="w-full rounded-t-2xl"/><p className="text-center py-2 font-semibold">DS2</p></button>
+            <button onClick={() => update('srvShaftDesign','Hollow')} className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"><img src={SRVHollowImg} alt="Hollow" className="w-full rounded-t-2xl"/><p className="text-center py-2 font-semibold">Hollow</p></button>
+          </div>
+        </Section>
+        {floatingBack(() => {
+          if (srvGearTypeSub) return update('srvGearTypeSub', null);
+          update('srvGearType', null);
+        })}
+      </>
+    );
+  }
+
+  // ---------- STEP 6 — Mounting Position ----------
+  if (!srvMounting) {
+    const image = srvSeries === 'SVF' ? SVFMTImg : SRVMTImg; // ถ้าคุณมี SDRVMTImg ต่างหาก ค่อยเปลี่ยนทีหลัง
+    return (
+      <>
+        <Section title="Step 6 — Mounting position">
+          <div className="flex justify-center mb-6">
+            <img src={image} alt="Mounting Table" className="max-w-md w-full rounded-xl shadow"/>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {['B3','B8','V5','V6','B6','B7'].map(m => (
+              <button key={m} onClick={() => update('srvMounting', m)}
+                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-3 py-4 font-semibold">
+                {m}
+              </button>
+            ))}
+          </div>
+        </Section>
+        {floatingBack(() => update('srvShaftDesign', null))}
+      </>
+    );
+  }
+
+  // ---------- STEP 7 — IEC Size ----------
+  if (!srvIECSize) {
+    return (
+      <>
+        <Section title="Step 7 — IEC Size">
+          <div className="grid grid-cols-2 gap-4">
+            <button onClick={() => update('srvIECSize','B5')}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              <img src={B5Img} alt="B5" className="w-full rounded-t-2xl"/>
+              <p className="text-center py-2 font-semibold">B5</p>
+            </button>
+            <button onClick={() => update('srvIECSize','B14')}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              <img src={B14TImg} alt="B14" className="w-full rounded-t-2xl"/>
+              <p className="text-center py-2 font-semibold">B14</p>
+            </button>
+          </div>
+        </Section>
+        {floatingBack(() => update('srvMounting', null))}
+      </>
+    );
+  }
+
+  // ---------- STEP 8 — Motor Type + Position (เฉพาะกรณี WM & IEC+Motor) ----------
+  if (srvInputSel === 'WM' && srvIECMode === 'IEC+Motor' && (!srvMotorType || !srvPosition || !srvPositionSub)) {
+    return (
+      <>
+        {!srvMotorType && (
+          <Section title="Step 8 — Motor Type">
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    {[
+      { type: 'YE3',   img: YE3Img   },
+      { type: 'YE4',   img: YE4Img   },
+      { type: 'YEJ',   img: YEJImg   },
+      { type: 'YVP',   img: YVPImg   },
+      { type: 'YVPEJ', img: YVPEJImg },
+      { type: 'YB',    img: YBImg    }
+    ].map(({ type, img }) => (
+      <button
+        key={type}
+        onClick={() => update('srvMotorType', type)}
+        className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
+        title={type}
+      >
+        <img src={img} alt={type} className="w-full rounded-t-2xl" />
+        <p className="text-center py-2 font-semibold text-gray-800">{type}</p>
+      </button>
+    ))}
+  </div>
+</Section>
+        )}
+        {srvMotorType && !srvPosition && (
+  <Section title="Step 9 — Position">
+    <div className="grid grid-cols-4 gap-4">
+      {[
+        { p: '0',   img: T0Img   },
+        { p: '90',  img: T90Img  },
+        { p: '180', img: T180Img },
+        { p: '270', img: T270Img }
+      ].map(({ p, img }) => (
+        <button
+          key={p}
+          onClick={() => update('srvPosition', p)}
+          className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
+          title={`${p}°`}
+        >
+          <img src={img} alt={`T${p}`} className="w-full rounded-t-2xl" />
+          <p className="text-center py-2 font-semibold text-gray-800">{p}°</p>
+        </button>
+      ))}
+    </div>
+  </Section>
+)}
+        {srvMotorType && srvPosition && !srvPositionSub && (
+  <Section title="Step 9.2 — Sub-position">
+    <div className="grid grid-cols-4 gap-4">
+      {[
+        { s: 'X', img: CXImg },
+        { s: '1', img: C1Img },
+        { s: '2', img: C2Img },
+        { s: '3', img: C3Img }
+      ].map(({ s, img }) => (
+        <button
+          key={s}
+          onClick={() => update('srvPositionSub', s)}
+          className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
+          title={s}
+        >
+          <img src={img} alt={`C${s}`} className="w-full rounded-t-2xl" />
+          <p className="text-center py-2 font-semibold text-gray-800">{s}</p>
+        </button>
+      ))}
+    </div>
+  </Section>
+)}
+        {floatingBack(() => {
+          if (srvPositionSub) return update('srvPositionSub', null);
+          if (srvPosition)    return update('srvPosition', null);
+          if (srvMotorType)   return update('srvMotorType', null);
+          update('srvIECSize', null);
+        })}
+      </>
+    );
+  }
+
+  // ---------- STEP 9 — Model Code & Confirm ----------
+  const seriesShort = srvSeries; // 'SRV' | 'SDRV' | 'SVF'
+  const sizeShort = srvSize ? srvSize.replaceAll('/', '-') : '';
+  const motorPart   = srvInputSel === 'WM' ? (srvPowerKW || '') : '';
+  const code = `${seriesShort}${sizeShort ? sizeShort.padStart(3,'0') : ''}-${srvRatio}${motorPart ? `-${motorPart}` : ''}-${srvIECSize}`;
+
+  return (
+    <>
+      <Section title="Step 9 — Model Code">
+  {(() => {
+    // --- สร้างค่าจากการเลือก เพื่อโชว์ใต้บรรทัด Model ---
+    const sizeKey = (srvSize || '').split('/')[0]; // เผื่อ SDRV
+    const inputPowerLabel =
+      srvInputSel === 'WM' ? 'With motor' :
+      srvInputSel === 'WS' ? 'With Servo motor' :
+      srvInputSel === 'IS' ? 'Input shaft' : '-';
+
+    // แผนที่ Input flange ตาม Size (ใช้ 075 แทน 070 ตามชุด Size ที่ระบบมี)
+    const inputFlangeBySize = {
+      '025': ['Ø80 mm'],
+      '030': ['Ø140 mm','Ø120 mm','Ø90 mm','Ø80 mm'],
+      '040': ['Ø160 mm','Ø140 mm','Ø120 mm','Ø105 mm','Ø90 mm'],
+      '050': ['Ø200 mm','Ø160 mm','Ø140 mm','Ø120 mm','Ø105 mm'],
+      '063': ['Ø200 mm','Ø160 mm','Ø140 mm','Ø120 mm','Ø105 mm'],
+      '075': ['Ø250 mm','Ø200 mm','Ø160 mm','Ø140 mm','Ø120 mm'], // ← แทน 070
+      '090': ['Ø250 mm','Ø200 mm','Ø160 mm','Ø140 mm','Ø120 mm'],
+      '110': ['Ø300 mm','Ø250 mm','Ø200 mm'],
+      '130': ['Ø300 mm','Ø250 mm','Ø200 mm'],
+      '150': ['Ø350 mm','Ø300 mm','Ø250 mm']
+    };
+
+    // แผนที่ Output shaft ตาม Size
+    const outputShaftBySize = {
+      '025': ['Ø11 mm'],
+      '030': ['Ø14 mm'],
+      '040': ['Ø18 mm','Ø19 mm'],
+      '050': ['Ø24 mm','Ø25 mm'],
+      '063': ['Ø25 mm','Ø28 mm'],
+      '075': ['Ø28 mm','Ø35 mm'], // ← แทน 070
+      '090': ['Ø35 mm','Ø38 mm'],
+      '110': ['Ø42 mm'],
+      '130': ['Ø45 mm'],
+      '150': ['Ø50 mm']
+    };
+
+    const flanges = inputFlangeBySize[sizeKey] || [];
+    const shafts  = outputShaftBySize[sizeKey] || [];
+
+    // คำนวณ Output speed (rpm)
+    const ratioNum = parseFloat(srvRatio || '');
+    const baseRPM  = srvPole === '6P' ? 1000 : (srvPole === '4P' ? 1500 : null);
+    const outRPM   = (baseRPM && ratioNum) ? Math.round(baseRPM / ratioNum) : null;
+
+    return (
+      <div className="text-center">
+        <p className="text-blue-400 font-bold mb-2">Model: {code}</p>
+
+        {/* รายละเอียดตามที่กำหนด */}
+        <div className="max-w-2xl mx-auto text-left text-white/90 space-y-1">
+          <p><span className="font-semibold">SRV Series:</span> {srvSeries || '-'}</p>
+          <p><span className="font-semibold">Size Gear:</span> {srvSize || '-'}</p>
+          <p>
+            <span className="font-semibold">Input flange:</span>{' '}
+            {flanges.length ? flanges.join(' , ') : '-'}
+          </p>
+          <p><span className="font-semibold">Input Power:</span> {inputPowerLabel}</p>
+          <p>
+            <span className="font-semibold">Power Motor (kW):</span>{' '}
+            {srvInputSel === 'WM'
+              ? `${srvPowerKW || '-'} : ${srvPole === '6P' ? '6 Pole' : (srvPole === '4P' ? '4 Pole' : '-')} — 3-Phase 380VAC, 50Hz, IP55, Class F, S1${srvMotorType ? ` , ${srvMotorType}` : ''}`
+              : '-'}
+          </p>
+          <p>
+            <span className="font-semibold">Output speed:</span>{' '}
+            {(outRPM !== null) ? `${outRPM} rpm` : '-'}
+          </p>
+          <p>
+            <span className="font-semibold">Output shaft:</span>{' '}
+            {shafts.length ? shafts.join(' , ') : '-'}
+          </p>
+          <p><span className="font-semibold">Warranty:</span> 18 เดือน</p>
+        </div>
+
+        <button
+          onClick={() => onConfirm(code)}
+          className="mt-3 px-6 py-3 rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition bg-emerald-500 text-white font-semibold"
+        >
+          ยืนยันและรับไฟล์ 3D
+        </button>
+      </div>
+    );
+  })()}
+</Section>
+      {floatingBack(() => {
+        if (srvInputSel === 'WM' && srvIECMode === 'IEC+Motor') {
+          if (srvPositionSub) return update('srvPositionSub', null);
+          if (srvPosition)    return update('srvPosition', null);
+          if (srvMotorType)   return update('srvMotorType', null);
+          return update('srvIECSize', null);
+        }
+        return update('srvIECSize', null);
+      })}
+    </>
+  );
+}
 
 
 

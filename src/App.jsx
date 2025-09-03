@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode } from './components/MotorFlows.js';
+import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode, renderSRVFlow } from './components/MotorFlows.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
@@ -380,6 +380,44 @@ const servoSetters = {
     const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
         const [rkfsInputSel, setRkfsInputSel] = useState(null); // Step 3.1 (With Motor / IEC / INPUT / SERVO)
 
+    // === SRV Worm Gear states ===
+const [srvSeries, setSrvSeries] = useState(null);
+const [srvSize, setSrvSize] = useState(null);
+const [srvInputSel, setSrvInputSel] = useState(null);     // 'WM' | 'WS' | 'IS'
+const [srvPowerKW, setSrvPowerKW] = useState(null);
+const [srvPole, setSrvPole] = useState(null);             // '4P' | '6P'
+const [srvIECMode, setSrvIECMode] = useState(null);       // 'IEC' | 'IEC+Motor'
+const [srvRatio, setSrvRatio] = useState(null);
+const [srvGearType, setSrvGearType] = useState(null);     // 'FA' | 'FB' | 'Hollow' | 'T'
+const [srvGearTypeSub, setSrvGearTypeSub] = useState(null);// 'A' | 'B' | null
+const [srvShaftDesign, setSrvShaftDesign] = useState(null);// 'DS' | 'DS1' | 'DS2' | 'Hollow'
+const [srvMounting, setSrvMounting] = useState(null);     // 'B3','B8','V5','V6','B6','B7'
+const [srvIECSize, setSrvIECSize] = useState(null);       // 'B5' | 'B14'
+const [srvMotorType, setSrvMotorType] = useState(null);   // (เฉพาะ IEC+Motor)
+const [srvPosition, setSrvPosition] = useState(null);
+const [srvPositionSub, setSrvPositionSub] = useState(null);
+
+// mappers สำหรับส่งให้ renderSRVFlow
+const srvState = {
+  srvSeries, srvSize, srvInputSel, srvPowerKW, srvPole, srvIECMode, srvRatio,
+  srvGearType, srvGearTypeSub, srvShaftDesign, srvMounting, srvIECSize,
+  srvMotorType, srvPosition, srvPositionSub
+};
+const srvSetters = {
+  setSrvSeries, setSrvSize, setSrvInputSel, setSrvPowerKW, setSrvPole, setSrvIECMode, setSrvRatio,
+  setSrvGearType, setSrvGearTypeSub, setSrvShaftDesign, setSrvMounting, setSrvIECSize,
+  setSrvMotorType, setSrvPosition, setSrvPositionSub
+};
+
+// [SRV] reset ทั้ง flow (เรียกใช้จากปุ่มเท่านั้น)
+const resetSRV = () => {
+  setSrvSeries(null); setSrvSize(null); setSrvInputSel(null); setSrvPowerKW(null);
+  setSrvPole(null); setSrvIECMode(null); setSrvRatio(null);
+  setSrvGearType(null); setSrvGearTypeSub(null); setSrvShaftDesign(null);
+  setSrvMounting(null); setSrvIECSize(null);
+  setSrvMotorType(null); setSrvPosition(null); setSrvPositionSub(null);
+};
+
 // === [ADD] HB states ===
 const [hbSeries, setHbSeries] = useState(null);            // 'HB' | 'ZDYFAMILY'
 const [hbHBType, setHbHBType] = useState(null);            // 'H' | 'B' (เฉพาะ HB)
@@ -400,7 +438,6 @@ const COMING_SOON = new Set([
   'SPN Series',
   'P Planetary Gearbox',
   'Servo Drive and Speed controller',
-  'SRV Worm Gear',
 ]);
 
 const handleBackUniversal = () => {
@@ -416,6 +453,7 @@ const handleBackUniversal = () => {
 
 const handleBackWithReset = () => {
   // Reset common states
+    resetSRV();
   setSelectedProduct(null);
   setSelectedModel(null);
   setModelCodeList([]);
@@ -445,6 +483,7 @@ const handleBackWithReset = () => {
   setHbRatio(null);
   setHbShaftDesign(null);
   setHbZdySelected(null);
+    resetSRV();
 };
 
     const resetRKFSState = () => {
@@ -857,6 +896,7 @@ const objectUrl = URL.createObjectURL(blob);
 };
 
   const handleBack = () => {
+        resetSRV();  
     setSelectedProduct(null);
     setModelCodeList([]);
     setSelectedModel(null);
@@ -1474,7 +1514,21 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   </>
 )}
 
+{selectedProduct === 'SRV Worm Gear' && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-white font-bold mb-2 drop-shadow">SRV Worm Gear Selection</h2>
+      <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
+    </div>
 
+    {renderSRVFlow(srvState, srvSetters, (modelCode) => {
+      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+      setModelCodeList(models);
+      setSelectedModel(models[0]);
+      setShowForm(true); // ★ เด้งไปหน้าแบบฟอร์ม
+    })}
+  </>
+)}
 
 {/* 🟦 RKFS Series STEP 1 */}
 {selectedProduct === 'RKFS Series' && !selectedModel && !showForm && (
@@ -1532,7 +1586,7 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
 
 {showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
-            <h3 className="text-lg font-semibold mb-4">อีกนิดเดียว กรอกข้อมูลครบทุกช่องเพื่อรับไฟล์ .STEP ทันที</h3>
+            <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องและรับไฟล์ .STEP ได้ทันที ไม่ต้องรอ..ตอบกลับครับ</h3>
 
             <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
             <input
