@@ -1259,6 +1259,24 @@ export function renderRKFSFlow(state, setState, onConfirm) {
   }
 };
 
+// === [ADD] RKFS click-sweep helper ===
+
+const sweepThen = (el, fn, ms = RKFS_SWEEP_MS) => {
+  try {
+    if (el && el.classList) {
+      el.classList.add('rkfs-sweep');
+      setTimeout(() => {
+        fn && fn();
+        // เอาออกเพื่อไม่ทับซ้อนเอฟเฟกต์ครั้งถัดไป
+        el.classList.remove('rkfs-sweep');
+      }, ms);
+      return;
+    }
+  } catch (_) { /* no-op */ }
+  // fallback: ถ้าไม่มี element ก็ทำงานทันที
+  fn && fn();
+};
+
   const designOptions = {
     R: ["R", "RF", "RM", "RX", "RXF"],   // ⬅️ เพิ่ม RX, RXF
     K: ["K", "KA", "KAB", "KAF", "KAT", "KAZ" ],
@@ -1389,6 +1407,19 @@ const sSeriesPowerBySize = {
     F: FMTImg
   };
 
+  /* === [ADD] RKFS click-sweep helper (black→white gloss) === */
+const RKFS_SWEEP_MS = 520;
+const clickSweep = (e, run) => {
+  const el = e && e.currentTarget;
+  if (!el) { run && run(); return; }
+  if (!el.classList.contains('rkfs-click-sweep')) el.classList.add('rkfs-click-sweep');
+  el.classList.add('is-active');
+  setTimeout(() => {
+    el.classList.remove('is-active');
+    run && run();
+  }, RKFS_SWEEP_MS);
+};
+
   return (
     <>
       {/* Step 1: Series */}
@@ -1397,7 +1428,7 @@ const sSeriesPowerBySize = {
           {["R","K","S","F"].map(label => (
             <button
               key={label}
-              onClick={() => update("rkfsSeries", label)}
+              onClick={(e) => clickSweep(e, () => update("rkfsSeries", label))}
               className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
             >
               <img
@@ -1428,7 +1459,7 @@ const sSeriesPowerBySize = {
               return (
                 <button
                   key={design}
-                  onClick={() => update("rkfsDesign", design)}
+                  onClick={(e) => clickSweep(e, () => update("rkfsDesign", design))}
                   className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
                 >
                   <img src={imgSrc} alt={design} className="w-full rounded-xl" />
@@ -1439,7 +1470,7 @@ const sSeriesPowerBySize = {
           </div>
           <div className="mt-4 text-center">
             <button
-              onClick={() => update("rkfsSeries", null)}
+              onClick={(e) => clickSweep(e, () => update("rkfsSeries", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1461,7 +1492,7 @@ const sSeriesPowerBySize = {
             ).map(size => (
               <button
                 key={size}
-                onClick={() => update("rkfsSize", size)}
+                onClick={(e) => clickSweep(e, () => update("rkfsSize", size))}
                 className="w-24 h-24 bg-white shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 rounded-xl flex items-center justify-center text-blue-800 font-bold text-lg border border-gray-300 hover:bg-blue-100"
               >
                 Size {size}
@@ -1470,7 +1501,7 @@ const sSeriesPowerBySize = {
           </div>
           <div className="mt-6 text-center">
             <button
-              onClick={() => update("rkfsDesign", null)}
+              onClick={(e) => clickSweep(e, () => update("rkfsDesign", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1518,7 +1549,7 @@ const sSeriesPowerBySize = {
           return (
             <button
               key={key}
-              onClick={() => { if (isWM) update('rkfsInputSel', 'With Motor'); }}
+              onClick={(e) => clickSweep(e, () => update("rkfsInputSel", key))}
               className={`rounded-2xl shadow-xl hover:shadow-2xl transform transition duration-300 bg-white
                           ${isWM ? 'hover:-translate-y-2 cursor-pointer' : 'opacity-70 cursor-not-allowed'}`}
               title={key}
@@ -1533,7 +1564,7 @@ const sSeriesPowerBySize = {
 
     <div className="mt-6 text-center">
       <button
-        onClick={() => { update('rkfsInputSel', null); update('rkfsSize', null); }}
+        onClick={(e) => clickSweep(e, () => update("rkfsSize", null))}
         className="text-blue-600 underline"
       >
         ← ย้อนกลับ
@@ -1557,7 +1588,7 @@ const sSeriesPowerBySize = {
             ].map(({ type, img }) => (
               <button
                 key={type}
-                onClick={() => update("rkfsMotorType", type)}
+                onClick={(e) => clickSweep(e, () => update("rkfsMotorType", type))}
                 className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
               >
                 <img src={img} alt={type} className="w-full rounded-t-xl" />
@@ -1569,7 +1600,7 @@ const sSeriesPowerBySize = {
           </div>
           <div className="mt-6 text-center">
             <button
-              onClick={() => { update("rkfsInputSel", null); update("rkfsSize", null); }}
+              onClick={(e) => clickSweep(e, () => update("rkfsSize", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1603,21 +1634,21 @@ const sSeriesPowerBySize = {
 
         const powerOptions = mapped ?? defaultPowerOptions;
 
-        return powerOptions.map(power => (
-          <button
-            key={power}
-            onClick={() => update("rkfsMotorPower", power)}
-            className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
-            title={`${power} kW`}
-          >
-            {power} kW
-          </button>
-        ));
+  return powerOptions.map((p) => (
+  <button
+  key={String(p)}
+  onClick={(e) => clickSweep(e, () => update("rkfsMotorPower", p))}
+  className="btn-3d-rkfs text-sm md:text-base font-semibold px-4 py-2"
+  title={`${p} kW`}
+>
+  {p} kW
+</button>
+));
       })()}
     </div>
           <div className="mt-4 text-center">
             <button
-              onClick={() => update("rkfsMotorType", null)}
+              onClick={(e) => clickSweep(e, () => update("rkfsMotorType", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1634,7 +1665,7 @@ const sSeriesPowerBySize = {
             {["2P","4P","6P","8P"].map(pole => (
               <button
                 key={pole}
-                onClick={() => update("rkfsPole", pole)}
+                onClick={(e) => clickSweep(e, () => update("rkfsPole", pole))}
                 className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
               >
                 {pole}
@@ -1644,7 +1675,7 @@ const sSeriesPowerBySize = {
           <h2 className="text-red-500 font-bold mb-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">**ความเร็วรอบของมอเตอร์จะอิงตาม Pole ของมอเตอร์ 2P = 3000 rpm, 4P = 1500 rpm, 6P = 1000 rpm, 8P = 750 rpm</h2>
           <div className="mt-4 text-center">
             <button
-              onClick={() => update("rkfsMotorPower", null)}
+              onClick={(e) => clickSweep(e, () => update("rkfsMotorPower", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1662,7 +1693,7 @@ const sSeriesPowerBySize = {
               {ratioList.map(ratio => (
                 <button
                   key={ratio}
-                  onClick={() => update("rkfsRatio", ratio)}
+                  onClick={(e) => clickSweep(e, () => update("rkfsRatio", ratio))}
                   className="bg-blue-600 text-white font-bold shadow px-4 py-2 rounded-xl hover:bg-blue-700"
                 >
                   i = {ratio}
@@ -1672,7 +1703,7 @@ const sSeriesPowerBySize = {
           </div>
           <div className="mt-4 text-center">
             <button
-              onClick={() => update("rkfsPole", null)}
+              onClick={(e) => clickSweep(e, () => update("rkfsPole", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1697,7 +1728,7 @@ const sSeriesPowerBySize = {
               {["M1","M2","M3","M4","M5","M6"].map(mount => (
                 <button
                   key={mount}
-                  onClick={() => update("rkfsMounting", mount)}
+                  onClick={(e) => clickSweep(e, () => update("rkfsMounting", mount))}
                   className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
                 >
                   {mount}
@@ -1707,7 +1738,7 @@ const sSeriesPowerBySize = {
           </div>
           <div className="mt-4 text-center">
             <button
-              onClick={() => update("rkfsRatio", null)}
+              onClick={(e) => clickSweep(e, () => update("rkfsRatio", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1730,7 +1761,7 @@ const sSeriesPowerBySize = {
               ].map(({ pos, img }) => (
                 <button
                   key={pos}
-                  onClick={() => update("rkfsPosition", pos)}
+                  onClick={(e) => clickSweep(e, () => update("rkfsPosition", pos))}
                   className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
                 >
                   <img src={img} alt={`T${pos}`} className="w-full rounded-t-xl" />
@@ -1741,7 +1772,7 @@ const sSeriesPowerBySize = {
           </div>
           <div className="mt-6 text-center">
             <button
-              onClick={() => update("rkfsMounting", null)}
+              onClick={(e) => clickSweep(e, () => update("rkfsMounting", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1764,7 +1795,7 @@ const sSeriesPowerBySize = {
               ].map(({ sub, img }) => (
                 <button
                   key={sub}
-                  onClick={() => update("rkfsPositionSub", sub)}
+                  onClick={(e) => clickSweep(e, () => update("rkfsPositionSub", sub))}
                   className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
                 >
                   <img src={img} alt={`C${sub}`} className="w-full rounded-t-xl" />
@@ -1775,7 +1806,7 @@ const sSeriesPowerBySize = {
           </div>
           <div className="mt-6 text-center">
             <button
-              onClick={() => update("rkfsPosition", null)}
+              onClick={(e) => clickSweep(e, () => update("rkfsPosition", null))}
               className="text-blue-600 underline"
             >
               ← ย้อนกลับ
@@ -1799,14 +1830,15 @@ const sSeriesPowerBySize = {
       const Card = ({ img, code, label }) => (
   <button
     type="button"
-    onClick={() => {
-      update('rkfsDesignSuffix', code);
-      // เลื่อนไป Step 10 ให้ผู้ใช้เห็น Model Code ทันที
-      setTimeout(() => {
-        document.getElementById('rkfs-confirm-step')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 0);
-    }}
+    onClick={(e) => {
+  clickSweep(e, () => {
+    update('rkfsDesignSuffix', code);
+    setTimeout(() => {
+      document.getElementById('rkfs-confirm-step')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  });
+}}
     className={[
       "group w-64 h-64 sm:w-68 sm:h-68",
       "rounded-2xl border bg-white shadow-md",
@@ -1924,10 +1956,55 @@ const sSeriesPowerBySize = {
 {rkfsPositionSub && (
   <div id="rkfs-confirm-step" className="text-center mt-6 space-y-4">
     <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code</h3>
-
-    <p className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+<p className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
       {`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`}
     </p>
+
+{/* === [ADD] RKFS: spacer 2 บรรทัด + สรุปสเปค === */}
+<br />
+{(() => {
+  // ค่าที่ผู้ใช้เลือก
+  const series = rkfsSeries || '-';
+  const design = rkfsDesign ? (rkfsDesign + (state?.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : '')) : '-';
+  const size   = rkfsSize   || '-';
+  const ratioS = rkfsRatio  || '-';
+  const inpSel = rkfsInputSel || '-';
+  const mType  = rkfsMotorType || '-';
+  const mKWs   = rkfsMotorPower || '-';
+  const MTP   = rkfsMounting || '-';
+  const MTC   = rkfsPosition || '-';
+  const poleS  = rkfsPole || '-';
+
+  // คำนวณความเร็วรอบออก (rpm) ตาม Pole/Ratio
+  const r = parseFloat(rkfsRatio);
+  const p = parseInt(rkfsPole, 10);
+  const baseRPM = p === 2 ? 3000 : p === 4 ? 1500 : p === 6 ? 1000 : p === 8 ? 700 : undefined;
+  const outRPM = (baseRPM && r && !Number.isNaN(r) && r > 0) ? (baseRPM / r) : null;
+
+  // คำนวณแรงบิดออก (N·m) = (9550 * kW) / rpm
+  const kW = parseFloat(String(rkfsMotorPower).replace(',', '.'));
+  const outTorque = (outRPM && kW && !Number.isNaN(kW)) ? (9550 * kW) / outRPM : null;
+
+  return (
+    <div className="max-w-3xl mx-auto text-left bg-black/25 rounded-xl px-5 py-4 backdrop-blur-sm text-white/90 text-sm md:text-base leading-7">
+      <div>Series : <b>{series}</b></div>
+      <div>Design : <b>{design}</b></div>
+      <div>Gear Size : <b>{design}{size}</b></div>
+      <div>Ratio : <b>{ratioS}</b></div>
+      <div>Input Selection : <b>{inpSel}</b></div>
+      <div>
+        Motor Type : (<b>{mType}</b>) , (<b>{mKWs}</b> kW) , (<b>{poleS}</b> Pole) ,
+        {' '}3Phase380VAC,50Hz,IP55,Class F, Premium Efficiency IE3.
+      </div>
+      <div>Output speed (rpm) : <b>{outRPM ? outRPM.toFixed(2) : '-'}</b></div>
+      <div>Output Torque (N·m) : <b>{outTorque ? outTorque.toFixed(2) : '-'}</b></div>
+      <div>Mouting Position : <b>{MTP}</b></div>
+      <div>Cable Wire Position : <b>{MTC}</b></div>
+      <div>Output Shaft Diameter : <b>—</b></div>
+      <div>Warranty : <b>2 Years</b></div>
+    </div>
+  );
+})()}
 
     <button
       type="button"
