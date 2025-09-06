@@ -1480,35 +1480,42 @@ const clickSweep = (e, run) => {
       )}
 
       {/* Step 3: Size */}
-      {rkfsDesign && !rkfsSize && (
-        <>
-          <div className="flex flex-wrap gap-4 justify-center">
-            {(
-              rkfsSeries === "R"
-                ? ["17","27","37","47","57","67","77","87","97","107","137","147","167"]
-                : rkfsSeries === "K" || rkfsSeries === "F"
-                ? ["37","47","57","67","77","87","97","107","127","157","167","187"]
-                : ["37","47","57","67","77","87","97"]
-            ).map(size => (
-              <button
-                key={size}
-                onClick={(e) => clickSweep(e, () => update("rkfsSize", size))}
-                className="w-24 h-24 bg-white shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 rounded-xl flex items-center justify-center text-blue-800 font-bold text-lg border border-gray-300 hover:bg-blue-100"
-              >
-                Size {size}
-              </button>
-            ))}
-          </div>
-          <div className="mt-6 text-center">
-            <button
-              onClick={(e) => clickSweep(e, () => update("rkfsDesign", null))}
-              className="text-blue-600 underline"
-            >
-              ← ย้อนกลับ
-            </button>
-          </div>
-        </>
-      )}
+{rkfsDesign && !rkfsSize && (
+  <>
+    <div className="flex flex-wrap gap-4 justify-center">
+      {(
+        rkfsSeries === "R"
+          ? ["17","27","37","47","57","67","77","87","97","107","137","147","167"]
+          : rkfsSeries === "K" || rkfsSeries === "F"
+          ? ["37","47","57","67","77","87","97","107","127","157","167","187"]
+          : ["37","47","57","67","77","87","97"]
+      )
+        .filter((size) => {
+          const n = parseInt(size, 10);
+          if (rkfsDesign === "RM") return n >= 57 && n <= 167;
+          if (rkfsDesign === "RX" || rkfsDesign === "RXF") return n >= 57 && n <= 107;
+          return true;
+        })
+        .map((size) => (
+          <button
+            key={size}
+            onClick={(e) => clickSweep(e, () => update("rkfsSize", size))}
+            className="w-24 h-24 bg-white shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 rounded-xl flex items-center justify-center text-blue-800 font-bold text-lg border border-gray-300 hover:bg-blue-100"
+          >
+            Size {size}
+          </button>
+        ))}
+    </div>
+    <div className="mt-6 text-center">
+      <button
+        onClick={(e) => clickSweep(e, () => update("rkfsDesign", null))}
+        className="text-blue-600 underline"
+      >
+        ← ย้อนกลับ
+      </button>
+    </div>
+  </>
+)}
       {/* Step 3.1: Input Selection */}
 {rkfsSize && !rkfsInputSel && (
   <>
@@ -1577,6 +1584,7 @@ const clickSweep = (e, run) => {
       {/* Step 4: Motor Type */}
       {rkfsSize && rkfsInputSel === 'With Motor' && !rkfsMotorType && (
         <>
+          <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือกประเภทของมอเตอร์</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { type: "YE3", img: YE3Img },
@@ -1612,6 +1620,7 @@ const clickSweep = (e, run) => {
       {/* Step 5: Motor Power */}
       {rkfsMotorType && !rkfsMotorPower && (
         <>
+          <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Input Power Motor (kW)</h3>
           <div className="flex flex-wrap gap-3">
       {(() => {
         // Fallback เดิม (กรณีไม่เจอ mapping หรือยังไม่เลือก Size)
@@ -1660,9 +1669,10 @@ const clickSweep = (e, run) => {
       {/* Step 6: Pole */}
       {rkfsMotorPower && !rkfsPole && (
         <>
+          <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือก Pole Motor</h3>
           <div className="flex flex-wrap gap-3">
-            <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">ขนาด Pole Motor</h3>
-            {["2P","4P","6P","8P"].map(pole => (
+            <br />
+            {["2P","4P","6P","8P"].map(pole =>(
               <button
                 key={pole}
                 onClick={(e) => clickSweep(e, () => update("rkfsPole", pole))}
@@ -1672,11 +1682,12 @@ const clickSweep = (e, run) => {
               </button>
             ))}
           </div>
+          <br />
           <h2 className="text-red-500 font-bold mb-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">**ความเร็วรอบของมอเตอร์จะอิงตาม Pole ของมอเตอร์ 2P = 3000 rpm, 4P = 1500 rpm, 6P = 1000 rpm, 8P = 750 rpm</h2>
           <div className="mt-4 text-center">
             <button
               onClick={(e) => clickSweep(e, () => update("rkfsMotorPower", null))}
-              className="text-blue-600 underline"
+              className="text-blue-400 underline"
             >
               ← ย้อนกลับ
             </button>
@@ -1716,7 +1727,8 @@ const clickSweep = (e, run) => {
       {rkfsRatio && !rkfsMounting && (
         <>
           <div>
-            <h3 className="font-semibold mb-2">เลือกรูปแบบ Mounting</h3>
+            <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือกทิศทางการติดตั้ง</h3>
+                          <h3 className="text-red-500 font-bold mb-2 drop-shadow-[0_05px_05px_rgba(0,0,0,0.3)]">**ทุกทิศทางการติดตั้งมีผลต่อระดับน้ำมันในห้องเกียร์ มีผลต่ออายุการใช้งานของเกียร์</h3>
             <div className="flex justify-center">
               <img
                 src={mountingImageMap[rkfsSeries]}
@@ -1751,7 +1763,7 @@ const clickSweep = (e, run) => {
       {rkfsMounting && !rkfsPosition && (
         <>
           <div>
-            <h3 className="font-semibold mb-4 text-center">เลือกตำแหน่งกล่องสายไฟ (Terminal Box)</h3>
+            <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(6,0,0,0.6)]">เลือกตำแหน่งกล่องสายไฟ (Terminal Box)</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
               {[
                 { pos: "0", img: T0Img },
@@ -1785,7 +1797,7 @@ const clickSweep = (e, run) => {
       {rkfsPosition && !rkfsPositionSub && (
         <>
           <div>
-            <h3 className="font-semibold mb-4 text-center">เลือกตำแหน่งย่อย (เพิ่มเติม)</h3>
+            <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(6,0,0,0.6)]">เลือกตำแหน่งรูสายไฟ (Cable wire position)</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
               {[
                 { sub: "X", img: CXImg },
@@ -1955,7 +1967,7 @@ const clickSweep = (e, run) => {
       {/* Step 10: Confirm */}
 {rkfsPositionSub && (
   <div id="rkfs-confirm-step" className="text-center mt-6 space-y-4">
-    <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code</h3>
+    <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code</h3>
 <p className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
       {`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`}
     </p>
@@ -1968,6 +1980,7 @@ const clickSweep = (e, run) => {
   const design = rkfsDesign ? (rkfsDesign + (state?.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : '')) : '-';
   const size   = rkfsSize   || '-';
   const ratioS = rkfsRatio  || '-';
+    const shaftPos = state?.rkfsDesignSuffix || '-';
   const inpSel = rkfsInputSel || '-';
   const mType  = rkfsMotorType || '-';
   const mKWs   = rkfsMotorPower || '-';
@@ -1984,23 +1997,138 @@ const clickSweep = (e, run) => {
   // คำนวณแรงบิดออก (N·m) = (9550 * kW) / rpm
   const kW = parseFloat(String(rkfsMotorPower).replace(',', '.'));
   const outTorque = (outRPM && kW && !Number.isNaN(kW)) ? (9550 * kW) / outRPM : null;
+  // --- NEW: Design description map (ตาม Step 2) ---
+const designMap = {
+  // R-series
+  R:   "R : Helical Gearmotor / Foot-mounted / Solid shaft.",
+  RF:  "RF : Helical Gearmotor / B5 Flange-mounted / Solid shaft.",
+  RM:  "RM : Helical Gearmotor / B5 Flange-mounted / Solid shaft / With extended bearing hub.",
+  RX:  "RX : Single stage / Helical Gearmotor / Foot-mounted / Solid shaft.",
+  RXF: "RXF : Single stage / Helical Gearmotor / Foot-mounted / Solid shaft.",
+
+  // F-series
+  F:   "F : Parallel-shaft helical gearmotor / Foot-mounted / Solid shaft.",
+  FA:  "FA : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft / Keyway.",
+  FAF: "FAF : Parallel-shaft helical gearmotor / B5 Flange-mounted / Hollow shaft / Keyway.",
+  FAZ: "FAZ : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft and shrink disk.",
+  FF:  "FF : Parallel-shaft helical gearmotor / B5 Flange-mounted / Solid shaft.",
+
+  // K-series
+  K:   "K : Helical-bevel gearmotor / Foot-mounted / Solid shaft.",
+  KA:  "KA : Helical-bevel gearmotor / Hollow shaft / Keyway.",
+  KAB: "KAB : Helical-bevel gearmotor / Foot-mounted / Hollow shaft / Keyway.",
+  KAF: "KAF : Helical-bevel gearmotor / Flange-mounted / Hollow shaft / Keyway.",
+  KAT: "KAT : Helical-bevel gearmotor / Hollow shaft / Keyway / Torque Arm.",
+  KAZ: "KAZ : Helical-bevel gearmotor / Hollow shaft and shrink disk.",
+
+  // S-series
+  S:   "S : Helical-worm gearmotor / Foot-mounted / Solid shaft.",
+  SA:  "SA : Helical-worm gearmotor / Hollow shaft / Keyway.",
+  SAF: "SAF : Helical-worm gearmotor / B5 Flange-mounted / Hollow shaft / Keyway.",
+  SAT: "SAT : Helical-worm gearmotor / Hollow shaft / Keyway / Torque Arm.",
+  SAZ: "SAZ : Helical-worm gearmotor / Hollow shaft and shrink disk."
+};
+
+const designDesc = rkfsDesign ? (designMap[rkfsDesign] || rkfsDesign) : "-";
+const motorTypeDescMap = {
+  YE3:  "Premium Efficiency IE3",
+  YE4:  "Super Premium Efficiency IE4",
+  YEJ:  "Electromagnetic Brake",
+  YVP:  "Variable Frequency Motor",
+  YVPEJ:"Variable Frequency Brake Motor",
+  YB:   "Explosion-proof Motor"
+};
+const motorTypeNote = motorTypeDescMap[rkfsMotorType] || "-";
+// --- NEW: Key สำหรับแมปค่าตามดีไซน์+ไซซ์ ---
+const dsKey = `${rkfsDesign || ''}${rkfsSize || ''}`;
+
+// --- NEW: Output Shaft Diameter ตาม {rkfsDesign}{rkfsSize} ---
+const shaftDiaMap = {
+  R17:'Ø20',  RF17:'Ø20',
+  R27:'Ø25',  RF27:'Ø25',
+  R37:'Ø25',  RF37:'Ø25',
+  R47:'Ø30',  RF47:'Ø30',
+
+  // RX, RXF, RM เริ่ม size 57
+  R57:'Ø35',  RF57:'Ø35',
+  RX57:'Ø20', RXF57:'Ø20',
+  RX67:'Ø25', RXF67:'Ø25',
+  RX77:'Ø30', RXF77:'Ø30',
+  RX87:'Ø40', RXF87:'Ø40',
+  RX97:'Ø50', RXF97:'Ø50',
+  RX107:'Ø60', RXF107:'Ø60',
+
+  RM57:'Ø35',
+  R67:'Ø35',  RF67:'Ø35',  RM67:'Ø40',
+  R77:'Ø40',  RF77:'Ø40',  RM77:'Ø50',
+  R87:'Ø50',  RF87:'Ø50',  RM87:'Ø60',
+  R97:'Ø60',  RF97:'Ø60',  RM97:'Ø70',
+  R107:'Ø70',  RF107:'Ø70',  RM107:'Ø80',
+  R137:'Ø90',  RF137:'Ø90',  RM137:'Ø100',
+  R147:'Ø110',  RF147:'Ø110',  RM147:'Ø110',
+  R167:'Ø120',  RF167:'Ø120',  RM167:'Ø125', 
+};
+const outShaftDia = shaftDiaMap[dsKey] || '—';
+
+// --- NEW: Output Flange Diameter (หลายตัวเลือก) ตาม {rkfsDesign}{rkfsSize} ---
+const flangeDiaMap = {
+  RF17:['Ø120','Ø140','Ø160'],
+  RF27:['Ø120','Ø140','Ø160'],
+  RF37:['Ø120','Ø140','Ø160','Ø200'],
+  RF47:['Ø140','Ø160','Ø200'],
+  RF57:['Ø160','Ø200','Ø250'],
+
+  RXF57:['Ø140','Ø160','Ø200'],
+  RXF67:['Ø160','Ø200','Ø250'],
+  RXF77:['Ø200','Ø250'],
+  RXF87:['Ø250','Ø300'],
+  RXF97:['Ø300','Ø350'],
+  RXF107:['Ø350','Ø450'],
+
+  RM57:['Ø250'],
+  RF67:['Ø200','Ø250'],
+  RM67:['Ø300'],
+  RF77:['Ø250','Ø300'],
+  RM77:['Ø350'],
+  RF87:['Ø300','Ø350'],
+  RM87:['Ø350'],
+  RF97:['Ø350','Ø450'],
+  RM97:['Ø450'],
+  RF107:['Ø350','Ø450'],
+  RM107:['Ø550'],
+  RF137:['Ø450','Ø550'],
+  RM137:['Ø550'],
+  RF147:['Ø450','Ø550'],
+  RM147:['Ø660'],
+  RF167:['Ø550','Ø660'],
+  RM167:['Ø660'],
+};
+const outFlangeList = flangeDiaMap[dsKey];
+
+
+
 
   return (
     <div className="max-w-3xl mx-auto text-left bg-black/25 rounded-xl px-5 py-4 backdrop-blur-sm text-white/90 text-sm md:text-base leading-7">
       <div>Series : <b>{series}</b></div>
-      <div>Design : <b>{design}</b></div>
+      <div>Design : <b>{designDesc}</b></div>
       <div>Gear Size : <b>{design}{size}</b></div>
       <div>Ratio : <b>{ratioS}</b></div>
       <div>Input Selection : <b>{inpSel}</b></div>
       <div>
-        Motor Type : (<b>{mType}</b>) , (<b>{mKWs}</b> kW) , (<b>{poleS}</b> Pole) ,
-        {' '}3Phase380VAC,50Hz,IP55,Class F, Premium Efficiency IE3.
-      </div>
+  Motor Type : <b>{mKWs}</b> kW ,<b>{poleS}</b> Pole ,
+  {' '}3Phase380VAC,50Hz,IP55,Class F,<b>{mType}</b>, <b>{motorTypeNote}</b>.
+</div>
       <div>Output speed (rpm) : <b>{outRPM ? outRPM.toFixed(2) : '-'}</b></div>
       <div>Output Torque (N·m) : <b>{outTorque ? outTorque.toFixed(2) : '-'}</b></div>
+             <div>Shaft Position : <b>{shaftPos}</b></div>
       <div>Mouting Position : <b>{MTP}</b></div>
       <div>Cable Wire Position : <b>{MTC}</b></div>
-      <div>Output Shaft Diameter : <b>—</b></div>
+      <div>Output Shaft Diameter : <b>{outShaftDia}</b></div>
+      <div>
+  Output Flange Diameter : <b>{outFlangeList ? outFlangeList.join(' , ') : '—'}</b>
+  {' '}<span className="text-red-500 font-semibold">**โปรดระบุขนาดก่อนยืนยันสั่งซื้อ</span>
+</div>
       <div>Warranty : <b>2 Years</b></div>
     </div>
   );
@@ -2015,7 +2143,7 @@ const clickSweep = (e, run) => {
       }
       className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow"
     >
-      ✅ เสร็จสิ้นพร้อมดาวน์โหลด 3D Model
+      ✅ รับไฟล์ 3D
     </button>
 
     <div className="mt-4">
