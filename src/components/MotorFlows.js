@@ -364,7 +364,7 @@ export const productList = [
   { name: 'SRV Worm Gear', image: SRVImg }
 ];
 
-export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio }) {
+export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio , acConfirm }) {
   if (!acMotorType || !acPower || !acVoltage || !acOption || !acGearHead || !acRatio) return null;
 
   const phaseMap = {
@@ -474,9 +474,10 @@ const getGearGif = () => {
 
 // Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
 export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
-  const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio } = acState;
+  const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio , acConfirm } = acState;
 
   const [selectedModel, setSelectedModel] = useState(null);
+  const [showAcFinal, setShowAcFinal] = React.useState(false);
 
   // Optional (multi-select + confirm)
   const [optSelected, setOptSelected] = useState(
@@ -539,10 +540,10 @@ const gifForHead = (() => {
 
   return (
     <div className="space-y-6 mt-6">
-      {/* Motor Type */}
+      {/* 	 */}
       {!acMotorType && (
         <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Motor Type</h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Motor Type : เลือกประเภทของมอเตอร์</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: 'Induction Motor', img: InductionImg },
@@ -568,7 +569,7 @@ const gifForHead = (() => {
       {/* Power */}
       {acMotorType && !acPower && (
         <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Power Motor</h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Power Motor : กำลังของมอเตอร์</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: '10W AC Motor', img: W10Img },
@@ -597,7 +598,7 @@ const gifForHead = (() => {
       {/* Voltage */}
       {acPower && !acVoltage && (
         <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Voltage</h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Voltage : แรงดันไฟฟ้า</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
               { label: '1Phase220V AC 50Hz', img: SingleImg },
@@ -619,7 +620,7 @@ const gifForHead = (() => {
       {/* Optional (multi-select + next) */}
       {acPower && acVoltage && !optConfirmed && !acGearHead && (
         <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Motor Optional</h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Motor Optional : เลือกอุปกรณ์เสริม</h3>
 
           {smallPowers.includes(acPower) ? (
             <p className="text-white/80 mb-2">รุ่น {acPower} ไม่ต้องใช้พัดลม</p>
@@ -670,7 +671,7 @@ const gifForHead = (() => {
       {/* Gear Type (มีปุ่มย้อนกลับล่างซ้าย) */}
       {acOption && optConfirmed && !acGearHead && (
         <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Gear Type</h3>
+          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Gear Type : เลือกชนิดหัวเกียร์</h3>
           {(() => {
             const gearOptionsByPower = () => {
               switch (acPower) {
@@ -734,34 +735,161 @@ const gifForHead = (() => {
         </div>
       )}
 
-      {/* Ratio */}
-      {acGearHead && !acRatio && (
-        <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Ratio Selection</h3>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <p className="text-red-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-              สูตรการหาความเร็วรอบ ( rpm ) = ความเร็วรอบมอเตอร์ / อัตราทด :
-            </p>
-            <p className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-              : เช่น มอเตอร์ 1Phase220VAC 4Pole, 1500 rpm , Gear Head อัตราทด 1:30 : 1500 / 30 = 50 rpm
-            </p>
-            <p>-------------------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
-            
-            {[3,3.6,5,6,7.5,9,12.5,15,18,25,30,36,50,60,75,90,100,120,150,180,200].map(ratio => (
-              <button
-                key={ratio}
-                onClick={() => update('acRatio', ratio)}
-                className="bg-blue-200 hover:bg-blue-500 px-6 py-3 rounded"
-              >
-                {ratio}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Step (AC): Ratio */}
+{acGearHead && !acRatio && (
+  <div>
+    <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      Ratio : เลือกอัตราทดที่ต้องการ
+    </h3>
 
+    <div className="flex flex-col items-center gap-2">
+      <p className="text-red-600 font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+        สูตรการหาความเร็วรอบ (rpm) = ความเร็วรอบมอเตอร์ / อัตราทด
+      </p>
+      <p className="text-white font-semibold drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+        เช่น มอเตอร์ 1Phase 220VAC, 4Pole, 1500 rpm, Gear Head อัตราทด 1:30 → 1500 / 30 = 50 rpm
+      </p>
+
+      <div className="flex flex-wrap gap-2 justify-center mt-2">
+        {[3,3.6,5,6,7.5,9,12.5,15,18,25,30,36,50,60,75,90,100,120,150,180,200].map(ratio => (
+          <button
+            key={ratio}
+            onClick={(e) => (typeof clickSweep === 'function'
+              ? clickSweep(e, () => update('acRatio', ratio))
+              : update('acRatio', ratio))}
+            className="bg-blue-200 hover:bg-blue-500 text-blue-900 hover:text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg transition"
+            title={`อัตราทด 1:${ratio}`}
+          >
+            {ratio}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Step (AC): Summary */}
+{acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && !showAcFinal && (
+  <div id="ac-summary" className="relative max-w-4xl mx-auto mt-6">
+    <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+  Model Code :{' '}
+  <span className="font-mono text-white/90 bg-black/30 px-2 py-0.5 rounded">
+    {(() => {
+  const raw = generateModelCode({ ...acState, acConfirm: true });
+  const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
+  if (!list.length) return null;
+  return (
+    <div className="flex flex-col items-center space-y-2">
+      {list.map((code, idx) => (
+        <label key={idx} className="flex items-center space-x-2">
+          <input
+            type="radio"
+            name="modelSelect"
+            value={code}
+            checked={selectedModel === code}
+            onChange={() => setSelectedModel(code)}
+          />
+          <span className="font-mono">{code}</span>
+        </label>
+      ))}
+    </div>
+  );
+})()}
+  </span>
+</h3>
+    <div className="bg-black/25 rounded-xl px-5 py-5 text-white/90 backdrop-blur-sm leading-7">
+      <div>Motor Type : <b>{acMotorType||'-'}</b></div>
+      <div>Frame size : <b>—</b></div>
+      <div>Motor Power : <b>{acPower||'-'}</b></div>
+      <div>Voltage : <b>{acVoltage||'-'}</b></div>
+      <div>Frequency : <b>50Hz , 60Hz</b></div>
+      <div>Current (A) : <b>—</b></div>
+      <div>Rated speed : <b>—</b></div>
+      <div>Optional : <b>{acOption||'-'}</b></div>
+      <div>Gear Type : <b>{acGearHead||'-'}</b></div>
+      <div>Ratio : <b>{acRatio}</b></div>
+      <div>
+        Output speed :
+        <b>
+          {(() => {
+            const r = Number(acRatio);
+            return Number.isFinite(r) && r > 0 ? (1500 / r).toFixed(2) : '-';
+          })()}
+        </b> rpm
+      </div>
+      <div>Output shaft diameter : <b>{
+  (() => {
+    // 1) รวมรายการโค้ดตามสภาพจริง (เหมือนตอนกด "ถัดไป")
+    const raw = generateModelCode({ ...acState, acConfirm: true });
+    const list = Array.isArray(raw)
+      ? (Array.isArray(raw[0]) ? raw.flat() : raw)
+      : (raw ? [raw] : []);
+
+    // 2) โค้ดที่ถูกเลือก (หรือเอาตัวแรกเป็นค่าเริ่มต้น)
+    const chosen = (typeof selectedModel === 'string' && selectedModel) || (list[0] || '');
+
+    // 3) อ่าน suffix จากรหัสที่เลือก (K / KB / RC / RT) → แม่นยำกว่าการเดาจาก acGearHead
+    const suffixMatch = chosen.match(/(KB|RC|RT|K)\s*$/i); // จับ KB ก่อน K
+    const suffixFromCode = suffixMatch ? suffixMatch[1].toUpperCase() : null;
+
+    // 4) fallback จาก acGearHead เมื่อยังจับจากรหัสไม่ได้
+    const headFromGearHead =
+      acGearHead === 'SQUARE BOX WITH WING'            ? 'K'  :
+      acGearHead === 'SQUARE BOX (Low)'                ? 'KB' :
+      acGearHead === 'SQUARE BOX'                      ? 'KB' :
+      acGearHead === 'RIGHT ANGLE GEAR/HOLLOW SHAFT'   ? 'RC' :
+      acGearHead === 'RIGHT ANGLE GEAR/SOLID SHAFT'    ? 'RT' : null;
+
+    const head = suffixFromCode || headFromGearHead;
+
+    // 5) เงื่อนไขตรวจ 60W + GN/GU
+    const is60W = /\b60W\b/i.test(String(acPower)); // รองรับ "60W AC Motor"
+    const isGN  = /GN/.test(chosen);
+    const isGU  = /GU/.test(chosen);
+
+    // 6) ตารางค่าที่คุณกำหนด
+    if (is60W) {
+      if (isGN && head === 'K')  return 'Ø12 mm';  // 60W GN + K
+      if (isGU) {
+        if (head === 'KB') return 'Ø15 mm';        // 60W GU + KB
+        if (head === 'K')  return 'Ø15 mm';        // 60W GU + K
+        if (head === 'RC') return 'Ø17 mm';        // 60W GU + RC
+        if (head === 'RT') return 'Ø15 mm';        // 60W GU + RT
+      }
+    }
+    return '—';
+  })()
+}</b></div>
+      <div>Weight : <b>— kg</b></div>
+    </div>
+
+    {/* Drawing PDF (กึ่งกลางล่างของจอ) */}
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[998]">
+      <button className="btn-3d-rkfs px-6 py-3 font-bold">
+        Drawing PDF
+      </button>
+    </div>
+    {/* ถัดไป (มุมขวาล่างของจอ) */}
+    <div className="fixed right-6 bottom-6 z-[999]">
+  <button
+    className="btn-3d-rkfs px-6 py-3 font-bold"
+    onClick={() => {
+  const base = Array.isArray(codes)
+    ? (Array.isArray(codes[0]) ? codes.flat() : codes)
+    : (codes ? [codes] : []);
+  const list = (selectedModel && base.length)
+    ? [selectedModel, ...base.filter(c => c !== selectedModel)] // ★ จัดลำดับ โดยเอาตัวที่ติ๊กไว้ขึ้นก่อน
+    : base;
+  if (list.length) onConfirm(list); // App.jsx จะตั้ง selectedModel = ตัวแรก → ตรงกับที่ผู้ใช้เลือก
+}}
+>
+  ถัดไป
+</button>
+    </div>
+  </div>
+)}
       {/* Final */}
-      {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && (
+      {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && showAcFinal &&  (
         <div className="text-center space-y-4 mt-6">
           <h2 className="text-2xl font-bold text-blue-700">
             {Array.isArray(codes) ? codes.join(', ') : codes}
@@ -784,10 +912,6 @@ const gifForHead = (() => {
         </div>
       </div>
     )}
-          <div>
-            <p>Output Speed 50Hz: {(1500 / acRatio).toFixed(1)} rpm</p>
-            <p>Output Speed 60Hz: {(1800 / acRatio).toFixed(1)} rpm</p>
-          </div>
 
           {Array.isArray(codes) && (
             <div className="flex flex-col items-center space-y-2">
@@ -1426,6 +1550,10 @@ const clickSweep = (e, run) => {
     <>
       {/* Step 1: Series */}
       {!rkfsSeries && (
+<>
+        <h3 className="font-semibold text-blue-500 drop-shadow mb-3">
+      เลือก Series Gear ที่คุณต้องการ
+    </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {["R","K","S","F"].map(label => (
             <button
@@ -1444,11 +1572,15 @@ const clickSweep = (e, run) => {
             </button>
           ))}
         </div>
+        </>
       )}
 
       {/* Step 2: Design */}
       {rkfsSeries && !rkfsDesign && (
         <>
+                    <h3 className="font-semibold text-blue-500 drop-shadow mb-3">
+      เลือก Design Gear ที่คุณต้องการ
+    </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {designOptions[rkfsSeries].map(design => {
               const imageMap = {
@@ -1470,12 +1602,12 @@ const clickSweep = (e, run) => {
               );
             })}
           </div>
-          <div className="mt-4 text-center">
+          <div className="mt-4 text-left">
             <button
               onClick={(e) => clickSweep(e, () => update("rkfsSeries", null))}
-              className="text-blue-600 underline"
+              className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
             >
-              ← ย้อนกลับ
+              ย้อนกลับ
             </button>
           </div>
         </>
@@ -1484,6 +1616,9 @@ const clickSweep = (e, run) => {
       {/* Step 3: Size */}
 {rkfsDesign && !rkfsSize && (
   <>
+    <h3 className="font-semibold text-blue-500 drop-shadow mb-3">
+      เลือก Size Gear ที่คุณต้องการ
+    </h3>
     <div className="flex flex-wrap gap-4 justify-center">
       {(
         rkfsSeries === "R"
@@ -1504,16 +1639,24 @@ const clickSweep = (e, run) => {
             onClick={(e) => clickSweep(e, () => update("rkfsSize", size))}
             className="w-24 h-24 bg-white shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 rounded-xl flex items-center justify-center text-blue-800 font-bold text-lg border border-gray-300 hover:bg-blue-100"
           >
-            Size {size}
+            {rkfsDesign}{size}
           </button>
         ))}
     </div>
-    <div className="mt-6 text-center">
+    <h2 className="text-xs sm:text-sm md:text-base font-semibold text-red-400 drop-shadow mb-6 leading-relaxed">
+  ขนาด Size Gear จะเป็นตัวบ่งบอกขนาดของเพลา , ความสูงของกึ่งกลางเพลา ,ระยะขาตั้ง, หน้าแปลน , ขนาด Housing , น้ำหนัก ที่แตกต่างกันออกไป สามารถเลือกได้ตามความเหมาะสมของเครื่องจักรของท่าน
+</h2>
+    <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
       <button
         onClick={(e) => clickSweep(e, () => update("rkfsDesign", null))}
-        className="text-blue-600 underline"
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
       >
-        ← ย้อนกลับ
+        ย้อนกลับ
       </button>
     </div>
   </>
@@ -1521,8 +1664,8 @@ const clickSweep = (e, run) => {
       {/* Step 3.1: Input Selection */}
 {rkfsSize && !rkfsInputSel && (
   <>
-    <h3 className="font-semibold text-white drop-shadow mb-3">
-      Step 3.1 — Input Selection
+    <h3 className="font-semibold text-blue-500 drop-shadow mb-3">
+      เลือก Input Selection
     </h3>
 
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -1570,13 +1713,17 @@ const clickSweep = (e, run) => {
         });
       })()}
     </div>
-
-    <div className="mt-6 text-center">
+    <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
       <button
         onClick={(e) => clickSweep(e, () => update("rkfsSize", null))}
-        className="text-blue-600 underline"
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
       >
-        ← ย้อนกลับ
+        ย้อนกลับ
       </button>
     </div>
   </>
@@ -1608,13 +1755,13 @@ const clickSweep = (e, run) => {
               </button>
             ))}
           </div>
-          <div className="mt-6 text-center">
-            <button
-              onClick={(e) => clickSweep(e, () => update("rkfsSize", null))}
-              className="text-blue-600 underline"
-            >
-              ← ย้อนกลับ
-            </button>
+          <div className="mt-4 text-left">
+      <button
+        onClick={(e) => clickSweep(e, () => update("rkfsInputSel", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+      >
+        ย้อนกลับ
+      </button>
           </div>
         </>
       )}
@@ -1622,7 +1769,7 @@ const clickSweep = (e, run) => {
       {/* Step 5: Motor Power */}
       {rkfsMotorType && !rkfsMotorPower && (
         <>
-          <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Input Power Motor (kW)</h3>
+          <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือกกำลังของมอเตอร์(หน่วย kW)</h3>
           <div className="flex flex-wrap gap-3">
       {(() => {
         // Fallback เดิม (กรณีไม่เจอ mapping หรือยังไม่เลือก Size)
@@ -1657,13 +1804,18 @@ const clickSweep = (e, run) => {
 ));
       })()}
     </div>
-          <div className="mt-4 text-center">
-            <button
-              onClick={(e) => clickSweep(e, () => update("rkfsMotorType", null))}
-              className="text-blue-600 underline"
-            >
-              ← ย้อนกลับ
-            </button>
+          <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
+      <button
+        onClick={(e) => clickSweep(e, () => update("rkfsMotorType", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+      >
+        ย้อนกลับ
+      </button>
           </div>
         </>
       )}
@@ -1674,25 +1826,30 @@ const clickSweep = (e, run) => {
           <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือก Pole Motor</h3>
           <div className="flex flex-wrap gap-3">
             <br />
-            {["2P","4P","6P","8P"].map(pole =>(
+            {["4P","6P"].map(pole =>(
               <button
                 key={pole}
                 onClick={(e) => clickSweep(e, () => update("rkfsPole", pole))}
-                className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+                className="bg-blue-600 text-white font-bold px-10 py-8 rounded-xl shadow"
               >
                 {pole}
               </button>
             ))}
           </div>
           <br />
-          <h2 className="text-red-500 font-bold mb-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">**ความเร็วรอบของมอเตอร์จะอิงตาม Pole ของมอเตอร์ 2P = 3000 rpm, 4P = 1500 rpm, 6P = 1000 rpm, 8P = 750 rpm</h2>
-          <div className="mt-4 text-center">
-            <button
-              onClick={(e) => clickSweep(e, () => update("rkfsMotorPower", null))}
-              className="text-blue-400 underline"
-            >
-              ← ย้อนกลับ
-            </button>
+          <h2 className="text-red-500 font-bold mb-1 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">**ความเร็วรอบของมอเตอร์จะอิงตาม Pole ของมอเตอร์ ค่าประมาณการ 4P = 1500 rpm, 6P = 1000 rpm (ทั้งนี้จะขึ้นอยู่มาตรฐานการผลิตของแต่ล่ะแบรนด์)</h2>
+          <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
+      <button
+        onClick={(e) => clickSweep(e, () => update("rkfsMotorPower", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+      >
+        ย้อนกลับ
+      </button>
           </div>
         </>
       )}
@@ -1701,26 +1858,31 @@ const clickSweep = (e, run) => {
       {rkfsPole && !rkfsRatio && (
         <>
           <div>
-            <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือกอัตราทดเกียร์ (Gear Ratio)</h3>
+            <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือกอัตราทดเกียร์ (Ratio (i))</h3>
             <div className="flex flex-wrap gap-3">
               {ratioList.map(ratio => (
                 <button
                   key={ratio}
                   onClick={(e) => clickSweep(e, () => update("rkfsRatio", ratio))}
-                  className="bg-blue-600 text-white font-bold shadow px-4 py-2 rounded-xl hover:bg-blue-700"
+                  className="bg-blue-600 text-white font-bold shadow px-8 py-6 rounded-xl hover:bg-blue-700"
                 >
                   i = {ratio}
                 </button>
               ))}
             </div>
           </div>
-          <div className="mt-4 text-center">
-            <button
-              onClick={(e) => clickSweep(e, () => update("rkfsPole", null))}
-              className="text-blue-600 underline"
-            >
-              ← ย้อนกลับ
-            </button>
+          <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
+      <button
+        onClick={(e) => clickSweep(e, () => update("rkfsPole", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+      >
+        ย้อนกลับ
+      </button>
           </div>
         </>
       )}
@@ -1730,7 +1892,7 @@ const clickSweep = (e, run) => {
   <>
     <div>
       <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-        เลือกทิศทางการติดตั้ง
+        เลือกทิศทางการติดตั้ง (Mounting Position)
       </h3>
       <h3 className="text-red-500 font-bold mb-2 drop-shadow-[0_05px_05px_rgba(0,0,0,0.3)]">
         **ทุกทิศทางการติดตั้งมีผลต่อระดับน้ำมันในห้องเกียร์ มีผลต่ออายุการใช้งานของเกียร์
@@ -1749,7 +1911,7 @@ const clickSweep = (e, run) => {
           <button
             key={mount}
             onClick={(e) => clickSweep(e, () => update("rkfsMountingTemp", mount))}
-            className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:shadow-lg"
+            className="bg-gradient-to-br from-blue-500 to-blue-800 text-white font-bold px-6 py-4 rounded-xl shadow hover:shadow-lg"
           >
             {mount}
           </button>
@@ -1967,12 +2129,17 @@ const clickSweep = (e, run) => {
            </div>
     )}
 
-    <div className="mt-4 text-center">
+    <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
       <button
         onClick={(e) => clickSweep(e, () => update("rkfsRatio", null))}
-        className="text-blue-600 underline"
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
       >
-        ← ย้อนกลับ
+        ย้อนกลับ
       </button>
     </div>
   </>
@@ -2001,13 +2168,18 @@ const clickSweep = (e, run) => {
               ))}
             </div>
           </div>
-          <div className="mt-6 text-center">
-            <button
-              onClick={(e) => clickSweep(e, () => update("rkfsMounting", null))}
-              className="text-blue-600 underline"
-            >
-              ← ย้อนกลับ
-            </button>
+          <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
+      <button
+        onClick={(e) => clickSweep(e, () => update("rkfsMounting", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+      >
+        ย้อนกลับ
+      </button>
           </div>
         </>
       )}
@@ -2035,13 +2207,18 @@ const clickSweep = (e, run) => {
               ))}
             </div>
           </div>
-          <div className="mt-6 text-center">
-            <button
-              onClick={(e) => clickSweep(e, () => update("rkfsPosition", null))}
-              className="text-blue-600 underline"
-            >
-              ← ย้อนกลับ
-            </button>
+          <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
+      <button
+        onClick={(e) => clickSweep(e, () => update("rkfsPosition", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+      >
+        ย้อนกลับ
+      </button>
           </div>
         </>
       )}
@@ -2049,8 +2226,8 @@ const clickSweep = (e, run) => {
       {/* Step 9.3: Design code (เฉพาะ K / S Series) */}
 {rkfsSeries && rkfsDesign && rkfsPosition && rkfsPositionSub && (rkfsSeries === 'K' || rkfsSeries === 'S') && (
   <div className="mt-6">
-    <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-      Step 9.3 — Design code
+    <h3 className="text-blue-600 font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+     เลือกทิศทางการติดตั้งเพลา ซ้าย หรือ ขวา ?
     </h3>
 
     {(() => {
@@ -2634,18 +2811,22 @@ if (oilArr && rkfsMounting && mountIdx[rkfsMounting] != null) {
           `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`
         )
       }
-      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow"
+      className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 shadow"
     >
       ✅ รับไฟล์ 3D
     </button>
-
-    <div className="mt-4">
+    
+    <div className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
       <button
-        type="button"
-        onClick={() => update('rkfsPositionSub', null)}
-        className="text-blue-600 underline"
+        onClick={(e) => clickSweep(e, () => update("rkfsPositionSub", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
       >
-        ← ย้อนกลับ
+        ย้อนกลับ
       </button>
     </div>
   </div>

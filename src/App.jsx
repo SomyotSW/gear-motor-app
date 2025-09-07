@@ -318,9 +318,6 @@ async function handleBLDCDownload(modelCode) {
 
 function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [modelCodeList, setModelCodeList] = useState([]);
-  const [selectedModel, setSelectedModel] = useState(null);
-  const [showForm, setShowForm] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
     useEffect(() => {
   if (typeof emailjs?.init === 'function') {
@@ -336,6 +333,12 @@ function App() {
   const [acOption, setAcOption] = useState(null);
   const [acGearHead, setAcGearHead] = useState(null);
   const [acRatio, setAcRatio] = useState(null);
+  const [acConfirm, setAcConfirm] = useState(false);
+  // ... ในฟังก์ชัน App()
+const [modelCodeList, setModelCodeList] = useState([]);   // รายการโค้ดที่ส่งมาจาก MotorFlows
+const [selectedModel, setSelectedModel] = useState(null); // ตัวที่ถูกเลือก
+// ถ้ายังไม่มี:
+const [showForm, setShowForm] = useState(false);
 
 
   // Hypoid Gear Flow states
@@ -696,7 +699,9 @@ const onConfirm = (modelCode) => {
       acVoltage &&
       acOption &&
       acGearHead &&	
-      acRatio
+      acRatio &&
+            acConfirm && 
+            !selectedModel
     ) {
       const powerArray = acPower.split(',').map(p => p.trim());
       const generatedCodes = powerArray.map(power =>
@@ -710,13 +715,14 @@ const onConfirm = (modelCode) => {
         })
       ).flat();
 
+      
       const finalCodes = Array.isArray(generatedCodes[0]) ? generatedCodes.flat() : generatedCodes;
       if (finalCodes.length > 0) {
         setModelCodeList(finalCodes);
         setSelectedModel(finalCodes[0]);
       }
     }
-  }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio]);
+  }, [selectedProduct, acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio, acConfirm, selectedModel]);
 
    // เลือก GIF ตามหัวเกียร์ที่ผู้ใช้เลือก (ใช้ state acGearHead จาก App.jsx)
 const gearGifForHead = () => {
@@ -917,8 +923,8 @@ const objectUrl = URL.createObjectURL(blob);
     setRkfsMounting(null);
   };
 
-  const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio };
-  const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio };
+  const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio, acConfirm };
+const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, setAcOption, setAcGearHead, setAcRatio, setAcConfirm };
   const rkfsState = {
   rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
   rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub,
@@ -1103,7 +1109,23 @@ const getFileUrl = () => {
                 <button
   key={p.name}
   type="button"
-  onClick={() => setSelectedProduct(p.name)}
+  onClick={() => {
+  if (p.name === 'AC Gear Motor') {
+    // กันค้างค่าเดิมทุกตัว
+    setAcMotorType(null);
+    setAcPower(null);
+    setAcSpeedAdjust(null);
+    setAcVoltage(null);
+    setAcOption(null);
+    setAcGearHead(null);
+    setAcRatio(null);
+    setAcConfirm(false);     // ★ สำคัญ
+    setModelCodeList([]);
+    setSelectedModel(null);
+    setShowForm(false);
+  }
+  setSelectedProduct(p.name);
+}}
   className="
     group relative w-full overflow-hidden text-left
     rounded-2xl
@@ -1537,7 +1559,7 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   <>
     <div className="flex justify-between items-center mt-6">
       <h2 className="text-white font-bold mb-2 drop-shadow">RKFS Series Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBackUniversal}>Home</button>
+      <button className="text-blue-500 font-bold mb-2 drop-shadow" onClick={handleBackUniversal}>Home</button>
     </div>
     {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
       const models = Array.isArray(modelCode) ? modelCode : [modelCode];
