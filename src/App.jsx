@@ -375,6 +375,7 @@ const servoSetters = {
     const [rkfsPole, setRkfsPole] = useState(null);
     const [rkfsRatio, setRkfsRatio] = useState(null);
     const [rkfsMounting, setRkfsMounting] = useState(null);
+        const [rkfsMountingTemp, setRkfsMountingTemp] = useState(null);
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
     const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
@@ -922,12 +923,13 @@ const objectUrl = URL.createObjectURL(blob);
   rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
   rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub,
   rkfsDesignSuffix,
+    rkfsMountingTemp,
   rkfsInputSel,                // ★ เพิ่ม
 };
   const rkfsSetters = {
   setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower,
   setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub,
-  setRkfsDesignSuffix,
+  setRkfsDesignSuffix, setRkfsMountingTemp,
   setRkfsInputSel,            // ★ เพิ่ม
 };
 
