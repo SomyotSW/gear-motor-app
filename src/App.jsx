@@ -4,6 +4,7 @@ import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { subscribeStats, countVisitOncePerDay, recordDownloadOncePerSession } from "./firebase";
 
 import ANL from './assets/ANL.gif';
 import ANR from './assets/ANR.gif';
@@ -24,7 +25,6 @@ import GNLGULGIF from './assets/bldc/GNLGULGIF.gif';
 import SGIF from './assets/bldc/SGIF.gif';
 import SFGIF from './assets/bldc/SFGIF.gif';
 import SLGIF from './assets/bldc/SLGIF.gif';
-
 
 // ====== Utilities: BLDC filename mapper ======
 function mapBLDCDownloadFilename(modelCode) {
@@ -436,6 +436,15 @@ const [hbZdySelected, setHbZdySelected] = useState(null);  // 'ZDY', 'ZLY', ...
 const hbState = { hbSeries, hbHBType, hbStage, hbOutput, hbMount, hbSize, hbRatio, hbShaftDesign, hbZdySelected };
 const hbSetters = { setHbSeries, setHbHBType, setHbStage, setHbOutput, setHbMount, setHbSize, setHbRatio, setHbShaftDesign, setHbZdySelected };
 
+// ★ เพิ่ม state เก็บสถิติ (วางใกล้ ๆ useState อื่น ๆ ของ App)
+const [stats, setStats] = useState({ totalVisits: 0, totalDownloads: 0 });
+
+// ★ เพิ่ม effect สำหรับนับผู้ชมและฟัง realtime (รันครั้งเดียวตอน mount)
+useEffect(() => {
+  countVisitOncePerDay();
+  const unsub = subscribeStats(setStats);
+  return () => unsub();
+}, []);
 
 const COMING_SOON = new Set([
   'DC Gear Motor',
@@ -1092,6 +1101,29 @@ const getFileUrl = () => {
           SAS 3D.STEP
         </text>
       </svg>
+      {/* === Real-time Stats (Left & Right) === */}
+<div className="relative w-full max-w-6xl mx-auto mt-2">
+  {/* ซ้าย: ผู้ชมทั้งหมด */}
+  <div className="absolute -top-6 left-12">
+    <div className="backdrop-blur-md bg-white/20 text-white px-4 py-2 rounded-2xl shadow-lg ring-1 ring-white/10">
+      <div className="text-xs opacity-90">มีผู้เข้าชมแล้ว</div>
+      <div className="text-2xl font-extrabold tabular-nums">
+        {stats.totalVisits.toLocaleString()}
+      </div>
+    </div>
+  </div>
+
+  {/* ขวา: ดาวน์โหลด 3D ทั้งหมด */}
+  <div className="absolute -top-6 right-0">
+    <div className="backdrop-blur-md bg-white/20 text-white px-4 py-2 rounded-2xl shadow-lg ring-1 ring-white/10">
+      <div className="text-xs opacity-90">ยอดดาวน์โหลด 3D ทั้งหมด</div>
+      <div className="text-2xl font-extrabold tabular-nums">
+        {stats.totalDownloads.toLocaleString()}
+      </div>
+    </div>
+  </div>
+</div>
+
 
       {/* GIF ขวา — สูงกว่าตัวอักษรนิดหน่อย */}
       <img
@@ -1273,7 +1305,10 @@ const getFileUrl = () => {
     <div className="flex justify-center items-center gap-4 mt-4">
       <button
         className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => setShowForm(true)}
+        onClick={async () => {
+  await recordDownloadOncePerSession();  // ★ เพิ่มบรรทัดนี้เพื่อเพิ่มตัวนับ
+  setShowForm(true);
+}}
       >
         Download 3D
       </button>
@@ -1377,7 +1412,10 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
         <div className="flex justify-center items-center gap-4 mt-4">
           <button
             className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => setShowForm(true)}
+            onClick={async () => {
+  await recordDownloadOncePerSession();  // ★ เพิ่มบรรทัดนี้เพื่อเพิ่มตัวนับ
+  setShowForm(true);
+}}
           >
             Download 3D
           </button>
@@ -1494,7 +1532,10 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
  })()}
       <div className="mt-6 flex gap-3 justify-center">
         <button
-          onClick={() => setShowForm(true)}
+          onClick={async () => {
+  await recordDownloadOncePerSession();  // ★ เพิ่มบรรทัดนี้เพื่อเพิ่มตัวนับ
+  setShowForm(true);
+}}
           className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow"
         >
           Download 3D
@@ -1593,7 +1634,10 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
     <div className="flex justify-center items-center gap-4 mt-4">
       <button
         className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => setShowForm(true)}
+        onClick={async () => {
+  await recordDownloadOncePerSession();  // ★ เพิ่มบรรทัดนี้เพื่อเพิ่มตัวนับ
+  setShowForm(true);
+}}
       >
         Download 3D
       </button>
