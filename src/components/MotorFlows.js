@@ -773,7 +773,7 @@ const gifForHead = (() => {
   <div id="ac-summary" className="relative max-w-4xl mx-auto mt-6">
     <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
   Model Code :{' '}
-  <span className="font-mono text-white/90 bg-black/30 px-2 py-0.5 rounded">
+  <span className="font-mono text-white/90 px-2 py-0.5 rounded">
     {(() => {
   const raw = generateModelCode({ ...acState, acConfirm: true });
   const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
@@ -796,6 +796,46 @@ const gifForHead = (() => {
   );
 })()}
   </span>
+<button
+  type="button"
+  title="Copy Model"
+  className="ml-2 align-middle text-[10px] px-2 py-0.5 rounded border border-white/20 bg-white/10 hover:bg-white/20 transition"
+  onClick={async (e) => {
+    const btn = e.currentTarget;              // ✅ จับปุ่มไว้ก่อน
+    const txt = String(code || '');
+
+    const setBadge = (el, msg = 'Copied!', ms = 1200) => {
+      const old = el.textContent;
+      el.textContent = msg;
+      setTimeout(() => { el.textContent = old; }, ms);
+    };
+
+    const fallbackCopy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    };
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(txt);
+      } else {
+        fallbackCopy();
+      }
+      setBadge(btn);                           // ✅ ใช้ตัวแปรที่จับไว้
+    } catch {
+      fallbackCopy();
+      setBadge(btn);
+    }
+  }}
+>
+  Copy
+</button>
 </h3>
     <div className="bg-black/25 rounded-xl px-5 py-5 text-white/90 backdrop-blur-sm leading-7">
       <div>Motor Type : <b>{acMotorType||'-'}</b></div>
@@ -1327,7 +1367,46 @@ const backOneStep = () => {
       {/* Final Confirm */}
       {supply && (
         <div className="pt-4">
-          <h4 className="text-white">Model Code: <strong>{generateModelCode()}</strong></h4>
+          <h4 className="text-white">Model Code: <strong>{generateModelCode()}</strong><button
+  type="button"
+  title="Copy Model"
+  className="ml-2 align-middle text-[10px] px-2 py-0.5 rounded border border-white/20 bg-white/10 hover:bg-white/20 transition"
+  onClick={async (e) => {
+    const btn = e.currentTarget;              // ✅ จับปุ่มไว้ก่อน
+    const txt = String(code || '');
+
+    const setBadge = (el, msg = 'Copied!', ms = 1200) => {
+      const old = el.textContent;
+      el.textContent = msg;
+      setTimeout(() => { el.textContent = old; }, ms);
+    };
+
+    const fallbackCopy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    };
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(txt);
+      } else {
+        fallbackCopy();
+      }
+      setBadge(btn);                           // ✅ ใช้ตัวแปรที่จับไว้
+    } catch {
+      fallbackCopy();
+      setBadge(btn);
+    }
+  }}
+>
+  Copy
+</button></h4>
           <button className="px-1 py-2 bg-green-300 rounded hover:bg-green-500" onClick={() => onConfirm(generateModelCode())}>เสร็จสิ้น</button>
           <div className="mt-2">
   <button onClick={backOneStep} className="px-1 py-2 bg-gray-200 rounded hover:bg-gray-300">
@@ -4682,6 +4761,7 @@ export function renderSRVFlow(state, setState, onConfirm) {
     "130": ratio11,
     "150": ratio11
   };
+  
 
   const floatingBack = (onClick) => (
     <button
@@ -4703,7 +4783,7 @@ export function renderSRVFlow(state, setState, onConfirm) {
   if (!srvSeries) {
     return (
       <>
-        <Section title="Step 1 — SRV Series">
+        <Section title="เลือก Series">
           <div className="grid grid-cols-3 gap-4">
             {[
               { key:'SRV',  img: SRVVImg,  label:'SRV'  },
@@ -4729,7 +4809,7 @@ export function renderSRVFlow(state, setState, onConfirm) {
     const sizes = sizeMap[srvSeries] || [];
     return (
       <>
-        <Section title="Step 2 — Size Gear">
+        <Section title="เลือก Size Gear">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             {sizes.map(sz => (
               <button key={sz}
@@ -4748,7 +4828,7 @@ export function renderSRVFlow(state, setState, onConfirm) {
   if (srvSize && !srvInputSel) {
     return (
       <>
-        <Section title="Step 3 — Input Power">
+        <Section title="เลือก Input Power ที่ต้องการ">
           <div className="grid grid-cols-3 gap-4">
             <button onClick={() => update('srvInputSel','WM')}
               className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
@@ -4778,7 +4858,7 @@ export function renderSRVFlow(state, setState, onConfirm) {
     const powers = powerBySize[key] || [];
     return (
       <>
-        <Section title="Step 3.1 — Power Motor (kW)">
+        <Section title="เลือกขนาดมอเตอร์ (กิโลวัต): Power Motor (kW)">
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
             {powers.map(p => (
               <button key={p} onClick={() => update('srvPowerKW', p)}
@@ -4797,7 +4877,7 @@ export function renderSRVFlow(state, setState, onConfirm) {
   if (srvInputSel === 'WM' && srvPowerKW && !srvPole) {
     return (
       <>
-        <Section title="Step 3.1.1 — Motor Pole">
+        <Section title="เลือกจำนวน Pole มอเตอร์ : Motor Pole">
           <div className="grid grid-cols-2 gap-4">
             {['4P','6P'].map(p => (
               <button key={p} onClick={() => update('srvPole', p)}
@@ -4816,7 +4896,7 @@ export function renderSRVFlow(state, setState, onConfirm) {
   if (srvInputSel === 'WM' && srvPowerKW && srvPole && !srvIECMode) {
     return (
       <>
-        <Section title="Step 3.1.2 — IEC or IEC + Motor">
+        <Section title="เลือกเฉพาะ Gear + IEC Adapter หรือ ทั้งชุด Gear + Motor">
           <div className="grid grid-cols-2 gap-4">
             <button onClick={() => update('srvIECMode','IEC')}
               className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
@@ -4850,7 +4930,7 @@ export function renderSRVFlow(state, setState, onConfirm) {
 
     return (
       <>
-        <Section title="Step 3.1.3 — Ratio">
+        <Section title="เลือกอัตราทด : Ratio">
           {extra}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {ratios.map(r => (
@@ -4875,12 +4955,12 @@ export function renderSRVFlow(state, setState, onConfirm) {
   if (!srvGearType) {
     return (
       <>
-        <Section title="Step 4 — Gear Type">
+        <Section title="เลือกตำแหน่งการติดตั้ง : Mounting Type">
           <div className="grid grid-cols-4 gap-4">
             {[
               {k:'FA', label:'FA', img: SRVFAImg},
               {k:'FB', label:'FB', img: SRVFBImg},
-              {k:'Hollow', label:'Hollow', img: SRVHollowImg},
+              {k:'Hollow & Solid shaft', label:'Hollow & Solid shaft', img: SRVHollowImg},
               {k:'T', label:'T', img: SRVTImg}
             ].map(({k,label,img}) => (
               <button key={k} onClick={() => update('srvGearType', k)}
@@ -4896,19 +4976,19 @@ export function renderSRVFlow(state, setState, onConfirm) {
     );
   }
 
-  // ---------- STEP 4 — Sub (เฉพาะ FA/FB/T) ----------
+  // ---------- STEP 4 : Sub (เฉพาะ FA/FB/T) ----------
 if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !srvGearTypeSub) {
   // เลือกรูป A/B ตามชนิดที่เลือก
   const subImages =
     srvGearType === 'FA'
-      ? [{ k: 'A', img: SRVFAAImg }, { k: 'B', img: SRVFABImg }]
+      ? [{ k: '1', img: SRVFAAImg }, { k: '2', img: SRVFABImg }]
       : srvGearType === 'FB'
-      ? [{ k: 'A', img: SRVFBAImg }, { k: 'B', img: SRVFBBImg }]
-      : [{ k: 'A', img: SRVTAImg }, { k: 'B', img: SRVTBImg }]; // 'T'
+      ? [{ k: '1', img: SRVFBAImg }, { k: '2', img: SRVFBBImg }]
+      : [{ k: '1', img: SRVTAImg }, { k: '2', img: SRVTBImg }]; // 'T'
 
   return (
     <>
-      <Section title="Step 4 — Sub Type">
+      <Section title="เลือกทิศทางการติดตั้ง">
         <div className="grid grid-cols-2 gap-4">
           {subImages.map(({ k, img }) => (
             <button
@@ -4928,11 +5008,11 @@ if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !sr
   );
 }
 
-  // ---------- STEP 5 — Shaft Design ----------
+  // ---------- STEP 5 : Shaft Design ----------
   if (!srvShaftDesign) {
     return (
       <>
-        <Section title="Step 5 — Shaft Design">
+        <Section title="เลือกลักษณะเพลา : Shaft Design">
           <div className="grid grid-cols-4 gap-4">
             <button onClick={() => update('srvShaftDesign','DS')} className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"><img src={DSImg}  alt="DS"  className="w-full rounded-t-2xl"/><p className="text-center py-2 font-semibold">DS</p></button>
             <button onClick={() => update('srvShaftDesign','DS1')} className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"><img src={DS1Img} alt="DS1" className="w-full rounded-t-2xl"/><p className="text-center py-2 font-semibold">DS1</p></button>
@@ -4953,7 +5033,7 @@ if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !sr
     const image = srvSeries === 'SVF' ? SVFMTImg : SRVMTImg; // ถ้าคุณมี SDRVMTImg ต่างหาก ค่อยเปลี่ยนทีหลัง
     return (
       <>
-        <Section title="Step 6 — Mounting position">
+        <Section title="เลือกตำแหน่งการติดตั้ง : Mounting position">
           <div className="flex justify-center mb-6">
             <img src={image} alt="Mounting Table" className="max-w-md w-full rounded-xl shadow"/>
           </div>
@@ -4975,7 +5055,7 @@ if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !sr
   if (!srvIECSize) {
     return (
       <>
-        <Section title="Step 7 — IEC Size">
+        <Section title="เลือกขนาดหน้าแปลนของ Adapter : IEC Adapter Size">
           <div className="grid grid-cols-2 gap-4">
             <button onClick={() => update('srvIECSize','B5')}
               className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
@@ -4994,12 +5074,12 @@ if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !sr
     );
   }
 
-  // ---------- STEP 8 — Motor Type + Position (เฉพาะกรณี WM & IEC+Motor) ----------
+  // ---------- STEP 8 : Motor Type + Position (เฉพาะกรณี WM & IEC+Motor) ----------
   if (srvInputSel === 'WM' && srvIECMode === 'IEC+Motor' && (!srvMotorType || !srvPosition || !srvPositionSub)) {
     return (
       <>
         {!srvMotorType && (
-          <Section title="Step 8 — Motor Type">
+          <Section title="เลือกประเภทของมอเตอร์ : Motor Type">
   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
     {[
       { type: 'YE3',   img: YE3Img   },
@@ -5023,7 +5103,7 @@ if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !sr
 </Section>
         )}
         {srvMotorType && !srvPosition && (
-  <Section title="Step 9 — Position">
+  <Section title="ทิศทางการติดตั้งกล่องไฟ : Terminal Box Position">
     <div className="grid grid-cols-4 gap-4">
       {[
         { p: '0',   img: T0Img   },
@@ -5045,7 +5125,7 @@ if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !sr
   </Section>
 )}
         {srvMotorType && srvPosition && !srvPositionSub && (
-  <Section title="Step 9.2 — Sub-position">
+  <Section title="ทิศทางการเข้าของสายไฟ : Cable wire position">
     <div className="grid grid-cols-4 gap-4">
       {[
         { s: 'X', img: CXImg },
@@ -5079,21 +5159,234 @@ if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !sr
   // ---------- STEP 9 — Model Code & Confirm ----------
   const seriesShort = srvSeries; // 'SRV' | 'SDRV' | 'SVF'
   const sizeShort = srvSize ? srvSize.replaceAll('/', '-') : '';
+  const paddedSize  = sizeShort ? sizeShort.padStart(3, '0') : '';
   const motorPart   = srvInputSel === 'WM' ? (srvPowerKW || '') : '';
-  const code = `${seriesShort}${sizeShort ? sizeShort.padStart(3,'0') : ''}-${srvRatio}${motorPart ? `-${motorPart}` : ''}-${srvIECSize}`;
+  const polePart = (srvInputSel === 'WM' && (srvPole === '4P' || srvPole === '6P'))
+  ? (srvPole === '6P' ? '6P' : '4P')
+  : '';
+  const amFrame = getIECFrameBySizePower(srvSize, srvPowerKW);
+  const NO_CODE_GEAR = ['Hollow & Solid shaft'];
+    const gearPart = (srvGearType && !NO_CODE_GEAR.includes(srvGearType))
+  ? `${srvGearType}${srvGearTypeSub || ''}`
+  : '';
+  const isDSShaft = ['DS','DS1','DS2'].includes(srvShaftDesign || '');
+  const shaftPart = isDSShaft ? srvShaftDesign : '';
+  const head = gearPart
+  ? `${seriesShort}${paddedSize}${gearPart}${shaftPart ? `-${shaftPart}` : ''}`
+  : `${seriesShort}${paddedSize}${shaftPart || ''}`;
+  const getInputFlangeBySizePower = (sizeStr, powerKW) => {
+  const sz = parseInt(String(sizeStr || '').replace(/\D/g, ''), 10);
+  const p  = Math.round(parseFloat(powerKW ?? '') * 100) / 100;
+  if (!sz || !Number.isFinite(p)) return null;
+  const inSet = (v, arr) => arr.some(x => Math.abs(v - x) < 1e-6);
+
+  switch (sz) {
+    case 25:
+      if (inSet(p, [0.06, 0.09])) return ['Ø80 mm B14'];
+      break;
+
+    case 30:
+      if (inSet(p, [0.06, 0.09])) return ['Ø120 mm B5'];
+      if (inSet(p, [0.12, 0.18])) return ['Ø90 mm B14', 'Ø140 mm B5'];
+      break;
+
+    case 40:
+      if (inSet(p, [0.09]))       return ['Ø80 mm B14', 'Ø120 mm B5'];
+      if (inSet(p, [0.12, 0.18])) return ['Ø90 mm B14', 'Ø140 mm B5'];
+      if (inSet(p, [0.25, 0.37])) return ['Ø105 mm B14', 'Ø160 mm B5'];
+      break;
+
+    case 50:
+      if (inSet(p, [0.12, 0.18])) return ['Ø140 mm B5'];
+      if (inSet(p, [0.25, 0.37])) return ['Ø105 mm B14', 'Ø160 mm B5'];
+      if (inSet(p, [0.55, 0.75])) return ['Ø120 mm B14', 'Ø200 mm B5'];
+      break;
+
+    case 63:
+      if (inSet(p, [0.25, 0.37])) return ['Ø105 mm B14', 'Ø160 mm B5'];
+      if (inSet(p, [0.55, 0.75])) return ['Ø120 mm B14', 'Ø200 mm B5'];
+      if (inSet(p, [1.1,  1.5 ])) return ['Ø140 mm B14', 'Ø200 mm B5'];
+      break;
+
+    case 75:
+      if (inSet(p, [0.25, 0.37])) return ['Ø105 mm B14', 'Ø160 mm B5'];
+      if (inSet(p, [0.55, 0.75])) return ['Ø120 mm B14', 'Ø200 mm B5'];
+      if (inSet(p, [1.1,  1.5 ])) return ['Ø120 mm B14', 'Ø200 mm B5'];
+      if (inSet(p, [2.2,  3   ])) return ['Ø160 mm B14', 'Ø250 mm B5'];
+      if (inSet(p, [4           ])) return ['Ø160 mm B14', 'Ø250 mm B5'];
+      break;
+
+    case 90:
+      if (inSet(p, [0.55, 0.75])) return ['Ø120 mm B14', 'Ø200 mm B5'];
+      if (inSet(p, [1.1,  1.5 ])) return ['Ø120 mm B14', 'Ø200 mm B5'];
+      if (inSet(p, [2.2,  3   ])) return ['Ø160 mm B14', 'Ø250 mm B5'];
+      if (inSet(p, [4           ])) return ['Ø160 mm B14', 'Ø250 mm B5'];
+      break;
+
+    case 110:
+      if (inSet(p, [0.55, 0.75])) return ['Ø200 mm B5'];
+      if (inSet(p, [1.1,  1.5 ])) return ['Ø200 mm B5'];
+      if (inSet(p, [2.2,  3   ])) return ['Ø250 mm B5'];
+      if (inSet(p, [4           ])) return ['Ø250 mm B5'];
+      if (inSet(p, [5.5,  7.5 ])) return ['Ø300 mm B5'];
+      break;
+
+    case 130:
+      if (inSet(p, [1.1,  1.5 ])) return ['Ø200 mm B5'];
+      if (inSet(p, [2.2,  3   ])) return ['Ø250 mm B5'];
+      if (inSet(p, [4           ])) return ['Ø250 mm B5'];
+      if (inSet(p, [5.5,  7.5 ])) return ['Ø300 mm B5'];
+      break;
+
+    case 150:
+      if (inSet(p, [2.2,  3   ])) return ['Ø250 mm B5'];
+      if (inSet(p, [4           ])) return ['Ø250 mm B5'];
+      if (inSet(p, [5.5,  7.5 ])) return ['Ø300 mm B5'];
+      if (inSet(p, [11,   15  ])) return ['Ø350 mm B5'];
+      break;
+  }
+  return null;
+};
+
+    const getInputHoleBySizePower = (sizeStr, powerKW) => {
+  const sz = parseInt(String(sizeStr || '').replace(/\D/g, ''), 10); // 25..150
+  const p  = Math.round(parseFloat(powerKW ?? '') * 100) / 100;      // ปัด 2 ตำแหน่ง
+  if (!sz || !Number.isFinite(p)) return null;
+
+  const inSet = (val, arr) => arr.some(x => Math.abs(val - x) < 1e-6);
+
+  switch (sz) {
+    case 25:  if (inSet(p, [0.06, 0.09])) return 'Ø9 mm'; break;
+
+    case 30:  if (inSet(p, [0.06, 0.09])) return 'Ø9 mm';
+              if (inSet(p, [0.12, 0.18])) return 'Ø11 mm'; break;
+
+    case 40:  if (inSet(p, [0.09]))       return 'Ø9 mm';
+              if (inSet(p, [0.12, 0.18])) return 'Ø11 mm';
+              if (inSet(p, [0.25, 0.37])) return 'Ø14 mm'; break;
+
+    case 50:  if (inSet(p, [0.12, 0.18])) return 'Ø11 mm';
+              if (inSet(p, [0.25, 0.37])) return 'Ø14 mm';
+              if (inSet(p, [0.55, 0.75])) return 'Ø19 mm'; break;
+
+    case 63:  if (inSet(p, [0.25, 0.37])) return 'Ø14 mm';
+              if (inSet(p, [0.55, 0.75])) return 'Ø19 mm';
+              if (inSet(p, [1.1,  1.5 ])) return 'Ø24 mm'; break;
+
+    case 75:  if (inSet(p, [0.25, 0.37])) return 'Ø14 mm';
+              if (inSet(p, [0.55, 0.75])) return 'Ø19 mm';
+              if (inSet(p, [1.1,  1.5 ])) return 'Ø24 mm';
+              if (inSet(p, [2.2,  3   ])) return 'Ø28 mm';
+              if (inSet(p, [4           ])) return 'Ø28 mm'; break;
+
+    case 90:  if (inSet(p, [0.55, 0.75])) return 'Ø19 mm';
+              if (inSet(p, [1.1,  1.5 ])) return 'Ø24 mm';
+              if (inSet(p, [2.2,  3   ])) return 'Ø28 mm';
+              if (inSet(p, [4           ])) return 'Ø28 mm'; break;
+
+    case 110: if (inSet(p, [0.55, 0.75])) return 'Ø19 mm';
+              if (inSet(p, [1.1,  1.5 ])) return 'Ø24 mm';
+              if (inSet(p, [2.2,  3   ])) return 'Ø28 mm';
+              if (inSet(p, [4           ])) return 'Ø28 mm';
+              if (inSet(p, [5.5,  7.5 ])) return 'Ø38 mm'; break;
+
+    case 130: if (inSet(p, [1.1,  1.5 ])) return 'Ø24 mm';
+              if (inSet(p, [2.2,  3   ])) return 'Ø28 mm';
+              if (inSet(p, [4           ])) return 'Ø28 mm';
+              if (inSet(p, [5.5,  7.5 ])) return 'Ø38 mm'; break;
+
+    case 150: if (inSet(p, [2.2,  3   ])) return 'Ø28 mm';
+              if (inSet(p, [4           ])) return 'Ø28 mm';
+              if (inSet(p, [5.5,  7.5 ])) return 'Ø38 mm';
+              if (inSet(p, [11,   15  ])) return 'Ø42 mm'; break;
+  }
+  return null;
+};
+
+  const flangePart  = srvIECSize || ''; // เช่น 'B5' / 'B14'
+  function getIECFrameBySizePower(sizeStr, powerKW){
+  const sz = parseInt(String(sizeStr || '').replace(/\D/g, ''), 10); // 25..150
+  const p  = Math.round(parseFloat(powerKW ?? '') * 100) / 100;      // ปัด 2 ตำแหน่ง
+
+  if (!sz || !Number.isFinite(p)) return null;
+
+  const inSet = (val, arr) => arr.some(x => Math.abs(val - x) < 1e-6);
+
+  switch (sz) {
+    case 25:  if (inSet(p, [0.06, 0.09])) return 56; break;
+
+    case 30:  if (inSet(p, [0.06, 0.09])) return 56;
+              if (inSet(p, [0.12, 0.18])) return 63; break;
+
+    case 40:  if (inSet(p, [0.09]))       return 56;
+              if (inSet(p, [0.12, 0.18])) return 63;
+              if (inSet(p, [0.25, 0.37])) return 71; break;
+
+    case 50:  if (inSet(p, [0.12, 0.18])) return 63;
+              if (inSet(p, [0.25, 0.37])) return 71;
+              if (inSet(p, [0.55, 0.75])) return 80; break;
+
+    case 63:  if (inSet(p, [0.25, 0.37])) return 71;
+              if (inSet(p, [0.55, 0.75])) return 80;
+              if (inSet(p, [1.1,  1.5 ])) return 90; break;
+
+    case 75:  if (inSet(p, [0.25, 0.37])) return 71;
+              if (inSet(p, [0.55, 0.75])) return 80;
+              if (inSet(p, [1.1,  1.5 ])) return 90;
+              if (inSet(p, [2.2,  3   ])) return 100;
+              if (inSet(p, [4           ])) return 112; break;
+
+    case 90:  if (inSet(p, [0.55, 0.75])) return 80;
+              if (inSet(p, [1.1,  1.5 ])) return 90;
+              if (inSet(p, [2.2,  3   ])) return 100;
+              if (inSet(p, [4           ])) return 112; break;
+
+    case 110: if (inSet(p, [0.55, 0.75])) return 80;
+              if (inSet(p, [1.1,  1.5 ])) return 90;
+              if (inSet(p, [2.2,  3   ])) return 100;
+              if (inSet(p, [4           ])) return 112;
+              if (inSet(p, [5.5,  7.5 ])) return 132; break;
+
+    case 130: if (inSet(p, [1.1,  1.5 ])) return 90;
+              if (inSet(p, [2.2,  3   ])) return 100;
+              if (inSet(p, [4           ])) return 112;
+              if (inSet(p, [5.5,  7.5 ])) return 132; break;
+
+    case 150: if (inSet(p, [2.2,  3   ])) return 100;
+              if (inSet(p, [4           ])) return 112;
+              if (inSet(p, [5.5,  7.5 ])) return 132;
+              if (inSet(p, [11,   15  ])) return 160; break;
+  }
+  return null;
+};
+  let code = `${head}-${srvRatio}`
+         + `${motorPart ? `-${motorPart}` : ''}`
+         + `${polePart  ? `-${polePart}`   : ''}`
+         + `-${flangePart}`;
+
+// IEC Adapter only → ใส่ AM (IEC+Motor ไม่ใส่ AM)
+if (srvInputSel === 'WM' && srvIECMode === 'IEC') {
+  const amFrame = getIECFrameBySizePower(srvSize, srvPowerKW); // ใช้ตัวเดิม
+  if (amFrame) {
+    code = `${head}-${srvRatio}-AM${amFrame}${flangePart}`;
+  }
+}
 
   return (
     <>
-      <Section title="Step 9 — Model Code">
+      <Section title="นี่คือ Specification ที่คุณต้องการ">
   {(() => {
     // --- สร้างค่าจากการเลือก เพื่อโชว์ใต้บรรทัด Model ---
     const sizeKey = (srvSize || '').split('/')[0]; // เผื่อ SDRV
     const inputPowerLabel =
-      srvInputSel === 'WM' ? 'With motor' :
-      srvInputSel === 'WS' ? 'With Servo motor' :
-      srvInputSel === 'IS' ? 'Input shaft' : '-';
+      srvInputSel === 'WM'
+    ? (srvIECMode === 'IEC' ? 'IEC Adapter Motor' : 'With motor')
+    : srvInputSel === 'WS'
+    ? 'With Servo motor'
+    : srvInputSel === 'IS'
+    ? 'Input shaft'
+    : '-';
 
-    // แผนที่ Input flange ตาม Size (ใช้ 075 แทน 070 ตามชุด Size ที่ระบบมี)
     const inputFlangeBySize = {
       '025': ['Ø80 mm'],
       '030': ['Ø140 mm','Ø120 mm','Ø90 mm','Ø80 mm'],
@@ -5123,40 +5416,142 @@ if ((srvGearType === 'FA' || srvGearType === 'FB' || srvGearType === 'T') && !sr
 
     const flanges = inputFlangeBySize[sizeKey] || [];
     const shafts  = outputShaftBySize[sizeKey] || [];
-
-    // คำนวณ Output speed (rpm)
+    const inputFlangeList = getInputFlangeBySizePower(srvSize, srvPowerKW);
+    const inputFlangeText = inputFlangeList?.length ? inputFlangeList.join(' , ') : '-';
+    const shaftLabelMap = {
+  DS:   'DS shaft on both sides : ( เพลา 2 ข้าง ซ้าย-ขวา )',
+  DS1:  'DS1 : ( เพลาข้างขวามองจากด้านหัวเกียร์ )',
+  DS2:  'DS2 : ( เพลาข้างซ้ายมองจากด้านหัวเกียร์ )',
+  Hollow: 'Hollow shaft / Keyway : เพลารูสวม แบบมีร่องลิ่ม',
+};
+const shaftLabel = srvShaftDesign
+  ? (shaftLabelMap[srvShaftDesign] || srvShaftDesign)
+  : '-';
     const ratioNum = parseFloat(srvRatio || '');
     const baseRPM  = srvPole === '6P' ? 1000 : (srvPole === '4P' ? 1500 : null);
     const outRPM   = (baseRPM && ratioNum) ? Math.round(baseRPM / ratioNum) : null;
+        const srvInputhole = (srvInputSel === 'WM')
+  ? getInputHoleBySizePower(srvSize, srvPowerKW)
+  : null;
+        const isIECAdapter = (srvInputSel === 'WM' && srvIECMode === 'IEC');
+   // ★ NEW: คำนวณ Output Torque (เฉพาะกรณี With motor)
+const kW = parseFloat(srvPowerKW ?? '');
+const outTorque = (srvInputSel === 'WM' && Number.isFinite(kW) && Number.isFinite(outRPM) && outRPM > 0)
+  ? Math.round((9550 * kW) / outRPM)
+  : null;
+// ★ NEW: แปลงโค้ดมอเตอร์ → คำอธิบาย
+const motorTypeLabelMap = {
+  YE3:  "Premium Efficiency IE3",
+  YE4:  "Super Premium Efficiency IE4",
+  YEJ:  "Electromagnetic Brake",
+  YVP:  "Variable Frequency Motor",
+  YVPEJ:"Variable Frequency Brake Motor",
+  YB:   "Explosion-proof Motor"
+};
+const motorTypeLabel = srvMotorType ? (motorTypeLabelMap[srvMotorType] || srvMotorType) : '';
+
 
     return (
       <div className="text-center">
-        <p className="text-blue-400 font-bold mb-2">Model: {code}</p>
+        <p className="text-blue-400 font-bold mb-2">
+  Model Code:
+  <span className="text-yellow-400 font-extrabold text-lg"> {code}</span>
+  <button
+  type="button"
+  title="Copy Model"
+  className="ml-2 align-middle text-[10px] px-2 py-0.5 rounded border border-white/20 bg-white/10 hover:bg-white/20 transition"
+  onClick={async (e) => {
+    const btn = e.currentTarget;              // ✅ จับปุ่มไว้ก่อน
+    const txt = String(code || '');
 
+    const setBadge = (el, msg = 'Copied!', ms = 1200) => {
+      const old = el.textContent;
+      el.textContent = msg;
+      setTimeout(() => { el.textContent = old; }, ms);
+    };
+
+    const fallbackCopy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    };
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(txt);
+      } else {
+        fallbackCopy();
+      }
+      setBadge(btn);                           // ✅ ใช้ตัวแปรที่จับไว้
+    } catch {
+      fallbackCopy();
+      setBadge(btn);
+    }
+  }}
+>
+  Copy
+</button>
+</p>
         {/* รายละเอียดตามที่กำหนด */}
         <div className="max-w-2xl mx-auto text-left text-white/90 space-y-1">
-          <p><span className="font-semibold">SRV Series:</span> {srvSeries || '-'}</p>
-          <p><span className="font-semibold">Size Gear:</span> {srvSize || '-'}</p>
+          <p><span className="font-semibold">SRV Series:</span><span className="text-blue-400"> {srvSeries || '-'}</span></p>
+          <p><span className="font-semibold">Size Gear:</span><span className="text-blue-400"> {srvSize || '-'}</span></p>
+          <p><span className="font-semibold">Ratio:</span><span className="text-blue-400"> 1/{srvRatio || '-'}</span></p>
+          <p><span className="font-semibold">Gear Mounting Type:</span><span className="text-blue-400"> {srvGearType || '-'}</span></p>
+                    <p><span className="font-semibold">Direction Type:</span><span className="text-blue-400"> {srvGearTypeSub || '-'}</span></p>
+                    <p><span className="font-semibold">Output shaft design:</span><span className="text-blue-400"> {shaftLabel || '-'}</span></p>
+                    <p><span className="font-semibold">Flange-mounted:</span><span className="text-blue-400"> {srvIECSize || '-'}</span></p>
+                    <p><span className="font-semibold">The hole diameter of input shaft:</span><span className="text-blue-400"> {srvInputhole || '-'}</span></p>
           <p>
-            <span className="font-semibold">Input flange:</span>{' '}
-            {flanges.length ? flanges.join(' , ') : '-'}
-          </p>
-          <p><span className="font-semibold">Input Power:</span> {inputPowerLabel}</p>
+  <span className="font-semibold">Input flange Diameter:</span>{' '}
+  <span className="text-blue-400">{inputFlangeText}</span>
+</p>
+          <p><span className="font-semibold">Input Power:</span> <span className="text-blue-400">{inputPowerLabel}</span>
+</p>
           <p>
-            <span className="font-semibold">Power Motor (kW):</span>{' '}
-            {srvInputSel === 'WM'
-              ? `${srvPowerKW || '-'} : ${srvPole === '6P' ? '6 Pole' : (srvPole === '4P' ? '4 Pole' : '-')} — 3-Phase 380VAC, 50Hz, IP55, Class F, S1${srvMotorType ? ` , ${srvMotorType}` : ''}`
-              : '-'}
+  <span className="font-semibold">Power Motor:</span>{' '}
+  <span className="text-blue-400">
+    {isIECAdapter
+      ? '-'                                                     // IEC Adapter → แสดง '-'
+      : (srvInputSel === 'WM'
+          ? `${srvPowerKW || '-'}kW  ${srvPole === '6P' ? '6 Pole' : (srvPole === '4P' ? '4 Pole' : '-')}, 3Phase380VAC, 50Hz, IP55, Class F, S1`
+          : '-')}
+  </span>
+  {/* แสดง motorTypeLabel เฉพาะเมื่อไม่ใช่ IEC Adapter */}
+  {!isIECAdapter && srvInputSel === 'WM' && srvMotorType && (
+    <>
+      <span className="text-blue-400"> , </span>
+      <span className="text-yellow-400 font-extrabold text-m">
+        {motorTypeLabel}
+      </span>
+    </>
+  )}
+</p>
+ <p>
+  <span className="font-semibold">Output Speed:</span>{' '}<span className="text-blue-400">
+  {isIECAdapter
+    ? '-'                                  // IEC Adapter → แสดง '-'
+    : (outRPM !== null ? `${outRPM} rpm` : '-')}</span>
+</p>
+<p>
+  <span className="font-semibold">Output Torque:</span> <span className="text-blue-400">{' '}
+  {outTorque !== null ? `${outTorque} N·m` : '-'} </span>
+</p>
+<p> <span className="font-semibold">Mounting Position: </span> <span className="text-blue-400">{srvMounting}</span></p>
+          
+<p>
+            <span className="font-semibold">Output shaft:</span> <span className="text-blue-400">{' '}
+            {shafts.length ? shafts.join(' , ') : '-'}</span>
           </p>
           <p>
-            <span className="font-semibold">Output speed:</span>{' '}
-            {(outRPM !== null) ? `${outRPM} rpm` : '-'}
-          </p>
-          <p>
-            <span className="font-semibold">Output shaft:</span>{' '}
-            {shafts.length ? shafts.join(' , ') : '-'}
-          </p>
-          <p><span className="font-semibold">Warranty:</span> 18 เดือน</p>
+  <span className="font-semibold">Warranty:</span>{' '}
+  <span className="text-yellow-400 font-extrabold text-xl">18 เดือน</span>
+</p>
         </div>
 
         <button
