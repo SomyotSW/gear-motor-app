@@ -81,6 +81,18 @@ import KINPUTImg from '../assets/rkfs/KINPUT.png';
 import KSERVOImg from '../assets/rkfs/KSERVO.png';
 import KWMImg from '../assets/rkfs/KWM.png';
 
+// [ADD-RKFS-ASSETS] IEC drawings
+import DrawRam from '../assets/rkfs/DrawRam.png';
+import DrawKam from '../assets/rkfs/DrawKam.png';
+import DrawFam from '../assets/rkfs/DrawFam.png';
+import DrawSam from '../assets/rkfs/DrawSam.png';
+
+// [ADD-RKFS-ASSETS] INPUT shaft gifs
+import RADgif from '../assets/rkfs/RADgif.gif';
+import KADgif from '../assets/rkfs/KADgif.gif';
+import FADgif from '../assets/rkfs/FADgif.gif';
+import SADgif from '../assets/rkfs/SADgif.gif';
+
 import YE3Img from '../assets/rkfs/YE3.png';
 import YE4Img from '../assets/rkfs/YE4.png';
 import YVPImg from '../assets/rkfs/YVP.png';
@@ -1432,10 +1444,31 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     rkfsPosition,
     rkfsPositionSub,
     rkfsDesignSuffix,
-        rkfsMountingTemp,
-    rkfsInputSel 
+    rkfsMountingTemp,
+    rkfsInputSel,
+    rkfsINPUTshaft,
+    rkfsINPUTshaftDia,
+    rkfsInputShaft,
+    rkfsInputShaftDia,
   } = state;
 
+// [ADD-RKFS-MAPS] ผูก Series -> รูป/ไฟล์ ที่ต้องแสดง
+const RKFS_IEC_IMG = {
+  R: DrawRam,
+  K: DrawKam,
+  F: DrawFam,
+  S: DrawSam,
+};
+
+const RKFS_INPUT_GIF = {
+  R: RADgif,
+  K: KADgif,
+  F: FADgif,
+  S: SADgif,
+};
+
+  const shaftCode = rkfsINPUTshaft ?? rkfsInputShaft ?? null;
+  const shaftDia  = rkfsINPUTshaftDia ?? rkfsInputShaftDia ?? null;
   const update = (key, value) => {
   const setterMap = {
     rkfsSeries:       setState.setRkfsSeries,
@@ -1446,12 +1479,15 @@ export function renderRKFSFlow(state, setState, onConfirm) {
     rkfsPole:         setState.setRkfsPole,
     rkfsRatio:        setState.setRkfsRatio,
     rkfsMounting:     setState.setRkfsMounting,
-        rkfsMountingTemp: setState.setRkfsMountingTemp,
+    rkfsMountingTemp: setState.setRkfsMountingTemp,
     rkfsPosition:     setState.setRkfsPosition,
     rkfsPositionSub:  setState.setRkfsPositionSub,
-    // ⬇️ เพิ่มบรรทัดนี้
     rkfsDesignSuffix: setState.setRkfsDesignSuffix,
-        rkfsInputSel:     setState.setRkfsInputSel,
+    rkfsInputSel:     setState.setRkfsInputSel,
+    rkfsINPUTshaft:    setState.setRkfsINPUTshaft,
+    rkfsINPUTshaftDia: setState.setRkfsINPUTshaftDia,
+    rkfsInputShaft:    setState.setRkfsInputShaft,
+    rkfsInputShaftDia: setState.setRkfsInputShaftDia,
   };
 
   if (setterMap[key]) {
@@ -1599,6 +1635,80 @@ const sSeriesPowerBySize = {
     }
   };
 
+const rkfsAMByPower = { '0.18':'AM63','0.25':'AM71','0.37':'AM71','0.55':'AM80','0.75':'AM80',
+  '1.1':'AM90','1.5':'AM90','2.2':'AM100','3':'AM100','4':'AM112','5.5':'AM132','7.5':'AM132','9.2':'AM132',
+  '11':'AM160','15':'AM160','18.5':'AM180','22':'AM180','30':'AM200','37':'AM225','45':'AM225',
+  '55':'AM250','75':'AM280','90':'AM280','110':'AM315','132':'AM315','160':'AM315' };
+function getRkfsIECByPower(kw){ return rkfsAMByPower[String(kw)] ?? null; }
+const rkfsAMFlangeDims = {
+  AM63:  { G5: 140, D1: 11 },
+  AM71:  { G5: 160, D1: 14 },
+  AM80:  { G5: 200, D1: 19 },
+  AM90:  { G5: 200, D1: 24 },
+  AM100: { G5: 250, D1: 28 },
+  AM112: { G5: 250, D1: 28 },
+  AM132: { G5: 300, D1: 38 },
+  AM160: { G5: 350, D1: 42 },
+  AM180: { G5: 350, D1: 48 },
+  AM200: { G5: 400, D1: 55 },
+  AM225: { G5: 450, D1: 60 },
+  AM250: { G5: 550, D1: 65 },
+  AM280: { G5: 550, D1: 75 },
+  AM315: { G5: 660, D1: 80 },
+};
+
+const rkfsInputShaftBySeries = {
+  R: {
+    '27': [{code:'AD1', dia:'Ø16'}, {code:'AD2', dia:'Ø19'}],
+    '37': [{code:'AD1', dia:'Ø16'}, {code:'AD2', dia:'Ø19'}],
+    '47': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '57': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '67': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '77': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}, {code:'AD4', dia:'Ø38'}],
+    '87': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}],
+    '97': [{code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}],
+    '107':[{code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}],
+    '137':[{code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}],
+    '147':[{code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}, {code:'AD8', dia:'Ø70'}],
+    '167':[{code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}, {code:'AD8', dia:'Ø70'}],
+  },
+  K: {
+    '37': [{code:'AD1', dia:'Ø16'}, {code:'AD2', dia:'Ø19'}],
+    '47': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '57': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '67': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '77': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}, {code:'AD4', dia:'Ø38'}],
+    '87': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}],
+    '97': [{code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}],
+    '107':[{code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}],
+    '127':[{code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}, {code:'AD8', dia:'Ø70'}],
+    '157':[{code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}, {code:'AD8', dia:'Ø70'}],
+    '167':[{code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}, {code:'AD8', dia:'Ø70'}],
+    '187':[{code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}, {code:'AD8', dia:'Ø70'}],
+  },
+  F: {
+    '37': [{code:'AD1', dia:'Ø16'}, {code:'AD2', dia:'Ø19'}],
+    '47': [{code:'AD1', dia:'Ø16'}, {code:'AD2', dia:'Ø19'}],
+    '57': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '67': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '77': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}, {code:'AD4', dia:'Ø38'}],
+    '87': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}],
+    '97': [{code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}],
+    '107':[{code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}],
+    '127':[{code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}, {code:'AD8', dia:'Ø70'}],
+    '157':[{code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}, {code:'AD7', dia:'Ø55'}, {code:'AD8', dia:'Ø70'}],
+  },
+  S: {
+    '37': [{code:'AD1', dia:'Ø16'}, {code:'AD2', dia:'Ø19'}],
+    '47': [{code:'AD1', dia:'Ø16'}, {code:'AD2', dia:'Ø19'}],
+    '57': [{code:'AD1', dia:'Ø16'}, {code:'AD2', dia:'Ø19'}],
+    '67': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}],
+    '77': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø24'}, {code:'AD4', dia:'Ø38'}],
+    '87': [{code:'AD2', dia:'Ø19'}, {code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}],
+    '97': [{code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}],
+  }
+};
+  
 
   const ratioList =
    rkfsSeries && ratioMapping[rkfsSeries]?.[rkfsSize]
@@ -1699,13 +1809,15 @@ const clickSweep = (e, run) => {
       เลือก Size Gear ที่คุณต้องการ
     </h3>
     <div className="flex flex-wrap gap-4 justify-center">
-      {(
-        rkfsSeries === "R"
-          ? ["17","27","37","47","57","67","77","87","97","107","137","147","167"]
-          : rkfsSeries === "K" || rkfsSeries === "F"
-          ? ["37","47","57","67","77","87","97","107","127","157","167","187"]
-          : ["37","47","57","67","77","87","97"]
-      )
+  {(
+    rkfsSeries === "R"
+      ? ["17","27","37","47","57","67","77","87","97","107","137","147","167"]
+      : rkfsSeries === "K"
+      ? ["37","47","57","67","77","87","97","107","127","157","167","187"]
+      : rkfsSeries === "F"
+      ? ["37","47","57","67","77","87","97","107","127","157"]   // ← ตามที่สั่ง
+      : ["37","47","57","67","77","87","97"]
+  )
         .filter((size) => {
           const n = parseInt(size, 10);
           if (rkfsDesign === "RM") return n >= 57 && n <= 167;
@@ -1723,7 +1835,8 @@ const clickSweep = (e, run) => {
         ))}
     </div>
     <h2 className="text-xs sm:text-sm md:text-base font-semibold text-red-400 drop-shadow mb-6 leading-relaxed">
-  ขนาด Size Gear จะเป็นตัวบ่งบอกขนาดของเพลา , ความสูงของกึ่งกลางเพลา ,ระยะขาตั้ง, หน้าแปลน , ขนาด Housing , น้ำหนัก ที่แตกต่างกันออกไป สามารถเลือกได้ตามความเหมาะสมของเครื่องจักรของท่าน
+       <br /><br /><br /><br /><br /><br /><br /><br />
+  **ขนาด Size Gear จะเป็นตัวบ่งบอกขนาดของเพลา , ความสูงของกึ่งกลางเพลา ,ระยะขาตั้ง, หน้าแปลน , ขนาด Housing , น้ำหนัก ที่แตกต่างกันออกไป สามารถเลือกได้ตามความเหมาะสมของเครื่องจักรของท่าน
 </h2>
     <div className="fixed z-[999]"
     style={{
@@ -1753,36 +1866,67 @@ const clickSweep = (e, run) => {
         const opts =
           rkfsSeries === 'R' ? [
             { key: 'With Motor',    img: RWMImg },
-            { key: 'IEC Adaptor Motor',   img: RIECImg },
+            { key: 'IEC Adapter Motor',   img: RIECImg },
             { key: 'INPUT Shaft', img: RINPUTImg },
-            { key: 'SERVO Adaptor', img: RSERVOImg },
+            { key: 'SERVO Adapter', img: RSERVOImg },
           ] :
           rkfsSeries === 'F' ? [
             { key: 'With Motor',    img: FWMImg },
-            { key: 'IEC Adaptor Motor',   img: FIECImg },
+            { key: 'IEC Adapter Motor',   img: FIECImg },
             { key: 'INPUT Shaft', img: FINPUTImg },
-            { key: 'SERVO Adaptor', img: FSERVOImg },
+            { key: 'SERVO Adapter', img: FSERVOImg },
           ] :
           rkfsSeries === 'S' ? [
             { key: 'With Motor',    img: SWMImg },
-            { key: 'IEC Adaptor Motor',   img: SIECImg },
+            { key: 'IEC Adapter Motor',   img: SIECImg },
             { key: 'INPUT Shaft', img: SINPUTImg },
-            { key: 'SERVO Adaptor', img: SSERVOImg },
+            { key: 'SERVO Adapter', img: SSERVOImg },
           ] : [
             { key: 'With Motor',    img: KWMImg },   // K
-            { key: 'IEC Adaptor Motor',   img: KIECImg },
+            { key: 'IEC Adapter Motor',   img: KIECImg },
             { key: 'INPUT Shaft', img: KINPUTImg },
-            { key: 'SERVO Adaptor', img: KSERVOImg },
+            { key: 'SERVO Adapter', img: KSERVOImg },
           ];
 
         return opts.map(({ key, img }) => {
-          const isWM = key === 'With Motor'; // ตอนนี้ให้คลิกได้เฉพาะ WM ตามโจทย์
+          const isClickable = (key === 'With Motor' || key === 'IEC Adapter Motor' || key === 'INPUT Shaft'); 
           return (
             <button
               key={key}
-              onClick={(e) => clickSweep(e, () => update("rkfsInputSel", key))}
+              onClick={(e) => clickSweep(e, () => {
+  if (!isClickable) return;
+  update("rkfsInputSel", key);
+
+  // [ADD] เฉพาะ IEC Adapter Motor: วาง "แผนนำทาง" ตั้งแต่ตอนนี้
+  // K/S → เมื่อมีหน้า Step 9.3 โผล่ ให้เลื่อนไปที่ #rkfs-step-93
+  // R/F → เมื่อมีหน้า Confirm (Step 10) โผล่ ให้เลื่อนไปที่ #rkfs-confirm-step
+  if (key === 'IEC Adapter Motor' && (rkfsSeries === 'K' || rkfsSeries === 'S')) {
+  try {
+    const targetId = 'rkfs-step-93';
+
+      if (targetId) {
+        // ยกเลิก observer เก่าถ้ามี
+        if (window.__rkfsPlanObs && typeof window.__rkfsPlanObs.disconnect === 'function') {
+          window.__rkfsPlanObs.disconnect();
+        }
+
+        const obs = new MutationObserver(() => {
+          const el = document.getElementById(targetId);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            obs.disconnect();
+            window.__rkfsPlanObs = null;
+          }
+        });
+
+        obs.observe(document.body, { childList: true, subtree: true });
+        window.__rkfsPlanObs = obs;
+      }
+    } catch (_) { /* no-op */ }
+  }
+})}
               className={`rounded-2xl shadow-xl hover:shadow-2xl transform transition duration-300 bg-white
-                          ${isWM ? 'hover:-translate-y-2 cursor-pointer' : 'opacity-70 cursor-not-allowed'}`}
+                          ${isClickable ? 'hover:-translate-y-2 cursor-pointer' : 'opacity-70 cursor-not-allowed'}`}
               title={key}
             >
               <img src={img} alt={`${rkfsSeries}${key}`} className="w-full rounded-t-2xl" />
@@ -1845,6 +1989,104 @@ const clickSweep = (e, run) => {
         </>
       )}
 
+           {/* IEC Adaptor flow: เลือกกำลัง (ไม่ต้องเลือก Motor Type/Pole) */}
+{rkfsInputSel === 'IEC Adapter Motor' && !rkfsMotorPower && (
+  <>
+    <h3 className="text-blue-500 font-bold mb-2">เลือกกำลังของมอเตอร์(หน่วย kW)</h3>
+    <div className="flex flex-wrap gap-3">
+      {(() => {
+        const tableMap = { R: rSeriesPowerBySize, K: kSeriesPowerBySize, F: fSeriesPowerBySize, S: sSeriesPowerBySize };
+        const sizeKey = rkfsSize ? String(rkfsSize) : null;
+        const mapped  = (tableMap[rkfsSeries] && sizeKey) ? tableMap[rkfsSeries][sizeKey] : null;
+        const options = mapped ?? ["0.18","0.25","0.37","0.55","0.75","1.1","1.5","2.2","3","4","5.5","7.5","9.2","11","15","18.5","22","30","37","45","55","75","90","110","132","160"];
+        return options.map(p => (
+          <button key={p} onClick={(e)=>clickSweep(e,()=>{
+   update("rkfsMotorPower", p);
+   update("rkfsRatio", null);
+   update("rkfsMounting", null);
+ })} className="btn-3d-rkfs font-bold px-4 py-2">For motor {p} kW <span className="text-xl text-blue-500 font-bold ml-2">{getRkfsIECByPower(p) || ''}</span></button>
+        ));
+      })()}
+    </div>
+    <div
+      className="fixed z-[999]"
+      style={{
+        left: 'max(1.5rem, env(safe-area-inset-right))',
+        bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+      }}
+    >
+      <button
+        onClick={(e) => clickSweep(e, () => update("rkfsInputSel", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+      >
+        ย้อนกลับ
+      </button>
+    </div>
+  </>
+)}
+          {/* INPUT Shaft flow: เลือก AD — แสดงเฉพาะตอนยังไม่ได้เลือก */}
+{rkfsInputSel === 'INPUT Shaft' && !(state.rkfsINPUTshaft || state.rkfsInputShaft) && (
+  <>
+    <h3 className="text-blue-500 font-bold mb-2">เลือกขนาด INPUT shaft (AD)</h3>
+    <div className="w-full flex flex-wrap justify-center items-center gap-4 mt-4">
+  {(() => {
+    const table =
+      rkfsInputShaftBySeries?.[rkfsSeries]?.[String(rkfsSize)] ?? [];
+    return table.map(({ code, dia }) => (
+      <button
+        key={code}
+        title={`${code}Diameter : ${dia}`}
+        onClick={(e) =>
+          clickSweep(e, () => {
+            // เก็บค่าตามโค้ดเดิม
+            update('rkfsINPUTshaft', code);
+            update('rkfsINPUTshaftDia', dia);
+            update('rkfsInputShaft', code);
+            update('rkfsInputShaftDia', dia);
+
+            // ไป Step 7 → รีเซ็ต Ratio/Mounting เดิม
+            update('rkfsRatio', null);
+            update('rkfsMounting', null);
+
+            setTimeout(() => {
+              document
+                .getElementById('rkfs-ratio-step')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 0);
+          })
+        }
+        className={`btn-3d-rkfs
+                    px-7 py-4 md:px-8 md:py-5
+                    min-w-[180px] md:min-w-[220px]
+                    text-base md:text-lg rounded-2xl
+                    shadow hover:shadow-lg
+                    ${state.rkfsINPUTshaft === code ? 'ring-2 ring-blue-500' : ''}`}
+      >
+        <span className="block leading-tight">{code} </span>
+        <span className="block text-blue-500 text-xl font-bold md-0.5:text-sm opacity-80">
+           Diameter : {dia}
+        </span>
+      </button>
+    ));
+  })()}
+</div>
+<div
+  className="fixed z-[999]"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+<button
+        onClick={(e) => clickSweep(e, () => update("rkfsInputSel", null))}
+        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+      >
+        ย้อนกลับ
+      </button>
+</div>
+  </>
+)}
+
       {/* Step 5: Motor Power */}
       {rkfsMotorType && !rkfsMotorPower && (
         <>
@@ -1900,7 +2142,7 @@ const clickSweep = (e, run) => {
       )}
 
       {/* Step 6: Pole */}
-      {rkfsMotorPower && !rkfsPole && (
+      {rkfsMotorPower && !rkfsPole && rkfsInputSel !== 'IEC Adapter Motor' && (
         <>
           <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือก Pole Motor</h3>
           <div className="flex flex-wrap gap-3">
@@ -1934,42 +2176,103 @@ const clickSweep = (e, run) => {
       )}
 
       {/* Step 7: Ratio */}
-      {rkfsPole && !rkfsRatio && (
-        <>
-          <div>
-            <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือกอัตราทดเกียร์ (Ratio (i))</h3>
-            <div className="flex flex-wrap gap-3">
-              {ratioList.map(ratio => (
-                <button
-                  key={ratio}
-                  onClick={(e) => clickSweep(e, () => update("rkfsRatio", ratio))}
-                  className="bg-blue-600 text-white font-bold shadow px-8 py-6 rounded-xl hover:bg-blue-700"
-                >
-                  i = {ratio}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="fixed z-[999]"
-    style={{
-      left: 'max(1.5rem, env(safe-area-inset-right))',
-      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-    }}
-  >
-      <button
-        onClick={(e) => clickSweep(e, () => update("rkfsPole", null))}
-        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+{(() => {
+  // ค่า AD ที่เลือก (รองรับสองชื่อ state)
+  const shaftSel = (state.rkfsINPUTshaft ?? state.rkfsInputShaft) || null;
+
+  // เงื่อนไขเข้า Step 7 (คงตรรกะเดิม)
+  const prereqOK =
+    rkfsInputSel === 'With Motor'
+      ? !!rkfsPole
+      : rkfsInputSel === 'IEC Adapter Motor'
+      ? !!rkfsMotorPower
+      : rkfsInputSel === 'INPUT Shaft'
+      ? !!shaftSel
+      : false;
+
+  const showRatioStep = prereqOK && !rkfsRatio;
+  if (!showRatioStep) return null;
+
+  return (
+    <>
+      <div id="rkfs-ratio-step">
+        <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+          เลือกอัตราทดเกียร์ (Ratio (i))
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {ratioList.map((ratio) => (
+            <button
+              key={ratio}
+              onClick={(e) =>
+                clickSweep(e, () => {
+                  update("rkfsRatio", ratio);
+
+// INPUT Shaft → ไป Mounting (เหมือนเดิม)
+if (rkfsInputSel === 'INPUT Shaft') {
+  setTimeout(() => {
+    document.getElementById("rkfs-mount-step")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 0);
+
+// IEC Adapter Motor เท่านั้น → K/S ไป 9.3, R/F ไม่แตะ
+} else if (rkfsInputSel === 'IEC Adapter Motor') {
+  setTimeout(() => {
+    const targetId = (rkfsSeries === 'K' || rkfsSeries === 'S')
+      ? 'rkfs-step-93'
+      : null; // R/F: ไม่กระโดด
+    if (targetId) {
+      document.getElementById(targetId)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 0);
+}
+
+                })
+              }
+              className="bg-blue-600 text-white font-bold shadow px-8 py-6 rounded-xl hover:bg-blue-700"
+            >
+              i = {ratio}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ปุ่มย้อนกลับ */}
+      <div
+        className="fixed z-[999]"
+        style={{
+          left: 'max(1.5rem, env(safe-area-inset-right))',
+          bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+        }}
       >
-        ย้อนกลับ
-      </button>
-          </div>
-        </>
-      )}
+        <button
+          onClick={(e) =>
+            clickSweep(e, () => {
+              if (rkfsInputSel === 'With Motor') {
+                update("rkfsPole", null);
+              } else if (rkfsInputSel === 'IEC Adapter Motor') {
+                update("rkfsMotorPower", null);
+              } else if (rkfsInputSel === 'INPUT Shaft') {
+                update("rkfsINPUTshaft", null);
+                update("rkfsInputShaft", null);
+                update("rkfsINPUTshaftDia", null);
+                update("rkfsInputShaftDia", null);
+              }
+            })
+          }
+          className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+        >
+          ย้อนกลับ
+        </button>
+      </div>
+    </>
+  );
+})()}
 
       {/* Step 8: Mounting */}
 {rkfsRatio && !rkfsMounting && (
   <>
-    <div>
+    <div id="rkfs-mount-step">
       <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
         เลือกทิศทางการติดตั้ง (Mounting Position)
       </h3>
@@ -1977,14 +2280,36 @@ const clickSweep = (e, run) => {
         **ทุกทิศทางการติดตั้งมีผลต่อระดับน้ำมันในห้องเกียร์ มีผลต่ออายุการใช้งานของเกียร์
       </h3>
 
+      {/* รูป Mounting (คลิกได้เฉพาะที่รูป → ขยาย) */}
       <div className="flex justify-center">
-        <img
-          src={mountingImageMap[rkfsSeries]}
-          alt="Mounting"
-          className="w-full max-w-md rounded-xl shadow"
-        />
+        <div className="group mx-auto w-full">
+          <img
+            src={mountingImageMap[rkfsSeries]}
+            alt="Mounting"
+            loading="lazy"
+            onClick={() => document.getElementById('rkfs-mount-modal')?.showModal()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                document.getElementById('rkfs-mount-modal')?.showModal();
+              }
+            }}
+            tabIndex={0}
+            className="
+              cursor-zoom-in
+              mx-auto h-auto w-full object-contain
+              max-w-[150px] sm:max-w-[250px] md:max-w-[350px] lg:max-w-[500px]
+              rounded-2xl shadow-lg ring-1 ring-white/10
+              transition-transform duration-200 group-hover:scale-[1.01] group-active:scale-[0.99]
+              focus:outline-none focus:ring-2 focus:ring-white/40
+            "
+          />
+          <div className="mt-2 text-xs text-white/70 text-center select-none pointer-events-none">
+            แตะ/คลิกที่รูปเพื่อขยาย
+          </div>
+        </div>
       </div>
 
+      {/* ปุ่มเลือก M1–M6 */}
       <div className="flex flex-wrap justify-center gap-3 mt-4">
         {["M1", "M2", "M3", "M4", "M5", "M6"].map((mount) => (
           <button
@@ -1996,224 +2321,237 @@ const clickSweep = (e, run) => {
           </button>
         ))}
       </div>
+
+      {/* ── Info หลังเลือก M ── */}
+      {state.rkfsMountingTemp && (
+        <div className="mt-6 max-w-4xl mx-auto text-left bg-black/25 rounded-xl px-5 py-4 backdrop-blur-sm text-white/90 text-sm md:text-base leading-7">
+          {(() => {
+            const mSel = state.rkfsMountingTemp;            // ปุ่มที่เพิ่งคลิก
+            const sizeKey = String(rkfsSize || "").trim();  // key ของ size ในตาราง
+
+            // 1) เกรดน้ำมัน + แบรนด์ (R/F/K = VG220, S-family = VG680)
+            const isSFamily =
+              rkfsSeries === "S" ||
+              ["S", "SA", "SAF", "SAZ", "SAT", "SH", "SHF", "SHZ", "ST", "SF"].includes(
+                rkfsDesign
+              );
+            const oilGradeText = isSFamily ? "ISO,NL GI = VG 680" : "ISO,NL GI = VG 220";
+            const brandText = isSFamily
+              ? "Shell Omala S2 G 680 (SAS เติมแบรนด์นี้) , Mobilgear 600 XP 680 , Castrol Tribol 1100/680"
+              : "Shell Omala S2 G220 (SAS เติมแบรนด์นี้) , Mobilgear 600 XP 220 , Castrol Tribol 1100/220";
+
+            // 2) เลือกหมวดตารางจาก Design
+            const oilCategory = (() => {
+              if (rkfsDesign === "RF") return "RF";
+              if (rkfsDesign === "RX") return "RX";
+              if (rkfsDesign === "RXF") return "RXF";
+              if (rkfsDesign === "FF") return "FF";
+              if (["F", "FA", "FAF", "FAZ", "FH", "FHF", "FHZ", "FV", "FVF", "FVZ", "FT"].includes(rkfsDesign)) return "F";
+              if (rkfsDesign === "S") return "S";
+              if (rkfsDesign === "SF") return "SF";
+              if (["SA", "SAF", "SAZ", "SAT", "SH", "SHF", "SHZ", "ST"].includes(rkfsDesign)) return "S_OTHER";
+              if (["K", "KA", "KAB", "KAF", "KAT", "KAZ"].includes(rkfsDesign)) return "K";
+              return "R"; // ดีไซน์ R
+            })();
+
+            // 3) ตารางปริมาณน้ำมัน
+            const OIL_DATA = {
+              R: {
+                "17": [0.25, 0.55, 0.35, 0.55, 0.35, 0.40],
+                "27": ["0.25/0.40", 0.70, 0.50, 0.70, 0.50, 0.50],
+                "37": ["0.30/0.95", 0.85, 0.95, 1.05, 0.75, 0.95],
+                "47": ["0.70/1.50", 1.60, 1.50, 1.65, 1.50, 1.50],
+                "57": ["0.80/1.70", 1.90, 1.70, 2.10, 1.70, 1.70],
+                "67": ["1.10/2.30", 2.40, 2.80, 2.90, 1.80, 2.00],
+                "77": ["1.20/3.00", 3.30, 3.60, 3.80, 2.50, 3.40],
+                "87": ["2.30/6.0", 6.4, 7.2, 7.2, 6.3, 6.5],
+                "97": ["4.60/9.8", 11.7, 11.7, 13.4, 11.3, 11.7],
+                "107": ["6.0/13.7", 16.3, 16.9, 19.2, 13.2, 15.9],
+                "137": ["10.0/25.0", 28.0, 29.5, 31.5, 25.0, 25.0],
+                "147": ["15.4/40.0", 46.5, 48.0, 52.0, 39.5, 41.0],
+                "167": ["27.0/70.0", 82.0, 78.0, 88.0, 66.0, 69.0],
+              },
+              RF: {
+                "17": [0.25, 0.55, 0.35, 0.55, 0.35, 0.40],
+                "27": ["0.25/0.40", 0.70, 0.50, 0.70, 0.50, 0.50],
+                "37": ["0.35/0.95", 0.90, 0.95, 1.05, 0.75, 0.95],
+                "47": ["0.65/1.50", 1.60, 1.50, 1.65, 1.50, 1.50],
+                "57": ["0.80/1.70", 1.80, 1.70, 2.00, 1.70, 1.70],
+                "67": ["1.20/2.50", 2.50, 2.70, 2.80, 1.90, 2.10],
+                "77": ["1.20/2.60", 3.10, 3.30, 3.60, 2.40, 3.00],
+                "87": ["2.40/6.0", 6.4, 7.1, 7.2, 6.3, 6.4],
+                "97": ["5.1/10.2", 11.9, 11.2, 14.0, 11.2, 11.8],
+                "107": ["6.3/14.9", 15.9, 17.0, 19.2, 13.1, 15.9],
+                "137": ["9.5/25.0", 27.0, 29.0, 32.5, 25.0, 25.0],
+                "147": ["16.4/42.0", 47.0, 48.0, 52.0, 42.0, 42.0],
+                "167": ["26.0/70.0", 82.0, 78.0, 88.0, 65.0, 71.0],
+              },
+              RX: {
+                "57": [0.60, 0.80, 1.30, 1.30, 0.90, 0.90],
+                "67": [0.80, 0.80, 1.70, 1.90, 1.10, 1.10],
+                "77": [1.10, 1.50, 2.60, 2.70, 1.60, 1.60],
+                "87": [1.70, 2.50, 4.80, 4.80, 2.90, 2.90],
+                "97": [2.10, 3.40, 7.40, 7.00, 4.80, 4.80],
+                "107": [3.90, 5.60, 11.60, 11.90, 7.70, 7.70],
+              },
+              RXF: {
+                "57": [0.50, 0.80, 1.10, 1.10, 0.70, 0.70],
+                "67": [0.70, 0.80, 1.50, 1.40, 1.00, 1.00],
+                "77": [0.90, 1.30, 2.40, 2.00, 1.60, 1.60],
+                "87": [1.60, 1.95, 4.90, 3.95, 2.90, 2.90],
+                "97": [2.10, 3.70, 7.10, 6.30, 4.80, 4.80],
+                "107": [3.10, 5.70, 11.20, 9.30, 7.20, 7.20],
+              },
+              F: {
+                "27": [0.60, 0.80, 0.65, 0.70, 0.60, 0.60],
+                "37": [0.95, 1.25, 0.70, 1.25, 1.00, 1.10],
+                "47": [1.50, 1.80, 1.10, 1.90, 1.50, 1.70],
+                "57": [2.60, 3.50, 2.10, 3.50, 2.80, 2.90],
+                "67": [2.70, 3.80, 1.90, 3.80, 2.90, 3.20],
+                "77": [5.90, 7.30, 4.30, 8.00, 6.00, 6.30],
+                "87": [10.80, 13.00, 7.70, 13.80, 10.80, 11.00],
+                "97": [18.50, 22.50, 12.60, 25.20, 18.50, 20.00],
+                "107": [24.50, 32.00, 19.50, 37.50, 27.00, 27.00],
+                "127": [40.50, 54.50, 34.00, 61.00, 46.30, 47.00],
+                "157": [69.00, 104.00, 63.00, 105.00, 86.00, 78.00],
+              },
+              FF: {
+                "27": [0.60, 0.80, 0.65, 0.70, 0.60, 0.60],
+                "37": [1.00, 1.25, 0.70, 1.30, 1.00, 1.10],
+                "47": [1.60, 1.85, 1.10, 1.90, 1.50, 1.70],
+                "57": [2.80, 3.50, 2.10, 3.70, 2.90, 3.00],
+                "67": [2.70, 3.80, 1.90, 3.80, 2.90, 3.20],
+                "77": [5.90, 7.30, 4.30, 8.10, 6.00, 6.30],
+                "87": [10.80, 13.20, 7.80, 14.10, 11.00, 11.20],
+                "97": [19.00, 22.50, 12.60, 25.60, 18.90, 20.50],
+                "107": [25.50, 32.00, 19.50, 38.50, 27.50, 28.00],
+                "127": [41.50, 55.50, 34.00, 63.00, 46.30, 49.00],
+                "157": [72.00, 105.00, 64.00, 106.00, 87.00, 79.00],
+              },
+              K: {
+                "37": [0.50, 1.00, 1.00, 1.25, 0.95, 0.95],
+                "47": [0.80, 1.30, 1.50, 2.00, 1.60, 1.60],
+                "57": [1.10, 2.20, 2.20, 2.80, 2.30, 2.10],
+                "67": [1.10, 2.40, 2.70, 3.45, 2.60, 2.60],
+                "77": [2.20, 4.10, 4.40, 5.80, 4.20, 4.40],
+                "87": [3.70, 8.00, 8.70, 10.90, 8.00, 8.00],
+                "97": [7.00, 14.00, 15.70, 20.00, 15.70, 15.50],
+                "107": [10.00, 21.00, 25.50, 33.50, 24.00, 24.00],
+                "127": [21.00, 41.50, 44.00, 54.00, 40.00, 41.00],
+                "157": [31.00, 62.00, 65.00, 90.00, 58.00, 62.00],
+                "167": [33.00, 95.00, 105.00, 123.00, 85.00, 84.00],
+                "187": [53.00, 152.00, 167.00, 200.00, 143.00, 143.00],
+              },
+              S: {
+                "37": [0.25, 0.40, "0.50", 0.55, 0.40, 0.40],
+                "47": [0.35, 0.80, "0.70/0.90", 1.00, 0.80, 0.80],
+                "57": [0.50, 1.20, "1.00/1.20", 1.45, 1.30, 1.30],
+                "67": [1.00, 2.00, "2.20/3.10", 3.10, 2.60, 2.60],
+                "77": [1.90, 4.20, "3.70/5.4", 5.90, 4.40, 4.40],
+                "87": [3.30, 8.10, "6.9/10.4", 11.30, 8.40, 8.40],
+                "97": [6.80, 15.00, "13.4/18.0", 21.80, 17.00, 17.00],
+              },
+              SF: {
+                "37": [0.25, 0.40, "0.50", 0.55, 0.40, 0.40],
+                "47": [0.40, 0.90, "0.90/1.05", 1.05, 1.00, 1.00],
+                "57": [0.50, 1.20, "1.00/1.50", 1.55, 1.40, 1.40],
+                "67": [1.00, 2.20, "2.30/3.00", 3.20, 2.70, 2.70],
+                "77": [1.90, 4.10, "3.90/5.8", 6.50, 4.90, 4.90],
+                "87": [3.80, 8.00, "7.1/10.1", 12.00, 9.10, 9.10],
+                "97": [7.40, 15.00, "13.8/18.8", 22.60, 18.00, 18.00],
+              },
+              S_OTHER: {
+                "37": [0.25, 0.40, "0.50", 0.50, 0.40, 0.40],
+                "47": [0.40, 0.80, "0.70/0.90", 1.00, 0.80, 0.80],
+                "57": [0.50, 1.10, "1.00/1.50", 1.50, 1.20, 1.20],
+                "67": [1.00, 2.00, "1.80/2.60", 2.90, 2.50, 2.50],
+                "77": [1.80, 3.90, "3.60/5.0", 5.80, 4.50, 4.50],
+                "87": [3.80, 7.40, "6.0/8.7", 10.80, 8.00, 8.00],
+                "97": [7.00, 14.00, "11.4/16.0", 20.50, 15.70, 15.70],
+              },
+            };
+
+            // 4) คำนวณลิตร
+            const mountIdx = { M1: 0, M2: 1, M3: 2, M4: 3, M5: 4, M6: 5 };
+            const row = OIL_DATA[oilCategory]?.[sizeKey];
+
+            const pick = (v) =>
+              typeof v === "string" && v.includes("/")
+                ? Math.max(...v.split("/").map((x) => parseFloat(String(x).trim())))
+                : v != null
+                ? Number(v)
+                : null;
+
+            const oilLiters =
+              row && mSel && mountIdx[mSel] != null ? pick(row[mountIdx[mSel]]) : null;
+
+            return (
+              <>
+                <div className="mb-1">
+                  ชนิดของน้ำมันเกียร์ที่แนะนำ สำหรับ{" "}
+                  <b>{isSFamily ? "S Series" : `${rkfsSeries} Series`}</b> ในอุณหภูมิ{" "}
+                  {isSFamily ? "-0" : "-15"}°C ถึง +40°C :<span className="text-yellow-400 font-extrabold text-l"> <b>{oilGradeText}</b> </span>
+                </div>
+                <div className="mb-2">
+                  แบรนด์ที่แนะนำ{" "}
+                  <span className="font-semibold">{brandText}</span>
+                </div>
+                <div className="mb-3">
+                  ระดับน้ำมันเกียร์ = <span className="text-yellow-400 font-extrabold text-xl">
+                  <b>
+                    {oilLiters != null && !Number.isNaN(oilLiters) ? oilLiters : "—"}
+                  </b>
+                   ลิตร (Liter) </span>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
     </div>
 
-    {/* ── Info หลังเลือก M ── */}
+    {/* ปุ่มถัดไป — ยึดมุมขวาล่างของหน้าจอแน่นอน */}
     {state.rkfsMountingTemp && (
-<div className="mt-6 max-w-4xl mx-auto text-left bg-black/25 rounded-xl px-5 py-4 backdrop-blur-sm text-white/90 text-sm md:text-base leading-7">
-        {(() => {
-          const mSel = state.rkfsMountingTemp;            // ปุ่มที่เพิ่งคลิก
-          const sizeKey = String(rkfsSize || "").trim();  // key ของ size ในตาราง
+      <div
+        className="fixed z-[999]"
+        style={{
+          right: 'max(1.5rem, env(safe-area-inset-right))',
+          bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+        }}
+      >
+        <button
+          className="btn-3d-rkfs px-6 py-3 font-bold"
+          onClick={(e) =>
+            clickSweep(e, () => {
+              update('rkfsMounting', state.rkfsMountingTemp);
+              update('rkfsMountingTemp', null);
 
-          // 1) เกรดน้ำมัน + แบรนด์ (R/F/K = VG220, S-family = VG680)
-          const isSFamily =
-            rkfsSeries === "S" ||
-            ["S", "SA", "SAF", "SAZ", "SAT", "SH", "SHF", "SHZ", "ST", "SF"].includes(
-              rkfsDesign
-            );
-          const oilGradeText = isSFamily ? "ISO,NL GI = VG 680" : "ISO,NL GI = VG 220";
-          const brandText = isSFamily
-            ? "Shell Omala S2 G 680 (SAS เติมแบรนด์นี้) , Mobilgear 600 XP 680 , Castrol Tribol 1100/680"
-            : "Shell Omala S2 G220 (SAS เติมแบรนด์นี้) , Mobilgear 600 XP 220 , Castrol Tribol 1100/220";
-
-          // 2) เลือกหมวดตารางจาก Design
-          const oilCategory = (() => {
-            if (rkfsDesign === "RF") return "RF";
-            if (rkfsDesign === "RX") return "RX";
-            if (rkfsDesign === "RXF") return "RXF";
-            if (rkfsDesign === "FF") return "FF";
-            if (["F", "FA", "FAF", "FAZ", "FH", "FHF", "FHZ", "FV", "FVF", "FVZ", "FT"].includes(rkfsDesign)) return "F";
-            if (rkfsDesign === "S") return "S";
-            if (rkfsDesign === "SF") return "SF";
-            if (["SA", "SAF", "SAZ", "SAT", "SH", "SHF", "SHZ", "ST"].includes(rkfsDesign)) return "S_OTHER";
-            if (["K", "KA", "KAB", "KAF", "KAT", "KAZ"].includes(rkfsDesign)) return "K";
-            return "R"; // ดีไซน์ R
-          })();
-
-          // 3) ตารางปริมาณน้ำมัน (ตามภาพที่ให้มา)
-          const OIL_DATA = {
-            R: {
-              "17": [0.25, 0.55, 0.35, 0.55, 0.35, 0.40],
-              "27": ["0.25/0.40", 0.70, 0.50, 0.70, 0.50, 0.50],
-              "37": ["0.30/0.95", 0.85, 0.95, 1.05, 0.75, 0.95],
-              "47": ["0.70/1.50", 1.60, 1.50, 1.65, 1.50, 1.50],
-              "57": ["0.80/1.70", 1.90, 1.70, 2.10, 1.70, 1.70],
-              "67": ["1.10/2.30", 2.40, 2.80, 2.90, 1.80, 2.00],
-              "77": ["1.20/3.00", 3.30, 3.60, 3.80, 2.50, 3.40],
-              "87": ["2.30/6.0", 6.4, 7.2, 7.2, 6.3, 6.5],
-              "97": ["4.60/9.8", 11.7, 11.7, 13.4, 11.3, 11.7],
-              "107": ["6.0/13.7", 16.3, 16.9, 19.2, 13.2, 15.9],
-              "137": ["10.0/25.0", 28.0, 29.5, 31.5, 25.0, 25.0],
-              "147": ["15.4/40.0", 46.5, 48.0, 52.0, 39.5, 41.0],
-              "167": ["27.0/70.0", 82.0, 78.0, 88.0, 66.0, 69.0],
-            },
-            RF: {
-              "17": [0.25, 0.55, 0.35, 0.55, 0.35, 0.40],
-              "27": ["0.25/0.40", 0.70, 0.50, 0.70, 0.50, 0.50],
-              "37": ["0.35/0.95", 0.90, 0.95, 1.05, 0.75, 0.95],
-              "47": ["0.65/1.50", 1.60, 1.50, 1.65, 1.50, 1.50],
-              "57": ["0.80/1.70", 1.80, 1.70, 2.00, 1.70, 1.70],
-              "67": ["1.20/2.50", 2.50, 2.70, 2.80, 1.90, 2.10],
-              "77": ["1.20/2.60", 3.10, 3.30, 3.60, 2.40, 3.00],
-              "87": ["2.40/6.0", 6.4, 7.1, 7.2, 6.3, 6.4],
-              "97": ["5.1/10.2", 11.9, 11.2, 14.0, 11.2, 11.8],
-              "107": ["6.3/14.9", 15.9, 17.0, 19.2, 13.1, 15.9],
-              "137": ["9.5/25.0", 27.0, 29.0, 32.5, 25.0, 25.0],
-              "147": ["16.4/42.0", 47.0, 48.0, 52.0, 42.0, 42.0],
-              "167": ["26.0/70.0", 82.0, 78.0, 88.0, 65.0, 71.0],
-            },
-            RX: {
-              "57": [0.60, 0.80, 1.30, 1.30, 0.90, 0.90],
-              "67": [0.80, 0.80, 1.70, 1.90, 1.10, 1.10],
-              "77": [1.10, 1.50, 2.60, 2.70, 1.60, 1.60],
-              "87": [1.70, 2.50, 4.80, 4.80, 2.90, 2.90],
-              "97": [2.10, 3.40, 7.40, 7.00, 4.80, 4.80],
-              "107": [3.90, 5.60, 11.60, 11.90, 7.70, 7.70],
-            },
-            RXF: {
-              "57": [0.50, 0.80, 1.10, 1.10, 0.70, 0.70],
-              "67": [0.70, 0.80, 1.50, 1.40, 1.00, 1.00],
-              "77": [0.90, 1.30, 2.40, 2.00, 1.60, 1.60],
-              "87": [1.60, 1.95, 4.90, 3.95, 2.90, 2.90],
-              "97": [2.10, 3.70, 7.10, 6.30, 4.80, 4.80],
-              "107": [3.10, 5.70, 11.20, 9.30, 7.20, 7.20],
-            },
-            F: {
-              "27": [0.60, 0.80, 0.65, 0.70, 0.60, 0.60],
-              "37": [0.95, 1.25, 0.70, 1.25, 1.00, 1.10],
-              "47": [1.50, 1.80, 1.10, 1.90, 1.50, 1.70],
-              "57": [2.60, 3.50, 2.10, 3.50, 2.80, 2.90],
-              "67": [2.70, 3.80, 1.90, 3.80, 2.90, 3.20],
-              "77": [5.90, 7.30, 4.30, 8.00, 6.00, 6.30],
-              "87": [10.80, 13.00, 7.70, 13.80, 10.80, 11.00],
-              "97": [18.50, 22.50, 12.60, 25.20, 18.50, 20.00],
-              "107": [24.50, 32.00, 19.50, 37.50, 27.00, 27.00],
-              "127": [40.50, 54.50, 34.00, 61.00, 46.30, 47.00],
-              "157": [69.00, 104.00, 63.00, 105.00, 86.00, 78.00],
-            },
-            FF: {
-              "27": [0.60, 0.80, 0.65, 0.70, 0.60, 0.60],
-              "37": [1.00, 1.25, 0.70, 1.30, 1.00, 1.10],
-              "47": [1.60, 1.85, 1.10, 1.90, 1.50, 1.70],
-              "57": [2.80, 3.50, 2.10, 3.70, 2.90, 3.00],
-              "67": [2.70, 3.80, 1.90, 3.80, 2.90, 3.20],
-              "77": [5.90, 7.30, 4.30, 8.10, 6.00, 6.30],
-              "87": [10.80, 13.20, 7.80, 14.10, 11.00, 11.20],
-              "97": [19.00, 22.50, 12.60, 25.60, 18.90, 20.50],
-              "107": [25.50, 32.00, 19.50, 38.50, 27.50, 28.00],
-              "127": [41.50, 55.50, 34.00, 63.00, 46.30, 49.00],
-              "157": [72.00, 105.00, 64.00, 106.00, 87.00, 79.00],
-            },
-            K: {
-              "37": [0.50, 1.00, 1.00, 1.25, 0.95, 0.95],
-              "47": [0.80, 1.30, 1.50, 2.00, 1.60, 1.60],
-              "57": [1.10, 2.20, 2.20, 2.80, 2.30, 2.10],
-              "67": [1.10, 2.40, 2.70, 3.45, 2.60, 2.60],
-              "77": [2.20, 4.10, 4.40, 5.80, 4.20, 4.40],
-              "87": [3.70, 8.00, 8.70, 10.90, 8.00, 8.00],
-              "97": [7.00, 14.00, 15.70, 20.00, 15.70, 15.50],
-              "107": [10.00, 21.00, 25.50, 33.50, 24.00, 24.00],
-              "127": [21.00, 41.50, 44.00, 54.00, 40.00, 41.00],
-              "157": [31.00, 62.00, 65.00, 90.00, 58.00, 62.00],
-              "167": [33.00, 95.00, 105.00, 123.00, 85.00, 84.00],
-              "187": [53.00, 152.00, 167.00, 200.00, 143.00, 143.00],
-            },
-            S: {
-              "37": [0.25, 0.40, "0.50", 0.55, 0.40, 0.40],
-              "47": [0.35, 0.80, "0.70/0.90", 1.00, 0.80, 0.80],
-              "57": [0.50, 1.20, "1.00/1.20", 1.45, 1.30, 1.30],
-              "67": [1.00, 2.00, "2.20/3.10", 3.10, 2.60, 2.60],
-              "77": [1.90, 4.20, "3.70/5.4", 5.90, 4.40, 4.40],
-              "87": [3.30, 8.10, "6.9/10.4", 11.30, 8.40, 8.40],
-              "97": [6.80, 15.00, "13.4/18.0", 21.80, 17.00, 17.00],
-            },
-            SF: {
-              "37": [0.25, 0.40, "0.50", 0.55, 0.40, 0.40],
-              "47": [0.40, 0.90, "0.90/1.05", 1.05, 1.00, 1.00],
-              "57": [0.50, 1.20, "1.00/1.50", 1.55, 1.40, 1.40],
-              "67": [1.00, 2.20, "2.30/3.00", 3.20, 2.70, 2.70],
-              "77": [1.90, 4.10, "3.90/5.8", 6.50, 4.90, 4.90],
-              "87": [3.80, 8.00, "7.1/10.1", 12.00, 9.10, 9.10],
-              "97": [7.40, 15.00, "13.8/18.8", 22.60, 18.00, 18.00],
-            },
-            S_OTHER: {
-              "37": [0.25, 0.40, "0.50", 0.50, 0.40, 0.40],
-              "47": [0.40, 0.80, "0.70/0.90", 1.00, 0.80, 0.80],
-              "57": [0.50, 1.10, "1.00/1.50", 1.50, 1.20, 1.20],
-              "67": [1.00, 2.00, "1.80/2.60", 2.90, 2.50, 2.50],
-              "77": [1.80, 3.90, "3.60/5.0", 5.80, 4.50, 4.50],
-              "87": [3.80, 7.40, "6.0/8.7", 10.80, 8.00, 8.00],
-              "97": [7.00, 14.00, "11.4/16.0", 20.50, 15.70, 15.70],
-            },
-          };
-
-          // 4) คำนวณลิตร
-          const mountIdx = { M1: 0, M2: 1, M3: 2, M4: 3, M5: 4, M6: 5 };
-          const row = OIL_DATA[oilCategory]?.[sizeKey];
-
-          const pick = (v) =>
-            typeof v === "string" && v.includes("/")
-              ? Math.max(...v.split("/").map((x) => parseFloat(String(x).trim())))
-              : v != null
-              ? Number(v)
-              : null;
-
-          const oilLiters =
-            row && mSel && mountIdx[mSel] != null ? pick(row[mountIdx[mSel]]) : null;
-
-          return (
-            <>
-              <div className="mb-1">
-                ชนิดของน้ำมันเกียร์ที่แนะนำ สำหรับ{" "}
-                <b>{isSFamily ? "S Series" : `${rkfsSeries} Series`}</b> ในอุณหภูมิ{" "}
-                {isSFamily ? "-0" : "-15"}°C ถึง +40°C : <b>{oilGradeText}</b>
-              </div>
-              <div className="mb-2">
-                แบรนด์ที่แนะนำ{" "}
-                <span className="font-semibold">{brandText}</span>
-              </div>
-              <div className="mb-3">
-                ระดับน้ำมันเกียร์ = (
-                <b>
-                  {oilLiters != null && !Number.isNaN(oilLiters) ? oilLiters : "—"}
-                </b>
-                ) ลิตร (Liter)
-              </div>
-            </>
-          );
-        })()}
+              // ★ เฉพาะโหมด INPUT Shaft: K/S → ไป 9.3, R/F → ไป Confirm
+              if (rkfsInputSel === 'INPUT Shaft') {
+                setTimeout(() => {
+                  const targetId = (rkfsSeries === 'K' || rkfsSeries === 'S')
+                    ? 'rkfs-step-93'
+                    : 'rkfs-confirm-step';
+                  document.getElementById(targetId)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 0);
+              }
+            })
+          }
+        >
+          ถัดไป
+        </button>
       </div>
     )}
 
-{/* ปุ่มถัดไป — ยึดมุมขวาล่างของหน้าจอแน่นอน */}
-{state.rkfsMountingTemp && (
-  <div
-    className="fixed z-[999]"
-    style={{
-      right: 'max(1.5rem, env(safe-area-inset-right))',
-      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-    }}
-  >
-    <button
-      className="btn-3d-rkfs px-6 py-3 font-bold"
-      onClick={(e) =>
-        clickSweep(e, () => {
-          update('rkfsMounting', state.rkfsMountingTemp);
-          update('rkfsMountingTemp', null);
-        })
-      }
+    {/* ปุ่มย้อนกลับ → กลับไปเลือก Ratio */}
+    <div
+      className="fixed z-[999]"
+      style={{
+        left: 'max(1.5rem, env(safe-area-inset-right))',
+        bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+      }}
     >
-        ถัดไป
-      </button>
-           </div>
-    )}
-
-    <div className="fixed z-[999]"
-    style={{
-      left: 'max(1.5rem, env(safe-area-inset-right))',
-      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-    }}
-  >
       <button
         onClick={(e) => clickSweep(e, () => update("rkfsRatio", null))}
         className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
@@ -2221,11 +2559,39 @@ const clickSweep = (e, run) => {
         ย้อนกลับ
       </button>
     </div>
+
+    {/* Lightbox (เต็มจอ) สำหรับรูป Mounting */}
+    <dialog
+      id="rkfs-mount-modal"
+      className="
+        hidden
+        open:fixed open:inset-0 open:z-[9999]
+        open:bg-black/80 open:backdrop-blur-sm open:p-4
+        open:flex open:items-center open:justify-center
+      "
+      onClick={(e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }}
+    >
+      <form method="dialog" className="contents">
+        <img
+          src={mountingImageMap[rkfsSeries]}
+          alt="Mounting (full)"
+          className="max-h-[92vh] max-w-[96vw] w-auto h-auto object-contain rounded-xl shadow-2xl"
+        />
+        <button
+          type="submit"
+          className="absolute top-4 right-4 text-white/90 bg-white/10 hover:bg-white/20 transition-colors rounded-full px-3 py-1 text-sm font-semibold"
+        >
+          ปิด
+        </button>
+      </form>
+    </dialog>
   </>
 )}
 
       {/* Step 9: Position */}
-      {rkfsMounting && !rkfsPosition && (
+      {rkfsMounting && !rkfsPosition &&
+  rkfsInputSel !== 'IEC Adapter Motor' &&
+  rkfsInputSel !== 'INPUT Shaft' && (
         <>
           <div id="rkfs-position-step">
             <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(6,0,0,0.6)]">เลือกตำแหน่งกล่องสายไฟ (Terminal Box)</h3>
@@ -2264,9 +2630,11 @@ const clickSweep = (e, run) => {
       )}
 
       {/* Step 9.2: Sub‐position */}
-      {rkfsPosition && !rkfsPositionSub && (
+      {rkfsPosition && !rkfsPositionSub &&
+  rkfsInputSel !== 'IEC Adapter Motor' &&
+  rkfsInputSel !== 'INPUT Shaft' && (
         <>
-          <div>
+          <div id="rkfs-step-92">
             <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(6,0,0,0.6)]">เลือกตำแหน่งรูสายไฟ (Cable wire position)</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
               {[
@@ -2303,55 +2671,65 @@ const clickSweep = (e, run) => {
       )}
 
       {/* Step 9.3: Design code (เฉพาะ K / S Series) */}
-{rkfsSeries && rkfsDesign && rkfsPosition && rkfsPositionSub && (rkfsSeries === 'K' || rkfsSeries === 'S') && (
-  <div className="mt-6">
+{ (rkfsSeries === 'K' || rkfsSeries === 'S') && rkfsDesign &&
+  (
+    // IEC / INPUT: ข้าม Step 9 → โผล่ได้เมื่อเลือก Mounting แล้ว
+    ((rkfsInputSel === 'IEC Adapter Motor' || rkfsInputSel === 'INPUT Shaft') && rkfsMounting)
+    ||
+    // With Motor / อื่น ๆ: ต้องผ่าน Step 9 ให้ครบก่อน (Position + Sub-position)
+    ((rkfsInputSel !== 'IEC Adapter Motor' && rkfsInputSel !== 'INPUT Shaft') && rkfsPosition && rkfsPositionSub)
+  ) &&
+  (!state.rkfsDesignSuffix || state.rkfsDesignSuffix === 'T') && (
+  <div id="rkfs-step-93" className="mt-6">
     <h3 className="text-blue-600 font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-     เลือกทิศทางการติดตั้งเพลา ซ้าย หรือ ขวา ?
+      เลือกทิศทางการติดตั้งเพลา ซ้าย หรือ ขวา ?
     </h3>
 
     {(() => {
-      const selected = state.rkfsDesignSuffix; // ใช้ state เดิมที่เราอัปเดตใน Step 9.3
+      const selected = state.rkfsDesignSuffix;
       const pick = (val) => update('rkfsDesignSuffix', val);
 
-      // ปุ่มภาพ 3D (ภาพอยู่กึ่งกลาง, กดเลือกได้, ไฮไลท์ตอนเลือก)
+      // ปุ่มภาพ 3D
       const Card = ({ img, code, label }) => (
-  <button
-    type="button"
-    onClick={(e) => {
-  clickSweep(e, () => {
-    update('rkfsDesignSuffix', code);
-    setTimeout(() => {
-      document.getElementById('rkfs-confirm-step')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 0);
-  });
-}}
-    className={[
-      "group w-64 h-64 sm:w-68 sm:h-68",
-      "rounded-2xl border bg-white shadow-md",
-      "hover:shadow-xl transition transform hover:-translate-y-0.5 active:scale-95",
-      "flex flex-col items-center justify-center",
-      state.rkfsDesignSuffix === code
-        ? "ring-4 ring-blue-500 border-blue-300"
-        : "ring-1 ring-gray-200 border-gray-200",
-    ].join(" ")}
-    style={{ WebkitTapHighlightColor: 'transparent' }}
-  >
-    <img
-      src={img}
-      alt={label}
-      className="w-64 h-64 object-contain pointer-events-none select-none"
-      draggable={false}
-    />
-    <span className="text-red-700 font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-      {label}
-    </span>
-  </button>
-);
+        <button
+          type="button"
+          onClick={(e) => {
+            clickSweep(e, () => {
+              update('rkfsDesignSuffix', code);
+              // ✅ เลือก T = ยังไม่จบ → ไม่เลื่อนไป Confirm
+              if (code !== 'T') {
+                setTimeout(() => {
+                  document.getElementById('rkfs-confirm-step')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 0);
+              }
+            });
+          }}
+          className={[
+            "group w-64 h-64 sm:w-68 sm:h-68",
+            "rounded-2xl border bg-white shadow-md",
+            "hover:shadow-xl transition transform hover:-translate-y-0.5 active:scale-95",
+            "flex flex-col items-center justify-center",
+            state.rkfsDesignSuffix === code
+              ? "ring-4 ring-blue-500 border-blue-300"
+              : "ring-1 ring-gray-200 border-gray-200",
+          ].join(" ")}
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+        >
+          <img
+            src={img}
+            alt={label}
+            className="w-64 h-64 object-contain pointer-events-none select-none"
+            draggable={false}
+          />
+          <span className="text-red-700 font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+            {label}
+          </span>
+        </button>
+      );
 
       // ---------- K-Series ----------
       if (rkfsSeries === 'K') {
-        // K → แสดง A / B / AB
         if (rkfsDesign === 'K') {
           return (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
@@ -2362,7 +2740,6 @@ const clickSweep = (e, run) => {
           );
         }
 
-        // KA, KAB, KAF, KAZ → แสดง A / B
         if (['KA', 'KAB', 'KAF', 'KAZ'].includes(rkfsDesign)) {
           return (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
@@ -2372,9 +2749,7 @@ const clickSweep = (e, run) => {
           );
         }
 
-        // KAT → ต้องกด T ก่อน แล้วค่อยเลือก A/B → ได้ TA / TB
         if (rkfsDesign === 'KAT') {
-          // ยังไม่ได้กด T
           if (!['T', 'TA', 'TB'].includes(selected)) {
             return (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-center">
@@ -2382,7 +2757,6 @@ const clickSweep = (e, run) => {
               </div>
             );
           }
-          // กด T แล้ว → เลือก A/B ต่อ (ใช้รูป KAXXA/KAXXB) → เก็บเป็น TA / TB
           return (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
               <Card img={KAXXAImg} code="TA" label="KAXXA (TA)" />
@@ -2394,7 +2768,6 @@ const clickSweep = (e, run) => {
 
       // ---------- S-Series ----------
       if (rkfsSeries === 'S') {
-        // S → แสดง A / B / AB
         if (rkfsDesign === 'S') {
           return (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-1 justify-items-center">
@@ -2405,7 +2778,6 @@ const clickSweep = (e, run) => {
           );
         }
 
-        // SA, SAF, SAZ → แสดง A / B
         if (['SA', 'SAF', 'SAZ'].includes(rkfsDesign)) {
           return (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
@@ -2415,7 +2787,6 @@ const clickSweep = (e, run) => {
           );
         }
 
-        // SAT → ต้องกด T ก่อน แล้วค่อยเลือก A/B → ได้ TA / TB
         if (rkfsDesign === 'SAT') {
           if (!['T', 'TA', 'TB'].includes(selected)) {
             return (
@@ -2433,292 +2804,389 @@ const clickSweep = (e, run) => {
         }
       }
 
-      // อื่น ๆ ไม่แสดง
       return null;
     })()}
+    {/* [ADD-IEC-INPUT-BACK-93] เฉพาะ IEC / INPUT → Back = กลับไปเลือก Mounting */}
+{ (rkfsSeries === 'K' || rkfsSeries === 'S') &&
+  (rkfsInputSel === 'IEC Adapter Motor' || rkfsInputSel === 'INPUT Shaft') && (
+  <div
+    className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
+    <button
+      onClick={(e) => clickSweep(e, () => update('rkfsMounting', null))}
+      className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+    >
+      ย้อนกลับ
+    </button>
+  </div>
+)}
   </div>
 )}
 
       {/* Step 10: Confirm */}
-{rkfsPositionSub && (
+{(
+  // IEC / INPUT
+  ((rkfsInputSel === 'IEC Adapter Motor' || rkfsInputSel === 'INPUT Shaft') &&
+    ((rkfsSeries === 'K' || rkfsSeries === 'S')
+        ? (rkfsMounting && state.rkfsDesignSuffix && state.rkfsDesignSuffix !== 'T') // ต้องผ่าน 9.3 แล้ว
+        : rkfsMounting // R/F: เดิม
+    )
+  )
+  ||
+  // With Motor / Servo: เดิม
+  ((rkfsInputSel !== 'IEC Adapter Motor' && rkfsInputSel !== 'INPUT Shaft') &&
+    rkfsPosition && rkfsPositionSub
+  )
+) && (
   <div id="rkfs-confirm-step" className="text-center mt-6 space-y-4">
     <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code</h3>
-<p className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-      {`${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`}
+    <p className="text-blue-400 font-extrabold text-xl">
+      {(() => {
+        // ── IEC Adapter Motor ──
+        if (rkfsInputSel === 'IEC Adapter Motor') {
+          const amCode = (typeof getRkfsIECByPower === 'function') ? getRkfsIECByPower(rkfsMotorPower) : null;
+          if (!rkfsRatio || !rkfsMounting || !amCode) return '-';
+          return `${rkfsDesign}${rkfsSize}-${rkfsRatio}-${amCode}-${rkfsMounting}`;
+        }
+
+        // ── INPUT Shaft ── (อ่านจาก state เสมอ เพื่อกันกรณีตัวแปรโลคัลไม่ได้ map)
+        if (rkfsInputSel === 'INPUT Shaft') {
+          const shaftCode = state?.rkfsINPUTshaft ?? state?.rkfsInputShaft ?? null;
+          const diaVal    = state?.rkfsINPUTshaftDia ?? state?.rkfsInputShaftDia ?? null;
+          if (!rkfsRatio || !rkfsMounting || !shaftCode) return '-';
+          const dia = diaVal ? `-${diaVal}` : '';
+          return `${rkfsDesign}${rkfsSize}-${rkfsRatio}-${shaftCode}-${rkfsMounting}${dia}`;
+        }
+
+        // ── With motor (โครงสร้างเดิม 100%) ──
+        return `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}${rkfsPosition ? `-${rkfsPosition}` : ''}${rkfsPositionSub ? `-${rkfsPositionSub}` : ''}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`;
+      })()}
     </p>
+    <br />
+    {(() => {
+  const isIEC   = rkfsInputSel === 'IEC Adapter Motor';
+  const isINPUT = rkfsInputSel === 'INPUT Shaft';
+  const thumbIEC   = isIEC   ? RKFS_IEC_IMG?.[rkfsSeries]   : null;
+  const thumbINPUT = isINPUT ? RKFS_INPUT_GIF?.[rkfsSeries] : null;
+  const thumbSrc = thumbIEC || thumbINPUT;
+  const thumbAlt = isIEC ? `${rkfsSeries} IEC adapter drawing` :
+                   isINPUT ? `${rkfsSeries} input shaft animation` : '';
 
-{/* === [ADD] RKFS: spacer 2 บรรทัด + สรุปสเปค === */}
-<br />
-{(() => {
-  // ค่าที่ผู้ใช้เลือก
-  const series = rkfsSeries || '-';
-  const design = rkfsDesign ? (rkfsDesign + (state?.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : '')) : '-';
-  const size   = rkfsSize   || '-';
-  const ratioS = rkfsRatio  || '-';
-    const shaftPos = state?.rkfsDesignSuffix || '-';
-  const inpSel = rkfsInputSel || '-';
-  const mType  = rkfsMotorType || '-';
-  const mKWs   = rkfsMotorPower || '-';
-  const MTP   = rkfsMounting || '-';
-  const MTC   = rkfsPosition || '-';
-  const poleS  = rkfsPole || '-';
+  if (!thumbSrc) return null;
 
-  // คำนวณความเร็วรอบออก (rpm) ตาม Pole/Ratio
-  const r = parseFloat(rkfsRatio);
-  const p = parseInt(rkfsPole, 10);
-  const baseRPM = p === 2 ? 3000 : p === 4 ? 1500 : p === 6 ? 1000 : p === 8 ? 700 : undefined;
-  const outRPM = (baseRPM && r && !Number.isNaN(r) && r > 0) ? (baseRPM / r) : null;
+  return (
+    <div className="group mx-auto mt-3 block w-full">
+  {/* คลิกได้เฉพาะที่รูป */}
+  <img
+    src={thumbSrc}
+    alt={thumbAlt}
+    loading="lazy"
+    onClick={() => document.getElementById('rkfs-illust-modal')?.showModal()}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        document.getElementById('rkfs-illust-modal')?.showModal();
+      }
+    }}
+    tabIndex={0}
+    className="
+      cursor-zoom-in
+      mx-auto h-auto w-full object-contain
+      max-w-[20px] sm:max-w-[120px] md:max-w-[220px] lg:max-w-[340px]
+      rounded-xl shadow-lg ring-1 ring-white/10
+      transition-transform duration-200 group-hover:scale-[1.02] group-active:scale-[0.99]
+      focus:outline-none focus:ring-2 focus:ring-white/40
+    "
+  />
+  {/* ป้ายคำบรรยายไม่รับคลิก */}
+  <div className="mt-1 text-xs text-white/70 select-none pointer-events-none">
+    แตะ/คลิกเพื่อขยาย
+  </div>
+</div>
+  );
+})()}
+    {/* === [ADD] RKFS: spacer 2 บรรทัด + สรุปสเปค (คงเดิมทั้งหมด) === */}
+    <br />
+    {(() => {
+      // ค่าที่ผู้ใช้เลือก
+      const series = rkfsSeries || '-';
+      const design = rkfsDesign ? (rkfsDesign + (state?.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : '')) : '-';
+      const size   = rkfsSize   || '-';
+      const ratioS = rkfsRatio  || '-';
+      const shaftPos = state?.rkfsDesignSuffix || '-';
+      const inpSel = rkfsInputSel || '-';
+      const mType  = rkfsMotorType || '-';
+      const mKWs   = rkfsMotorPower || '-';
+      const MTP   = rkfsMounting || '-';
+      const MTT   = rkfsPosition || '-';
+      const MTC   = rkfsPositionSub || '-';
+      const poleS  = rkfsPole || '-';
+      const amCodeForKW = (typeof getRkfsIECByPower === 'function') ? getRkfsIECByPower(rkfsMotorPower) : null;
+      const amDims = amCodeForKW && typeof rkfsAMFlangeDims !== 'undefined' ? rkfsAMFlangeDims[amCodeForKW] : null;
 
-  // คำนวณแรงบิดออก (N·m) = (9550 * kW) / rpm
-  const kW = parseFloat(String(rkfsMotorPower).replace(',', '.'));
-  const outTorque = (outRPM && kW && !Number.isNaN(kW)) ? (9550 * kW) / outRPM : null;
-  // --- NEW: Design description map (ตาม Step 2) ---
-const designMap = {
-  // R-series
-  R:   "R : Helical Gearmotor / Foot-mounted / Solid shaft.",
-  RF:  "RF : Helical Gearmotor / B5 Flange-mounted / Solid shaft.",
-  RM:  "RM : Helical Gearmotor / B5 Flange-mounted / Solid shaft / With extended bearing hub.",
-  RX:  "RX : Single stage / Helical Gearmotor / Foot-mounted / Solid shaft.",
-  RXF: "RXF : Single stage / Helical Gearmotor / Foot-mounted / Solid shaft.",
+// ดึง/เดาเส้นผ่านศูนย์กลางเพลาขาเข้า (INPUT) จาก state หรือ mapping
+let inputShaftDia = state?.rkfsINPUTshaftDia ?? state?.rkfsInputShaftDia ?? null;
+if (!inputShaftDia && rkfsSeries && rkfsSize) {
+  const list = rkfsInputShaftBySeries?.[rkfsSeries]?.[rkfsSize];
+  const codePick = state?.rkfsINPUTshaft ?? state?.rkfsInputShaft;
+  if (Array.isArray(list) && codePick) {
+    const found = list.find(x => x.code === codePick);
+    inputShaftDia = found?.dia ?? null; // รูปแบบเดิมเช่น "Ø28"
+  }
+}
+      // คำนวณความเร็วรอบออก (rpm) ตาม Pole/Ratio
+      const r = parseFloat(rkfsRatio);
+      const p = parseInt(rkfsPole, 10);
+      const baseRPM = p === 2 ? 3000 : p === 4 ? 1500 : p === 6 ? 1000 : p === 8 ? 700 : undefined;
+      const outRPM = (baseRPM && r && !Number.isNaN(r) && r > 0) ? (baseRPM / r) : null;
 
-  // F-series
-  F:   "F : Parallel-shaft helical gearmotor / Foot-mounted / Solid shaft.",
-  FA:  "FA : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft / Keyway.",
-  FAF: "FAF : Parallel-shaft helical gearmotor / B5 Flange-mounted / Hollow shaft / Keyway.",
-  FAZ: "FAZ : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft and shrink disk.",
-  FF:  "FF : Parallel-shaft helical gearmotor / B5 Flange-mounted / Solid shaft.",
+      // คำนวณแรงบิดออก (N·m) = (9550 * kW) / rpm
+      const kW = parseFloat(String(rkfsMotorPower).replace(',', '.'));
+      const outTorque = (outRPM && kW && !Number.isNaN(kW)) ? (9550 * kW) / outRPM : null;
 
-  // K-series
-  K:   "K : Helical-bevel gearmotor / Foot-mounted / Solid shaft.",
-  KA:  "KA : Helical-bevel gearmotor / Hollow shaft / Keyway.",
-  KAB: "KAB : Helical-bevel gearmotor / Foot-mounted / Hollow shaft / Keyway.",
-  KAF: "KAF : Helical-bevel gearmotor / Flange-mounted / Hollow shaft / Keyway.",
-  KAT: "KAT : Helical-bevel gearmotor / Hollow shaft / Keyway / Torque Arm.",
-  KAZ: "KAZ : Helical-bevel gearmotor / Hollow shaft and shrink disk.",
+      // --- NEW: Design description map (ตาม Step 2) ---
+      const designMap = {
+        // R-series
+        R:   "R : Helical Gearmotor / Foot-mounted / Solid shaft.",
+        RF:  "RF : Helical Gearmotor / B5 Flange-mounted / Solid shaft.",
+        RM:  "RM : Helical Gearmotor / B5 Flange-mounted / Solid shaft / With extended bearing hub.",
+        RX:  "RX : Single stage / Helical Gearmotor / Foot-mounted / Solid shaft.",
+        RXF: "RXF : Single stage / Helical Gearmotor / Foot-mounted / Solid shaft.",
+        // F-series
+        F:   "F : Parallel-shaft helical gearmotor / Foot-mounted / Solid shaft.",
+        FA:  "FA : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft / Keyway.",
+        FAF: "FAF : Parallel-shaft helical gearmotor / B5 Flange-mounted / Hollow shaft / Keyway.",
+        FAZ: "FAZ : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft and shrink disk.",
+        FF:  "FF : Parallel-shaft helical gearmotor / B5 Flange-mounted / Solid shaft.",
+        // K-series
+        K:   "K : Helical-bevel gearmotor / Foot-mounted / Solid shaft.",
+        KA:  "KA : Helical-bevel gearmotor / Hollow shaft / Keyway.",
+        KAB: "KAB : Helical-bevel gearmotor / Foot-mounted / Hollow shaft / Keyway.",
+        KAF: "KAF : Helical-bevel gearmotor / Flange-mounted / Hollow shaft / Keyway.",
+        KAT: "KAT : Helical-bevel gearmotor / Hollow shaft / Keyway / Torque Arm.",
+        KAZ: "KAZ : Helical-bevel gearmotor / Hollow shaft and shrink disk.",
+        // S-series
+        S:   "S : Helical-worm gearmotor / Foot-mounted / Solid shaft.",
+        SA:  "SA : Helical-worm gearmotor / Hollow shaft / Keyway.",
+        SAF: "SAF : Helical-worm gearmotor / B5 Flange-mounted / Hollow shaft / Keyway.",
+        SAT: "SAT : Helical-worm gearmotor / Hollow shaft / Keyway / Torque Arm.",
+        SAZ: "SAZ : Helical-worm gearmotor / Hollow shaft and shrink disk."
+      };
+      const designDesc = rkfsDesign ? (designMap[rkfsDesign] || rkfsDesign) : "-";
 
-  // S-series
-  S:   "S : Helical-worm gearmotor / Foot-mounted / Solid shaft.",
-  SA:  "SA : Helical-worm gearmotor / Hollow shaft / Keyway.",
-  SAF: "SAF : Helical-worm gearmotor / B5 Flange-mounted / Hollow shaft / Keyway.",
-  SAT: "SAT : Helical-worm gearmotor / Hollow shaft / Keyway / Torque Arm.",
-  SAZ: "SAZ : Helical-worm gearmotor / Hollow shaft and shrink disk."
-};
+      const motorTypeDescMap = {
+        YE3:  "Premium Efficiency IE3",
+        YE4:  "Super Premium Efficiency IE4",
+        YEJ:  "Electromagnetic Brake",
+        YVP:  "Variable Frequency Motor",
+        YVPEJ:"Variable Frequency Brake Motor",
+        YB:   "Explosion-proof Motor"
+      };
+      const motorTypeNote = motorTypeDescMap[rkfsMotorType] || "-";
 
-const designDesc = rkfsDesign ? (designMap[rkfsDesign] || rkfsDesign) : "-";
-const motorTypeDescMap = {
-  YE3:  "Premium Efficiency IE3",
-  YE4:  "Super Premium Efficiency IE4",
-  YEJ:  "Electromagnetic Brake",
-  YVP:  "Variable Frequency Motor",
-  YVPEJ:"Variable Frequency Brake Motor",
-  YB:   "Explosion-proof Motor"
-};
-const motorTypeNote = motorTypeDescMap[rkfsMotorType] || "-";
-// --- NEW: Key สำหรับแมปค่าตามดีไซน์+ไซซ์ ---
-const dsKey = `${rkfsDesign || ''}${rkfsSize || ''}`;
+      // --- NEW: Key สำหรับแมปค่าตามดีไซน์+ไซซ์ ---
+      const dsKey = `${rkfsDesign || ''}${rkfsSize || ''}`;
 
-// --- NEW: Output Shaft Diameter ตาม {rkfsDesign}{rkfsSize} ---
-const shaftDiaMap = {
-  R17:'Ø20',  RF17:'Ø20',
-  R27:'Ø25',  RF27:'Ø25',
-  R37:'Ø25',  RF37:'Ø25',
-  R47:'Ø30',  RF47:'Ø30',
+      // --- NEW: Output Shaft Diameter ตาม {rkfsDesign}{rkfsSize} ---
+      const shaftDiaMap = {
+        R17:'Ø20',  RF17:'Ø20',
+        R27:'Ø25',  RF27:'Ø25',
+        R37:'Ø25',  RF37:'Ø25',
+        R47:'Ø30',  RF47:'Ø30',
 
-  F37:'Ø25',  FA37:'Ø30', FAF37:'Ø30',  FAZ37:'Ø30', FF37:'Ø25',
-  F47:'Ø30',  FA47:'Ø35', FAF47:'Ø35',  FAZ47:'Ø35', FF47:'Ø30',
-  F57:'Ø35',  FA57:'Ø40', FAF57:'Ø40',  FAZ57:'Ø40', FF57:'Ø35',
-  F67:'Ø40',  FA67:'Ø40', FAF67:'Ø40',  FAZ67:'Ø40', FF67:'Ø40',
-  F77:'Ø50',  FA77:'Ø50', FAF77:'Ø50',  FAZ77:'Ø50', FF77:'Ø50',
-  F87:'Ø60',  FA87:'Ø60', FAF87:'Ø60',  FAZ87:'Ø65', FF87:'Ø60',
-  F97:'Ø70',  FA97:'Ø70', FAF97:'Ø70',  FAZ97:'Ø75', FF97:'Ø70',
-  F107:'Ø90',  FA107:'Ø90', FAF107:'Ø90',  FAZ107:'Ø95', FF107:'Ø90',
-  F127:'Ø110',  FA127:'Ø100', FAF127:'Ø100',  FAZ127:'Ø105', FF37:'Ø110',
-  F157:'Ø120',  FA157:'Ø120', FAF157:'Ø120',  FAZ157:'Ø125', FF157:'Ø120',
+        F37:'Ø25',  FA37:'Ø30', FAF37:'Ø30',  FAZ37:'Ø30', FF37:'Ø25',
+        F47:'Ø30',  FA47:'Ø35', FAF47:'Ø35',  FAZ47:'Ø35', FF47:'Ø30',
+        F57:'Ø35',  FA57:'Ø40', FAF57:'Ø40',  FAZ57:'Ø40', FF57:'Ø35',
+        F67:'Ø40',  FA67:'Ø40', FAF67:'Ø40',  FAZ67:'Ø40', FF67:'Ø40',
+        F77:'Ø50',  FA77:'Ø50', FAF77:'Ø50',  FAZ77:'Ø50', FF77:'Ø50',
+        F87:'Ø60',  FA87:'Ø60', FAF87:'Ø60',  FAZ87:'Ø65', FF87:'Ø60',
+        F97:'Ø70',  FA97:'Ø70', FAF97:'Ø70',  FAZ97:'Ø75', FF97:'Ø70',
+        F107:'Ø90',  FA107:'Ø90', FAF107:'Ø90',  FAZ107:'Ø95', FF107:'Ø90',
+        F127:'Ø110',  FA127:'Ø100', FAF127:'Ø100',  FAZ127:'Ø105', FF37:'Ø110',
+        F157:'Ø120',  FA157:'Ø120', FAF157:'Ø120',  FAZ157:'Ø125', FF157:'Ø120',
 
-  K37:'Ø25',  KF37:'Ø25', KA37:'Ø30', KAB37:'Ø30',  KAF37:'Ø30', KAT37:'Ø30', KAZ37:'Ø30',
-  K47:'Ø30',  KF47:'Ø30', KA47:'Ø35', KAB47:'Ø35',  KAF47:'Ø35', KAT47:'Ø35', KAZ47:'Ø35',
-  K57:'Ø35',  KF57:'Ø35', KA57:'Ø40', KAB57:'Ø40',  KAF57:'Ø40', KAT57:'Ø40', KAZ57:'Ø40',
-  K67:'Ø40',  KF67:'Ø40', KA67:'Ø40', KAB67:'Ø40',  KAF67:'Ø40', KAT67:'Ø40', KAZ67:'Ø40',
-  K77:'Ø50',  KF77:'Ø50', KA77:'Ø50', KAB77:'Ø50',  KAF77:'Ø50', KAT77:'Ø50', KAZ77:'Ø50',
-  K87:'Ø60',  KF87:'Ø60', KA87:'Ø60', KAB87:'Ø60',  KAF87:'Ø60', KAT87:'Ø60', KAZ87:'Ø65',
-  K97:'Ø70',  KF97:'Ø70', KA97:'Ø70', KAB97:'Ø70',  KAF97:'Ø70', KAT97:'Ø70', KAZ97:'Ø75',
-  K107:'Ø90',  KF107:'Ø90', KA107:'Ø90', KAB107:'Ø90',  KAF107:'Ø90', KAT107:'Ø90', KAZ107:'Ø95',
-  K127:'Ø110',  KF127:'Ø110', KA127:'Ø100', KAB127:'Ø100',  KAF127:'Ø100', KAT127:'Ø100', KAZ127:'Ø105',
-  K157:'Ø120',  KF157:'Ø120', KA157:'Ø120', KAB157:'Ø120',  KAF157:'Ø120', KAT157:'Ø120', KAZ157:'Ø125',
-  K167:'Ø160', KAZ167:'Ø140',
-  K187:'Ø190',  KAZ187:'Ø160',
+        K37:'Ø25',  KF37:'Ø25', KA37:'Ø30', KAB37:'Ø30',  KAF37:'Ø30', KAT37:'Ø30', KAZ37:'Ø30',
+        K47:'Ø30',  KF47:'Ø30', KA47:'Ø35', KAB47:'Ø35',  KAF47:'Ø35', KAT47:'Ø35', KAZ47:'Ø35',
+        K57:'Ø35',  KF57:'Ø35', KA57:'Ø40', KAB57:'Ø40',  KAF57:'Ø40', KAT57:'Ø40', KAZ57:'Ø40',
+        K67:'Ø40',  KF67:'Ø40', KA67:'Ø40', KAB67:'Ø40',  KAF67:'Ø40', KAT67:'Ø40', KAZ67:'Ø40',
+        K77:'Ø50',  KF77:'Ø50', KA77:'Ø50', KAB77:'Ø50',  KAF77:'Ø50', KAT77:'Ø50', KAZ77:'Ø50',
+        K87:'Ø60',  KF87:'Ø60', KA87:'Ø60', KAB87:'Ø60',  KAF87:'Ø60', KAT87:'Ø60', KAZ87:'Ø65',
+        K97:'Ø70',  KF97:'Ø70', KA97:'Ø70', KAB97:'Ø70',  KAF97:'Ø70', KAT97:'Ø70', KAZ97:'Ø75',
+        K107:'Ø90',  KF107:'Ø90', KA107:'Ø90', KAB107:'Ø90',  KAF107:'Ø90', KAT107:'Ø90', KAZ107:'Ø95',
+        K127:'Ø110',  KF127:'Ø110', KA127:'Ø100', KAB127:'Ø100',  KAF127:'Ø100', KAT127:'Ø100', KAZ127:'Ø105',
+        K157:'Ø120',  KF157:'Ø120', KA157:'Ø120', KAB157:'Ø120',  KAF157:'Ø120', KAT157:'Ø120', KAZ157:'Ø125',
+        K167:'Ø160', KAZ167:'Ø140',
+        K187:'Ø190',  KAZ187:'Ø160',
 
-  S37:'Ø20',  SF37:'Ø20', SA37:'Ø20', SAF37:'Ø20', SAT37:'Ø20',  SAZ37:'Ø20',
-  S47:'Ø25',  SF47:'Ø30', SA47:['Ø30',',','Ø25'], SAF47:['Ø30',',','Ø25'], SAT47:['Ø30',',','Ø25'],  SAZ47:'Ø30', 
-  S57:'Ø30',  SF57:'Ø30', SA57:['Ø35',',','Ø30'], SAF57:['Ø35',',','Ø30'], SAT57:['Ø35',',','Ø30'],  SAZ57:'Ø30', 
-  S67:'Ø35',  SF67:'Ø35', SA67:['Ø45',',','Ø40'], SAF67:['Ø45',',','Ø40'], SAT67:['Ø45',',','Ø40'],  SAZ67:'Ø40', 
-  S77:'Ø45',  SF77:'Ø45', SA77:['Ø60',',','Ø50'], SAF77:['Ø60',',','Ø50'], SAT77:['Ø60',',','Ø50'],  SAZ77:'Ø50', 
-  S87:'Ø60',  SF87:'Ø60', SA87:['Ø70',',','Ø60'], SAF87:['Ø70',',','Ø60'], SAT87:['Ø70',',','Ø60'],  SAZ87:'Ø60', 
-  S97:'Ø70',  SF97:'Ø70', SA97:['Ø90',',','Ø70'], SAF97:['Ø90',',','Ø70'], SAT97:['Ø90',',','Ø70'],  SAZ97:'Ø70', 
+        S37:'Ø20',  SF37:'Ø20', SA37:'Ø20', SAF37:'Ø20', SAT37:'Ø20',  SAZ37:'Ø20',
+        S47:'Ø25',  SF47:'Ø30', SA47:['Ø30',',','Ø25'], SAF47:['Ø30',',','Ø25'], SAT47:['Ø30',',','Ø25'],  SAZ47:'Ø30', 
+        S57:'Ø30',  SF57:'Ø30', SA57:['Ø35',',','Ø30'], SAF57:['Ø35',',','Ø30'], SAT57:['Ø35',',','Ø30'],  SAZ57:'Ø30', 
+        S67:'Ø35',  SF67:'Ø35', SA67:['Ø45',',','Ø40'], SAF67:['Ø45',',','Ø40'], SAT67:['Ø45',',','Ø40'],  SAZ67:'Ø40', 
+        S77:'Ø45',  SF77:'Ø45', SA77:['Ø60',',','Ø50'], SAF77:['Ø60',',','Ø50'], SAT77:['Ø60',',','Ø50'],  SAZ77:'Ø50', 
+        S87:'Ø60',  SF87:'Ø60', SA87:['Ø70',',','Ø60'], SAF87:['Ø70',',','Ø60'], SAT87:['Ø70',',','Ø60'],  SAZ87:'Ø60', 
+        S97:'Ø70',  SF97:'Ø70', SA97:['Ø90',',','Ø70'], SAF97:['Ø90',',','Ø70'], SAT97:['Ø90',',','Ø70'],  SAZ97:'Ø70', 
 
-  // RX, RXF, RM เริ่ม size 57
-  R57:'Ø35',  RF57:'Ø35',
-  RX57:'Ø20', RXF57:'Ø20',
-  RX67:'Ø25', RXF67:'Ø25',
-  RX77:'Ø30', RXF77:'Ø30',
-  RX87:'Ø40', RXF87:'Ø40',
-  RX97:'Ø50', RXF97:'Ø50',
-  RX107:'Ø60', RXF107:'Ø60',
+        // RX, RXF, RM เริ่ม size 57
+        R57:'Ø35',  RF57:'Ø35',
+        RX57:'Ø20', RXF57:'Ø20',
+        RX67:'Ø25', RXF67:'Ø25',
+        RX77:'Ø30', RXF77:'Ø30',
+        RX87:'Ø40', RXF87:'Ø40',
+        RX97:'Ø50', RXF97:'Ø50',
+        RX107:'Ø60', RXF107:'Ø60',
 
-  RM57:'Ø35',
-  R67:'Ø35',  RF67:'Ø35',  RM67:'Ø40',
-  R77:'Ø40',  RF77:'Ø40',  RM77:'Ø50',
-  R87:'Ø50',  RF87:'Ø50',  RM87:'Ø60',
-  R97:'Ø60',  RF97:'Ø60',  RM97:'Ø70',
-  R107:'Ø70',  RF107:'Ø70',  RM107:'Ø80',
-  R137:'Ø90',  RF137:'Ø90',  RM137:'Ø100',
-  R147:'Ø110',  RF147:'Ø110',  RM147:'Ø110',
-  R167:'Ø120',  RF167:'Ø120',  RM167:'Ø125', 
-};
-const outShaftDia = shaftDiaMap[dsKey] || '—';
+        RM57:'Ø35',
+        R67:'Ø35',  RF67:'Ø35',  RM67:'Ø40',
+        R77:'Ø40',  RF77:'Ø40',  RM77:'Ø50',
+        R87:'Ø50',  RF87:'Ø50',  RM87:'Ø60',
+        R97:'Ø60',  RF97:'Ø60',  RM97:'Ø70',
+        R107:'Ø70',  RF107:'Ø70',  RM107:'Ø80',
+        R137:'Ø90',  RF137:'Ø90',  RM137:'Ø100',
+        R147:'Ø110',  RF147:'Ø110',  RM147:'Ø110',
+        R167:'Ø120',  RF167:'Ø120',  RM167:'Ø125', 
+      };
+      const outShaftDia = shaftDiaMap[dsKey] || '—';
 
-// --- NEW: Output Flange Diameter (หลายตัวเลือก) ตาม {rkfsDesign}{rkfsSize} ---
-const flangeDiaMap = {
-  RF17:['Ø120','Ø140','Ø160'],
-  RF27:['Ø120','Ø140','Ø160'],
-  RF37:['Ø120','Ø140','Ø160','Ø200'],
-  RF47:['Ø140','Ø160','Ø200'],
-  RF57:['Ø160','Ø200','Ø250'],
+      // --- NEW: Output Flange Diameter ตาม {rkfsDesign}{rkfsSize} ---
+      const flangeDiaMap = {
+        RF17:['Ø120','Ø140','Ø160'],
+        RF27:['Ø120','Ø140','Ø160'],
+        RF37:['Ø120','Ø140','Ø160','Ø200'],
+        RF47:['Ø140','Ø160','Ø200'],
+        RF57:['Ø160','Ø200','Ø250'],
 
-  RXF57:['Ø140','Ø160','Ø200'],
-  RXF67:['Ø160','Ø200','Ø250'],
-  RXF77:['Ø200','Ø250'],
-  RXF87:['Ø250','Ø300'],
-  RXF97:['Ø300','Ø350'],
-  RXF107:['Ø350','Ø450'],
+        RXF57:['Ø140','Ø160','Ø200'],
+        RXF67:['Ø160','Ø200','Ø250'],
+        RXF77:['Ø200','Ø250'],
+        RXF87:['Ø250','Ø300'],
+        RXF97:['Ø300','Ø350'],
+        RXF107:['Ø350','Ø450'],
 
-  RM57:['Ø250'],
-  RF67:['Ø200','Ø250'],
-  RM67:['Ø300'],
-  RF77:['Ø250','Ø300'],
-  RM77:['Ø350'],
-  RF87:['Ø300','Ø350'],
-  RM87:['Ø350'],
-  RF97:['Ø350','Ø450'],
-  RM97:['Ø450'],
-  RF107:['Ø350','Ø450'],
-  RM107:['Ø550'],
-  RF137:['Ø450','Ø550'],
-  RM137:['Ø550'],
-  RF147:['Ø450','Ø550'],
-  RM147:['Ø660'],
-  RF167:['Ø550','Ø660'],
-  RM167:['Ø660'],
+        RM57:['Ø250'],
+        RF67:['Ø200','Ø250'],
+        RM67:['Ø300'],
+        RF77:['Ø250','Ø300'],
+        RM77:['Ø350'],
+        RF87:['Ø300','Ø350'],
+        RM87:['Ø350'],
+        RF97:['Ø350','Ø450'],
+        RM97:['Ø450'],
+        RF107:['Ø350','Ø450'],
+        RM107:['Ø550'],
+        RF137:['Ø450','Ø550'],
+        RM137:['Ø550'],
+        RF147:['Ø450','Ø550'],
+        RM147:['Ø660'],
+        RF167:['Ø550','Ø660'],
+        RM167:['Ø660'],
 
-  SF37:['Ø120','Ø160'],
-  SAF37:['Ø120','Ø160'],
-  SHF37:['Ø120','Ø160'],
-  SF47:['Ø160'],
-  SAF47:['Ø160'],
-  SHF47:['Ø160'],
-  SF57:['Ø200'],
-  SAF57:['Ø200'],
-  SHF57:['Ø200'],
-  SF67:['Ø200'],
-  SAF67:['Ø200'],
-  SHF67:['Ø200'],
-  SF77:['Ø250'],
-  SAF77:['Ø250'],
-  SHF77:['Ø250'],
-  SF87:['Ø350'],
-  SAF87:['Ø350'],
-  SHF87:['Ø350'],
-  SF97:['Ø450'],
-  SAF97:['Ø450'],
-  SHF97:['Ø450'],
-  
-  KF37:['Ø160'],
-  KAF37:['Ø160'],
-  KHF37:['Ø160'],
-  KF47:['Ø200'],
-  KAF47:['Ø200'],
-  KHF47:['Ø200'],
-  KF57:['Ø250'],
-  KAF57:['Ø250'],
-  KHF57:['Ø250'],
-  KF67:['Ø250'],
-  KAF67:['Ø250'],
-  KHF67:['Ø250'],
-  KF77:['Ø300'],
-  KAF77:['Ø300'],
-  KHF77:['Ø300'],
-  KF87:['Ø350'],
-  KAF87:['Ø350'],
-  KHF87:['Ø350'],
-  KF97:['Ø450'],
-  KAF97:['Ø450'],
-  KHF97:['Ø450'],
-  KF107:['Ø450'],
-  KAF107:['Ø450'],
-  KHF107:['Ø450'],
-  KF127:['Ø550'],
-  KAF127:['Ø550'],
-  KHF127:['Ø550'],
-  KF157:['Ø660'],
-  KAF157:['Ø660'],
-  KHF157:['Ø660'],
+        SF37:['Ø120','Ø160'],
+        SAF37:['Ø120','Ø160'],
+        SHF37:['Ø120','Ø160'],
+        SF47:['Ø160'],
+        SAF47:['Ø160'],
+        SHF47:['Ø160'],
+        SF57:['Ø200'],
+        SAF57:['Ø200'],
+        SHF57:['Ø200'],
+        SF67:['Ø200'],
+        SAF67:['Ø200'],
+        SHF67:['Ø200'],
+        SF77:['Ø250'],
+        SAF77:['Ø250'],
+        SHF77:['Ø250'],
+        SF87:['Ø350'],
+        SAF87:['Ø350'],
+        SHF87:['Ø350'],
+        SF97:['Ø450'],
+        SAF97:['Ø450'],
+        SHF97:['Ø450'],
+        
+        KF37:['Ø160'],
+        KAF37:['Ø160'],
+        KHF37:['Ø160'],
+        KF47:['Ø200'],
+        KAF47:['Ø200'],
+        KHF47:['Ø200'],
+        KF57:['Ø250'],
+        KAF57:['Ø250'],
+        KHF57:['Ø250'],
+        KF67:['Ø250'],
+        KAF67:['Ø250'],
+        KHF67:['Ø250'],
+        KF77:['Ø300'],
+        KAF77:['Ø300'],
+        KHF77:['Ø300'],
+        KF87:['Ø350'],
+        KAF87:['Ø350'],
+        KHF87:['Ø350'],
+        KF97:['Ø450'],
+        KAF97:['Ø450'],
+        KHF97:['Ø450'],
+        KF107:['Ø450'],
+        KAF107:['Ø450'],
+        KHF107:['Ø450'],
+        KF127:['Ø550'],
+        KAF127:['Ø550'],
+        KHF127:['Ø550'],
+        KF157:['Ø660'],
+        KAF157:['Ø660'],
+        KHF157:['Ø660'],
 
-  FF27:['Ø136'],
-  FAF27:['Ø136'],
-  FHF27:['Ø136'],
-  FF37:['Ø160'],
-  FAF37:['Ø160'],
-  FHF37:['Ø160'],
-  FF47:['Ø200'],
-  FAF47:['Ø200'],
-  FHF47:['Ø200'],
-  FF57:['Ø250'],
-  FAF57:['Ø250'],
-  FHF57:['Ø250'],
-  FF67:['Ø250'],
-  FAF67:['Ø250'],
-  FHF67:['Ø250'],
-  FF77:['Ø300'],
-  FAF77:['Ø300'],
-  FHF77:['Ø300'],
-  FF87:['Ø350'],
-  FAF87:['Ø350'],
-  FHF87:['Ø350'],
-  FF97:['Ø450'],
-  FAF97:['Ø450'],
-  FHF97:['Ø450'],
-  FF107:['Ø450'],
-  FAF107:['Ø450'],
-  FHF107:['Ø450'],
-  FF127:['Ø550'],
-  FAF127:['Ø550'],
-  FHF127:['Ø550'],
-  FF157:['Ø660'],
-  FAF157:['Ø660'],
-  FHF157:['Ø660'],
+        FF27:['Ø136'],
+        FAF27:['Ø136'],
+        FHF27:['Ø136'],
+        FF37:['Ø160'],
+        FAF37:['Ø160'],
+        FHF37:['Ø160'],
+        FF47:['Ø200'],
+        FAF47:['Ø200'],
+        FHF47:['Ø200'],
+        FF57:['Ø250'],
+        FAF57:['Ø250'],
+        FHF57:['Ø250'],
+        FF67:['Ø250'],
+        FAF67:['Ø250'],
+        FHF67:['Ø250'],
+        FF77:['Ø300'],
+        FAF77:['Ø300'],
+        FHF77:['Ø300'],
+        FF87:['Ø350'],
+        FAF87:['Ø350'],
+        FHF87:['Ø350'],
+        FF97:['Ø450'],
+        FAF97:['Ø450'],
+        FHF97:['Ø450'],
+        FF107:['Ø450'],
+        FAF107:['Ø450'],
+        FHF107:['Ø450'],
+        FF127:['Ø550'],
+        FAF127:['Ø550'],
+        FHF127:['Ø550'],
+        FF157:['Ø660'],
+        FAF157:['Ø660'],
+        FHF157:['Ø660'],
+      };
+      const outFlangeList = flangeDiaMap[dsKey];
 
+      // ===== Oil fill =====
+      const oilCategory = (() => {
+        if (rkfsDesign === 'RF') return 'RF';
+        if (rkfsDesign === 'RX') return 'RX';
+        if (rkfsDesign === 'RXF') return 'RXF';
+        if (rkfsDesign === 'FF') return 'FF';
+        if (['F','FA','FAF','FAZ','FH','FHF','FHZ','FV','FVF','FVZ','FT'].includes(rkfsDesign)) return 'F';
+        if (rkfsDesign === 'S') return 'S';
+        if (rkfsDesign === 'SF') return 'SF';
+        if (['SA','SAF','SAZ','SAT','SH','SHF','SHZ','ST'].includes(rkfsDesign)) return 'S_OTHER';
+        if (['K','KA','KAB','KAF','KAT','KAZ'].includes(rkfsDesign)) return 'K';
+        return 'R';
+      })();
 
-};
-const outFlangeList = flangeDiaMap[dsKey];
-
-// ===== Oil fill (liters) mapping =====
-// เลือกตารางตาม Design ที่ Step 2
-const oilCategory = (() => {
-  if (rkfsDesign === 'RF') return 'RF';
-  if (rkfsDesign === 'RX') return 'RX';
-  if (rkfsDesign === 'RXF') return 'RXF';
-  if (rkfsDesign === 'FF') return 'FF';
-  if (['F','FA','FAF','FAZ','FH','FHF','FHZ','FV','FVF','FVZ','FT'].includes(rkfsDesign)) return 'F';
-  if (rkfsDesign === 'S') return 'S';                    // 👈 NEW
-  if (rkfsDesign === 'SF') return 'SF';                  // 👈 NEW
-  if (['SA','SAF','SAZ','SAT','SH','SHF','SHZ','ST'].includes(rkfsDesign)) return 'S_OTHER'; // 👈 NEW
-  if (['K','KA','KAB','KAF','KAT','KAZ'].includes(rkfsDesign)) return 'K';
-  return 'R';
-})();
-
-// ตารางตามภาพ: เก็บเป็น [M1,M2,M3,M4,M5,M6]
-// หมายเหตุ: บางช่องมี "a/b" -> ให้ใช้ค่าที่มากกว่า (ตาม footnote)
-const OIL_DATA = {
+      const OIL_DATA = {
   R: {
     "17":[0.25,0.55,0.35,0.55,0.35,0.40],
     "27":["0.25/0.40",0.70,0.50,0.70,0.50,0.50],
@@ -2842,77 +3310,229 @@ const OIL_DATA = {
   },
 };
 
-// เลือกค่าตาม Mounting (M1..M6) และจัดการ a/b ด้วยค่าที่มากกว่า
-const mountIdx = { M1:0, M2:1, M3:2, M4:3, M5:4, M6:5 };
-const oilArr = OIL_DATA[oilCategory]?.[String(rkfsSize)];
-let oilLiters = null;
-if (oilArr && rkfsMounting && mountIdx[rkfsMounting] != null) {
-  const raw = oilArr[mountIdx[rkfsMounting]];
-  if (raw != null) {
-    oilLiters = (typeof raw === 'string' && raw.includes('/'))
-      ? Math.max(...raw.split('/').map(v => parseFloat(v)))
-      : Number(raw);
-  }
-}
-
-
-  return (
-    <div className="max-w-3xl mx-auto text-left bg-black/25 rounded-xl px-5 py-4 backdrop-blur-sm text-white/90 text-sm md:text-base leading-7">
-      <div>Series : <b>{series}</b></div>
-      <div>Design : <b>{designDesc}</b></div>
-      <div>Gear Size : <b>{design}{size}</b></div>
-      <div>Ratio : <b>{ratioS}</b></div>
-      <div>Input Selection : <b>{inpSel}</b></div>
-      <div>
-  Motor Type : <b>{mKWs}</b> kW ,<b>{poleS}</b> Pole ,
-  {' '}3Phase380VAC,50Hz,IP55,Class F,<b>{mType}</b>, <b>{motorTypeNote}</b>.
-</div>
-      <div>Output speed (rpm) : <b>{outRPM ? outRPM.toFixed(2) : '-'}</b></div>
-      <div>Output Torque (N·m) : <b>{outTorque ? outTorque.toFixed(2) : '-'}</b></div>
-             <div>Shaft Direction : <b>{shaftPos}</b></div>
-      <div>Mouting Position : <b>{MTP}</b></div>
-            <div>ระดับการเติมน้ำมันเกียร์ : <b>{oilLiters != null ? oilLiters : '—'} ลิตร (liters)</b></div>
-      <div>Cable Wire Position : <b>{MTC}</b></div>
-      <div>Output Shaft Diameter : <b>{outShaftDia}</b></div>
-      <div>
-  Output Flange Diameter : <b>{outFlangeList ? outFlangeList.join(' , ') : '—'}</b>
-  {' '}<span className="text-red-200 font-semibold">**โปรดระบุขนาดก่อนยืนยันสั่งซื้อ</span>
-</div>
-      <div>Warranty : <b>2 Years</b></div>
-    </div>
-  );
-})()}
-
-    <button
-      type="button"
-      onClick={() =>
-        onConfirm(
-          `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}-${rkfsPosition}-${rkfsPositionSub}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`
-        )
+      // เลือกค่าตาม Mounting (M1..M6) และจัดการ a/b ด้วยค่าที่มากกว่า
+      const mountIdx = { M1:0, M2:1, M3:2, M4:3, M5:4, M6:5 };
+      const oilArr = OIL_DATA[oilCategory]?.[String(rkfsSize)];
+      let oilLiters = null;
+      if (oilArr && rkfsMounting && mountIdx[rkfsMounting] != null) {
+        const raw = oilArr[mountIdx[rkfsMounting]];
+        if (raw != null) {
+          oilLiters = (typeof raw === 'string' && raw.includes('/'))
+            ? Math.max(...raw.split('/').map(v => parseFloat(v)))
+            : Number(raw);
+        }
       }
-      className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 shadow"
-    >
-      ✅ รับไฟล์ 3D
-    </button>
-    
-    <div className="fixed z-[999]"
+
+      return (
+        <div className="max-w-3xl mx-auto text-left bg-black/25 rounded-xl px-5 py-4 backdrop-blur-sm text-white/90 text-sm md:text-base leading-7">
+          <div>Series : <b>{series}</b></div>
+          <div>Design : <b>{designDesc}</b></div>
+          <div>Gear Size : <b>{design}{size}</b></div>
+          <div>Ratio : <b>{ratioS}</b></div>
+          <div>Input Selection : <b>{inpSel}</b></div>
+          {/* [ADD] IEC: แสดงขนาดหน้าแปลน/รูตาม AM */}
+{rkfsInputSel === 'IEC Adapter Motor' && (
+  <>
+    <div>Input flange diameter : <b>G5 Ø{amDims?.G5 ?? '—'} mm</b></div>
+    <div>Input hole diameter : <b>D1 Ø{amDims?.D1 ?? '—'} mm</b></div>
+  </>
+)}
+
+{/* [ADD] INPUT: แสดงขนาดเพลาขาเข้า */}
+{rkfsInputSel === 'INPUT Shaft' && (
+  <div>Input shaft diameter : <span className="text-blue-400 font-extrabold text-xl"><b>{inputShaftDia ? `${inputShaftDia.replace('Ø','Ø')} mm` : '—'}</b></span></div>
+)}
+   {rkfsInputSel === 'IEC Adapter Motor' ? (
+  <div>
+    Motor Type : For motor (<b>{mKWs || '-'}</b>) kW , Frame size : (<b>{amCodeForKW || '-'}</b>)
+  </div>
+) : rkfsInputSel === 'INPUT Shaft' ? (
+  <div>
+    Motor Type : For your design.
+  </div>
+) : (
+  <div>
+    Motor Type : <b>{mKWs}</b> kW , <b>{poleS}</b> Pole , 3Phase380VAC,50Hz,IP55,Class F, <b>{mType}</b>, <b>{motorTypeNote}</b>.
+  </div>
+)}
+          <div>Output speed (rpm) : <b>{outRPM ? outRPM.toFixed(2) : '-'}</b></div>
+          <div>Output Torque (N·m) : <b>{outTorque ? outTorque.toFixed(2) : '-'}</b></div>
+          <div>Shaft Direction : <b>{shaftPos}</b></div>
+          <div>Mouting Position : <b>{MTP}</b></div>
+          <div>ระดับการเติมน้ำมันเกียร์ : <b>{oilLiters != null ? oilLiters : '—'} ลิตร (liters)</b></div>
+          <div>Terminal box : <b>{MTT}</b></div>
+          <div>Cable Wire Position : <b>{MTC}</b></div>
+          <div>Output Shaft Diameter : <b>{outShaftDia}</b></div>
+          <div>
+            Output Flange Diameter : <b>{outFlangeList ? outFlangeList.join(' , ') : '—'}</b>
+            {' '}<span className="text-red-200 font-semibold">**โปรดระบุขนาดก่อนยืนยันสั่งซื้อ</span>
+          </div>
+          <div><span className="text-yellow-400 font-extrabold text-l">Warranty : <b>2 Years</b></span></div>
+        </div>
+      );
+    })()}
+
+    {/* ปุ่มยืนยัน: ส่งโค้ดตามโหมด (ไม่แตะโครงสร้างเดิมของ With motor) */}
+    {(() => {
+      // เตรียมโค้ดตามโหมด
+      const amCode   = (typeof getRkfsIECByPower === 'function') ? getRkfsIECByPower(rkfsMotorPower) : null;
+      const shaftCode = state?.rkfsINPUTshaft ?? state?.rkfsInputShaft ?? null;
+      const diaVal    = state?.rkfsINPUTshaftDia ?? state?.rkfsInputShaftDia ?? null;
+
+      let confirmModel;
+      if (rkfsInputSel === 'IEC Adapter Motor' && rkfsRatio && rkfsMounting && amCode) {
+        confirmModel = `${rkfsDesign}${rkfsSize}-${rkfsRatio}-${amCode}-${rkfsMounting}`;
+      } else if (rkfsInputSel === 'INPUT Shaft' && rkfsRatio && rkfsMounting && shaftCode) {
+        const dia = diaVal ? `-${diaVal}` : '';
+        confirmModel = `${rkfsDesign}${rkfsSize}-${rkfsRatio}-${shaftCode}-${rkfsMounting}${dia}`;
+      } else {
+        // With motor (เดิม)
+        confirmModel = `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}${rkfsPosition ? `-${rkfsPosition}` : ''}${rkfsPositionSub ? `-${rkfsPositionSub}` : ''}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`;
+      }
+
+      return (
+        <button
+          type="button"
+          onClick={() => onConfirm(confirmModel)}
+          className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 shadow"
+        >
+          ✅ รับไฟล์ 3D
+        </button>
+      );
+    })()}
+    <div
+  className="fixed z-[999]"
+  style={{
+    left: 'max(1.5rem, env(safe-area-inset-right))',
+    bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+  }}
+>
+  <button
+    onClick={(e) =>
+      clickSweep(e, () => {
+        if (rkfsSeries === 'K' || rkfsSeries === 'S') {
+          // จังหวะที่ 1: จาก Step 10 → กลับไป Step 9.3 (ล้าง A/B/AB/TA/TB)
+          if (state.rkfsDesignSuffix) {
+            update('rkfsDesignSuffix', null);
+            setTimeout(() => {
+              document.getElementById('rkfs-step-93')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 0);
+          } else {
+            // จังหวะที่ 2: (กรณีไม่มี suffix แล้ว) → กลับ Step 9.2 (Cable Wire Position)
+            update('rkfsPositionSub', null);
+            setTimeout(() => {
+              document.getElementById('rkfs-step-92')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 0);
+          }
+        } else {
+          // R/F: พฤติกรรมเดิม → กลับ Step 9.2
+          update('rkfsPositionSub', null);
+        }
+      })
+    }
+    className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+  >
+    ย้อนกลับ
+  </button>
+{/* [ADD-IEC-INPUT-BACK-10-RF] ปุ่มย้อนกลับเฉพาะ R/F + IEC/INPUT → กลับไป Step 8 (Mounting) */}
+{ ( (rkfsSeries === 'R' || rkfsSeries === 'F') &&
+    (rkfsInputSel === 'IEC Adapter Motor' || rkfsInputSel === 'INPUT Shaft')
+  ) && (
+  <div
+    className="fixed z-[999]"
     style={{
       left: 'max(1.5rem, env(safe-area-inset-right))',
       bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
     }}
   >
-      <button
-        onClick={(e) => clickSweep(e, () => update("rkfsPositionSub", null))}
-        className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
-      >
-        ย้อนกลับ
-      </button>
-    </div>
+    <button
+      onClick={(e) => clickSweep(e, () => {
+        // เคลียร์ Mounting เพื่อให้ Step 8 โชว์
+        update('rkfsMounting', null);
+        // เลื่อนจอไปยัง Step 8 เพื่อให้ผู้ใช้เห็นทันที
+        setTimeout(() => {
+          document
+            .getElementById('rkfs-mount-step')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+      })}
+      className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+    >
+      ย้อนกลับ
+    </button>
   </div>
 )}
-</>
-);  
-}     
+{/* [ADD-IEC-INPUT-BACK-10] ปุ่มย้อนกลับเฉพาะ IEC / INPUT */}
+{ (rkfsSeries === 'K' || rkfsSeries === 'S') &&
+  (rkfsInputSel === 'IEC Adapter Motor' || rkfsInputSel === 'INPUT Shaft') && (
+  <div
+    className="fixed z-[999]"
+    style={{
+      left: 'max(1.5rem, env(safe-area-inset-right))',
+      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+    }}
+  >
+    <button
+      onClick={(e) => clickSweep(e, () => {
+        // K / S → ย้อนกลับไป Step 9.3
+        if (rkfsSeries === 'K' || rkfsSeries === 'S') {
+          update('rkfsDesignSuffix', null); // ให้ 9.3 โชว์อีกครั้ง
+          setTimeout(() => {
+            document
+              .getElementById('rkfs-step-93')
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 0);
+        } else {
+          // R / F → ย้อนกลับไป Step Mounting
+          update('rkfsMounting', null);
+        }
+      })}
+      className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
+    >
+      ย้อนกลับ
+    </button>
+  </div>
+)}
+    {/* [ADD-RKFS-LIGHTBOX] คลิกภาพแล้วขยายเต็มจอ (แก้ให้ซ่อนจนกว่าจะเปิด) */}
+<dialog
+  id="rkfs-illust-modal"
+  /* ซ่อนเป็นค่าเริ่มต้น แล้วค่อยโชว์เมื่อ open */
+  className="hidden open:fixed open:inset-0 open:z-[9999] open:bg-black/80 open:backdrop-blur-sm open:p-4 open:flex open:items-center open:justify-center"
+  /* คลิกพื้นดำปิด */
+  onClick={(e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }}
+>
+  {/* ปล่อย form ว่าง ๆ ไว้สำหรับปุ่ม type=submit จะ close() อัตโนมัติ */}
+  <form method="dialog" className="contents">
+        {(() => {
+          const bigSrc = rkfsInputSel === 'IEC Adapter Motor'
+            ? RKFS_IEC_IMG?.[rkfsSeries]
+            : (rkfsInputSel === 'INPUT Shaft'
+                ? RKFS_INPUT_GIF?.[rkfsSeries]
+                : null);
+          if (!bigSrc) return null;
+          return (
+            <img
+              src={bigSrc}
+              alt="RKFS illustration"
+              className="max-h-[92vh] max-w-[96vw] w-auto h-auto
+                         object-contain rounded-xl shadow-2xl"
+            />
+          );
+        })()}
+        <button
+  type="submit"
+  className="absolute top-4 right-4 text-white/90 bg-white/10 hover:bg-white/20 transition-colors rounded-full px-3 py-1 text-sm font-semibold"
+>
+  ปิด
+</button>
+      </form>
+    </dialog>
+  </div>
+    </div>
+)}
+</> ); }
 
 
 // [ADD-BLDC-IMG] Card ปุ่มรูป 3D + เด้งตอน hover (อยู่ นอกทุกฟังก์ชัน)
@@ -3315,7 +3935,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 
           {/* Step 6: Speed */}
           {bldcGearType && (
-            <Section title="Step 6: Speed code" note="15S=1500rpm, 20S=2000rpm, 30S=3000rpm">
+            <Section title="Step 6: Speed code" note="15S=1500rpm, 20S=2000rpm,  30S=3000rpm">
               {['15S','20S','30S'].map(s => (
                 <Btn key={s} active={bldcSpeed === s} onClick={() => update('bldcSpeed', s)}>
                   {s}<div className="text-xs">{speedInfo[s]}</div>
@@ -3347,7 +3967,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
             <button disabled={!canConfirmNormal}
               onClick={() => onConfirm(generateBLDCModelCode(state))}
               className={`px-5 py-2 rounded-xl shadow ${canConfirmNormal ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}>
-              ยืนยันรุ่น (Generate Model Code)
+              ยืนยัน
             </button>
           </div>
         </>
@@ -3505,7 +4125,7 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
               disabled={!(canConfirmHE_S || canConfirmHE_SF || canConfirmHE_SL)}
               onClick={() => onConfirm(generateBLDCModelCode(state))}
               className={`px-5 py-2 rounded-xl shadow ${(canConfirmHE_S || canConfirmHE_SF || canConfirmHE_SL) ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}>
-              ยืนยันรุ่น (Generate Model Code)
+              ยืนยัน
             </button>
           </div>
         </>

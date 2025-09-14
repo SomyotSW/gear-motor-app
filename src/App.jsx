@@ -377,11 +377,15 @@ const servoSetters = {
     const [rkfsPole, setRkfsPole] = useState(null);
     const [rkfsRatio, setRkfsRatio] = useState(null);
     const [rkfsMounting, setRkfsMounting] = useState(null);
-        const [rkfsMountingTemp, setRkfsMountingTemp] = useState(null);
+    const [rkfsMountingTemp, setRkfsMountingTemp] = useState(null);
     const [rkfsPosition, setRkfsPosition] = useState(null);
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
     const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
-        const [rkfsInputSel, setRkfsInputSel] = useState(null); // Step 3.1 (With Motor / IEC / INPUT / SERVO)
+    const [rkfsInputSel, setRkfsInputSel] = useState(null); 
+        const [rkfsInputShaft, setRkfsInputShaft] = useState(null);
+        const [rkfsInputShaftDia, setRkfsInputShaftDia] = useState(null);
+    const [rkfsINPUTshaft, setRkfsINPUTshaft]       = useState(null);
+    const [rkfsINPUTshaftDia, setRkfsINPUTshaftDia] = useState(null);
 
     // === SRV Worm Gear states ===
 const [srvSeries, setSrvSeries] = useState(null);
@@ -472,7 +476,11 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
-    rkfsSetters.setRkfsInputSel(null);
+  rkfsSetters.setRkfsInputSel(null);
+  rkfsSetters.setRkfsINPUTshaft(null);
+  rkfsSetters.setRkfsINPUTshaftDia(null);
+  rkfsSetters.setRkfsInputShaft(null);
+  rkfsSetters.setRkfsInputShaftDia(null);
     setRkfsDesignSuffix(null);
 
 // [ADD] เคลียร์สถานะ HB ทั้งหมด
@@ -499,6 +507,8 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
+    rkfsSetters.setRkfsINPUTShaft(null);
+    rkfsSetters.setRkfsINPUTShaftDia(null);
     setRkfsDesignSuffix(null); 
   setSelectedModel(null);
   setModelCodeList([]);
@@ -515,6 +525,8 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
+  rkfsSetters.setRkfsINPUTShaft(null);
+  rkfsSetters.setRkfsINPUTShaftDia(null);
     setRkfsDesignSuffix(null);
   setSelectedModel(null);
   setModelCodeList([]); // ถ้ามี
@@ -919,6 +931,8 @@ const objectUrl = URL.createObjectURL(blob);
     setRkfsSize(null);
     setRkfsMotorPower(null);
     setRkfsMounting(null);
+        setRkfsInputShaft(null);
+        setRkfsInputShaftDia(null);
   };
 
   const acState = { acMotorType, acPower, acSpeedAdjust, acVoltage, acOption, acGearHead, acRatio, acConfirm };
@@ -927,14 +941,17 @@ const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, 
   rkfsSeries, rkfsDesign, rkfsSize, rkfsMotorType, rkfsMotorPower,
   rkfsPole, rkfsRatio, rkfsMounting, rkfsPosition, rkfsPositionSub,
   rkfsDesignSuffix,
-    rkfsMountingTemp,
-  rkfsInputSel,                // ★ เพิ่ม
+  rkfsMountingTemp,
+  rkfsInputSel, 
+    rkfsInputShaft,
+  rkfsInputShaftDia,              
 };
   const rkfsSetters = {
   setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower,
   setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub,
   setRkfsDesignSuffix, setRkfsMountingTemp,
-  setRkfsInputSel,            // ★ เพิ่ม
+  setRkfsInputSel,
+    setRkfsINPUTshaft, setRkfsINPUTshaftDia, setRkfsInputShaft, setRkfsInputShaftDia,           
 };
 
 const getFileUrl = () => {
@@ -1558,10 +1575,11 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
       <h2 className="text-white font-bold mb-2 drop-shadow">RKFS Series Selection</h2>
       <button className="text-blue-500 font-bold mb-2 drop-shadow" onClick={handleBackUniversal}>Home</button>
     </div>
-    {renderRKFSFlow(rkfsState, rkfsSetters, (modelCode) => {
+    {renderRKFSFlow(rkfsState, rkfsSetters,(modelCode) => {
       const models = Array.isArray(modelCode) ? modelCode : [modelCode];
       setModelCodeList(models);
       setSelectedModel(models[0]);
+      setShowForm(true); 
     })}
   </>
 )}
