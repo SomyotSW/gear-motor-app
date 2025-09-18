@@ -488,6 +488,73 @@ const getGearGif = () => {
 export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio , acConfirm } = acState;
 
+  const frameSizeMap = {
+    '10W AC Motor': '60mm',
+    '15W AC Motor': '70mm',
+    '25W AC Motor': '80mm',
+    '40W AC Motor': '90mm',
+    '60W AC Motor': '90mm',
+    '90W AC Motor': '90mm',
+    '120W AC Motor': '90mm',
+    '140W AC Motor': '104mm',
+    '200W AC Motor': '104mm'
+  };
+
+const getShaftDia = (power, gear) => {
+    if (!power || !gear) return null;
+
+    const map = {
+      '10W AC Motor': {
+        'SQUARE BOX (Low)': 'Ø8 mm',
+      },
+      '15W AC Motor': {
+        'SQUARE BOX (Low)': 'Ø10 mm',
+      },
+      '25W AC Motor': {
+        'SQUARE BOX (Low)': 'Ø10 mm',
+        'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'Ø15 mm',
+        'RIGHT ANGLE GEAR/SOLID SHAFT': 'Ø12 mm',
+      },
+      '40W AC Motor': {
+        'SQUARE BOX (Low)': 'Ø12 mm',
+        'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'Ø17 mm',
+        'RIGHT ANGLE GEAR/SOLID SHAFT': 'Ø15 mm',
+      },
+      '60W AC Motor': {
+        'SQUARE BOX (Low)': 'Ø12 mm',
+        'SQUARE BOX': 'Ø15 mm',
+        'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'Ø17 mm',
+        'RIGHT ANGLE GEAR/SOLID SHAFT': 'Ø15 mm',
+      },
+      '90W AC Motor': {
+        'SQUARE BOX WITH WING': 'Ø15 mm',
+        'SQUARE BOX': 'Ø15 mm',
+        'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'Ø17 mm',
+        'RIGHT ANGLE GEAR/SOLID SHAFT': 'Ø15 mm',
+      },
+      '120W AC Motor': {
+        'SQUARE BOX WITH WING': 'Ø15 mm',
+        'SQUARE BOX': 'Ø15 mm',
+        'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'Ø17 mm',
+        'RIGHT ANGLE GEAR/SOLID SHAFT': 'Ø15 mm',
+      },
+      '140W AC Motor': {
+        'SQUARE BOX WITH WING': 'Ø15 mm',
+        'SQUARE BOX': 'Ø15 mm',
+        'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'Ø22 mm',
+        'RIGHT ANGLE GEAR/SOLID SHAFT': 'Ø20 mm',
+      },
+      '200W AC Motor': {
+        'SQUARE BOX WITH WING': 'Ø15 mm',
+        'SQUARE BOX': 'Ø15 mm',
+        'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'Ø22 mm',
+        'RIGHT ANGLE GEAR/SOLID SHAFT': 'Ø20 mm',
+      },
+    };
+
+    return map[power]?.[gear] || null;
+  };
+
   const [selectedModel, setSelectedModel] = useState(null);
   const [showAcFinal, setShowAcFinal] = React.useState(false);
 
@@ -851,7 +918,7 @@ const gifForHead = (() => {
 </h3>
     <div className="bg-black/25 rounded-xl px-5 py-5 text-white/90 backdrop-blur-sm leading-7">
       <div>Motor Type : <b>{acMotorType||'-'}</b></div>
-      <div>Frame size : <b>—</b></div>
+      <div>Frame size : <b>{frameSizeMap[acPower] || '—'}</b></div>
       <div>Motor Power : <b>{acPower||'-'}</b></div>
       <div>Voltage : <b>{acVoltage||'-'}</b></div>
       <div>Frequency : <b>50Hz , 60Hz</b></div>
@@ -869,49 +936,7 @@ const gifForHead = (() => {
           })()}
         </b> rpm
       </div>
-      <div>Output shaft diameter : <b>{
-  (() => {
-    // 1) รวมรายการโค้ดตามสภาพจริง (เหมือนตอนกด "ถัดไป")
-    const raw = generateModelCode({ ...acState, acConfirm: true });
-    const list = Array.isArray(raw)
-      ? (Array.isArray(raw[0]) ? raw.flat() : raw)
-      : (raw ? [raw] : []);
-
-    // 2) โค้ดที่ถูกเลือก (หรือเอาตัวแรกเป็นค่าเริ่มต้น)
-    const chosen = (typeof selectedModel === 'string' && selectedModel) || (list[0] || '');
-
-    // 3) อ่าน suffix จากรหัสที่เลือก (K / KB / RC / RT) → แม่นยำกว่าการเดาจาก acGearHead
-    const suffixMatch = chosen.match(/(KB|RC|RT|K)\s*$/i); // จับ KB ก่อน K
-    const suffixFromCode = suffixMatch ? suffixMatch[1].toUpperCase() : null;
-
-    // 4) fallback จาก acGearHead เมื่อยังจับจากรหัสไม่ได้
-    const headFromGearHead =
-      acGearHead === 'SQUARE BOX WITH WING'            ? 'K'  :
-      acGearHead === 'SQUARE BOX (Low)'                ? 'KB' :
-      acGearHead === 'SQUARE BOX'                      ? 'KB' :
-      acGearHead === 'RIGHT ANGLE GEAR/HOLLOW SHAFT'   ? 'RC' :
-      acGearHead === 'RIGHT ANGLE GEAR/SOLID SHAFT'    ? 'RT' : null;
-
-    const head = suffixFromCode || headFromGearHead;
-
-    // 5) เงื่อนไขตรวจ 60W + GN/GU
-    const is60W = /\b60W\b/i.test(String(acPower)); // รองรับ "60W AC Motor"
-    const isGN  = /GN/.test(chosen);
-    const isGU  = /GU/.test(chosen);
-
-    // 6) ตารางค่าที่คุณกำหนด
-    if (is60W) {
-      if (isGN && head === 'K')  return 'Ø12 mm';  // 60W GN + K
-      if (isGU) {
-        if (head === 'KB') return 'Ø15 mm';        // 60W GU + KB
-        if (head === 'K')  return 'Ø15 mm';        // 60W GU + K
-        if (head === 'RC') return 'Ø17 mm';        // 60W GU + RC
-        if (head === 'RT') return 'Ø15 mm';        // 60W GU + RT
-      }
-    }
-    return '—';
-  })()
-}</b></div>
+      <div>Output shaft diameter : <b>{getShaftDia(acPower, acGearHead) || '—'}</b></div>
       <div>Weight : <b>— kg</b></div>
     </div>
 
