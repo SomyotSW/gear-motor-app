@@ -1,5 +1,5 @@
 // MotorFlows.js
-import React, { useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
@@ -487,6 +487,42 @@ const getGearGif = () => {
 // Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
 export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio , acConfirm } = acState;
+    const [qtyGear, setQtyGear] = useState(1);
+  const [qtyMotor, setQtyMotor] = useState(1);
+  const [qtyCtrl, setQtyCtrl] = useState(1);
+  const [showQuote, setShowQuote] = useState(false);
+  const [qName, setQName]       = useState('');
+  const [qCompany, setQCompany] = useState('');
+  const [qPhone, setQPhone]     = useState('');
+  const [qEmail, setQEmail]     = useState('');
+  const [sending, setSending]   = useState(false);
+
+ // อ้างอิงกล่อง Summary เพื่อจับภาพ
+ const summaryRef = useRef(null);
+
+ // โหลดสคริปต์ภายนอกแบบ on-demand
+ const ensureLib = (src, globalKey) =>
+   new Promise((resolve, reject) => {
+     if (globalKey && window[globalKey]) return resolve();
+     const s = document.createElement('script');
+     s.src = src; s.async = true;
+     s.onload = () => resolve();
+     s.onerror = () => reject(new Error('load-failed:' + src));
+     document.head.appendChild(s);
+   });
+
+ // ตั้งค่า EmailJS (แก้ค่า 3 ตัวแปรนี้ **ในไฟล์เดียว**) — ไม่แตะ config ที่อื่น
+ const EMAILJS_SERVICE_ID = 'service_fwgn6cw';
+ const EMAILJS_TEMPLATE_ID = 'template_7eppr2x';
+ const EMAILJS_PUBLIC_KEY  = 'J6kLpbLcieCe2cKzU';
+
+ // แปลง Blob → base64 (ให้แนบไฟล์ทาง EmailJS)
+ const blobToBase64 = (blob) =>
+   new Promise((resolve) => {
+     const r = new FileReader();
+     r.onloadend = () => resolve(String(r.result).split(',')[1]);
+     r.readAsDataURL(blob);
+   });
 
   const frameSizeMap = {
     '10W AC Motor': '60mm',
@@ -553,6 +589,256 @@ const getShaftDia = (power, gear) => {
     };
 
     return map[power]?.[gear] || null;
+  };
+
+// NEW: map AC Power -> base PDF filename in /public/model/pdf/AC
+const powerToPdf = (power) => {
+  if (!power) return null;
+  const key = String(power).trim(); // e.g. "60W AC Motor"
+  const map = {
+    '10W AC Motor':  '10W.pdf',
+    '15W AC Motor':  '15W.pdf',
+    '25W AC Motor':  '25W.pdf',
+    '40W AC Motor':  '40W.pdf',
+    '60W AC Motor':  '60W.pdf',
+    '90W AC Motor':  '90W.pdf',
+    '120W AC Motor': '120W.pdf',
+    '140W AC Motor': '140W.pdf',
+    '200W AC Motor': '200W.pdf',
+  };
+  return map[key] || null;
+};
+
+// NEW: Play custom thank-you audio from public/
+const playThanksAudio = () => {
+  try {
+    // ไฟล์ใน public => เรียกใช้ด้วยพาธเว็บ
+    const audio = new Audio('/model/pdf/AC/sexy_thank_you.MP3');
+    audio.play().catch(() => {
+      // เผื่อเบราว์เซอร์บล็อก ให้เงียบไว้ ไม่เด้ง error
+    });
+  } catch (_) {}
+};
+
+ const handleRequestQuote = () => setShowQuote(true);
+ const submitQuote = async () => {
+   // ตรวจสอบฟิลด์
+   if (!qName || !qCompany || !qPhone || !qEmail) {
+     alert('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return;
+   }
+   try {
+     setSending(true);
+     // โหลด html2canvas + jsPDF (CDN) เฉพาะตอนใช้งาน
+     await ensureLib('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', 'html2canvas');
+     await ensureLib('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'jspdf');
+
+     // จับภาพกล่อง Summary → Canvas → PDF
+     const node = summaryRef.current;
+     const canvas = await window.html2canvas(node, { scale: 2, backgroundColor: null });
+     const imgData = canvas.toDataURL('image/jpeg', 0.92);
+     const { jsPDF } = window.jspdf;
+     const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+     const pageW = pdf.internal.pageSize.getWidth();
+     const pageH = pdf.internal.pageSize.getHeight();
+     // จัดให้ภาพพอดีหน้า
+     const imgW = pageW - 72; // margin 36pt ซ้ายขวา
+     const imgH = (canvas.height / canvas.width) * imgW;
+     pdf.addImage(imgData, 'JPEG', 36, 36, imgW, Math.min(imgH, pageH - 72), undefined, 'FAST');
+
+     // ตั้งชื่อไฟล์ = Model Code
+     const raw = generateModelCode({ ...acState, acConfirm: true });
+     const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
+     const chosenModel = (list && list[0]) || 'SAS_Model';
+
+     const blob = pdf.output('blob');
+     // ดาวน์โหลดสำรองไว้ก่อน
+     const a = document.createElement('a');
+     a.href = URL.createObjectURL(blob);
+     a.download = `${chosenModel}.pdf`;
+     document.body.appendChild(a); a.click(); a.remove();
+     setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+
+     if (EMAILJS_SERVICE_ID !== 'service_fwgn6cw' &&
+         EMAILJS_TEMPLATE_ID !== 'template_7eppr2x' &&
+         EMAILJS_PUBLIC_KEY  !== 'J6kLpbLcieCe2cKzU') {
+       await ensureLib('https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js', 'emailjs');
+       if (window.emailjs && !window.emailjs.__inited) {
+         window.emailjs.init(EMAILJS_PUBLIC_KEY); window.emailjs.__inited = true;
+       }
+       const base64 = await blobToBase64(blob);
+       await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+  requester_name: qName,
+  company: qCompany,
+  phone: qPhone,
+  email: qEmail,
+  model_code: chosenModel,
+  qty_gear: qtyGear,
+  qty_motor: qtyMotor,
+  qty_ctrl: qtyCtrl,
+  // แนบไฟล์ PDF
+  attachments: [
+    { name: `${chosenModel}.pdf`, data: base64 } // base64 ไม่มี prefix "data:application/pdf;base64,"
+  ],
+});
+     } else {
+       console.warn('EmailJS keys not set — sent only local download.');
+     }
+
+     setShowQuote(false);
+     setTimeout(() => alert('ขอบคุณสำหรับการขอราคา กรุณารอการตอบกลับสักครู่'), 150);
+   } catch (err) {
+     console.error(err);
+     alert('ส่งคำขอล้มเหลว กรุณาลองอีกครั้ง หรือตรวจสอบการตั้งค่า EmailJS');
+   } finally {
+     setSending(false);
+   }
+ };
+
+// NEW: Download PDF from /model/pdf/AC/<power>.pdf with filename = <ModelCode>.pdf
+const handleDownloadPDF = async () => {
+  try {
+       
+        playThanksAudio();
+    // 1) สร้างรายการรหัสรุ่นปัจจุบัน
+    const raw = generateModelCode({ ...acState, acConfirm: true });
+    const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
+    const chosenModel = (list && list[0]) || 'SAS_Model';
+
+    // 2) map power -> base pdf
+    const basePdf = powerToPdf(acPower);
+    if (!basePdf) {
+      alert('ไม่พบไฟล์ PDF สำหรับกำลังไฟนี้');
+      return;
+    }
+
+    // 3) ดึงไฟล์จาก public (เส้นทางที่ build แล้วคือ /model/pdf/AC/xxx.pdf)
+    const url = `/model/pdf/AC/${basePdf}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('PDF not found');
+    const blob = await res.blob();
+
+    // 4) ดาวน์โหลด โดยตั้งชื่อไฟล์ = Model Code
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${chosenModel}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+
+    // 5) ข้อความ + เสียงผู้หญิง
+    speakThanks();
+    // คุณจะใช้ toast ของคุณเองก็ได้ ตรงนี้ใช้ alert ให้เห็นผลทันที
+    setTimeout(() => {
+      alert('ขอบคุณสำหรับการดาวน์โหลดไฟล์ จะดีกว่านี้หากท่านกดสั่งซื้อด้วย อิอิ');
+    }, 200);
+  } catch (err) {
+    console.error('Download PDF error:', err);
+    alert('ขอบคุณสำหรับการดาวน์โหลดไฟล์ ');
+  }
+};
+
+// แก้ชื่อไฟล์ได้ตามที่คุณมีใน public/model/img/ac/
+const getGearPreviewUrl = (gear) => {
+  if (!gear) return null;
+
+  const filenameMap = {
+    'SQUARE Box (Low)': 'square_box_low.png',
+    'SQUARE BOX (Low)': 'square_box_low.png',
+    'SQUARE Box': 'square_box.png',
+    'SQUARE BOX': 'square_box.png',
+    'SQUARE BOX WITH WING': 'square_box_wing.png',
+    'RIGHT ANGLE GEAR/HOLLOW SHAFT': 'right_angle_hollow.png',
+    'RIGHT ANGLE GEAR/SOLID SHAFT': 'right_angle_solid.png',
+  };
+
+  // ไฟล์รูปเก็บไว้ที่ /public/model/img/ac/*
+  const file = filenameMap[gear];
+  return file ? `/model/img/ac/${file}` : null;
+};
+
+
+  // NEW: Current(A) & Rated speed by MotorType x Power x Voltage (AC only)
+  const getCurrentRated = (motorType, power, voltage) => {
+    if (!motorType || !power || !voltage) return null;
+    // ตัด phase แบบย่อ 1P / 3P จากข้อความ voltage เช่น "1Phase220V AC 50Hz"
+    const phase = String(voltage).startsWith('1') ? '1P'
+                : String(voltage).startsWith('3') ? '3P'
+                : null;
+
+    // ตารางค่าตามที่ผู้ใช้กำหนด (แสดง 50Hz , 60Hz เป็นสตริงเดียว)
+    const MAP = {
+      'Induction Motor': {
+        '10W AC Motor': {
+          '1P': { current: '0.130 , 0.130', rated: '1200 , 1450' },
+          '3P': { current: '0.076 , 0.065', rated: '1200 , 1450' },
+        },
+        '15W AC Motor': {
+          '1P': { current: '0.18 , 0.16', rated: '1200 , 1450' },
+          '3P': { current: '0.14 , 0.12', rated: '1200 , 1450' },
+        },
+        '25W AC Motor': {
+          '1P': { current: '0.23 , 0.23', rated: '1250 , 1550' },
+          '3P': { current: '0.185 , 0.170', rated: '1250 , 1550' },
+        },
+        '40W AC Motor': {
+          '1P': { current: '0.35 , 0.35', rated: '1250 , 1550' },
+          '3P': { current: '0.30 , 0.25', rated: '1250 , 1550' },
+        },
+        '60W AC Motor': {
+          '1P': { current: '0.50 , 0.50', rated: '1250 , 1550' },
+          '3P': { current: '0.45 , 0.40', rated: '1250 , 1550' },
+        },
+        '90W AC Motor': {
+          '1P': { current: '0.72 , 0.71', rated: '1250 , 1550' },
+          '3P': { current: '0.60 , 0.55', rated: '1250 , 1550' },
+        },
+        '120W AC Motor': {
+          '1P': { current: '1.0 , 1.0', rated: '1250 , 1550' },
+          '3P': { current: '0.70 , 0.60', rated: '1250 , 1550' },
+        },
+        '140W AC Motor': {
+          '1P': { current: '1.05 , 1.05', rated: '1350 , 1600' },
+          '3P': { current: '0.85 , 0.75', rated: '1250 , 1550' },
+        },
+        '200W AC Motor': {
+          '1P': { current: '1.40 , 1.40', rated: '1250 , 1550' },
+          '3P': { current: '1.20 , 1.0',  rated: '1250 , 1550' },
+        },
+      },
+
+      'Reversible Motor': {
+        '10W AC Motor':  { '1P': { current: '0.145 , 0.150', rated: '1200 , 1450' } },
+        '15W AC Motor':  { '1P': { current: '0.23 , 0.20',  rated: '1200 , 1450' } },
+        '25W AC Motor':  { '1P': { current: '0.29 , 0.35',  rated: '1250 , 1550' } },
+        '40W AC Motor':  { '1P': { current: '0.45 , 0.45',  rated: '1250 , 1550' } },
+        '60W AC Motor':  { '1P': { current: '0.55 , 0.55',  rated: '1250 , 1550' } },
+        '90W AC Motor':  { '1P': { current: '0.82 , 0.81',  rated: '1250 , 1550' } },
+        '120W AC Motor': { '1P': { current: '1.15 , 1.20', rated: '1250 , 1550' } },
+        '140W AC Motor': {
+          '1P': { current: '1.05 , 1.05', rated: '1250 , 1550' },
+          '3P': { current: '0.85 , 0.75', rated: '1250 , 1550' },
+        },
+        '200W AC Motor': {
+          '1P': { current: '1.40 , 1.40', rated: '1250 , 1550' },
+          '3P': { current: '1.20 , 1.00', rated: '1250 , 1550' },
+        },
+      },
+
+      'Variable Speed Motor': {
+        '10W AC Motor':  { '1P': { current: '0.130 , 0.140', rated: '90~1350  , 90~1650' } },
+        '15W AC Motor':  { '1P': { current: '0.18 , 0.16',   rated: '90~1350  , 90~1650' } },
+        '25W AC Motor':  { '1P': { current: '0.25 , 0.23',   rated: '90~1350  , 90~1650' } },
+        '40W AC Motor':  { '1P': { current: '0.35 , 0.35',   rated: '90~1350  , 90~1650' } },
+        '60W AC Motor':  { '1P': { current: '0.50 , 0.50',   rated: '90~1350  , 90~1650' } },
+        '90W AC Motor':  { '1P': { current: '0.72 , 0.71',   rated: '90~1350  , 90~1650' } },
+        '120W AC Motor': { '1P': { current: '0.95 , 0.95',   rated: '90~1350  , 90~1650' } },
+        '140W AC Motor': { '1P': { current: '1.05 , 1.05',   rated: '90~1350  , 90~1650' } },
+        '200W AC Motor': { '1P': { current: '1.40 , 1.40',   rated: '90~1350  , 90~1650' } },
+      },
+    };
+
+    return MAP[motorType]?.[power]?.[phase] || null;
   };
 
   const [selectedModel, setSelectedModel] = useState(null);
@@ -850,7 +1136,7 @@ const gifForHead = (() => {
 {/* Step (AC): Summary */}
 {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && !showAcFinal && (
   <div id="ac-summary" className="relative max-w-4xl mx-auto mt-6">
-    <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+    <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)] flex items-center gap-3 flex-wrap">
   Model Code :{' '}
   <span className="font-mono text-white/90 px-2 py-0.5 rounded">
     {(() => {
@@ -880,50 +1166,66 @@ const gifForHead = (() => {
   title="Copy Model"
   className="ml-2 align-middle text-[10px] px-2 py-0.5 rounded border border-white/20 bg-white/10 hover:bg-white/20 transition"
   onClick={async (e) => {
-    const btn = e.currentTarget;              // ✅ จับปุ่มไว้ก่อน
-    const txt = String(code || '');
+  const btn = e.currentTarget;
 
-    const setBadge = (el, msg = 'Copied!', ms = 1200) => {
-      const old = el.textContent;
-      el.textContent = msg;
-      setTimeout(() => { el.textContent = old; }, ms);
-    };
+  // 1) สร้างรายการรหัสรุ่นตามสถานะปัจจุบัน
+  const raw  = generateModelCode({ ...acState, acConfirm: true });
+  const list = Array.isArray(raw)
+    ? (Array.isArray(raw[0]) ? raw.flat() : raw)
+    : (raw ? [raw] : []);
 
-    const fallbackCopy = () => {
-      const ta = document.createElement('textarea');
-      ta.value = txt;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    };
+  // 2) ใช้รหัสที่ผู้ใช้เลือก (radio) ถ้ามี; ไม่งั้นตัวแรก
+  const chosen = (typeof selectedModel === 'string' && selectedModel) || (list[0] || '');
+  const txt = String(chosen);
 
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(txt);
-      } else {
-        fallbackCopy();
-      }
-      setBadge(btn);                           // ✅ ใช้ตัวแปรที่จับไว้
-    } catch {
+  const setBadge = (el, msg = 'Copied!', ms = 1200) => {
+    const old = el.textContent;
+    el.textContent = msg;
+    setTimeout(() => { el.textContent = old; }, ms);
+  };
+
+  const fallbackCopy = () => {
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(ta);
+  };
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(txt);
+    } else {
       fallbackCopy();
-      setBadge(btn);
     }
-  }}
+    setBadge(btn);
+  } catch {
+    fallbackCopy();
+    setBadge(btn);
+  }
+}}
 >
   Copy
 </button>
 </h3>
-    <div className="bg-black/25 rounded-xl px-5 py-5 text-white/90 backdrop-blur-sm leading-7">
+    <div ref={summaryRef} className="bg-black/25 rounded-xl px-5 py-5 text-white/90 backdrop-blur-sm leading-7 relative group">
       <div>Motor Type : <b>{acMotorType||'-'}</b></div>
       <div>Frame size : <b>{frameSizeMap[acPower] || '—'}</b></div>
       <div>Motor Power : <b>{acPower||'-'}</b></div>
       <div>Voltage : <b>{acVoltage||'-'}</b></div>
       <div>Frequency : <b>50Hz , 60Hz</b></div>
-      <div>Current (A) : <b>—</b></div>
-      <div>Rated speed : <b>—</b></div>
+      {(() => {
+  const cr = getCurrentRated(acMotorType, acPower, acVoltage);
+  return (
+    <>
+      <div>Current (A) : <b>{cr?.current || '—'}</b></div>
+      <div>Rated speed motor(rpm) : <b>{cr?.rated || '—'}</b></div>
+    </>
+  );
+})()}
       <div>Optional : <b>{acOption||'-'}</b></div>
       <div>Gear Type : <b>{acGearHead||'-'}</b></div>
       <div>Ratio : <b>{acRatio}</b></div>
@@ -936,16 +1238,277 @@ const gifForHead = (() => {
           })()}
         </b> rpm
       </div>
-      <div>Output shaft diameter : <b>{getShaftDia(acPower, acGearHead) || '—'}</b></div>
+      <div>Output shaft diameter : <b>{
+  (() => {
+    // 1) รวมรายการโค้ดตามสภาพจริง (เหมือนตอนกด "ถัดไป")
+    const raw = generateModelCode({ ...acState, acConfirm: true });
+    const list = Array.isArray(raw)
+      ? (Array.isArray(raw[0]) ? raw.flat() : raw)
+      : (raw ? [raw] : []);
+
+    // 2) โค้ดที่ถูกเลือก (หรือเอาตัวแรกเป็นค่าเริ่มต้น)
+    const chosen = (typeof selectedModel === 'string' && selectedModel) || (list[0] || '');
+
+    // 3) อ่าน suffix จากรหัสที่เลือก (K/KB/RC/RT)
+    const suffixMatch = chosen.match(/(KB|RC|RT|K)\s*$/i); // จับ KB ก่อน K
+    const head = (suffixMatch ? suffixMatch[1].toUpperCase() : null);
+
+    // 4) เฉพาะ 60W: ถ้าเลือก GN → Ø12, ถ้าเลือก GU → Ø15
+    const is60W = /\b60W\b/i.test(String(acPower));
+    const isGN  = /GN/.test(chosen);
+    const isGU  = /GU/.test(chosen);
+
+    if (is60W) {
+      if (isGN) return 'Ø12 mm';           // 60W + GN
+      if (isGU) {
+        // กรณี GU แบบมุมฉากยังรักษาตามสเปคเดิม
+        if (head === 'RC') return 'Ø17 mm'; // HOLLOW
+        if (head === 'RT') return 'Ø15 mm'; // SOLID
+        return 'Ø15 mm';                    // K / KB หรือกรณีทั่วไป
+      }
+    }
+
+    // 5) นอกเหนือจาก 60W → ใช้แมปเดิมที่คุณตั้งไว้ (ถ้ามี)
+    return getShaftDia ? (getShaftDia(acPower, acGearHead) || '—') : '—';
+  })()
+}</b></div>
       <div>Weight : <b>— kg</b></div>
     </div>
-
-    {/* Drawing PDF (กึ่งกลางล่างของจอ) */}
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[998]">
-      <button className="btn-3d-rkfs px-6 py-3 font-bold">
-        Drawing PDF
-      </button>
+	{/* NEW: Gear preview image on the right side */}
+{acGearHead && (() => {
+  const src = getGearPreviewUrl(acGearHead);
+  if (!src) return null;
+  return (
+    <div
+      className="hidden md:block absolute"
+      style={{
+        right: '1.25rem',    // ~20px
+        top:   '1.25rem',
+        bottom:'10.25rem',
+        width: '23%',
+        pointerEvents: 'none', // ไม่บังการคลิกตัวอื่น
+      }}
+    >
+      <img
+        src={src}
+        alt={acGearHead}
+        onError={(e) => { e.currentTarget.style.display = 'none'; }} // ถ้าหาไม่พบ ให้ซ่อนตัวเอง
+        className="w-full h-full object-contain opacity-95 drop-shadow
+             transition-transform duration-500 ease-out
+             group-hover:scale-155 will-change-transform"
+      />
     </div>
+  );
+})()}
+{/* NEW: Multi-line quantity selectors (เฉพาะ AC Summary) */}
+{acGearHead && (
+  <div
+    className="hidden md:flex flex-col gap-2 absolute"
+    style={{ right: '1.25rem', bottom: '1.25rem', width: '34%' }}
+  >
+    {/* Row 1 — Gear Head */}
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-white/90 select-none">Gear Head :</span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="ลดจำนวน Gear Head"
+          onClick={() => setQtyGear(q => Math.max(1, q - 1))}
+          className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+        >–</button>
+        <input
+          type="number"
+          min={1}
+          step={1}
+          value={qtyGear}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setQtyGear(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
+          }}
+          onWheel={(e) => e.currentTarget.blur()}
+          className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
+        />
+        <button
+          type="button"
+          aria-label="เพิ่มจำนวน Gear Head"
+          onClick={() => setQtyGear(q => Math.min(999, q + 1))}
+          className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+        >+</button>
+      </div>
+    </div>
+
+    {/* Row 2 — AC Motor */}
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-white/90 select-none">AC Motor :</span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="ลดจำนวน AC Motor"
+          onClick={() => setQtyMotor(q => Math.max(1, q - 1))}
+          className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+        >–</button>
+        <input
+          type="number"
+          min={1}
+          step={1}
+          value={qtyMotor}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setQtyMotor(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
+          }}
+          onWheel={(e) => e.currentTarget.blur()}
+          className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
+        />
+        <button
+          type="button"
+          aria-label="เพิ่มจำนวน AC Motor"
+          onClick={() => setQtyMotor(q => Math.min(999, q + 1))}
+          className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+        >+</button>
+      </div>
+    </div>
+
+    {/* Row 3 — Speed controller (เฉพาะ Variable Speed Motor) */}
+    {acMotorType === 'Variable Speed Motor' && (
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-white/90 select-none">Speed controller :</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="ลดจำนวน Speed controller"
+            onClick={() => setQtyCtrl(q => Math.max(1, q - 1))}
+            className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+          >–</button>
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={qtyCtrl}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setQtyCtrl(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
+            }}
+            onWheel={(e) => e.currentTarget.blur()}
+            className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
+          />
+          <button
+            type="button"
+            aria-label="เพิ่มจำนวน Speed controller"
+            onClick={() => setQtyCtrl(q => Math.min(999, q + 1))}
+            className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+          >+</button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
+{showQuote && (
+  <div className="fixed inset-0 z-[1200] flex items-center justify-center">
+    {/* backdrop */}
+    <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setShowQuote(false)} />
+    {/* modal */}
+    <div className="relative bg-white rounded-2xl shadow-2xl w-[92%] max-w-xl p-6 text-slate-900">
+      <h3 className="text-xl font-bold mb-4">ขอใบเสนอราคา</h3>
+      <div className="grid grid-cols-1 gap-3">
+        <div>
+          <label className="block text-sm mb-1">ชื่อผู้ขอราคา :</label>
+          <input value={qName} onChange={e=>setQName(e.target.value)}
+                 className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+        </div>
+        <div>
+          <label className="block text-sm mb-1">ชื่อบริษัท :</label>
+          <input value={qCompany} onChange={e=>setQCompany(e.target.value)}
+                 className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+        </div>
+        <div>
+          <label className="block text-sm mb-1">เบอร์ติดต่อ :</label>
+          <input value={qPhone} onChange={e=>setQPhone(e.target.value)}
+                 className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+        </div>
+        <div>
+          <label className="block text-sm mb-1">Email :</label>
+          <input type="email" value={qEmail} onChange={e=>setQEmail(e.target.value)}
+                 className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+        </div>
+      </div>
+
+      {/* ปุ่ม */}
+      <div className="mt-5 flex gap-3 justify-end">
+        <button
+          type="button"
+          onClick={()=>setShowQuote(false)}
+          disabled={sending}
+          className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
+        >
+          ปิด
+        </button>
+        <button
+          type="button"
+          onClick={submitQuote}
+          disabled={sending || !qName || !qCompany || !qPhone || !qEmail}
+          className="px-5 py-2 rounded-2xl bg-green-300 hover:bg-green-400 font-semibold shadow
+                     active:scale-95 transition transform"
+        >
+          {sending ? 'กำลังส่ง…' : 'ขอใบเสนอราคา'}
+        </button>
+      </div>
+
+      {/* note: model code + qty สรุปสั้น ๆ */}
+      <div className="mt-4 text-sm text-slate-600">
+        <div>Model: <b>{
+          (() => {
+            const raw = generateModelCode({ ...acState, acConfirm: true });
+            const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
+            return (list && list[0]) || '—';
+          })()
+        }</b></div>
+        <div className="flex gap-4 mt-1">
+          <span>Gear Head: <b>{qtyGear}</b></span>
+          <span>AC Motor: <b>{qtyMotor}</b></span>
+          {acMotorType === 'Variable Speed Motor' && <span>Controller: <b>{qtyCtrl}</b></span>}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+    <div
+  className="fixed z-[1000]"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  <button
+    type="button"
+    onClick={handleDownloadPDF}
+    className="bg-white/90 text-slate-900 px-5 py-3 rounded-xl font-semibold shadow hover:bg-white"
+  >
+    Drawing PDF
+  </button>
+</div>
+
+{/* CENTER — ขอใบเสนอราคา (fixed, safe-area) */}
+<div
+  className="fixed z-[1000] flex justify-center"
+  style={{
+    left: '50%',
+    transform: 'translateX(-50%)',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  <button
+    type="button"
+    onClick={handleRequestQuote}
+    className="bg-green-300 hover:bg-green-400 text-slate-900 px-6 py-3 rounded-2xl font-semibold shadow-lg flex items-center gap-2"
+    title="ขอใบเสนอราคา"
+  >
+    {/* ไอคอนตะกร้า (inline SVG, ไม่พึ่ง lib เพิ่ม) */}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+      <path d="M7 4a1 1 0 1 1 0-2h1a1 1 0 0 1 .95.684L9.76 4H19a1 1 0 0 1 .98 1.197l-1.5 9A1 1 0 0 1 17.5 15H9a1 1 0 0 1-.98-.804L6.24 5H4a1 1 0 1 1 0-2h3Zm3.28 11h7.96l1.17-7H10.45l.83 7ZM9 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 .001 4.001A2 2 0 0 0 17 18Z"/>
+    </svg>
+    ขอใบเสนอราคา
+  </button>
+</div>
     {/* ถัดไป (มุมขวาล่างของจอ) */}
     <div className="fixed right-6 bottom-6 z-[999]">
   <button
