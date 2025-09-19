@@ -316,11 +316,20 @@ async function handleBLDCDownload(modelCode) {
  }
 
 function App() {
+
+  const EMAILJS_PUBLIC_KEY = 'BvIT5-X7LnkaS3LKq';
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
     useEffect(() => {
-  if (typeof emailjs?.init === 'function') {
-    emailjs.init('J6kLpbLcieCe2cKzU'); // ใช้ Public Key เดิมของคุณ
+    // 1) โยน instance ไว้ให้ทั้งแอปใช้ร่วมกัน
+  if (!window.emailjs) window.emailjs = emailjs;
+
+  // 2) init เพียงครั้งเดียว และใช้คีย์ "อันเดียวทั้งแอป"
+  const pk = EMAILJS_PUBLIC_KEY.trim();
+  if (!window.__EMAILJS_PK) {
+    // emailjs-com ใช้รูปแบบ init(pk) (v2)
+    window.emailjs.init(pk);
+    window.__EMAILJS_PK = pk; // บันทึกว่ามีการ init แล้ว
   }
 }, []);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -801,7 +810,7 @@ const handleSendVerificationCode = () => {
       name: userInfo.name || 'ลูกค้า',
       code: code
     },
-    'J6kLpbLcieCe2cKzU'          // ✅ Public Key
+    'BvIT5-X7LnkaS3LKq'          // ✅ Public Key
   )
   .then(() => {
     toast.success('✅ ส่งรหัสแล้ว กรุณาตรวจสอบอีเมลของคุณ');
@@ -835,7 +844,7 @@ const handleDownload = async () => {
         company: userInfo.company,
         model: selectedModel
       },
-      'J6kLpbLcieCe2cKzU'
+      'BvIT5-X7LnkaS3LKq'
     );
     toast.success("✅ ส่งข้อมูลเรียบร้อยแล้ว");
   } catch (e) {

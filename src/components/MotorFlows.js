@@ -514,7 +514,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
  // ตั้งค่า EmailJS (แก้ค่า 3 ตัวแปรนี้ **ในไฟล์เดียว**) — ไม่แตะ config ที่อื่น
  const EMAILJS_SERVICE_ID = 'service_fwgn6cw';
  const EMAILJS_TEMPLATE_ID = 'template_7eppr2x';
- const EMAILJS_PUBLIC_KEY  = 'J6kLpbLcieCe2cKzU';
+ const EMAILJS_PUBLIC_KEY  = 'BvIT5-X7LnkaS3LKq'.trim();
 
  // แปลง Blob → base64 (ให้แนบไฟล์ทาง EmailJS)
  const blobToBase64 = (blob) =>
@@ -634,39 +634,108 @@ const playThanksAudio = () => {
 
      // จับภาพกล่อง Summary → Canvas → PDF
      const node = summaryRef.current;
-     const canvas = await window.html2canvas(node, { scale: 2, backgroundColor: null });
-     const imgData = canvas.toDataURL('image/jpeg', 0.92);
-     const { jsPDF } = window.jspdf;
-     const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
-     const pageW = pdf.internal.pageSize.getWidth();
-     const pageH = pdf.internal.pageSize.getHeight();
-     // จัดให้ภาพพอดีหน้า
-     const imgW = pageW - 72; // margin 36pt ซ้ายขวา
-     const imgH = (canvas.height / canvas.width) * imgW;
-     pdf.addImage(imgData, 'JPEG', 36, 36, imgW, Math.min(imgH, pageH - 72), undefined, 'FAST');
+     // 1) จับภาพ Summary
+const canvas = await window.html2canvas(summaryRef.current, { scale: 1, backgroundColor: null });
 
-     // ตั้งชื่อไฟล์ = Model Code
-     const raw = generateModelCode({ ...acState, acConfirm: true });
-     const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
-     const chosenModel = (list && list[0]) || 'SAS_Model';
+// 2) สร้าง PDF ขนาดเล็กกว่า 50KB (ถ้าเกินจะลด size/quality อัตโนมัติ)
+const { jsPDF } = window.jspdf;
+const raw  = generateModelCode({ ...acState, acConfirm: true });
+const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
+const chosenModel =
+  (typeof selectedModel === 'string' && selectedModel) ||
+  (list && list[0]) ||
+  'SAS_Model';
 
-     const blob = pdf.output('blob');
-     // ดาวน์โหลดสำรองไว้ก่อน
-     const a = document.createElement('a');
-     a.href = URL.createObjectURL(blob);
-     a.download = `${chosenModel}.pdf`;
-     document.body.appendChild(a); a.click(); a.remove();
-     setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+async function makeSmallPdfBlob(maxBytes = 37000) {
+  let scaleFactor = 0.6;   // เริ่มย่อขนาดลง
+  let quality     = 0.55;  // เริ่มลดคุณภาพ JPEG
 
-     if (EMAILJS_SERVICE_ID !== 'service_fwgn6cw' &&
-         EMAILJS_TEMPLATE_ID !== 'template_7eppr2x' &&
-         EMAILJS_PUBLIC_KEY  !== 'J6kLpbLcieCe2cKzU') {
-       await ensureLib('https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js', 'emailjs');
-       if (window.emailjs && !window.emailjs.__inited) {
-         window.emailjs.init(EMAILJS_PUBLIC_KEY); window.emailjs.__inited = true;
-       }
-       const base64 = await blobToBase64(blob);
-       await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+  for (let i = 0; i < 6; i++) {
+    const w = Math.max(320, Math.floor(canvas.width  * scaleFactor));
+    const h = Math.max(240, Math.floor(canvas.height * scaleFactor));
+
+    // ย่อภาพลงบน offscreen canvas
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    off.getContext('2d').drawImage(canvas, 0, 0, w, h);
+
+    const imgData = off.toDataURL('image/jpeg', quality);
+
+    const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+
+    // ให้รูปพอดีหน้ากระดาษโดยคงสัดส่วน
+    const imgW = pageW - 72; // margin 36pt ซ้ายขวา
+    const ratio = h / w;
+    const imgH = Math.min((imgW * ratio), pageH - 72);
+
+    pdf.addImage(imgData, 'JPEG', 36, 36, imgW, imgH, undefined, 'FAST');
+    const blob = pdf.output('blob');
+
+    if (blob.size <= maxBytes) return blob;
+
+    // ถ้ายังเกิน ให้ลดลงอีกหน่อยแล้วลองใหม่
+    scaleFactor *= 0.85;
+    quality     *= 0.85;
+  }
+  // ถ้ายังเกินหลังจากลองหลายครั้ง ก็คืนค่าเวอร์ชันล่าสุด (อาจ >50KB)
+  return pdf.output('blob');
+}
+
+const blob = await makeSmallPdfBlob(49000);
+
+ // ถ้ามี instance จาก App.jsx แล้ว ให้ใช้เลย
+ if (!window.emailjs) {
+   // ไม่มี ก็โหลด SDK v3 มาใช้ (ไม่ชนกับของเดิม)
+   await ensureLib('https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js','emailjs');
+ }
+ // ถ้ายังไม่ถูก init (ไม่มีธง) ให้ init ด้วยคีย์เดียวกัน
+ const pk = (window.__EMAILJS_PK || EMAILJS_PUBLIC_KEY).trim();
+ if (!window.__EMAILJS_PK) {
+   // v3 init รูปแบบใหม่
+   window.emailjs.init({ publicKey: pk });
+   window.__EMAILJS_PK = pk;
+ }
+// ===== PATCH START (replace your old block that starts with `const base64 = await blobToBase64(blob);`) =====
+
+// helper: ลดขนาด PDF ให้เล็กกว่า ~37KB (base64 จะ ~ < 50KB)
+async function shrinkPdfToUnder(canvasNode, maxBytes = 37000) {
+  const { jsPDF } = window.jspdf;
+  let scale = 0.65;    // เริ่มย่อ
+  let quality = 0.6;   // เริ่มลดคุณภาพ
+
+  for (let i = 0; i < 7; i++) {
+    const w = Math.max(320, Math.floor(canvasNode.width  * scale));
+    const h = Math.max(240, Math.floor(canvasNode.height * scale));
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    off.getContext('2d').drawImage(canvasNode, 0, 0, w, h);
+
+    const imgData = off.toDataURL('image/jpeg', quality);
+
+    const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW - 72;
+    const imgH = Math.min((imgW * h) / w, pageH - 72);
+        
+
+    pdf.addImage(imgData, 'JPEG', 36, 36, imgW, imgH, undefined, 'FAST');
+    const out = pdf.output('blob');
+    if (out.size <= maxBytes) return out;
+
+    scale *= 0.85;
+    quality *= 0.85;
+  }
+  return null; // ยังเล็กไม่พอ
+}
+
+// 1) พยายามย่อไฟล์ให้แนบแบบ base64 ได้
+let tinyBlob = await shrinkPdfToUnder(canvas, 37000);
+
+// base params ใช้ซ้ำทุกกรณี
+const baseParams = {
   requester_name: qName,
   company: qCompany,
   phone: qPhone,
@@ -675,14 +744,90 @@ const playThanksAudio = () => {
   qty_gear: qtyGear,
   qty_motor: qtyMotor,
   qty_ctrl: qtyCtrl,
-  // แนบไฟล์ PDF
-  attachments: [
-    { name: `${chosenModel}.pdf`, data: base64 } // base64 ไม่มี prefix "data:application/pdf;base64,"
-  ],
-});
-     } else {
-       console.warn('EmailJS keys not set — sent only local download.');
-     }
+  to_emails: 'Somyotsw442@gmail.com,Somyot@synergy-as.com,sas04@synergy-as.com',
+};
+
+const isLocal = ['localhost','127.0.0.1'].includes(location.hostname);
+
+// 2) เตรียมพารามิเตอร์ส่งแบบเหมาะสมกับขนาด/สภาพแวดล้อม
+let params;
+if (tinyBlob) {
+  // 2.1 แนบแบบ base64 (เล็กพอ)
+  const base64 = await blobToBase64(tinyBlob); // ไม่มี prefix data:
+  if (base64.length > 50000) {
+    // เผื่อเคสฐานข้อมูลอื่นๆ ทำให้ยาวขึ้น — ตัดไปใช้แผน URL/No-attach ด้านล่าง
+    tinyBlob = null;
+  } else {
+    params = { ...baseParams, attachments: [{ name: `${chosenModel}.pdf`, data: base64 }] };
+  }
+}
+
+if (!params) {
+  // 2.2 ยังใหญ่/ไม่ผ่าน — ใช้ URL เมื่ออยู่บนโดเมนจริง
+  const watts = String(acPower).match(/^(\d+)/)?.[1]; // "90W AC Motor" -> "90"
+  const libPath = watts ? `/model/pdf/AC/${watts}W.pdf` : null;
+  const publicUrl = libPath ? `${location.origin}${libPath}` : null;
+
+  if (!isLocal && publicUrl) {
+    params = { ...baseParams, attachments: [{ name: `${chosenModel}.pdf`, path: publicUrl }] };
+  } else {
+    // 2.3 dev: แนบไม่ได้ + URL ใช้กับ EmailJS server ไม่ได้ → ส่งแบบไม่แนบแต่ให้ลิงก์ในเนื้อหา
+    params = { ...baseParams, attachment_note: 'dev build: ใช้ลิงก์แทนไฟล์แนบ', drawing_url: publicUrl || '' };
+  }
+}
+
+// 3) ส่งอีเมล (ลองส่งปกติ)
+let sent = false;
+try {
+  const res = await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
+  console.log('EmailJS OK:', res);
+  sent = true;
+} catch (err) {
+  console.error('EmailJS send failed (first):', err?.text || err);
+  // 3.1 ถ้าเพราะขนาด/attachments ให้ลอง "ส่งแบบไม่แนบไฟล์" อีกครั้ง (ลดตัวแปรรวม)
+  try {
+    const fallbackParams = { ...baseParams };
+    delete fallbackParams.attachments;
+    fallbackParams.attachment_note = 'ส่งแบบไม่แนบไฟล์ (ขนาดเกินลิมิต 50KB)';
+    const res2 = await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, fallbackParams);
+    console.log('EmailJS OK (no attachment fallback):', res2);
+    sent = true;
+  } catch (err2) {
+    console.error('EmailJS send failed (fallback):', err2?.text || err2);
+    sent = false;
+  }
+}
+
+// 4) จัดการหลังส่ง
+if (!sent) {
+  // แผนสำรองสุดท้าย: ดาวน์โหลดไฟล์ + เปิด email ไคลเอนต์ (ให้ผู้ใช้กดส่งออกแน่ ๆ)
+  try {
+    const dlBlob = tinyBlob || blob; // ถ้ามีตัวเล็กใช้/ไม่มีก็ใช้ตัวเดิม
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(dlBlob);
+    a.download = `${chosenModel}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  } catch (_) {}
+
+  const mailto = [
+    'mailto:Somyotsw442@gmail.com,Somyot@synergy-as.com,sas04@synergy-as.com',
+    '?subject=', encodeURIComponent(`ขอใบเสนอราคา: ${chosenModel}`),
+    '&body=', encodeURIComponent(
+      `ผู้ขอ: ${qName}\nบริษัท: ${qCompany}\nโทร: ${qPhone}\nอีเมล: ${qEmail}\n` +
+      `Model: ${chosenModel}\nGear Head: ${qtyGear}  Motor: ${qtyMotor}` +
+      (acMotorType === 'Variable Speed Motor' ? `  Controller: ${qtyCtrl}` : '') +
+      (params?.drawing_url ? `\nไฟล์: ${params.drawing_url}` : '')
+    )
+  ].join('');
+  window.location.href = mailto;
+
+  alert('ส่งอีเมลผ่านระบบไม่สำเร็จ — ผมเปิดหน้าต่างอีเมลให้แล้ว กรุณากดส่งจากไคลเอนต์ (แนบไฟล์ที่เพิ่งดาวน์โหลด)');
+  return; // ไม่แสดงข้อความสำเร็จ เพื่อไม่ให้เข้าใจผิด
+}
+
+// หากถึงตรงนี้ แปลว่าส่งผ่านแล้ว
+// ===== PATCH END =====
 
      setShowQuote(false);
      setTimeout(() => alert('ขอบคุณสำหรับการขอราคา กรุณารอการตอบกลับสักครู่'), 150);
