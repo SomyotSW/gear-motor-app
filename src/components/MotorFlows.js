@@ -1668,7 +1668,7 @@ const gifForHead = (() => {
   if (list.length) onConfirm(list); // App.jsx จะตั้ง selectedModel = ตัวแรก → ตรงกับที่ผู้ใช้เลือก
 }}
 >
-  ถัดไป
+  รับไฟล์ 3D
 </button>
     </div>
   </div>
@@ -2164,7 +2164,7 @@ const backOneStep = () => {
   );
 } // END renderHypoidGearFlow
 
-export function renderRKFSFlow(state, setState, onConfirm) {
+export function renderRKFSFlow(state, setState, onConfirm, onRequestQuote = null) {
   const {
     rkfsSeries,
     rkfsDesign,
@@ -2221,6 +2221,7 @@ const RKFS_INPUT_GIF = {
     rkfsINPUTshaftDia: setState.setRkfsINPUTshaftDia,
     rkfsInputShaft:    setState.setRkfsInputShaft,
     rkfsInputShaftDia: setState.setRkfsInputShaftDia,
+        rkfsQty: setState.setRkfsQty,
   };
 
   if (setterMap[key]) {
@@ -2367,6 +2368,407 @@ const sSeriesPowerBySize = {
       '97':  ['286.40','262.22','231.67','196.52','180.95','161.74','145.60','131.85','116.92','105.71','89.60','80.85','78.26','71.43','65.45','60.59','55.79','49.87','44.65','40.95','36.05','32.60','27.63','26.39','24.13','23.59','21.23','19.23','17.05','15.42','13.07','11.41','9.55','8.26']
     }
   };
+
+const SERVICE_FACTOR_DB = {
+  R: {
+    R87: {
+      0.25: {
+        '8P': [
+          { i: 246.54, fB: 1.80 }, { i: 216.54, fB: 2.0 },
+          { i: 205.71, fB: 2.2 },  { i: 181.77, fB: 2.4 },
+        ],
+      },
+      0.37: {
+        '8P': [
+          { i: 216.54, fB: 1.40 }, { i: 205.71, fB: 1.45 }, { i: 181.77, fB: 1.65 },
+        ],
+        '6P': [
+          { i: 246.54, fB: 1.60 }, { i: 216.54, fB: 1.80 }, { i: 205.71, fB: 1.90 },
+          { i: 181.77, fB: 2.20 }, { i: 155.34, fB: 2.50 }, { i: 142.41, fB: 2.80 },
+        ],
+      },
+      0.55: {
+        '6P': [
+          { i: 246.54, fB: 1.10 }, { i: 216.54, fB: 1.25 }, { i: 205.71, fB: 1.30 },
+          { i: 181.77, fB: 1.45 }, { i: 155.34, fB: 1.70 },
+        ],
+        '4P': [
+          { i: 246.54, fB: 1.65 }, { i: 216.54, fB: 1.85 }, { i: 205.71, fB: 1.95 },
+          { i: 181.77, fB: 2.20 }, { i: 155.34, fB: 2.60 }, { i: 142.41, fB: 2.80 },
+          { i: 124.97, fB: 3.20 }, { i: 118.43, fB: 3.40 }, { i: 103.65, fB: 3.90 },
+        ],
+      },
+      0.75: {
+        '6P': [
+          { i: 216.54, fB: 0.90 }, { i: 205.71, fB: 0.95 }, { i: 181.77, fB: 1.05 },
+          { i: 155.34, fB: 1.25 }, { i: 142.41, fB: 1.35 },
+        ],
+        '4P': [
+          { i: 246.54, fB: 1.20 }, { i: 216.54, fB: 1.30 }, { i: 205.71, fB: 1.40 },
+          { i: 181.77, fB: 1.65 }, { i: 155.34, fB: 2.00 }, { i: 142.41, fB: 2.10 },
+          { i: 124.97, fB: 2.40 }, { i: 118.43, fB: 2.50 }, { i: 103.65, fB: 2.90 }, { i: 93.38, fB: 3.20 },
+        ],
+      },
+      1.1: {
+        '4P': [
+          { i: 216.54, fB: 0.95 }, { i: 205.71, fB: 1.00 }, { i: 181.77, fB: 1.15 },
+          { i: 155.34, fB: 1.35 }, { i: 142.41, fB: 1.45 }, { i: 124.97, fB: 1.65 },
+          { i: 118.43, fB: 1.75 }, { i: 103.65, fB: 2.00 }, { i: 93.38,  fB: 2.20 },
+          { i: 81.92,  fB: 2.50 }, { i: 72.57,  fB: 2.80 }, { i: 63.68,  fB: 3.20 },
+          { i: 60.35,  fB: 3.40 }, { i: 52.82,  fB: 3.90 },
+        ],
+      },
+      1.5: {
+        '4P': [
+          { i: 181.77, fB: 0.85 }, { i: 155.34, fB: 1.00 }, { i: 141.83, fB: 1.05 },
+          { i: 124.97, fB: 1.20 }, { i: 118.43, fB: 1.30 }, { i: 103.65, fB: 1.45 },
+          { i: 93.38,  fB: 1.65 }, { i: 81.92,  fB: 1.85 }, { i: 72.57,  fB: 2.10 },
+          { i: 63.68,  fB: 2.40 }, { i: 60.35,  fB: 2.50 }, { i: 52.82,  fB: 2.90 },
+          { i: 47.58,  fB: 3.20 }, { i: 41.74,  fB: 3.70 }, { i: 36.84,  fB: 4.10 },
+        ],
+      },
+      2.2: {
+        '4P': [
+          { i: 124.97, fB: 0.85 }, { i: 118.43, fB: 0.90 }, { i: 103.65, fB: 1.00 },
+          { i: 93.38,  fB: 1.10 }, { i: 81.92,  fB: 1.25 },
+          { i: 72.57,  fB: 1.45 }, { i: 63.68,  fB: 1.65 }, { i: 60.35,  fB: 1.70 },
+          { i: 52.82,  fB: 1.95 }, { i: 47.58,  fB: 2.20 }, { i: 41.74,  fB: 2.50 },
+          { i: 36.84,  fB: 2.80 }, { i: 32.66,  fB: 3.20 },
+          { i: 34.40,  fB: 2.90 }, { i: 31.40,  fB: 3.30 }, { i: 27.84,  fB: 3.70 },
+          { i: 23.40,  fB: 4.40 }, { i: 21.51,  fB: 4.70 },
+        ],
+      },
+      3: {
+        '4P': [
+          { i: 93.38,  fB: 0.80 }, { i: 81.92,  fB: 0.90 }, { i: 72.57,  fB: 1.05 }, { i: 63.68,  fB: 1.20 },
+          { i: 60.35,  fB: 1.25 }, { i: 52.82,  fB: 1.45 }, { i: 47.58,  fB: 1.60 },
+          { i: 41.74,  fB: 1.80 }, { i: 37.13,  fB: 2.00 }, { i: 32.66,  fB: 2.30 }, { i: 27.88,  fB: 2.60 },
+          { i: 34.40,  fB: 2.10 }, { i: 31.40,  fB: 2.40 }, { i: 27.84,  fB: 2.70 },
+          { i: 23.40,  fB: 3.20 }, { i: 21.51,  fB: 3.40 }, { i: 19.10,  fB: 3.70 },
+          { i: 17.08,  fB: 4.00 }, { i: 15.35,  fB: 4.30 },
+        ],
+      },
+      4: {
+        '4P': [
+          { i: 63.68,  fB: 0.90 }, { i: 60.35,  fB: 0.95 }, { i: 52.82,  fB: 1.10 },
+          { i: 47.58,  fB: 1.20 }, { i: 41.74,  fB: 1.40 }, { i: 36.84,  fB: 1.55 },
+          { i: 32.66,  fB: 1.75 }, { i: 27.88,  fB: 2.00 },
+          { i: 34.40,  fB: 1.60 }, { i: 31.40,  fB: 1.85 }, { i: 27.84,  fB: 2.10 },
+          { i: 23.40,  fB: 2.50 }, { i: 21.51,  fB: 2.60 }, { i: 19.10,  fB: 2.80 },
+          { i: 17.08,  fB: 3.00 }, { i: 15.35,  fB: 3.20 }, { i: 13.33,  fB: 3.60 }, { i: 11.93,  fB: 3.80 },
+        ],
+      },
+      5.5: { '4P': [
+        { i: 47.58, fB: 0.90 }, { i: 41.74, fB: 1.00 }, { i: 36.84, fB: 1.15 }, { i: 32.66, fB: 1.30 },
+        { i: 27.88, fB: 1.45 }, { i: 27.84, fB: 1.50 }, { i: 23.40, fB: 1.80 }, { i: 21.51, fB: 1.90 },
+        { i: 19.10, fB: 2.0 },  { i: 17.08, fB: 2.2 },  { i: 15.35, fB: 2.4 }, { i: 13.33, fB: 2.6 },
+        { i: 11.93, fB: 2.8 }, { i: 9.90, fB: 3.2 }, { i: 9.14, fB: 3.6 }, { i: 8.22, fB: 3.8 }, { i: 7.13, fB: 4.1 },
+      ]},
+      7.5: { '4P': [
+        { i: 36.84, fB: 0.85 }, { i: 32.66, fB: 0.95 }, { i: 27.88, fB: 1.05 },
+        { i: 27.84, fB: 1.10 }, { i: 23.40, fB: 1.30 }, { i: 21.51, fB: 1.40 },
+        { i: 19.10, fB: 1.50 }, { i: 17.08, fB: 1.65 }, { i: 15.35, fB: 1.75 },
+        { i: 13.33, fB: 1.90 }, { i: 11.93, fB: 2.10 }, { i: 9.90,  fB: 2.40 },
+        { i: 9.14,  fB: 2.60 }, { i: 8.22,  fB: 2.80 }, { i: 7.13,  fB: 3.00 },
+        { i: 6.39,  fB: 3.20 }, { i: 5.30,  fB: 3.40 },
+      ]},
+      9.2: { '4P': [
+        { i: 21.51, fB: 1.15 }, { i: 19.10, fB: 1.25 }, { i: 17.08, fB: 1.35 },
+        { i: 15.35, fB: 1.45 }, { i: 13.33, fB: 1.55 }, { i: 11.93, fB: 1.70 },
+        { i: 9.90,  fB: 1.95 }, { i: 9.14,  fB: 2.20 }, { i: 8.22,  fB: 2.30 },
+        { i: 7.13,  fB: 2.50 }, { i: 6.39,  fB: 2.60 },
+      ]},
+      11: { '4P': [
+        { i: 21.51, fB: 0.95 }, { i: 19.10, fB: 1.05 }, { i: 17.08, fB: 1.10 },
+        { i: 15.35, fB: 1.20 }, { i: 13.33, fB: 1.30 }, { i: 11.93, fB: 1.40 },
+        { i: 9.90,  fB: 1.65 }, { i: 9.14,  fB: 1.80 }, { i: 8.22,  fB: 1.95 },
+        { i: 7.13,  fB: 2.10 }, { i: 6.39,  fB: 2.20 }, { i: 5.30,  fB: 2.30 },
+      ]},
+      15.0: { '4P': [
+        { i: 17.08, fB: 0.85 }, { i: 15.35, fB: 0.90 }, { i: 13.33, fB: 1.00 }, { i: 11.93, fB: 1.05 },
+        { i: 9.90,  fB: 1.20 }, { i: 9.14,  fB: 1.35 }, { i: 8.22,  fB: 1.45 },
+        { i: 7.13,  fB: 1.55 }, { i: 6.39,  fB: 1.65 }, { i: 5.30,  fB: 1.75 },
+      ]},
+      18.5: { '4P': [
+        { i: 13.33, fB: 0.80 }, { i: 11.93, fB: 0.85 }, { i: 9.90,  fB: 1.00 }, { i: 9.14,  fB: 1.10 },
+        { i: 8.22,  fB: 1.15 }, { i: 7.13,  fB: 1.25 }, { i: 6.39,  fB: 1.30 }, { i: 5.30,  fB: 1.40 },
+      ]},
+      22: { '4P': [
+        { i: 9.90, fB: 0.85 }, { i: 9.14, fB: 0.90 }, { i: 8.22, fB: 1.00 },
+        { i: 7.13, fB: 1.05 }, { i: 6.39, fB: 1.10 }, { i: 5.30, fB: 1.20 },
+      ]},
+    },
+
+    R97: {
+      5.5: [ /* ... */ ],
+      7.5: [ /* ... */ ],
+      15.0: [ /* ... */ ],
+      18.5: [ /* ... */ ],
+    },
+
+    R167: {
+      15.0: [ /* เช่น { i: 186.93, fB: 0.80 }, { i: 153.07, fB: 1.00 }, ... */ ],
+      18.5: [ /* เติมจากหน้าตาราง 18.5kW */ ],
+    },
+  },
+
+  F: {
+    F87: {
+      0.37: {
+        '8P': [
+          { i: 270.68, fB: 2.10 }, { i: 255.37, fB: 2.30 },
+          { i: 228.93, fB: 2.50 }, { i: 197.20, fB: 2.90 },
+        ],
+        '6P': [
+          { i: 270.68, fB: 2.80 }, { i: 255.37, fB: 3.00 }, { i: 228.93, fB: 3.30 },
+        ],
+      },
+      0.55: {
+        '8P': [
+          { i: 270.68, fB: 1.90 }, { i: 255.37, fB: 2.00 },
+          { i: 228.93, fB: 2.20 }, { i: 197.20, fB: 2.60 },
+        ],
+        '6P': [
+          { i: 270.68, fB: 1.90 }, { i: 255.37, fB: 2.00 }, { i: 228.93, fB: 2.20 },
+          { i: 197.20, fB: 2.60 }, { i: 179.97, fB: 2.90 },
+        ],
+      },
+      0.75: {
+        '6P': [
+          { i: 270.68, fB: 1.40 }, { i: 255.37, fB: 1.50 }, { i: 228.93, fB: 1.65 },
+          { i: 197.20, fB: 1.90 }, { i: 179.97, fB: 2.10 }, { i: 156.61, fB: 2.40 },
+        ],
+        '4P': [
+          { i: 270.68, fB: 2.10 }, { i: 255.37, fB: 2.30 }, { i: 228.93, fB: 2.50 },
+        ],
+      },
+    },
+  },
+
+  K: {
+    K87: {
+      0.37: {
+        '8P': [
+          { i: 174.19, fB: 3.0 }, { i: 164.34, fB: 3.2 }, { i: 147.32, fB: 3.5 },
+        ],
+        '6P': [
+          { i: 197.37, fB: 3.5 }, { i: 174.19, fB: 4.0 },
+        ],
+      },
+      0.55: {
+        '8P': [
+          { i: 174.19, fB: 2.7 }, { i: 164.34, fB: 2.8 }, { i: 147.32, fB: 3.1 },
+        ],
+        '6P': [
+          { i: 197.37, fB: 2.3 }, { i: 174.19, fB: 2.7 }, { i: 164.34, fB: 2.8 }, { i: 147.32, fB: 3.1 },
+        ],
+      },
+      0.75: {
+        '8P': [
+          { i: 147.32, fB: 1.75 }, { i: 126.91, fB: 2.00 }, { i: 115.82, fB: 2.20 }, { i: 102.71, fB: 2.50 },
+        ],
+        '6P': [
+          { i: 174.19, fB: 1.95 }, { i: 164.34, fB: 2.10 }, { i: 147.32, fB: 2.30 }, { i: 126.91, fB: 2.70 },
+        ],
+        '4P': [
+          { i: 197.37, fB: 2.60 }, { i: 174.19, fB: 3.00 }, { i: 164.34, fB: 3.20 }, { i: 147.32, fB: 3.50 },
+        ],
+      },
+      1.1: {
+        '6P': [
+          { i: 174.19, fB: 2.1 }, { i: 164.34, fB: 2.2 }, { i: 147.32, fB: 2.4 }, { i: 126.91, fB: 2.8 },
+        ],
+        '4P': [
+          { i: 174.19, fB: 2.1 }, { i: 164.34, fB: 2.2 }, { i: 147.32, fB: 2.4 },
+          { i: 126.91, fB: 2.8 }, { i: 115.82, fB: 3.1 },
+        ],
+      },
+      1.5: {
+        '6P': [
+          { i: 147.32, fB: 1.80 }, { i: 126.91, fB: 2.10 }, { i: 115.82, fB: 2.30 }, { i: 102.71, fB: 2.60 },
+        ],
+        '4P': [
+          { i: 174.19, fB: 1.55 }, { i: 164.34, fB: 1.60 }, { i: 147.32, fB: 1.80 },
+          { i: 126.91, fB: 2.10 }, { i: 115.82, fB: 2.30 }, { i: 102.71, fB: 2.60 },
+          { i: 86.34,  fB: 3.10 },
+        ],
+      },
+      2.2: {
+        '4P': [
+          { i: 147.32, fB: 1.25 }, { i: 126.91, fB: 1.45 }, { i: 115.82, fB: 1.55 }, { i: 102.71, fB: 1.75 },
+          { i: 86.34,  fB: 2.10 }, { i: 79.34,  fB: 2.30 }, { i: 70.46,  fB: 2.60 }, { i: 63.00,  fB: 2.90 },
+        ],
+      },
+      3: {
+        '4P': [
+          { i: 147.32, fB: 0.90 }, { i: 126.91, fB: 1.05 }, { i: 115.82, fB: 1.15 }, { i: 102.71, fB: 1.30 },
+          { i: 86.34,  fB: 1.55 }, { i: 79.34,  fB: 1.65 }, { i: 70.46,  fB: 1.85 }, { i: 63.00,  fB: 2.10 },
+          { i: 56.64,  fB: 2.30 }, { i: 49.16,  fB: 2.70 }, { i: 44.02,  fB: 2.90 }, { i: 36.52,  fB: 3.30 },
+        ],
+      },
+      4: {
+        '4P': [
+          { i: 115.82, fB: 0.85 }, { i: 102.71, fB: 1.00 }, { i: 86.34,  fB: 1.15 }, { i: 79.34,  fB: 1.25 },
+          { i: 70.46,  fB: 1.40 }, { i: 63.00,  fB: 1.60 }, { i: 56.64,  fB: 1.75 }, { i: 49.16,  fB: 2.00 },
+          { i: 44.02,  fB: 2.20 }, { i: 36.52,  fB: 2.50 },
+        ],
+      },
+      5.5: {
+        '4P': [
+          { i: 86.34, fB: 0.85 }, { i: 79.34, fB: 0.95 }, { i: 70.46, fB: 1.05 }, { i: 63.00, fB: 1.15 },
+          { i: 56.64, fB: 1.30 }, { i: 49.16, fB: 1.50 }, { i: 44.02, fB: 1.60 }, { i: 36.52, fB: 1.85 },
+          { i: 31.39, fB: 2.30 }, { i: 27.88, fB: 2.50 },
+        ],
+      },
+      7.5: {
+        '4P': [
+          { i: 63.00, fB: 0.85 }, { i: 56.64, fB: 0.95 }, { i: 49.16, fB: 1.10 }, { i: 44.02, fB: 1.20 },
+          { i: 36.52, fB: 1.35 }, { i: 31.39, fB: 1.70 }, { i: 27.88, fB: 1.85 }, { i: 24.92, fB: 2.00 },
+          { i: 22.41, fB: 2.00 }, { i: 19.45, fB: 2.40 }, { i: 17.42, fB: 2.50 }, { i: 16.00, fB: 2.20 },
+          { i: 14.45, fB: 2.90 },
+        ],
+      },
+      9.2: {
+        '4P': [
+          { i: 49.16, fB: 0.90 }, { i: 44.02, fB: 0.95 }, { i: 36.52, fB: 1.10 }, { i: 31.39, fB: 1.40 },
+          { i: 27.88, fB: 1.55 }, { i: 24.92, fB: 1.65 }, { i: 22.41, fB: 1.70 }, { i: 19.45, fB: 1.95 },
+          { i: 17.42, fB: 2.10 }, { i: 16.00, fB: 1.85 }, { i: 14.45, fB: 2.40 }, { i: 12.56, fB: 2.60 },
+          { i: 11.17, fB: 2.20 }, { i: 10.00, fB: 2.50 },
+        ],
+      },
+      11: {
+        '4P': [
+          { i: 44.02, fB: 0.80 }, { i: 36.52, fB: 0.95 }, { i: 31.39, fB: 1.20 }, { i: 27.88, fB: 1.30 },
+          { i: 24.92, fB: 1.40 }, { i: 22.41, fB: 1.40 }, { i: 19.45, fB: 1.60 }, { i: 17.42, fB: 1.75 },
+          { i: 16.00, fB: 1.55 }, { i: 14.45, fB: 2.00 }, { i: 12.56, fB: 2.20 }, { i: 11.17, fB: 1.85 },
+          { i: 10.00, fB: 2.10 }, { i: 8.29, fB: 2.30 }, { i: 7.21, fB: 2.50 },
+        ],
+      },
+      15: {
+        '4P': [
+          { i: 31.39, fB: 0.90 }, { i: 27.88, fB: 0.95 }, { i: 24.92, fB: 1.00 }, { i: 22.41, fB: 1.05 },
+          { i: 19.45, fB: 1.20 }, { i: 17.42, fB: 1.30 }, { i: 16.00, fB: 1.15 }, { i: 14.45, fB: 1.50 },
+          { i: 12.56, fB: 1.60 }, { i: 11.17, fB: 1.35 }, { i: 10.00, fB: 1.55 }, { i: 8.29, fB: 1.70 },
+          { i: 7.21, fB: 1.85 },
+        ],
+      },
+      18.5: {
+        '4P': [
+          { i: 24.92, fB: 0.85 }, { i: 22.41, fB: 0.85 }, { i: 19.45, fB: 1.00 }, { i: 17.42, fB: 1.05 },
+          { i: 14.45, fB: 1.20 }, { i: 12.56, fB: 1.30 }, { i: 11.17, fB: 1.10 }, { i: 10.00, fB: 1.25 },
+          { i: 8.29, fB: 1.40 }, { i: 7.21, fB: 1.50 },
+        ],
+      },
+    },
+  },
+
+  S: {
+    // S77: { 5.5: [ { i, fB }, ... ] }
+  },
+};
+
+
+function getServiceFactorFB(series, sizeCode, motorKw, pole, ratio) {
+  // แปลง pole ให้เป็นรูปแบบ '4P','6P','8P' (ถ้าเป็นตัวเลข/ไม่มี P)
+  const poleKey = String(pole).toUpperCase().endsWith('P')
+    ? String(pole).toUpperCase()
+    : `${pole}P`;
+
+  const list =
+    SERVICE_FACTOR_DB?.[series]?.[sizeCode]?.[Number(motorKw)]?.[poleKey]
+    // บางหน้าไม่แยก pole ให้ลอง bucket '—' เป็น fallback เท่านั้น
+    || SERVICE_FACTOR_DB?.[series]?.[sizeCode]?.[Number(motorKw)]?.['—']
+    || null;
+
+  if (!list || !list.length) return null;
+
+  const r = Number(ratio);
+  const exact = list.find(row => Math.abs(Number(row.i) - r) < 1e-6);
+  if (exact) return Number(exact.fB);
+
+  const sorted = [...list].sort((a, b) => Number(a.i) - Number(b.i));
+  let lo = null, hi = null;
+  for (let i = 0; i < sorted.length; i++) {
+    const cur = sorted[i];
+    if (Number(cur.i) <= r) lo = cur;
+    if (Number(cur.i) >= r) { hi = cur; break; }
+  }
+  if (!lo) return hi ? Number(hi.fB) : null;
+  if (!hi) return lo ? Number(lo.fB) : null;
+  if (Number(hi.i) === Number(lo.i)) return Number(lo.fB);
+
+  const t = (r - Number(lo.i)) / (Number(hi.i) - Number(lo.i));
+  return Number(lo.fB) + t * (Number(hi.fB) - Number(lo.fB));
+}
+
+// [UPDATE] RKFS Drawing 2D path resolver — อิง rkfsDesign
+function rkfsDrawingPdfPathByDesign(design, size) {
+  const d = String(design || '').toUpperCase().replace(/\s+/g, ''); // เช่น 'R', 'RF', 'RX', 'RXF', ...
+  const n = Number(size);
+  if (!Number.isFinite(n)) return null;
+
+  // กติกา:
+  // - ถ้า Design ขึ้นต้นด้วย 'RX' (เช่น RX, RXF) => GRX + เลขเดิม (ไม่ +2)
+  // - อื่น ๆ (R, RF, R...) => GR + (เลข +2)
+  if (d.startsWith('RX')) {
+    return `/model/pdf/RKFS/R/GRX${n}.pdf`;
+  }
+  return `/model/pdf/RKFS/R/GR${n + 2}.pdf`;
+}
+
+// [REPLACE] ดาวน์โหลด Drawing 2D แบบลองหลาย candidate และตรวจว่าเป็น PDF จริง
+async function downloadRkfsDrawingPDF(design, size, modelCode) {
+  const d = String(design || '').toUpperCase().replace(/\s+/g, ''); // 'R','RF','RX','RXF',...
+  const n = Number(size);
+  if (!Number.isFinite(n)) {
+    alert('ขนาด (size) ไม่ถูกต้อง');
+    return;
+  }
+
+  // --- กำหนด candidate ตามกติกา ---
+  let candidates = [];
+  if (d.startsWith('RX')) {
+    // RX / RXF: ก่อนหน้าอยากได้ GRX{n} ตรง ๆ แต่ไฟล์จริงในโฟลเดอร์เป็นระยะห่าง 2
+    candidates = [`GRX${n}`, `GRX${n + 2}`, `GRX${n - 2}`];
+  } else {
+    // R / RF: ใช้ +2 เป็นหลัก แต่กันพลาดด้วย n และ n-2
+    candidates = [`GR${n + 2}`, `GR${n}`, `GR${n - 2}`];
+  }
+
+  // พาธภายใต้ public: /public/model/pdf/RKFS/R/xxx.pdf -> URL = /model/pdf/RKFS/R/xxx.pdf
+  const base = `/model/pdf/RKFS/R/`;
+
+  // --- ลองทีละตัวและตรวจว่าเป็น PDF จริง ---
+  for (const fileBase of candidates) {
+    const relPath = `${base}${fileBase}.pdf`;
+    try {
+      const res = await fetch(relPath, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+      const blob = await res.blob();
+      const isPdf = ct.includes('pdf') || (blob.type && blob.type.toLowerCase().includes('pdf'));
+      if (!isPdf) continue;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = String(modelCode || fileBase).replace(/[^\w.-]/g, "_");
+           a.download = `${safeName}.pdf`;    
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      return; // ✅ เจอแล้ว ออกเลย
+    } catch (_) {
+      // ลองตัวถัดไป
+    }
+  }
+
+  // ถ้าไม่เจอเลย
+  alert(`ไม่พบไฟล์ PDF ใด ๆ ตามตัวเลือกต่อไปนี้:\n${candidates
+    .map(x => `${base}${x}.pdf`)
+    .join('\n')}\n\nตรวจชื่อไฟล์ใน: C:\\Users\\Haruj\\gear-motor-app\\public\\model\\pdf\\RKFS\\R`);
+}
 
 const rkfsAMByPower = { '0.18':'AM63','0.25':'AM71','0.37':'AM71','0.55':'AM80','0.75':'AM80',
   '1.1':'AM90','1.5':'AM90','2.2':'AM100','3':'AM100','4':'AM112','5.5':'AM132','7.5':'AM132','9.2':'AM132',
@@ -2880,7 +3282,7 @@ const clickSweep = (e, run) => {
           <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือก Pole Motor</h3>
           <div className="flex flex-wrap gap-3">
             <br />
-            {["4P","6P"].map(pole =>(
+            {["4P","6P","8P"].map(pole =>(
               <button
                 key={pole}
                 onClick={(e) => clickSweep(e, () => update("rkfsPole", pole))}
@@ -3718,6 +4120,132 @@ if (!inputShaftDia && rkfsSeries && rkfsSize) {
         YVPEJ:"Variable Frequency Brake Motor",
         YB:   "Explosion-proof Motor"
       };
+            // [ADD] MOTOR_DB: ตารางข้อมูลมอเตอร์ แยกตาม Pole และ Motor Type (YE3/YE4/ฯลฯ)
+// โครงสร้าง: MOTOR_DB[poleKey][typeKey][kW] = { speed, eff, pf, current:{'380':A,'400':A,'415':A} }
+// หมายเหตุ:
+// - ให้คุณเติมค่าจริงจากตารางรูปภาพลงในชุด 'YE3' และ 'YE4' (อย่างน้อย 4P ก่อน)
+// - รุ่นอื่น ๆ (YEJ/YVP/YVPEJ/YB) จะ fallback ไปที่ 'BASE' หรือ 'YE3' อัตโนมัติ
+const MOTOR_DB = {
+  '4P': {
+  YE3: {
+    '0.55': { speed: 1400, eff: 80.8, pf: 0.75, current: { '380': 1.4,  '400': 1.3,  '415': 1.3 } },
+    '0.75': { speed: 1420, eff: 82.5, pf: 0.75, current: { '380': 1.8,  '400': 1.7,  '415': 1.7 } },
+    '1.1' : { speed: 1445, eff: 84.1, pf: 0.76, current: { '380': 2.6,  '400': 2.5,  '415': 2.4 } },
+    '1.5' : { speed: 1445, eff: 85.3, pf: 0.77, current: { '380': 3.5,  '400': 3.3,  '415': 3.2 } },
+    '2.2' : { speed: 1435, eff: 86.7, pf: 0.81, current: { '380': 4.8,  '400': 4.5,  '415': 4.4 } },
+    '3'   : { speed: 1435, eff: 87.7, pf: 0.82, current: { '380': 6.3,  '400': 6.0,  '415': 5.8 } },
+    '4'   : { speed: 1435, eff: 88.6, pf: 0.82, current: { '380': 8.4,  '400': 7.9,  '415': 7.7 } },
+    '5.5' : { speed: 1460, eff: 89.6, pf: 0.83, current: { '380': 11.2, '400': 10.7, '415': 10.3 } },
+    '7.5' : { speed: 1460, eff: 90.4, pf: 0.84, current: { '380': 15.0, '400': 14.3, '415': 13.7 } },
+    '11'  : { speed: 1465, eff: 91.4, pf: 0.85, current: { '380': 21.5, '400': 20.4, '415': 19.7 } },
+    '15'  : { speed: 1465, eff: 92.1, pf: 0.86, current: { '380': 28.8, '400': 27.3, '415': 26.3 } },
+    '18.5': { speed: 1470, eff: 92.6, pf: 0.86, current: { '380': 35.3, '400': 33.5, '415': 32.3 } },
+    '22'  : { speed: 1470, eff: 93.0, pf: 0.86, current: { '380': 41.8, '400': 39.7, '415': 38.3 } },
+    '30'  : { speed: 1475, eff: 93.6, pf: 0.86, current: { '380': 56.6, '400': 53.8, '415': 51.9 } },
+    '37'  : { speed: 1485, eff: 93.9, pf: 0.86, current: { '380': 69.6, '400': 66.1, '415': 63.7 } },
+    '45'  : { speed: 1485, eff: 94.2, pf: 0.86, current: { '380': 84.4, '400': 80.2, '415': 77.3 } },
+    '55'  : { speed: 1485, eff: 94.6, pf: 0.86, current: { '380': 102.7,'400': 97.6, '415': 94.1 } },
+    '75'  : { speed: 1486, eff: 95.0, pf: 0.88, current: { '380': 136.3,'400': 129.5,'415': 124.8 } },
+    '90'  : { speed: 1486, eff: 95.2, pf: 0.88, current: { '380': 163.2,'400': 155.1,'415': 149.5 } },
+    '110' : { speed: 1488, eff: 95.4, pf: 0.89, current: { '380': 196.8,'400': 187.0,'415': 180.2 } },
+    '132' : { speed: 1488, eff: 95.6, pf: 0.89, current: { '380': 235.7,'400': 223.9,'415': 215.8 } },
+    '160' : { speed: 1488, eff: 95.8, pf: 0.89, current: { '380': 285.1,'400': 270.9,'415': 261.1 } },
+    '200' : { speed: 1488, eff: 96.0, pf: 0.90, current: { '380': 351.7,'400': 334.1,'415': 322.0 } },
+    '250' : { speed: 1490, eff: 96.0, pf: 0.90, current: { '380': 439.6,'400': 417.7,'415': 402.6 } },
+    '315' : { speed: 1490, eff: 96.0, pf: 0.90, current: { '380': 553.9,'400': 526.2,'415': 507.2 } },
+  },
+    YE4: {
+      // ⬇⬇ เติมค่าจริงของ IE4 (ตัวเลข speed/eff/pf/current ที่ต่างจาก IE3) ⬇⬇
+      // '0.55': { speed: 1450, eff: 84.0, pf: 0.78, current: { '380': 1.3, '400': 1.2, '415': 1.2 } },
+      // …
+    },
+
+    // BASE = ค่าพื้นฐานไว้ใช้ fallback ให้รุ่นอื่น (เช่นใช้ชุด YE3 เป็นฐาน)
+    BASE: 'YE3',
+  },
+
+  '6P': {
+    YE3: {
+    '0.37': { speed: 895, eff: 62.0, pf: 0.70, current: { '380': 1.3,  '400': 1.2,  '415': 1.2 } },
+    '0.55': { speed: 890, eff: 73.6, pf: 0.72, current: { '380': 1.6,  '400': 1.5,  '415': 1.4 } },
+    '0.75': { speed: 935, eff: 78.9, pf: 0.72, current: { '380': 2.0,  '400': 1.9,  '415': 1.8 } },
+    '1.1' : { speed: 945, eff: 81.0, pf: 0.73, current: { '380': 2.8,  '400': 2.7,  '415': 2.6 } },
+    '1.5' : { speed: 949, eff: 82.5, pf: 0.74, current: { '380': 3.7,  '400': 3.5,  '415': 3.4 } },
+    '2.2' : { speed: 955, eff: 84.3, pf: 0.74, current: { '380': 5.4,  '400': 5.1,  '415': 4.9 } },
+    '3'   : { speed: 968, eff: 85.6, pf: 0.74, current: { '380': 6.4,  '400': 6.2,  '415': 6.0 } },
+    '4'   : { speed: 968, eff: 86.8, pf: 0.74, current: { '380': 9.5,  '400': 9.0,  '415': 8.7 } },
+    '5.5' : { speed: 968, eff: 88.0, pf: 0.75, current: { '380': 12.7, '400': 11.9, '415': 11.3 } },
+    '7.5' : { speed: 970, eff: 90.3, pf: 0.80, current: { '380': 16.2, '400': 15.4, '415': 14.6 } },
+    '11'  : { speed: 970, eff: 90.3, pf: 0.80, current: { '380': 23.1, '400': 22.0, '415': 21.2 } },
+    '15'  : { speed: 978, eff: 91.2, pf: 0.81, current: { '380': 30.9, '400': 29.2, '415': 28.2 } },
+    '18.5': { speed: 980, eff: 91.7, pf: 0.81, current: { '380': 37.8, '400': 36.4, '415': 34.7 } },
+    '22'  : { speed: 980, eff: 92.2, pf: 0.81, current: { '380': 44.8, '400': 42.5, '415': 41.0 } },
+    '30'  : { speed: 980, eff: 92.9, pf: 0.83, current: { '380': 59.1, '400': 56.2, '415': 54.1 } },
+    '37'  : { speed: 985, eff: 93.3, pf: 0.84, current: { '380': 71.7, '400': 68.1, '415': 65.7 } },
+    '45'  : { speed: 985, eff: 93.7, pf: 0.85, current: { '380': 85.8, '400': 81.6, '415': 78.6 } },
+    '55'  : { speed: 985, eff: 94.1, pf: 0.86, current: { '380': 103.3,'400': 98.1, '415': 94.6 } },
+    '75'  : { speed: 1000, eff: 94.6, pf: 0.84, current: { '380': 143.4,'400': 136.2,'415': 131.3 } },
+    '90'  : { speed: 988, eff: 94.9, pf: 0.85, current: { '380': 169.5,'400': 161.0,'415': 155.2 } },
+    '110' : { speed: 988, eff: 95.1, pf: 0.85, current: { '380': 206.8,'400': 196.4,'415': 189.3 } },
+    '132' : { speed: 988, eff: 95.4, pf: 0.86, current: { '380': 244.5,'400': 232.2,'415': 223.8 } },
+    '160' : { speed: 990, eff: 95.6, pf: 0.86, current: { '380': 295.7,'400': 280.2,'415': 270.7 } },
+    '200' : { speed: 990, eff: 95.8, pf: 0.87, current: { '380': 364.6,'400': 346.4,'415': 333.8 } },
+    '250' : { speed: 990, eff: 95.8, pf: 0.87, current: { '380': 455.7,'400': 433.0,'415': 417.3 } },
+  },
+    YE4: {
+      // '0.55': { speed: 960, eff: 81.0, pf: 0.72, current: { '380': 1.4, '400': 1.3, '415': 1.3 } },
+    },
+    BASE: 'YE3',
+  },
+
+  '8P': {
+    YE3: {
+    '0.18': { speed: 650, eff: 51.0, pf: 0.61, current: { '380': 0.9,  '400': 0.8,  '415': 0.8 } },
+    '0.25': { speed: 650, eff: 54.0, pf: 0.61, current: { '380': 1.2,  '400': 1.1,  '415': 1.1 } },
+    '0.37': { speed: 675, eff: 62.0, pf: 0.61, current: { '380': 1.5,  '400': 1.4,  '415': 1.4 } },
+    '0.55': { speed: 675, eff: 63.0, pf: 0.61, current: { '380': 2.2,  '400': 2.1,  '415': 2.0 } },
+    '0.75': { speed: 685, eff: 68.7, pf: 0.67, current: { '380': 2.5,  '400': 2.4,  '415': 2.3 } },
+    '1.1' : { speed: 685, eff: 70.7, pf: 0.67, current: { '380': 3.5,  '400': 3.4,  '415': 3.2 } },
+    '1.5' : { speed: 695, eff: 72.8, pf: 0.71, current: { '380': 4.4,  '400': 4.2,  '415': 4.0 } },
+    '2.2' : { speed: 710, eff: 77.9, pf: 0.71, current: { '380': 6.0,  '400': 5.7,  '415': 5.5 } },
+    '3'   : { speed: 710, eff: 78.9, pf: 0.73, current: { '380': 7.9,  '400': 7.5,  '415': 7.2 } },
+    '4'   : { speed: 725, eff: 79.9, pf: 0.73, current: { '380': 10.4, '400': 9.9,  '415': 9.5 } },
+    '5.5' : { speed: 725, eff: 82.0, pf: 0.74, current: { '380': 13.8, '400': 13.1, '415': 12.6 } },
+    '7.5' : { speed: 725, eff: 84.0, pf: 0.75, current: { '380': 18.1, '400': 17.2, '415': 16.6 } },
+    '11'  : { speed: 735, eff: 86.4, pf: 0.75, current: { '380': 25.8, '400': 24.5, '415': 23.6 } },
+    '15'  : { speed: 730, eff: 86.9, pf: 0.76, current: { '380': 34.5, '400': 32.8, '415': 31.6 } },
+    '18.5': { speed: 730, eff: 89.1, pf: 0.76, current: { '380': 41.5, '400': 39.4, '415': 38.0 } },
+    '22'  : { speed: 730, eff: 89.6, pf: 0.78, current: { '380': 47.8, '400': 45.4, '415': 43.8 } },
+    '30'  : { speed: 735, eff: 90.4, pf: 0.79, current: { '380': 63.8, '400': 60.6, '415': 58.4 } },
+    '37'  : { speed: 735, eff: 90.9, pf: 0.79, current: { '380': 78.3, '400': 74.4, '415': 71.7 } },
+    '45'  : { speed: 735, eff: 91.4, pf: 0.79, current: { '380': 94.7, '400': 90.0, '415': 86.7 } },
+    '55'  : { speed: 735, eff: 92.3, pf: 0.80, current: { '380': 113.2,'400': 107.5,'415': 103.6 } },
+    '75'  : { speed: 735, eff: 93.2, pf: 0.80, current: { '380': 152.8,'400': 145.2,'415': 139.9 } },
+    '90'  : { speed: 735, eff: 93.5, pf: 0.80, current: { '380': 182.8,'400': 173.7,'415': 167.4 } },
+    '110' : { speed: 735, eff: 93.5, pf: 0.82, current: { '380': 218.0,'400': 207.1,'415': 199.6 } },
+    '132' : { speed: 740, eff: 93.8, pf: 0.82, current: { '380': 260.8,'400': 247.7,'415': 238.8 } },
+    '160' : { speed: 740, eff: 94.0, pf: 0.82, current: { '380': 315.4,'400': 299.6,'415': 288.8 } },
+    '200' : { speed: 740, eff: 94.2, pf: 0.83, current: { '380': 388.7,'400': 369.2,'415': 355.9 } },
+  },
+    YE4: { /* ... */ },
+    BASE: 'YE3',
+  },
+};
+
+// [ADD] ตัวแมปชนิดมอเตอร์ → คีย์ชุดข้อมูลใน MOTOR_DB
+// - YE3 → YE3
+// - YE4 → YE4
+// - รุ่นอื่น (YEJ/YVP/YVPEJ/YB) → ไปตาม BASE ของ pole นั้น ๆ (เช่น YE3) จนกว่าจะมีข้อมูลเฉพาะของรุ่นนั้น
+const MOTOR_TYPE_KEY = (type) => {
+  if (!type) return null;
+  const t = String(type).toUpperCase();
+  if (t === 'YE3') return 'YE3';
+  if (t === 'YE4') return 'YE4';
+  // ยังไม่มีตารางของรุ่นเบรก/อินเวอร์เตอร์/กันระเบิด → fallback
+  if (['YEJ','YVP','YVPEJ','YB'].includes(t)) return null; // ให้ไปใช้ BASE
+  return null;
+};
+            
       const motorTypeNote = motorTypeDescMap[rkfsMotorType] || "-";
 
       // --- NEW: Key สำหรับแมปค่าตามดีไซน์+ไซซ์ ---
@@ -4073,23 +4601,118 @@ if (!inputShaftDia && rkfsSeries && rkfsSize) {
 
 {/* [ADD] INPUT: แสดงขนาดเพลาขาเข้า */}
 {rkfsInputSel === 'INPUT Shaft' && (
-  <div>Input shaft diameter : <span className="text-blue-400 font-extrabold text-xl"><b>{inputShaftDia ? `${inputShaftDia.replace('Ø','Ø')} mm` : '—'}</b></span></div>
+  <div>
+    Input shaft diameter :
+    <span className="text-blue-400 font-extrabold text-xl">
+      <b>{inputShaftDia ? `${inputShaftDia.replace('Ø','Ø')} mm` : '—'}</b>
+    </span>
+  </div>
 )}
-   {rkfsInputSel === 'IEC Adapter Motor' ? (
+
+{rkfsInputSel === 'IEC Adapter Motor' ? (
   <div>
     Motor Type : For motor (<b>{mKWs || '-'}</b>) kW , Frame size : (<b>{amCodeForKW || '-'}</b>)
   </div>
 ) : rkfsInputSel === 'INPUT Shaft' ? (
-  <div>
-    Motor Type : For your design.
-  </div>
+  <div>Motor Type : For your design.</div>
 ) : (
-  <div>
-    Motor Type : <b>{mKWs}</b> kW , <b>{poleS}</b> Pole , 3Phase380VAC,50Hz,IP55,Class F, <b>{mType}</b>, <b>{motorTypeNote}</b>.
-  </div>
+  (() => {
+  // --- ดึงค่า Pole แบบปลอดภัย (หลีกเลี่ยง ReferenceError) ---
+  const poleDisp =
+    (typeof poleS !== 'undefined' && poleS) || rkfsPole || motorPole || selectedPole || '—';
+  const poleKey =
+    (typeof poleS !== 'undefined' && poleS) || rkfsPole || motorPole || selectedPole || '4P';
+
+  const typeKey = (typeof MOTOR_TYPE_KEY === 'function' ? MOTOR_TYPE_KEY(mType) : null);
+  const poleTable = (typeof MOTOR_DB !== 'undefined' && MOTOR_DB[poleKey]) || {};
+  const baseKey = poleTable.BASE || 'YE3';
+  const tableForType = (typeKey && poleTable[typeKey]) || poleTable[baseKey] || {};
+  const k = String(mKWs ?? '');
+  const row = tableForType[k] || null;
+
+  const ratedSpeed = row?.speed ?? null;
+  const eff100 = row?.eff ?? '—';
+  const pf = row?.pf ?? '—';
+  const a380 = row?.current?.['380'] ?? '—';
+  const a400 = row?.current?.['400'] ?? '—';
+  const a415 = row?.current?.['415'] ?? '—';
+
+  return (
+    <>
+      <div>
+        Rated Power : <b>{mKWs}</b> kW , <b>{poleDisp}</b> Pole , Standard flange-mounted
+      </div>
+      <div>Rated Speed : <b>{ratedSpeed ?? '—'}</b> rpm</div>
+      <div>Specification Motor: 3Phase 380VAC,50Hz/60Hz</div>
+      <div>
+        Rated Current : 380V: <b>{a380}</b> A, 400V: <b>{a400}</b> A , 415V : <b>{a415}</b> A , Efficiency 100% : <b>{eff100}</b> %
+      </div>
+      <div>
+        Protection IP55, Insulation Class F: ทนอุณหภูมิได้สูงสุด 155°C, <b>{mType}</b>, <b>{motorTypeNote}</b>.
+      </div>
+      {/* <div>Power Factor : <b>{pf}</b></div> */}
+    </>
+  );
+})()
 )}
-          <div>Output speed (rpm) : <b>{outRPM ? outRPM.toFixed(2) : '-'}</b></div>
-          <div>Output Torque (N·m) : <b>{outTorque ? outTorque.toFixed(2) : '-'}</b></div>
+{(() => {
+  const poleKey =
+    (typeof poleS !== 'undefined' && poleS) || rkfsPole || motorPole || selectedPole || '4P';
+
+  const typeKey = (typeof MOTOR_TYPE_KEY === 'function' ? MOTOR_TYPE_KEY(mType) : null);
+  const poleTable = (typeof MOTOR_DB !== 'undefined' && MOTOR_DB[poleKey]) || {};
+  const baseKey = poleTable.BASE || 'YE3';
+  const tableForType = (typeKey && poleTable[typeKey]) || poleTable[baseKey] || {};
+  const k = String(mKWs ?? '');
+  const row = tableForType[k] || null;
+  const ratedSpeed = row?.speed ?? null;
+  const ratioNum = Number(typeof ratio !== 'undefined' ? ratio : rkfsRatio);
+  const out = (typeof ratedSpeed === 'number' && ratioNum > 0) ? ratedSpeed / ratioNum : null;
+
+  return (
+    <div>
+      Output speed (rpm) : <b>{out !== null ? out.toFixed(2) : '—'}</b>
+    </div>
+  );
+})()}
+{(() => {
+  const poleKey =
+    (typeof poleS !== 'undefined' && poleS) || rkfsPole || motorPole || selectedPole || '4P';
+
+  const typeKey = (typeof MOTOR_TYPE_KEY === 'function' ? MOTOR_TYPE_KEY(mType) : null);
+  const poleTable = (typeof MOTOR_DB !== 'undefined' && MOTOR_DB[poleKey]) || {};
+  const baseKey = poleTable.BASE || 'YE3';
+  const tableForType = (typeKey && poleTable[typeKey]) || poleTable[baseKey] || {};
+  const k = String(mKWs ?? '');
+  const row = tableForType[k] || null;
+   const ratedSpeed = row?.speed ?? null;
+  const ratioNum = Number(typeof ratio !== 'undefined' ? ratio : rkfsRatio);
+  const outSpeed = (typeof ratedSpeed === 'number' && ratioNum > 0) ? ratedSpeed / ratioNum : null;
+
+  const kW = Number(mKWs);
+  const torque = (outSpeed && kW > 0) ? (9550 * kW) / outSpeed : null;
+
+  return (
+    <div>
+      Output Torque (N·m) : <b>{torque !== null ? torque.toFixed(2) : '—'}</b>
+    </div>
+  );
+})()}
+                    {(() => {
+  const gearSizeCode = `${rkfsSeries}${rkfsSize}`;            
+  const fB = getServiceFactorFB(
+    rkfsSeries,
+    gearSizeCode,
+    rkfsMotorPower,
+    rkfsPole,                                           
+    rkfsRatio
+  );
+  return (
+    <div>
+      Service Factor (fB) : <b>{fB ? fB.toFixed(2) : '—'}</b>
+    </div>
+  );
+})()}
           <div>Shaft Direction : <b>{shaftPos}</b></div>
           <div>Mouting Position : <b>{MTP}</b></div>
           <div>ระดับการเติมน้ำมันเกียร์ : <b>{oilLiters != null ? oilLiters : '—'} ลิตร (liters)</b></div>
@@ -4101,6 +4724,72 @@ if (!inputShaftDia && rkfsSeries && rkfsSize) {
             {' '}<span className="text-red-200 font-semibold">**โปรดระบุขนาดก่อนยืนยันสั่งซื้อ</span>
           </div>
           <div><span className="text-yellow-400 font-extrabold text-l">Warranty : <b>2 Years</b></span></div>
+          {/* [ADD] RKFS Design preview (ขวากลางการ์ด) */}
+{(() => {
+  // map รูปสำหรับสรุป (ใช้เฉพาะตรงนี้ ไม่กระทบส่วนเลือกดีไซน์เดิม)
+  const designImageMap = {
+    R: { R: RImg, RF: RFImg, RX: RXImg, RXF: RXFImg, RM: RMImg },
+    K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg },
+    F: { F: FImg, FA: FAImg, FAF: FAFImg, FAZ: FAZImg, FF: FFImg },
+    S: { S: SImg, SA: SAImg, SAF: SAFImg, SAT: SATImg, SAZ: SAZImg }
+  };
+
+  const imgSrc =
+    (rkfsSeries && rkfsDesign && designImageMap[rkfsSeries]?.[rkfsDesign]) || null;
+
+  if (!imgSrc) return null;
+
+  return (
+    <div
+      className="absolute right-8 top-1/4 -translate-y-1/2
+                 w-[300px] max-w-[25%] h-[300px] pointer-events-none"
+      aria-hidden="true"
+    >
+      <img
+        src={imgSrc}
+        alt={rkfsDesign}
+        className="w-full h-full object-contain opacity-95 drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] rounded-xl"
+        draggable={false}
+      />
+    </div>
+  );
+})()}        
+<div className="absolute right-6 bottom-4 flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/15">
+  <span className="text-white/80 text-sm">จำนวน</span>
+
+  <button
+  type="button"
+  onClick={() => {
+    const q = Number(state.rkfsQty ?? 1);
+       update('rkfsQty', Math.max(1, q - 1));
+  }}
+  className="w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 text-white text-lg leading-none"
+  aria-label="ลดจำนวน"
+>−</button>
+
+<input
+  type="number"
+  min={1}
+  max={999}
+  value={state.rkfsQty ?? 1}
+  onChange={e => {
+    const v = parseInt(e.target.value, 10);
+    const next = Number.isFinite(v) ? Math.max(1, Math.min(999, v)) : 1;
+    update('rkfsQty', next);
+  }}
+  className="w-14 text-center bg-transparent border border-white/20 rounded-md py-1 text-white"
+/>
+
+<button
+  type="button"
+  onClick={() => {
+  const q = Number(state.rkfsQty ?? 1);
+     update('rkfsQty', Math.min(999, q + 1));
+  }}
+  className="w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 text-white text-lg leading-none"
+  aria-label="เพิ่มจำนวน"
+>+</button>
+</div>
         </div>
       );
     })()}
@@ -4124,13 +4813,86 @@ if (!inputShaftDia && rkfsSeries && rkfsSize) {
       }
 
       return (
-        <button
-          type="button"
-          onClick={() => onConfirm(confirmModel)}
-          className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 shadow"
-        >
-          ✅ รับไฟล์ 3D
-        </button>
+        <div className="flex items-center justify-center mt-4 w-full gap-2 md:gap-14">
+  {/* ซ้าย: Drawing 2D */}
+  <button
+    type="button"
+    onClick={() => downloadRkfsDrawingPDF(rkfsDesign, rkfsSize, confirmModel)}
+    className="bg-white/10 text-white px-6 py-3 rounded-lg hover:bg-white/20 shadow border border-white/20"
+  >
+    📐 Drawing 2D
+  </button>
+
+  {/* กลาง: ปุ่มเดิม “รับไฟล์ 3D” — คง callback เดิม */}
+  <button
+    type="button"
+    onClick={() => onConfirm(confirmModel)}
+    className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 shadow"
+  >
+    ✅ รับไฟล์ 3D
+  </button>
+
+  <button
+  type="button"
+  className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 shadow"
+  onClick={(e) => {
+    // กัน event ไม่ให้ไปติด onClick ของ parent (ที่พาไป flow 3D)
+    e.stopPropagation();
+    e.preventDefault();
+
+    // === สร้าง summary ตามที่คุณมีอยู่เดิม ===
+    const mKWs  = state?.rkfsMotorPower ?? null;
+    const mType = state?.rkfsMotorType  ?? 'YE3';
+    const poleS = state?.rkfsPole       ?? '4P';
+
+    const up = String(poleS).toUpperCase();
+    const poleKey = up.includes('8') ? '8P' : (up.includes('6') ? '6P' : '4P');
+
+    const typeKey = (typeof MOTOR_TYPE_KEY === 'function') ? MOTOR_TYPE_KEY(mType) : null;
+    const poleTable = (typeof MOTOR_DB !== 'undefined' && MOTOR_DB[poleKey]) || {};
+    const baseKey = poleTable.BASE || 'YE3';
+    const tableForType = (typeKey && poleTable[typeKey]) || poleTable[baseKey] || {};
+    const row = tableForType[String(mKWs ?? '')] || null;
+
+    const ratedSpeed = row?.speed ?? null;
+    const eff100 = row?.eff ?? null;
+    const pf = row?.pf ?? null;
+    const a380 = row?.current?.['380'] ?? null;
+    const a400 = row?.current?.['400'] ?? null;
+    const a415 = row?.current?.['415'] ?? null;
+
+    const ratioNum = Number(state?.rkfsRatio);
+    const outSpeed = (ratedSpeed && ratioNum > 0) ? ratedSpeed / ratioNum : null;
+    const kW = Number(mKWs);
+    const outTq = (outSpeed && kW > 0) ? (9550 * kW) / outSpeed : null;
+
+    const summary = {
+      product: 'RKFS Series',
+      modelCode: (typeof confirmModel !== 'undefined' && confirmModel) || (typeof selectedModel !== 'undefined' && selectedModel) || '',
+      series: state?.rkfsSeries ?? '',
+      design: state?.rkfsDesign ?? '',
+      gearSize: state?.rkfsSize ?? '',
+      ratio: ratioNum || '',
+      motor_kw: mKWs || '',
+      pole: poleKey,
+      motor_type: mType || '',
+      motor_note: state?.motorTypeNote || '',
+      rated_speed: ratedSpeed,
+      eff100, pf,
+      current_380: a380, current_400: a400, current_415: a415,
+      out_speed: outSpeed ? Number(outSpeed.toFixed(2)) : null,
+      out_torque: outTq ? Number(outTq.toFixed(2)) : null,
+      qty: state?.rkfsQty ?? 1,
+    };
+
+    // เปิด MODAL ฟอร์ม (อยู่หน้าเดิม) – ใช้ handler ที่ App.jsx ส่งเข้ามา
+    onRequestQuote && onRequestQuote(summary);
+  }}
+>
+  🧾 ขอใบเสนอราคา
+</button>
+
+</div>
       );
     })()}
     <div
@@ -6907,12 +7669,63 @@ const motorTypeLabel = srvMotorType ? (motorTypeLabelMap[srvMotorType] || srvMot
 </p>
         </div>
 
-        <button
-          onClick={() => onConfirm(code)}
-          className="mt-3 px-6 py-3 rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition bg-emerald-500 text-white font-semibold"
-        >
-          ยืนยันและรับไฟล์ 3D
-        </button>
+<div className="mt-6 flex items-center w-full">
+  {/* ซ้าย: Drawing 2D PDF */}
+  <div className="flex-1">
+    <button
+      type="button"
+      onClick={() => {
+        // TODO: ใช้ฟังก์ชันดาวน์โหลด PDF ของ SRV ที่คุณมี
+        // เช่น downloadSrvDrawingPDF(srvState, confirmModel) หรือพารามิเตอร์ที่คุณใช้จริง
+        if (typeof downloadSrvDrawingPDF === 'function') {
+          downloadSrvDrawingPDF(srvState, confirmModel);
+        } else {
+          console.warn('downloadSrvDrawingPDF() not found');
+        }
+      }}
+      className="bg-white/10 text-white px-6 py-3 rounded-lg hover:bg-white/20 shadow border border-white/20"
+    >
+      📐 Drawing 2D
+    </button>
+  </div>
+
+  {/* กลาง: ขอใบเสนอราคา (เดี๋ยวคุณใส่เงื่อนไขเพิ่มได้) */}
+  <div className="flex-1 flex justify-center">
+    <button
+      type="button"
+      className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 shadow"
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        // === สร้าง summary ของ SRV สำหรับส่งไป modal/อีเมล (โครงสร้างตามที่คุณใช้กับ RKFS) ===
+        const summary = {
+          product: 'SRV Series',
+          modelCode: srvModelCode,
+          // เพิ่มฟิลด์ที่คุณต้องการในใบเสนอราคาได้เลย เช่น:
+          // series: srvState?.srvSeries, size: srvState?.srvSize, ratio: srvState?.srvRatio, ...
+        };
+
+        // ส่งออกไปยัง handler ฝั่ง App.jsx (คุณต้องส่ง onSrvRequestQuote มาจาก App เหมือนที่ RKFS ทำ)
+        onRequestQuote && onRequestQuote(summary);
+      }}
+    >
+      🧾 ขอใบเสนอราคา
+    </button>
+  </div>
+
+  {/* ขวา: ยืนยันและรับไฟล์ 3D  -- ใช้ handler/เงื่อนไขเดิมทุกอย่าง */}
+  <div className="flex-1 flex justify-end">
+    <button
+      type="button"
+      onClick={() => onConfirm(srvModelCode)}
+      className="bg-green-500 text-white px-8 py-4 rounded-lg hover:bg-green-600 shadow"
+      // ^ ใช้ class/disabled เงื่อนไขเดิมของคุณได้เลย ถ้ามี
+    >
+      ✅ ยืนยันและรับไฟล์ 3D
+    </button>
+  </div>
+</div>
       </div>
     );
   })()}

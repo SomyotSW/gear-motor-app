@@ -345,8 +345,16 @@ function App() {
   // ... ในฟังก์ชัน App()
 const [modelCodeList, setModelCodeList] = useState([]);   // รายการโค้ดที่ส่งมาจาก MotorFlows
 const [selectedModel, setSelectedModel] = useState(null); // ตัวที่ถูกเลือก
-// ถ้ายังไม่มี:
 const [showForm, setShowForm] = useState(false);
+const [quoteInfo, setQuoteInfo] = useState(null);
+const [showRKFSQuote, setShowRKFSQuote] = useState(false);
+const [rkfsQuote, setRkfsQuote] = useState({
+  requester_name: '',
+  company: '',
+  phone: '',
+  email: '',
+  qty: 1,
+});
 
 
   // Hypoid Gear Flow states
@@ -391,10 +399,11 @@ const servoSetters = {
     const [rkfsPositionSub, setRkfsPositionSub] = useState(null);
     const [rkfsDesignSuffix, setRkfsDesignSuffix] = useState(null);
     const [rkfsInputSel, setRkfsInputSel] = useState(null); 
-        const [rkfsInputShaft, setRkfsInputShaft] = useState(null);
-        const [rkfsInputShaftDia, setRkfsInputShaftDia] = useState(null);
+    const [rkfsInputShaft, setRkfsInputShaft] = useState(null);
+    const [rkfsInputShaftDia, setRkfsInputShaftDia] = useState(null);
     const [rkfsINPUTshaft, setRkfsINPUTshaft]       = useState(null);
     const [rkfsINPUTshaftDia, setRkfsINPUTshaftDia] = useState(null);
+        const [rkfsQty, setRkfsQty] = useState(1);
 
     // === SRV Worm Gear states ===
 const [srvSeries, setSrvSeries] = useState(null);
@@ -544,6 +553,23 @@ const handleBackWithReset = () => {
 const handleRKFSBackToHome = () => {
   resetRKFSState();               // 🔁 รีเซตก่อนกลับหน้า Home
   setSelectedProduct(null);      // ⬅ กลับหน้าเลือก Product
+};
+
+const handleRequestQuote = (summary) => {
+  setQuoteInfo(summary);
+
+  // เตรียม model list ไว้ให้โชว์ก็ได้ (ไม่บังคับ)
+  const list = Array.isArray(summary?.modelCode)
+    ? summary.modelCode
+    : (summary?.modelCode ? [summary.modelCode] : []);
+  if (list.length) {
+    setModelCodeList(list);
+    setSelectedModel(list[0]);
+  }
+
+  // ★ เปิด "RKFS Quote Modal" (ไม่ใช่ฟอร์มรับไฟล์ 3D)
+    setShowForm(false); 
+  setShowRKFSQuote(true);
 };
 
   const [emailVerifiedCode, setEmailVerifiedCode] = useState(null);
@@ -834,18 +860,61 @@ const handleDownload = async () => {
 
   // ✅ ส่งข้อมูลลูกค้าเข้าอีเมล Somyot
   try {
-    await emailjs.send(
-      'service_s30eakb',
-      'template_4vqperj',
-      {
-        name: userInfo.name,
-        phone: userInfo.phone,
-        email: userInfo.email,
-        company: userInfo.company,
-        model: selectedModel
-      },
-      'BvIT5-X7LnkaS3LKq'
-    );
+    if (quoteInfo?.product === 'RKFS Series') {
+  await emailjs.send(
+    'service_s30eakb',
+    'template_s1b15j8', // ★ Template RKFS ใหม่
+    {
+      // --- ข้อมูลลูกค้า ---
+      requester_name: userInfo.name,
+      company: userInfo.company,
+      phone: userInfo.phone,
+      email: userInfo.email,
+      time: new Date().toLocaleString(),
+
+      // --- สรุปจาก RKFS ---
+      product: quoteInfo.product,
+      model_code: selectedModel || quoteInfo.modelCode || '-',
+      series: quoteInfo.series ?? '-',
+      design: quoteInfo.design ?? '-',
+      gear_size: quoteInfo.gearSize ?? '-',
+      ratio: quoteInfo.ratio ?? '-',
+
+      motor_kw: quoteInfo.motor_kw ?? '-',
+      pole: quoteInfo.pole ?? '-',
+      motor_type: quoteInfo.motor_type ?? '-',
+      motor_note: quoteInfo.motor_note ?? '-',
+
+      rated_speed: quoteInfo.rated_speed ?? '-',
+      eff100: quoteInfo.eff100 ?? '-',
+      pf: quoteInfo.pf ?? '-',
+      current_380: quoteInfo.current_380 ?? '-',
+      current_400: quoteInfo.current_400 ?? '-',
+      current_415: quoteInfo.current_415 ?? '-',
+
+      out_speed: quoteInfo.out_speed ?? '-',
+      out_torque: quoteInfo.out_torque ?? '-',
+      qty: quoteInfo.qty ?? 1,
+
+      extra_note: '', // ถ้ามี textarea ใน modal ให้ใส่ค่ามาที่นี่
+    },
+    'BvIT5-X7LnkaS3LKq'
+  );
+} else {
+  // เดิม: เคสอื่น ๆ (AC/ฯลฯ) ใช้ template_4vqperj เหมือนเดิม
+  await emailjs.send(
+    'service_s30eakb',
+    'template_4vqperj',
+    {
+      name: userInfo.name,
+      phone: userInfo.phone,
+      email: userInfo.email,
+      company: userInfo.company,
+      model: selectedModel
+    },
+    'BvIT5-X7LnkaS3LKq'
+  );
+}
     toast.success("✅ ส่งข้อมูลเรียบร้อยแล้ว");
   } catch (e) {
     toast.error("❌ ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่");
@@ -953,15 +1022,23 @@ const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, 
   rkfsMountingTemp,
   rkfsInputSel, 
     rkfsInputShaft,
-  rkfsInputShaftDia,              
+  rkfsInputShaftDia,rkfsQty,              
 };
   const rkfsSetters = {
   setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower,
   setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub,
   setRkfsDesignSuffix, setRkfsMountingTemp,
   setRkfsInputSel,
-    setRkfsINPUTshaft, setRkfsINPUTshaftDia, setRkfsInputShaft, setRkfsInputShaftDia,           
+    setRkfsINPUTshaft, setRkfsINPUTshaftDia, setRkfsInputShaft, setRkfsInputShaftDia, setRkfsQty,          
 };
+// [ADD] เรียกตอนกดปุ่ม "ขอใบเสนอราคา" จาก RKFS
+const handleRKFSRequestQuote = (summary) => {
+  setQuoteInfo(summary);
+    setRkfsQuote(q => ({ ...q, qty: rkfsState?.rkfsQty ?? 1 }));
+ setShowForm(false);
+ setShowRKFSQuote(true);                       
+};
+
 
 const getFileUrl = () => {
   if (!selectedModel) return '#';
@@ -1584,12 +1661,18 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
       <h2 className="text-white font-bold mb-2 drop-shadow">RKFS Series Selection</h2>
       <button className="text-blue-500 font-bold mb-2 drop-shadow" onClick={handleBackUniversal}>Home</button>
     </div>
-    {renderRKFSFlow(rkfsState, rkfsSetters,(modelCode) => {
-      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-      setModelCodeList(models);
-      setSelectedModel(models[0]);
-      setShowForm(true); 
-    })}
+    {renderRKFSFlow(
+  rkfsState,
+  rkfsSetters,
+  (listOrModel) => {
+    // ← อันนี้ไว้สำหรับปุ่ม "รับไฟล์ 3D" เท่านั้น
+    const list = Array.isArray(listOrModel) ? listOrModel : [listOrModel];
+    setModelCodeList(list);
+    setSelectedModel(list[0]);
+    setShowForm(true);
+  },
+  handleRKFSRequestQuote   // ★ ตัวเดียวกับที่ AC ใช้เปิด modal
+)}
   </>
 )}
 
@@ -1630,9 +1713,123 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
     </div>
   </>
 )}
+{/* === RKFS Quote Modal (แยกจากฟอร์มรับไฟล์ 3D) === */}
+{showRKFSQuote && (
+  <div className="fixed inset-0 z-[2000] flex items-center justify-center">
+    <div
+      className="absolute inset-0 bg-black/60"
+      onClick={() => { setShowRKFSQuote(false); setShowForm(false); setQuoteInfo(null); }}
+    />
+    <div className="relative bg-white rounded-2xl shadow-2xl w-[min(92vw,560px)] p-6">
+      <button
+        onClick={() => { setShowRKFSQuote(false); setShowForm(false); setQuoteInfo(null); }}
+        className="absolute -right-3 -top-3 bg-red-500 text-white w-9 h-9 rounded-full font-bold shadow"
+        title="ยกเลิก"
+      >×</button>
+
+      <h3 className="text-xl font-bold mb-4">ขอใบเสนอราคา RKFS Series</h3>
+
+      <div className="mb-4 text-sm">
+        <div>Model code: <b>{quoteInfo?.modelCode || selectedModel || '-'}</b></div>
+        <div className="mt-2 flex items-center gap-3">
+          <label className="w-32">จำนวนที่ต้องการ</label>
+          <input type="number" min={1}
+            value={rkfsQuote.qty ?? (rkfsState?.rkfsQty ?? 1)}
+            onChange={e => setRkfsQuote(q => ({ ...q, qty: Math.max(1, Number(e.target.value||1)) }))}
+            className="border rounded px-3 py-2 w-28" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        <div className="flex items-center gap-3">
+          <label className="w-32">ผู้ติดต่อ</label>
+          <input className="border rounded px-3 py-2 flex-1"
+            value={rkfsQuote.requester_name}
+            onChange={e => setRkfsQuote(q => ({ ...q, requester_name: e.target.value }))} />
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="w-32">บริษัท</label>
+          <input className="border rounded px-3 py-2 flex-1"
+            value={rkfsQuote.company}
+            onChange={e => setRkfsQuote(q => ({ ...q, company: e.target.value }))} />
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="w-32">เบอร์</label>
+          <input className="border rounded px-3 py-2 flex-1"
+            value={rkfsQuote.phone}
+            onChange={e => setRkfsQuote(q => ({ ...q, phone: e.target.value }))} />
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="w-32">อีเมล</label>
+          <input className="border rounded px-3 py-2 flex-1"
+            value={rkfsQuote.email}
+            onChange={e => setRkfsQuote(q => ({ ...q, email: e.target.value }))} />
+        </div>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={async () => {
+            const { requester_name, company, phone, email, qty } = rkfsQuote;
+            const model_code = quoteInfo?.modelCode || selectedModel || '';
+            if (!requester_name || !company || !phone || !email || !model_code) { alert('กรอกให้ครบ'); return; }
+            try {
+  const { requester_name, company, phone, email, qty } = rkfsQuote;
+  const model_code = quoteInfo?.modelCode || quoteInfo?.model_code || selectedModel || '';
+  if (!requester_name || !company || !phone || !email || !model_code) {
+    alert('กรอกให้ครบ'); return;
+  }
+
+  // === ส่งค่าตรงจาก MotorFlows.js (summary -> quoteInfo) ===
+  const params = {
+    // ผู้ติดต่อ + เวลาบนหัวจดหมาย
+    requester_name,
+    company,
+    phone,
+    email,
+    time: new Date().toLocaleString('th-TH'),
+
+    // สรุปสินค้า
+    product:    String(quoteInfo?.product ?? 'RKFS Series'),
+    qty:        String(qty ?? rkfsState?.rkfsQty ?? 1),
+
+    series:     String(quoteInfo?.series ?? ''),
+    design:     String(quoteInfo?.design ?? ''),
+    gear_size:  String(quoteInfo?.gearSize ?? ''),
+    ratio:      String(quoteInfo?.ratio ?? ''),
+    model_code: String(model_code),
+
+    motor_kw:   String(quoteInfo?.motor_kw ?? ''),
+    pole:       String(quoteInfo?.pole ?? ''),
+    motor_type: String(quoteInfo?.motor_type ?? ''),
+    motor_note: String(quoteInfo?.motor_note ?? ''),
+     rated_speed: String(quoteInfo?.rated_speed ?? quoteInfo?.ratedSpeed ?? ''),
+    eff100:      String(quoteInfo?.eff100 ?? ''),
+    current_380: String(quoteInfo?.current_380 ?? quoteInfo?.current380 ?? ''),
+    current_400: String(quoteInfo?.current_400 ?? quoteInfo?.current400 ?? ''),
+    current_415: String(quoteInfo?.current_415 ?? quoteInfo?.current415 ?? ''),
+    out_speed:   String(quoteInfo?.out_speed ?? quoteInfo?.outSpeed ?? ''),
+    out_torque:  String(quoteInfo?.out_torque ?? quoteInfo?.outTorque ?? ''),
+
+    // ช่องหมายเหตุในเทมเพลต (ถ้ามี)
+    extra_note:  String(rkfsQuote?.extra_note ?? ''),
+  };
+               await window.emailjs.send('service_fwgn6cw', 'template_s1b15j8', params);
+              alert('ส่งคำขอใบเสนอราคาเรียบร้อย');
+              setShowRKFSQuote(false); setShowForm(false); setQuoteInfo(null);
+            } catch (e) { console.error(e); alert('ส่งไม่สำเร็จ'); }
+          }}
+          className="px-6 py-3 rounded-2xl font-semibold text-slate-900 bg-green-300 hover:bg-green-400 shadow-[0_8px_0_#72b37a] active:translate-y-[2px] active:shadow-[0_6px_0_#72b37a]"
+        >
+          ✅ ยืนยัน
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 
-{showForm && (
+{!showRKFSQuote && showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
             <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องและรับไฟล์ .STEP ได้ทันที ไม่ต้องรอ..ตอบกลับครับ</h3>
 
