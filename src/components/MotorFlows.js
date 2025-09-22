@@ -7056,6 +7056,13 @@ export function renderSRVFlow(state, setState, onConfirm) {
             ))}
           </div>
         </Section>
+        <p className="text-blue-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+ <b></b><br/>
+  สามารถใช้สูตรคำนวณความเร็วรอบจากอัตราทดได้เลย: <b>ความเร็วหัวเกียร์ (รอบ/นาที) = ความเร็วมอเตอร์ (รอบ/นาที) ÷ อัตราทด (i)</b><br/>
+  ถ้าเลือกมอเตอร์ 4 Pole ค่าโดยประมาณ = <b>1450</b> รอบ/นาที<br/>
+  ถ้าเลือกมอเตอร์ 6 Pole ค่าโดยประมาณ = <b>950</b> รอบ/นาที<br/>
+  ถ้าเลือกอัตราทด (i) 50 = <b>ความเร็วของหัวเกียร์ = 1450 / 50 = 29 rpm </b>
+</p>
         {floatingBack(() => {
           if (srvIECMode) return update('srvIECMode', null);
           if (srvPole)     return update('srvPole', null);
