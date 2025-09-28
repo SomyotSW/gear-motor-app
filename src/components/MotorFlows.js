@@ -1120,41 +1120,49 @@ const gifForHead = (() => {
       )}
 
       {/* Voltage */}
-      {acPower && !acVoltage && (
-        <div>
-          <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Voltage : แรงดันไฟฟ้า</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { label: '1Phase220V AC 50Hz', img: SingleImg },
-              { label: '3Phase220V AC 50Hz', img: ThreeImg }
-            ].map(({ label, img }) => (
-              <button
-                key={label}
-                onClick={() => update('acVoltage', label)}
-                className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 active:scale-105"
-              >
-                <img src={img} alt={label} className="h-64 mb-2 object-contain" />
-                <span className="text-sm font-semibold">{label}</span>
-              </button>
-            ))}
-          </div>
-          <button
-  onClick={() => update('acPower', null)}
-  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
-             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
-             hover:text-white hover:bg-green-500 hover:shadow-lg
-             focus:outline-none focus:ring-2 focus:ring-green-400/60
-             active:scale-95 transition-all duration-200"
-  style={{
-    left: 'max(1rem, env(safe-area-inset-left))',
-    bottom: 'max(1rem, env(safe-area-inset-bottom))',
-  }}
->
-  ย้อนกลับ
-</button>
-        </div>
-      )}
+{acPower && !acVoltage && (
+  <div>
+    <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      Voltage : แรงดันไฟฟ้า
+    </h3>
 
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {[
+        { label: '1Phase220V AC 50Hz', img: SingleImg },
+        { label: '3Phase220V AC 50Hz', img: ThreeImg }
+      ]
+        // ⬇️ ซ่อน 3Phase เมื่อเป็น Variable Speed Motor
+        .filter(v =>
+          acMotorType === 'Variable Speed Motor' ? v.label.startsWith('1Phase') : true
+        )
+        .map(({ label, img }) => (
+          <button
+            key={label}
+            onClick={() => update('acVoltage', label)}
+            className="flex flex-col items-center bg-white rounded-xl p-3 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 active:scale-105"
+          >
+            <img src={img} alt={label} className="h-64 mb-2 object-contain" />
+            <span className="text-sm font-semibold">{label}</span>
+          </button>
+        ))}
+    </div>
+
+    <button
+      onClick={() => update('acPower', null)}
+      className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+                 bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+                 hover:text-white hover:bg-green-500 hover:shadow-lg
+                 focus:outline-none focus:ring-2 focus:ring-green-400/60
+                 active:scale-95 transition-all duration-200"
+      style={{
+        left: 'max(1rem, env(safe-area-inset-left))',
+        bottom: 'max(1rem, env(safe-area-inset-bottom))',
+      }}
+    >
+      ย้อนกลับ
+    </button>
+  </div>
+)}
       {/* Optional (multi-select + next) */}
       {acPower && acVoltage && !optConfirmed && !acGearHead && (
         <div>
