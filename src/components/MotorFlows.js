@@ -1102,6 +1102,20 @@ const gifForHead = (() => {
               </button>
             ))}
           </div>
+                    <button
+  onClick={() => update('acMotorType', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-green-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-green-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
         </div>
       )}
 
@@ -1124,6 +1138,20 @@ const gifForHead = (() => {
               </button>
             ))}
           </div>
+          <button
+  onClick={() => update('acPower', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-green-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-green-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
         </div>
       )}
 
@@ -1157,7 +1185,10 @@ const gifForHead = (() => {
             ))}
           </div>
 
-          <div className="mt-4 text-xs text-white/80">
+          <div className="fixed z-30 px-1 py-0.5 rounded text-white/80"style={{
+    left: 'max(25rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}>
             เลือกได้สูงสุด 5 ตัวเลือก (หากไม่ต้องการ Optionsเสริม : เลือก"With FAN")
           </div>
 
@@ -1170,11 +1201,33 @@ const gifForHead = (() => {
                 update('acOption', finalSel);
                 setOptConfirmed(true);
               }}
-              className="px-5 py-2 bg-green-400 text-white rounded hover:bg-green-200"
-            >
+              className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-green-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-green-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(75rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
               ถัดไป
             </button>
           </div>
+<button
+  onClick={() => update('acVoltage', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-green-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-green-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
         </div>
       )}
 
@@ -1234,10 +1287,19 @@ const gifForHead = (() => {
                       update('acGearHead', null);
                       setOptConfirmed(false);
                     }}
-                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                  >
+                    className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-green-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-green-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
                     ย้อนกลับ
                   </button>
+
                 </div>
               </div>
             );
@@ -1274,6 +1336,20 @@ const gifForHead = (() => {
           </button>
         ))}
       </div>
+      <button
+  onClick={() => update('acGearHead', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-green-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-green-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
     </div>
   </div>
 )}
@@ -1671,6 +1747,20 @@ const gifForHead = (() => {
   รับไฟล์ 3D
 </button>
     </div>
+<button
+  onClick={() => update('acRatio', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-green-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-green-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(31.8rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
   </div>
 )}
       {/* Final */}
