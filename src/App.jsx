@@ -830,7 +830,7 @@ const handleSendVerificationCode = () => {
 
   emailjs.send(
     'service_s30eakb',           // ✅ Service ID ของคุณ
-    'template_4vqperj',          // ✅ Template สำหรับส่งรหัสให้ลูกค้า
+    'template_gum65p2',          // ✅ Template สำหรับส่งรหัสให้ลูกค้า
     {
       to_email: userInfo.email,
       name: userInfo.name || 'ลูกค้า',
