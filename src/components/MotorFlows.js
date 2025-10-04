@@ -2004,7 +2004,19 @@ const backOneStep = () => {
               </motion.button>
             ))}
                         <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button
+    onClick={backOneStep}
+    className="
+      fixed bottom-4 left-4 z-50
+      px-3 py-1 text-xs md:text-sm rounded-full
+      bg-white/15 text-gray-800/90 border border-white/30
+      backdrop-blur-sm shadow-sm opacity-70
+      hover:opacity-100 hover:bg-white/25 hover:shadow-md hover:-translate-y-0.5
+      active:scale-95
+      transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-white/40
+    "
+  >
     ย้อนกลับ
   </button>
 </div>
@@ -2046,7 +2058,19 @@ const backOneStep = () => {
               </motion.button>
             ))}
                        <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button
+    onClick={backOneStep}
+    className="
+      fixed bottom-4 left-4 z-50
+      px-3 py-1 text-xs md:text-sm rounded-full
+      bg-white/15 text-gray-800/90 border border-white/30
+      backdrop-blur-sm shadow-sm opacity-70
+      hover:opacity-100 hover:bg-white/25 hover:shadow-md hover:-translate-y-0.5
+      active:scale-95
+      transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-white/40
+    "
+  >
     ย้อนกลับ
   </button>
 </div>
@@ -2098,7 +2122,19 @@ const backOneStep = () => {
               </motion.button>
             ))}
                        <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button
+    onClick={backOneStep}
+    className="
+      fixed bottom-4 left-4 z-50
+      px-3 py-1 text-xs md:text-sm rounded-full
+      bg-white/15 text-gray-800/90 border border-white/30
+      backdrop-blur-sm shadow-sm opacity-70
+      hover:opacity-100 hover:bg-white/25 hover:shadow-md hover:-translate-y-0.5
+      active:scale-95
+      transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-white/40
+    "
+  >
     ย้อนกลับ
   </button>
 </div>
@@ -2138,10 +2174,23 @@ const backOneStep = () => {
               </motion.button>
             ))}
                        <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button
+    onClick={backOneStep}
+    className="
+      fixed bottom-4 left-4 z-50
+      px-3 py-1 text-xs md:text-sm rounded-full
+      bg-white/15 text-gray-800/90 border border-white/30
+      backdrop-blur-sm shadow-sm opacity-70
+      hover:opacity-100 hover:bg-white/25 hover:shadow-md hover:-translate-y-0.5
+      active:scale-95
+      transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-white/40
+    "
+  >
     ย้อนกลับ
   </button>
 </div>
+
           </div>
 <div className="text-center mt-6">
   <span
@@ -2159,7 +2208,7 @@ const backOneStep = () => {
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Power Supply</h3>
           <div className="flex flex-wrap gap-3">
-            {(type === 'F2' ? ['C','A','S','S3'] : ['S']).map(s => (
+            {(type === 'F2' ? ['C','A','S','S3','S4'] : ['S']).map(s => (
               <motion.button
                 key={s}
                 whileHover={{ y: -4, scale: 1.03 }}
@@ -2183,21 +2232,44 @@ const backOneStep = () => {
               </motion.button>
             ))}
                        <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button
+    onClick={backOneStep}
+    className="
+      fixed bottom-4 left-4 z-50
+      px-3 py-1 text-xs md:text-sm rounded-full
+      bg-white/15 text-gray-800/90 border border-white/30
+      backdrop-blur-sm shadow-sm opacity-70
+      hover:opacity-100 hover:bg-white/25 hover:shadow-md hover:-translate-y-0.5
+      active:scale-95
+      transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-white/40
+    "
+  >
     ย้อนกลับ
   </button>
 </div>
+
           </div>
 <div className="mt-6 text-center to-fade">
   <br />
   <br />
   <span
     className="text-emboss-3d typewriter typewriter-medium text-2xl"
-    style={{ '--chars': 28 }}  // นับจำนวนอักษรของข้อความด้านล่าง
+    style={{ '--chars': 28 }}
   >
-    **S : (3เฟส-220/380V/50Hz/460V/60Hz)
-<br /> 
-        **C : (1เฟส-220/380V/50Hz/460V/60Hz)
+    {type === 'F2' ? (
+      <>
+        <strong>**C : (1เฟส-Single phase 220/50Hz/60Hz)</strong><br />
+        <strong>**A : (1เฟส-Single phase 110/50Hz/60Hz)</strong><br />
+        <strong>**S : (3เฟส-Three phase 220V/50Hz/60Hz)</strong><br />
+        <strong>**S3 : (3เฟส-Three phase 380V/50Hz/60Hz)</strong><br />
+        <strong>**S4 : (3เฟส-Three phase 460V/60Hz)</strong>
+      </>
+    ) : (
+      <>
+        <strong>**S : (3เฟส-220/380V/50Hz/460V/60Hz)</strong>
+      </>
+    )}
   </span>
 </div>
         </div>
@@ -2301,19 +2373,122 @@ const backOneStep = () => {
   Copy
 </button>
 </span>
+<br />
 <button
-  className="px-3 py-2 bg-green-300 rounded hover:bg-green-500"
+  className="finish-trigger px-3 py-2 bg-green-300 rounded hover:bg-green-500 transition"
   data-code={generateModelCode()}
   onClick={(e) => {
-    document.documentElement.classList.add('hyp-finished');   // << จาง-หาย Step6/7 ที่ติด .to-fade
+    document.documentElement.classList.add('hyp-finished');
     const val = e.currentTarget.dataset.code || generateModelCode();
     onConfirm(val);
   }}
 >
   เสร็จสิ้น
 </button>
-          <div className="mt-2">
-  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+{/* ===== Specification & Drawing (อยู่ระหว่าง Model Code และปุ่มเสร็จสิ้น) ===== */}
+  {/* เนื้อหาจะโผล่เฉพาะหลังคลิก "เสร็จสิ้น" */}
+  <div className="show-when-finished mt-2 flex justify-center">
+    <div id="spec-top" className="mt-4 w-full max-w-[720px] text-center">
+  <div className="text-emboss-3d font-extrabold text-lg md:text-xl leading-tight">
+    Specification and Drawing
+  </div>
+    <div className="text-emboss-3d">SAS Hypoid Gearmotor</div>
+    <div className="text-emboss-3d">Series : {type}</div>
+    <div className="text-emboss-3d">
+      Gear type : {gearType === 'A' ? 'A Solid shaft' : 'H Hollow shaft'}
+    </div>
+    <div className="text-emboss-3d">Ratio : 1/{ratio}</div>
+    <div className="text-emboss-3d">
+      Output speed : {(1500 / ratio).toFixed(0)} rpm
+    </div>
+    <div className="text-emboss-3d">
+  Power Motor : {power != null ? power.toLocaleString() : '-'} W
+</div>
+    <div className="text-emboss-3d">
+  {(() => {
+    const f2 = {
+      C: ' : 1เฟส-Single phase 220/50Hz/60Hz',
+      A: ' : 1เฟส-Single phase 110/50Hz/60Hz',
+      S: ' : 3เฟส-Three phase 220V/50Hz/60Hz',
+      S3: ' : 3เฟส-Three phase 380V/50Hz/60Hz',
+      S4: ' : 3เฟส-Three phase 460V/60Hz',
+    };
+    const f3 = {
+      S: '**S : (3เฟส-220/380V/50Hz/460V/60Hz)',
+    };
+
+    const desc = type === 'F2' ? f2[supply] : f3[supply];
+
+    return (
+      <>
+        Power supply : {supply || '-'}<strong>{desc || ''}</strong>
+      </>
+    );
+  })()}
+</div>
+    <div className="text-emboss-3d">
+      Motor Optional : {optional?.length ? optional.join(' ') : '-'}
+      {optional?.includes('B') && ' — B: Electromagnetic brake'}
+    </div>
+  </div>
+</div>
+<br />
+<div className="show-when-finished flex flex-wrap items-center justify-center gap-3 mt-4">
+  {/* 1) General specification */}
+<button
+  type="button"
+  className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
+  onClick={() => {
+    // ไฟล์อยู่ใน public => เสิร์ฟเป็น /model/pdf/Hypoid/...
+    const url = '/model/pdf/Hypoid/General%20specification.pdf';
+
+    // พยายามดาวน์โหลดด้วย <a download> (ทำงานกับ Chrome/Edge/Firefox ส่วนใหญ่)
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'General specification.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }}
+>
+  General specification
+</button>
+
+  {/* 2) Drawing 2D (pdf) */}
+  <button
+    type="button"
+    className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
+    data-code={generateModelCode()}
+    onClick={(e) => {
+      const code = e.currentTarget.dataset.code || generateModelCode();
+      window.open(`/docs/2d/${code}.pdf`, '_blank', 'noopener,noreferrer');
+    }}
+  >
+    Drawing 2D (pdf)
+  </button>
+
+  {/* 3) ขอใบเสนอราคา */}
+  <a
+    className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
+    href={`mailto:sales@example.com?subject=RFQ%20-%20${encodeURIComponent(generateModelCode())}&body=ขอใบเสนอราคา%20รุ่น:%20${encodeURIComponent(generateModelCode())}`}
+  >
+    ขอใบเสนอราคา
+  </a>
+</div>
+          <div className="mt-4">
+  <button
+    onClick={backOneStep}
+    className="
+      fixed bottom-4 left-4 z-50
+      px-3 py-1 text-xs md:text-sm rounded-full
+      bg-white/15 text-gray-800/90 border border-white/30
+      backdrop-blur-sm shadow-sm opacity-70
+      hover:opacity-100 hover:bg-white/25 hover:shadow-md hover:-translate-y-0.5
+      active:scale-95
+      transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-white/40
+    "
+  >
     ย้อนกลับ
   </button>
 </div>

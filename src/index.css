@@ -587,13 +587,22 @@ code {
 /* แกนหลัก: พิมพ์ทีละตัวด้วย steps(N) + เคอร์เซอร์กระพริบ */
 .typewriter{
   display:inline-block;
-  white-space:nowrap;           /* ให้พิมพ์เป็นบรรทัดเดียว */
-  overflow:hidden;              /* ซ่อนส่วนที่ยังไม่พิมพ์ */
+  white-space:nowrap;
+  overflow:hidden;
   border-right:2px solid rgba(255,255,255,.85); /* caret */
-  /* จำนวนตัวอักษรตั้งผ่าน --chars (ต้องใส่จาก JSX) */
+
+  /* กำหนดเวลาเป็นตัวแปร (เดิมใช้ 3s + delay .2s) */
+  --tw-delay: .2s;
+  --tw-duration: 3s;
+  --tw-total: calc(var(--tw-duration) + var(--tw-delay));
+
+  /* 1) พิมพ์ทีละตัว
+     2) กระพริบ caret ระหว่างพิมพ์
+     3) พอครบเวลา ให้ caret ถูก "ปิดทับ" ให้โปร่งใส และคงสภาพไว้ (forwards) */
   animation:
-      type-reveal var(--tw-duration, 3s) steps(var(--chars)) 0.2s forwards,
-      caret-blink 900ms steps(1) infinite;
+      type-reveal var(--tw-duration) steps(var(--chars)) var(--tw-delay) forwards,
+      caret-blink 900ms steps(1) var(--tw-delay) infinite,
+      caret-hide 1ms linear var(--tw-total) forwards;  /* <<< ตัวนี้ทำให้เคอร์เซอร์หายเมื่อพิมพ์จบ */
 }
 
 /* เวอร์ชันช้า/กลาง/เร็ว (เลือกใช้ได้) */
@@ -609,10 +618,16 @@ code {
   50% { border-right-color: transparent; }
 }
 
-/* ตัวคูณนูนเพิ่มอีกนิดเวลาพิมพ์เสร็จ (optional, นุ่ม ๆ) */
+/* ปิด caret หลังพิมพ์ครบเวลา */
+@keyframes caret-hide{
+  from { border-right-color: rgba(255,255,255,.85); }
+  to   { border-right-color: transparent; }
+}
+
+/* (ยังใช้ได้เหมือนเดิม) ตัวคูณนูนตอนจบ */
 .typewriter-done-bounce{
   animation:
-    type-reveal var(--tw-duration, 3s) steps(var(--chars)) 0.2s forwards,
+    type-reveal var(--tw-duration) steps(var(--chars)) var(--tw-delay) forwards,
     caret-blink 900ms steps(1) infinite;
 }
 .typewriter-done-bounce.is-done{
@@ -671,4 +686,23 @@ code {
   margin: initial;
   padding: initial;
   pointer-events: auto;
+}
+
+/* ซ่อนทุกอย่างที่ติด .show-when-finished ไว้ก่อน (ชนะ flex ของ Tailwind) */
+:root:not(.hyp-finished) .show-when-finished{
+  display: none !important;
+}
+
+/* โผล่หลังเสร็จสิ้นเท่านั้น */
+:root.hyp-finished .show-when-finished{
+  display: flex !important;   /* คอนเทนเนอร์คุณเป็น flex อยู่แล้ว */
+}
+/* ปุ่มเสร็จสิ้น (ตัว Trigger) ให้แสดงเฉพาะก่อนเสร็จสิ้น */
+:root:not(.hyp-finished) .finish-trigger{
+  display: inline-flex !important;
+}
+
+/* พอเสร็จสิ้นแล้วให้ซ่อนปุ่มนี้ทันที */
+:root.hyp-finished .finish-trigger{
+  display: none !important;
 }
