@@ -1438,13 +1438,13 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   Home
 </button>
     </div>
-    {renderHypoidGearFlow(hypoidState, hypoidSetters, (modelCode) => {
-      const models = Array.isArray(modelCode) ? modelCode : [modelCode];
-      setModelCodeList(models);
-      setSelectedModel(models[0]);
-    })}
-   {/* [HYP] ผลลัพธ์อยู่หน้าเดียวกับการเลือก (เหมือน BLDC) */}
-    {modelCodeList?.length > 0 && (
+{renderHypoidGearFlow(hypoidState, hypoidSetters, (modelCode) => {
+  const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+  setModelCodeList(models);
+  setSelectedModel(models[0]);
+  document.documentElement.classList.add('hyp-finished');
+})}
+    {document.documentElement.classList.contains('hyp-finished') && modelCodeList?.length > 0 && (
       <>
         {/* iPad frame + GIF (Hypoid) */}
         {(() => {

@@ -1931,8 +1931,8 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
     if (!optional.includes(opt)) update('optional', [...optional, opt]);
     else update('optional', optional.filter(o => o !== opt));
   };
-    // 🔙 ย้อนกลับทีละสเตป (เรียงจากท้ายไปต้น)
 const backOneStep = () => {
+  document.documentElement.classList.remove('hyp-finished'); // << ให้บล็อกกลับมา
   if (supply)    return update('supply', null);
   if (power)     return update('power', null);
   if (direction) return update('direction', null);
@@ -1976,15 +1976,15 @@ const backOneStep = () => {
       {type && !gearType && (
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Gear Type</h3>
-          <div className="grid grid-cols-2 sm:grid-cols1 gap-7 sm:gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-7 sm:gap-8">
             {[
               { label: 'A', img: F23AImg },
               { label: 'H', img: F23HImg }
             ].map(({ label, img }) => (
               <motion.button
                 key={label}
-                whileHover={{ y: -4, scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.99 }}
                 onClick={(e) => {
                   const el = e.currentTarget;       // กัน SyntheticEvent pooling
                   if (!el) return;
@@ -1997,12 +1997,14 @@ const backOneStep = () => {
                 }}
                 className="btn-sweep"
               >
-                <img src={img} alt={label} className="btn-sweep-img" />
+                <img src={img} alt={label} className="btn-sweep-img w-full max-w-full object-contain my-2
+             scale-[1.18] md:scale-[1.25] transition-transform"
+  style={{ transformOrigin: 'center center' }} />
                 <span className="btn-sweep-label">{label}</span>
               </motion.button>
             ))}
                         <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
     ย้อนกลับ
   </button>
 </div>
@@ -2019,8 +2021,8 @@ const backOneStep = () => {
               <motion.button
                 key={r}
                 onClick={() => update('ratio', r)}
-                whileHover={{ y: -1, scale: 1.53 }}
-                whileTap={{ scale: 1.57 }}
+                whileHover={{ y: -1, scale: 1.06 }}
+                whileTap={{ scale: 0.98 }}
                 className="
                   group relative overflow-hidden
                   rounded-2xl px-5 py-5
@@ -2044,11 +2046,19 @@ const backOneStep = () => {
               </motion.button>
             ))}
                        <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
     ย้อนกลับ
   </button>
 </div>
           </div>
+<div className="mt-6 text-center">
+  <span
+    className="text-emboss-3d typewriter typewriter-medium text-2xl"
+    style={{ '--chars': 28 }}  // นับจำนวนอักษรของข้อความด้านล่าง
+  >
+    ความเร็วรอบของมอเตอร์  / อัตราทด = ความเร็วรอบหัวเกียร์ ( rpm)
+  </span>
+</div>
         </div>
       )}
 
@@ -2088,7 +2098,7 @@ const backOneStep = () => {
               </motion.button>
             ))}
                        <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
     ย้อนกลับ
   </button>
 </div>
@@ -2128,11 +2138,19 @@ const backOneStep = () => {
               </motion.button>
             ))}
                        <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
     ย้อนกลับ
   </button>
 </div>
           </div>
+<div className="text-center mt-6">
+  <span
+    className="text-emboss-3d typewriter typewriter-medium text-2xl"
+    style={{ '--chars': 28 }}  // นับจำนวนอักษรของข้อความด้านล่าง
+  >
+    กรุณาเลือกขนาด มอเตอร์ที่ต้องการ
+  </span>
+</div>
         </div>
       )}
 
@@ -2165,20 +2183,32 @@ const backOneStep = () => {
               </motion.button>
             ))}
                        <div className="mt-4">
-  <button onClick={backOneStep} className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
     ย้อนกลับ
   </button>
 </div>
           </div>
+<div className="mt-6 text-center to-fade">
+  <br />
+  <br />
+  <span
+    className="text-emboss-3d typewriter typewriter-medium text-2xl"
+    style={{ '--chars': 28 }}  // นับจำนวนอักษรของข้อความด้านล่าง
+  >
+    **S : (3เฟส-220/380V/50Hz/460V/60Hz)
+<br /> 
+        **C : (1เฟส-220/380V/50Hz/460V/60Hz)
+  </span>
+</div>
         </div>
       )}
 
       {/* Step 7 */}
       {supply && (
-        <div>
+        <div className="to-fade">
           <h3 className="font-semibold text-white drop-shadow mb-2">Motor Optional</h3>
           <div className="flex flex-wrap gap-3">
-            {['B','F','P'].map(opt => {
+            {['B','F','T'].map(opt => {
               const isOn = optional.includes(opt);
               return (
                 <motion.button
@@ -2204,19 +2234,39 @@ const backOneStep = () => {
               );
             })}
           </div>
+<div className="mt-6 text-center">
+  <span
+    className="text-emboss-3d text-xs md:text-sm lg:text-base"
+    style={{ '--chars': 28 }}  // นับจำนวนอักษรของข้อความด้านล่าง
+  >
+    B: Electromagnetic brake  , F: Force cooling fan , T: Thermal protection sensor   หากไม่ต้องการกด "เสร็จสิ้น"
+  </span>
+</div>
         </div>
       )}
 
       {/* Final Confirm */}
       {supply && (
-        <div className="pt-4">
-          <h4 className="text-white">Model Code: <strong>{generateModelCode()}</strong><button
+        <div className="mt-6 text-center">
+  <span className="text-emboss-3d">
+    Model Code:&nbsp;
+  </span>
+          <span
+  className="typewriter typewriter-medium text-sm md:text-base lg:text-lg"
+  style={{ '--chars': 32 }}
+>
+  <strong className="text-emboss-3d" style={{ color: '#86ff6a' }}>
+    {generateModelCode()}
+  </strong>
+
+<button
   type="button"
   title="Copy Model"
+  data-code={generateModelCode()}   // <<< ใส่รหัสลง data-attribute
   className="ml-2 align-middle text-[10px] px-2 py-0.5 rounded border border-white/20 bg-white/10 hover:bg-white/20 transition"
   onClick={async (e) => {
-    const btn = e.currentTarget;              // ✅ จับปุ่มไว้ก่อน
-    const txt = String(code || '');
+    const btn = e.currentTarget;
+    const txt = String(btn.dataset.code || '');   // <<< อ่านจาก data-attribute เท่านั้น
 
     const setBadge = (el, msg = 'Copied!', ms = 1200) => {
       const old = el.textContent;
@@ -2241,7 +2291,7 @@ const backOneStep = () => {
       } else {
         fallbackCopy();
       }
-      setBadge(btn);                           // ✅ ใช้ตัวแปรที่จับไว้
+      setBadge(btn);
     } catch {
       fallbackCopy();
       setBadge(btn);
@@ -2249,10 +2299,21 @@ const backOneStep = () => {
   }}
 >
   Copy
-</button></h4>
-          <button className="px-1 py-2 bg-green-300 rounded hover:bg-green-500" onClick={() => onConfirm(generateModelCode())}>เสร็จสิ้น</button>
+</button>
+</span>
+<button
+  className="px-3 py-2 bg-green-300 rounded hover:bg-green-500"
+  data-code={generateModelCode()}
+  onClick={(e) => {
+    document.documentElement.classList.add('hyp-finished');   // << จาง-หาย Step6/7 ที่ติด .to-fade
+    const val = e.currentTarget.dataset.code || generateModelCode();
+    onConfirm(val);
+  }}
+>
+  เสร็จสิ้น
+</button>
           <div className="mt-2">
-  <button onClick={backOneStep} className="px-1 py-2 bg-gray-200 rounded hover:bg-gray-300">
+  <button onClick={backOneStep} className="fixed bottom-4 left-4 z-50 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
     ย้อนกลับ
   </button>
 </div>

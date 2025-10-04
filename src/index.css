@@ -571,3 +571,104 @@ code {
     0 6px 14px rgba(0,0,0,.18),
     0 2px 6px rgba(0,0,0,.10);
 }
+
+/* ===== Embossed White Text (ใช้กับสูตรใต้ปุ่ม Ratio) ===== */
+.text-emboss-3d{
+  color:#fff;
+  font-weight:800;
+  letter-spacing:.02em;
+  -webkit-text-stroke:0.2px rgba(0,0,0,0.18);        /* เส้นขอบบางลง */
+  text-shadow:
+    0 -1px 0 rgba(255,255,255,0.60),                 /* ไฮไลท์บนเบา ๆ */
+    0  1px 0 rgba(0,0,0,0.28),                        /* ขอบล่างให้มิติ */
+    0  3px 6px rgba(0,0,0,0.25);                      /* เงาหลักนุ่ม ๆ */
+}
+
+/* แกนหลัก: พิมพ์ทีละตัวด้วย steps(N) + เคอร์เซอร์กระพริบ */
+.typewriter{
+  display:inline-block;
+  white-space:nowrap;           /* ให้พิมพ์เป็นบรรทัดเดียว */
+  overflow:hidden;              /* ซ่อนส่วนที่ยังไม่พิมพ์ */
+  border-right:2px solid rgba(255,255,255,.85); /* caret */
+  /* จำนวนตัวอักษรตั้งผ่าน --chars (ต้องใส่จาก JSX) */
+  animation:
+      type-reveal var(--tw-duration, 3s) steps(var(--chars)) 0.2s forwards,
+      caret-blink 900ms steps(1) infinite;
+}
+
+/* เวอร์ชันช้า/กลาง/เร็ว (เลือกใช้ได้) */
+.typewriter-slow   { --tw-duration: 4s; }
+.typewriter-medium { --tw-duration: 3s; }  /* ดีฟอลต์ */
+.typewriter-fast   { --tw-duration: 2.2s; }
+
+@keyframes type-reveal{
+  from { width: 0; }
+  to   { width: 100%; }
+}
+@keyframes caret-blink{
+  50% { border-right-color: transparent; }
+}
+
+/* ตัวคูณนูนเพิ่มอีกนิดเวลาพิมพ์เสร็จ (optional, นุ่ม ๆ) */
+.typewriter-done-bounce{
+  animation:
+    type-reveal var(--tw-duration, 3s) steps(var(--chars)) 0.2s forwards,
+    caret-blink 900ms steps(1) infinite;
+}
+.typewriter-done-bounce.is-done{
+  animation: none;
+  animation: pop-emboss 260ms ease-out both;
+}
+@keyframes pop-emboss{
+  0%   { transform: translateZ(0) scale(1);   text-shadow:
+         0 -1px 0 rgba(255,255,255,0.90),
+         0 -2px 0 rgba(255,255,255,0.55),
+         0  1px 0 rgba(255,255,255,0.85),
+         0  2px 0 rgba(255,255,255,0.50),
+         0  2px 1px rgba(0,0,0,0.45),
+         0  3px 2px rgba(0,0,0,0.40),
+         0  6px 8px rgba(0,0,0,0.45); }
+  60%  { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.emboss-green{
+  color: #86ff6a !important;         /* เขียวสว่าง */
+  -webkit-text-stroke: 0.2px rgba(0,0,0,0.18);
+  text-shadow:
+    0 -1px 0 rgba(255,255,255,0.55),  /* ไฮไลท์บนเบา ๆ */
+    0  1px 0 rgba(0,0,0,0.28),         /* ขอบล่างให้มิติ */
+    0  3px 6px rgba(0,0,0,0.25);       /* เงาหลักนุ่ม ๆ */
+}
+
+/* จางและยุบพื้นที่ของบล็อกที่ติด .to-fade เมื่อสถานะเสร็จสิ้น */
+.to-fade{
+  transition: opacity .35s ease, transform .35s ease, height .35s ease, margin .35s ease, padding .35s ease;
+}
+.hyp-finished .to-fade{
+  opacity: 0;
+  transform: translateY(-6px);
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* แสดงเฉพาะเมื่อ finish */
+.show-when-finished{
+  opacity: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity .35s ease, height .35s ease, margin .35s ease, padding .35s ease;
+}
+.hyp-finished .show-when-finished{
+  opacity: 1;
+  height: auto;
+  margin: initial;
+  padding: initial;
+  pointer-events: auto;
+}
