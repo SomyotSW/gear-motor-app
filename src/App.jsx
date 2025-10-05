@@ -239,6 +239,44 @@ async function handlePlanetaryDownload3D() {
   }
 }
 
+async function submitSrvQuote(e) {
+  e.preventDefault();
+  try {
+    setSrvRfqSending(true);
+
+    const params = {
+      requester_name: srvRfqForm.name,
+      company: srvRfqForm.company,
+      phone: srvRfqForm.phone,
+      email: srvRfqForm.email,
+
+      model_code: srvQuoteInfo?.model_code || '-',
+      srv_series: 'SRV',
+      size_gear: srvState?.sizeGear || srvState?.srvSize || '-',
+      ratio: srvState?.srvRatio || '-',
+      gear_mounting_type: srvState?.srvMountingType || 'Hollow & Solid shaft',
+      direction_type: srvState?.srvDirectionType || '-',
+      output_shaft_design: srvState?.srvOutputShaftDesign || 'DS1',
+      flange_mounted: srvState?.srvFlange || 'B5',
+      input_shaft_hole_dia: srvState?.srvInputShaftHole || 'Ø19 mm',
+      input_flange_dia: srvState?.srvInputFlangeDia || 'Ø120 mm B14 , Ø200 mm B5',
+      input_power: srvState?.srvInputPower || 'IEC Adapter Motor',
+      power_motor: srvState?.srvPowerMotor || '-',
+      output_speed: srvState?.srvOutputSpeed || '-',
+      output_torque: srvState?.srvOutputTorque || '-',
+      mounting_position: srvState?.srvMountingPosition || 'B3',
+      output_shaft: srvState?.srvOutputShaft || 'Ø24 mm , Ø25 mm',
+      warranty: '18 เดือน',
+      quantity: String(srvRfqForm.quantity || 1),
+    };
+
+    await window.emailjs.send('service_fwgn6cw','template_haalx9b', params);
+    alert('ขอบคุณสำหรับการขอราคา กรุณารอการติดต่อกลับสักครู่');
+    setSrvRfqOpen(false);
+  } finally {
+    setSrvRfqSending(false);
+  }
+}
 
 // [ADD] ตัวอย่าง handler ดาวน์โหลด BLDC
 async function handleBLDCDownload(modelCode) {
@@ -356,6 +394,74 @@ const [rkfsQuote, setRkfsQuote] = useState({
   qty: 1,
 });
 
+// === RFQ (ถ้ายังไม่มี ให้เพิ่ม 4 บรรทัดนี้) ===
+const [rfqOpen, setRfqOpen] = useState(false);
+const [rfqForm, setRfqForm] = useState({ name:'', phone:'', company:'', email:'', quantity:1 });
+const [rfqSending, setRfqSending] = useState(false);
+
+const handleRfqChange = (e) => {
+  const { name, value } = e.target;
+  setRfqForm((s) => ({ ...s, [name]: value }));
+};
+
+// === SRV RFQ (แยกจาก Hypoid เดิม) ===
+const [srvRfqOpen, setSrvRfqOpen] = useState(false);
+const [srvQuoteInfo, setSrvQuoteInfo] = useState(null);
+const [srvRfqForm, setSrvRfqForm] = useState({ name:'', phone:'', company:'', email:'', quantity:1 });
+const [srvRfqSending, setSrvRfqSending] = useState(false);
+const handleSrvRfqChange = (e) => {
+  const { name, value } = e.target;
+  setSrvRfqForm(s => ({ ...s, [name]: value }));
+};
+
+/* ⬇⬇⬇ ใส่ฟังก์ชันนี้ต่อจากบล็อกข้างบนภายใน App() ⬇⬇⬇ */
+const submitSrvQuote = async (e) => {
+  e.preventDefault();
+  try {
+    setSrvRfqSending(true);
+
+    const params = {
+      // ผู้ติดต่อ
+      requester_name: srvRfqForm.name,
+      company:        srvRfqForm.company,
+      phone:          srvRfqForm.phone,
+      email:          srvRfqForm.email,
+
+      // รุ่น
+      model_code: srvQuoteInfo?.model_code || '-',
+
+      // สเปก SRV (map จาก state ที่คุณแสดง summary)
+      srv_series: 'SRV',
+      size_gear: srvState?.sizeGear || srvState?.srvSize || '-',
+      ratio: srvState?.srvRatio || '-',
+      gear_mounting_type: srvState?.srvMountingType || 'Hollow & Solid shaft',
+      direction_type: srvState?.srvDirectionType || '-',
+      output_shaft_design: srvState?.srvOutputShaftDesign || 'DS1',
+      flange_mounted: srvState?.srvFlange || 'B5',
+      input_shaft_hole_dia: srvState?.srvInputShaftHole || 'Ø19 mm',
+      input_flange_dia: srvState?.srvInputFlangeDia || 'Ø120 mm B14 , Ø200 mm B5',
+      input_power: srvState?.srvInputPower || 'IEC Adapter Motor',
+      power_motor: srvState?.srvPowerMotor || '-',
+      output_speed: srvState?.srvOutputSpeed || '-',
+      output_torque: srvState?.srvOutputTorque || '-',
+      mounting_position: srvState?.srvMountingPosition || 'B3',
+      output_shaft: srvState?.srvOutputShaft || 'Ø24 mm , Ø25 mm',
+      warranty: '18 เดือน',
+      quantity: String(srvRfqForm.quantity || 1),
+    };
+
+    await window.emailjs.send('service_fwgn6cw', 'template_haalx9b', params);
+    alert('ขอบคุณสำหรับการขอราคา กรุณารอการตอบกลับสักครู่');
+    setSrvRfqOpen(false);
+  } catch (err) {
+    console.error(err);
+    alert('ส่งคำขอล้มเหลว กรุณาลองอีกครั้ง หรือตรวจสอบการตั้งค่า EmailJS');
+  } finally {
+    setSrvRfqSending(false);
+  }
+};
+
+
 
   // Hypoid Gear Flow states
   const [svInertia,   setSvInertia]   = useState(null);  // A / H / G
@@ -386,6 +492,13 @@ const servoSetters = {
   const [hypoidSupply, setHypoidSupply] = useState(null);         // C, A, S, S3
   const [hypoidOptional, setHypoidOptional] = useState([]); 
     const [hypoidQuantity, setHypoidQuantity] = useState(1);
+    const [showRFQ, setShowRFQ] = React.useState(false);
+    const [rfqPayload, setRfqPayload] = React.useState(null);
+    const openRFQ = React.useCallback(() => setRfqOpen(true), []);
+    React.useEffect(() => {
+  window.showRFQ = () => setRfqOpen(true);
+  return () => { delete window.showRFQ; };
+}, []);
 
 const hypoidState = {
   type: hypoidType,
@@ -395,7 +508,9 @@ const hypoidState = {
   power: hypoidPower,
   supply: hypoidSupply,
   optional: hypoidOptional,
-  quantity: hypoidQuantity,                // <<< เพิ่มบรรทัดนี้
+  quantity: hypoidQuantity,
+    showHypoidRfq: rfqOpen,
+  hypoidRfqPayload: rfqPayload,                // <<< เพิ่มบรรทัดนี้
 };
 
 const hypoidSetters = {
@@ -1117,7 +1232,7 @@ const getFileUrl = () => {
       <img
         src={ANL}
         alt="Left accent"
-        className="h-[132px] md:h-[160px] lg:h-[180px] object-contain select-none"
+        className="h-[88px] md:h-[112px] lg:h-[128px] object-contain select-none"
         draggable="false"
         aria-hidden="true"
       />
@@ -1127,7 +1242,7 @@ const getFileUrl = () => {
         viewBox="0 0 800 240"
         className="w-auto h-[160px] md:h-[185px] lg:h-[195px] select-none"
         preserveAspectRatio="xMidYMid meet"
-        aria-label="SAS 3D.STEP"
+        aria-label="SAS TRANSMISSION"
       >
         <defs>
           {/* ไล่เฉดโทน น้ำเงิน–ฟ้า–เทา–ขาว พร้อม animation กวาดซ้าย↔ขวา */}
@@ -1177,11 +1292,11 @@ const getFileUrl = () => {
           x="50%" y="65%"
           textAnchor="middle" dominantBaseline="middle"
           fontFamily="Inter, ui-sans-serif, system-ui"
-          fontWeight="900" fontSize="118"
+          fontWeight="900" fontSize="80.5"
           fill="url(#luxGradient)"
           filter="url(#luxShadow)"
         >
-          SAS 3D.STEP
+          SAS TRANSMISSION
         </text>
 
         {/* ชั้นนูน/ไฮไลท์ */}
@@ -1189,18 +1304,18 @@ const getFileUrl = () => {
           x="50%" y="65%"
           textAnchor="middle" dominantBaseline="middle"
           fontFamily="Inter, ui-sans-serif, system-ui"
-          fontWeight="900" fontSize="118"
+          fontWeight="900" fontSize="80"
           fill="url(#luxGradient)"
           filter="url(#emboss)"
         >
-          SAS 3D.STEP
+          SAS TRANSMISSION
         </text>
       </svg>
             {/* GIF ขวา — สูงกว่าตัวอักษรนิดหน่อย */}
       <img
         src={ANR}
         alt="Right accent"
-        className="h-[142px] md:h-[170px] lg:h-[190px] object-contain select-none"
+        className="h-[96px] md:h-[120px] lg:h-[140px] object-contain select-none"
         draggable="false"
         aria-hidden="true"
       />
@@ -1446,7 +1561,7 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   setModelCodeList(models);
   setSelectedModel(models[0]);
   document.documentElement.classList.add('hyp-finished');
-})}
+}, openRFQ)}
     {document.documentElement.classList.contains('hyp-finished') && modelCodeList?.length > 0 && (
       <>
         {/* iPad frame + GIF (Hypoid) */}
@@ -1647,15 +1762,16 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
       <h2 className="text-white font-bold mb-2 drop-shadow">SRV Worm Gear Selection</h2>
       <button className="text-blue-600 hover:underline" onClick={handleBack}>Home</button>
     </div>
-
-    {renderSRVFlow(srvState, srvSetters, (modelCode) => {
+    {renderSRVFlow(srvState, srvSetters, (modelCode, srvSpec) => {
       const models = Array.isArray(modelCode) ? modelCode : [modelCode];
       setModelCodeList(models);
-      setSelectedModel(models[0]);
-      setShowForm(true); // ★ เด้งไปหน้าแบบฟอร์ม
+      //setSelectedModel(models[0]);
+            setSrvQuoteInfo({ model_code: models[0] });
+      setSrvRfqOpen(true);         // ใช้ modal/ฟอร์มเดิม
     })}
   </>
 )}
+
 
 {/* 🟦 RKFS Series STEP 1 */}
 {selectedProduct === 'RKFS Series' && !selectedModel && !showForm && (
@@ -1831,6 +1947,42 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   </div>
 )}
 
+{srvRfqOpen && (
+  <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="relative w-full max-w-[520px] bg-white rounded-2xl shadow-2xl">
+      <button onClick={() => setSrvRfqOpen(false)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white text-xs">✕</button>
+
+      <form onSubmit={submitSrvQuote} className="p-6 space-y-4">
+        <h3 className="text-xl font-bold">ขอใบเสนอราคา SRV Worm Gear</h3>
+
+        <label className="text-sm font-semibold">ชื่อ
+          <input name="name" value={srvRfqForm.name} onChange={handleSrvRfqChange} required className="mt-1 w-full rounded-lg border px-3 py-2" />
+        </label>
+
+        <label className="text-sm font-semibold">เบอร์ติดต่อ
+          <input name="phone" value={srvRfqForm.phone} onChange={handleSrvRfqChange} className="mt-1 w-full rounded-lg border px-3 py-2" />
+        </label>
+
+        <label className="text-sm font-semibold">ชื่อบริษัท
+          <input name="company" value={srvRfqForm.company} onChange={handleSrvRfqChange} className="mt-1 w-full rounded-lg border px-3 py-2" />
+        </label>
+
+        <label className="text-sm font-semibold">Email
+          <input type="email" name="email" value={srvRfqForm.email} onChange={handleSrvRfqChange} required className="mt-1 w-full rounded-lg border px-3 py-2" />
+        </label>
+
+        <label className="text-sm font-semibold">จำนวนที่ต้องการ
+          <input type="number" min="1" name="quantity" value={srvRfqForm.quantity} onChange={handleSrvRfqChange} className="mt-1 w-full rounded-lg border px-3 py-2" />
+        </label>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={() => setSrvRfqOpen(false)} className="px-3 py-2 rounded-lg border">ยกเลิก</button>
+          <button type="submit" disabled={srvRfqSending} className="px-4 py-2 rounded-lg bg-emerald-500 text-white">{srvRfqSending ? 'กำลังส่ง...' : 'ยืนยัน'}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
 {!showRKFSQuote && showForm && (
           <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">

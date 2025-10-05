@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "emailjs-com": "^3.2.0",
     "firebase": "^12.2.1",
     "framer-motion": "^12.23.12",

@@ -360,6 +360,7 @@ import SVFMTImg   from '../assets/srv/SVFMT.png';
 
 import B5Img    from '../assets/srv/B5.png';
 import B14TImg  from '../assets/srv/B14.png';
+import emailjs from '@emailjs/browser';
 
 
 export const productList = [
@@ -1903,8 +1904,183 @@ export function generateBLDCModelCode(state) {
   return `${head}-${tail}`;
 }
 
+export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm, onOpenRFQ) {
 
-export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
+const EMAILJS_SERVICE_ID = 'service_fwgn6cw';
+const EMAILJS_TEMPLATE_ID = 'rfq_hypoid_template';
+const EMAILJS_PUBLIC_KEY  = 'BvIT5-X7LnkaS3LKq'.trim();
+
+function RequestQuoteModal({
+  open,
+  onClose,
+  payload,        // { modelCode, series, gearType, power, supply, ratio, outputSpeed, outputTorque, motorOptional, quantity }
+}) {
+  const [form, setForm] = React.useState({
+    name: '',
+    phone: '',
+    company: '',
+    email: '',
+  });
+  const [sending, setSending] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!open) {
+      setForm({ name: '', phone: '', company: '', email: '' });
+      setSending(false);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  function formatSupply(s) {
+  const SUPPLY_LABELS = {
+    C: '1เฟส-Single phase 220V/50Hz/60Hz',
+    A: '1เฟส-Single phase 220V/50Hz/60Hz',
+    S: '3เฟส-Three phase220/380V/50Hz/460V/60Hz',
+    S3: '3เฟส-Three phase 220/380/415V/50Hz',
+    S4 : '3เฟส-Three phase 460V/60Hz',
+  };
+  return SUPPLY_LABELS[s] ?? s ?? '-';
+}
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email) {
+      alert('กรุณากรอกชื่อ และอีเมล');
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          // ====== ฟิลด์ของลูกค้า ======
+          customer_name: form.name,
+          customer_phone: form.phone,
+          customer_company: form.company,
+          customer_email: form.email,
+
+          // ====== ผู้รับ (คอมมาคั่นได้) ======
+          to_email: 'Chotthanin@synergy-as.com,SAS04@synergy-as.com',
+
+          // ====== สเปกจากหน้าเลือกของคุณ ======
+          model_code: payload.modelCode || '-',
+          series: payload.series || '-',
+          gear_type: payload.gearType || '-',
+          power_motor: payload.power != null ? `${payload.power} W` : '-',
+          power_supply: formatSupply(payload.supply) || '-',
+          ratio: payload.ratio != null ? `1/${payload.ratio}` : '-',
+          output_speed: payload.outputSpeed != null ? `${Math.round(payload.outputSpeed)} rpm` : '-',
+          output_torque: payload.outputTorque != null ? `${Number(payload.outputTorque).toFixed(2)} N.m` : '-',
+          motor_optional: payload.motorOptional || '-',
+          quantity: payload.quantity != null ? String(payload.quantity) : '1',
+        },
+        { publicKey: EMAILJS_PUBLIC_KEY }
+      );
+
+      alert('ขอบคุณสำหรับการขอราคา กรุณารอการตอบกลับสักครู่');
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('ส่งคำขอไม่สำเร็จ กรุณาลองอีกครั้ง');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="relative w-full max-w-[520px] bg-white rounded-2xl shadow-2xl">
+        {/* ปุ่ม X มุมขวาบน */}
+        <button
+          onClick={onClose}
+          aria-label="ปิด"
+          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
+        >
+          ✕
+        </button>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <h3 className="text-xl font-bold">ขอใบเสนอราคา ZDF2 & ZDF3 Series</h3>
+
+          <div className="grid grid-cols-1 gap-3 text-left">
+            <label className="text-sm font-semibold">
+              ชื่อ
+              <input
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+                className="mt-1 w-full rounded-lg border px-3 py-2"
+              />
+            </label>
+
+            <label className="text-sm font-semibold">
+              เบอร์ติดต่อ
+              <input
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                className="mt-1 w-full rounded-lg border px-3 py-2"
+              />
+            </label>
+
+            <label className="text-sm font-semibold">
+              ชื่อบริษัท
+              <input
+                name="company"
+                value={form.company}
+                onChange={handleChange}
+                className="mt-1 w-full rounded-lg border px-3 py-2"
+              />
+            </label>
+
+            <label className="text-sm font-semibold">
+              Email
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                className="mt-1 w-full rounded-lg border px-3 py-2"
+              />
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-2 rounded-lg border text-gray-600 hover:bg-gray-50"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="submit"
+              disabled={sending}
+              className="px-4 py-2 rounded-lg bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-50"
+            >
+              {sending ? 'กำลังส่ง...' : 'ยืนยัน'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function getContinuousRatingPdf(series, powerW) {
   // series ใช้ 'F2'|'F3' หรือ 'ZDF2'|'ZDF3' ก็ได้
@@ -2022,7 +2198,47 @@ function getDrawingPdfSrc(series, powerW) {
   const key = Number(powerW);
   const base = drawingPdfMap?.[series]?.[key];
   return base ? `/model/pdf/Hypoid/${base}.pdf` : null; // path ใต้ public
-}  
+}
+
+  function HypoidRFQButton() {
+  const [open, setOpen] = React.useState(false);
+  const [payload, setPayload] = React.useState(null);
+
+  const handleOpen = (e) => {
+    e.preventDefault();
+    const p = {
+  modelCode: generateDisplayModelCode(),
+  series: String(type || ''),
+  gearType: gearType === 'H' ? 'H Hollow shaft / Keyway' : 'A Solid shaft',
+
+  // ส่งค่าดิบ (number) ไปให้ modal ฟอร์แมตเอง
+  power: power != null ? Number(power) : null,
+  supply: String(supply ?? ''),
+  ratio: ratio != null ? Number(ratio) : null,
+  outputSpeed: outputSpeedToShow != null ? Math.round(outputSpeedToShow) : null,
+  outputTorque: outputTorqueToShow != null ? Number(outputTorqueToShow) : null,
+
+  motorOptional: (Array.isArray(optional) && optional.length) ? optional.join(', ') : '-',
+  quantity: Number(quantity || 1),
+};
+    setPayload(p);
+    setOpen(true);
+  };
+
+  return (
+    <>
+      <button type="button" className="hyp-cta" onClick={handleOpen}>
+        ขอใบเสนอราคา
+      </button>
+  {/* NEW: render โมดัล */}
+  <RequestQuoteModal
+    open={open}
+    onClose={() => setOpen(false)}
+    payload={payload}
+  />
+    </>
+  );
+}
 
 const {
     type,        // ZDF2 หรือ ZDF3
@@ -2721,16 +2937,7 @@ const backOneStep = () => {
   >
     Drawing 2D (pdf)
   </button>
-
-  {/* 3) ขอใบเสนอราคา */}
-  <a
-    className="hyp-cta"
-    href={`mailto:sales@example.com?subject=RFQ%20-%20${encodeURIComponent(
-      generateDisplayModelCode()
-    )}&body=ขอใบเสนอราคา%20รุ่น:%20${encodeURIComponent(generateDisplayModelCode())}`}
-  >
-    ขอใบเสนอราคา
-  </a>
+<HypoidRFQButton />
 </div>
 </>
           <div className="mt-4">
@@ -5424,66 +5631,42 @@ const MOTOR_TYPE_KEY = (type) => {
     ✅ รับไฟล์ 3D
   </button>
 
-  <button
+  // สมมติอยู่ใน Step Summary ของ SRV
+<button
   type="button"
-  className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 shadow"
-  onClick={(e) => {
-    // กัน event ไม่ให้ไปติด onClick ของ parent (ที่พาไป flow 3D)
-    e.stopPropagation();
-    e.preventDefault();
+  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl shadow"
+  onClick={() => {
+    // === เตรียม modelCode (ของ SRV) ตามที่คุณสรุปไว้ใน Summary ===
+    const modelCode = confirmModel || srvModelCode || selectedModel || '-';
 
-    // === สร้าง summary ตามที่คุณมีอยู่เดิม ===
-    const mKWs  = state?.rkfsMotorPower ?? null;
-    const mType = state?.rkfsMotorType  ?? 'YE3';
-    const poleS = state?.rkfsPole       ?? '4P';
-
-    const up = String(poleS).toUpperCase();
-    const poleKey = up.includes('8') ? '8P' : (up.includes('6') ? '6P' : '4P');
-
-    const typeKey = (typeof MOTOR_TYPE_KEY === 'function') ? MOTOR_TYPE_KEY(mType) : null;
-    const poleTable = (typeof MOTOR_DB !== 'undefined' && MOTOR_DB[poleKey]) || {};
-    const baseKey = poleTable.BASE || 'YE3';
-    const tableForType = (typeKey && poleTable[typeKey]) || poleTable[baseKey] || {};
-    const row = tableForType[String(mKWs ?? '')] || null;
-
-    const ratedSpeed = row?.speed ?? null;
-    const eff100 = row?.eff ?? null;
-    const pf = row?.pf ?? null;
-    const a380 = row?.current?.['380'] ?? null;
-    const a400 = row?.current?.['400'] ?? null;
-    const a415 = row?.current?.['415'] ?? null;
-
-    const ratioNum = Number(state?.rkfsRatio);
-    const outSpeed = (ratedSpeed && ratioNum > 0) ? ratedSpeed / ratioNum : null;
-    const kW = Number(mKWs);
-    const outTq = (outSpeed && kW > 0) ? (9550 * kW) / outSpeed : null;
-
-    const summary = {
-      product: 'RKFS Series',
-      modelCode: (typeof confirmModel !== 'undefined' && confirmModel) || (typeof selectedModel !== 'undefined' && selectedModel) || '',
-      series: state?.rkfsSeries ?? '',
-      design: state?.rkfsDesign ?? '',
-      gearSize: state?.rkfsSize ?? '',
-      ratio: ratioNum || '',
-      motor_kw: mKWs || '',
-      pole: poleKey,
-      motor_type: mType || '',
-      motor_note: state?.motorTypeNote || '',
-      rated_speed: ratedSpeed,
-      eff100, pf,
-      current_380: a380, current_400: a400, current_415: a415,
-      out_speed: outSpeed ? Number(outSpeed.toFixed(2)) : null,
-      out_torque: outTq ? Number(outTq.toFixed(2)) : null,
-      qty: state?.rkfsQty ?? 1,
+    // === รวบรวมข้อมูล Spec จาก state เดิมของ SRV (ใช้ตัวแปรที่คุณแสดงใน Summary) ===
+    const srvSpec = {
+      srv_series: 'SRV',
+      size_gear: srvSize || sizeGear || '-',                 // เช่น "050"
+      ratio: srvRatio || '-',                                // เช่น "1/15"
+      gear_mounting_type: srvMountingType || 'Hollow & Solid shaft',
+      direction_type: srvDirectionType || '-',               // เช่น "-"
+      output_shaft_design: srvOutputShaftDesign || 'DS1',
+      flange_mounted: srvFlange || 'B5',
+      input_shaft_hole_dia: srvInputShaftHole || 'Ø19 mm',
+      input_flange_dia: srvInputFlangeDia || 'Ø120 mm B14 , Ø200 mm B5',
+      input_power: srvInputPower || 'IEC Adapter Motor',
+      power_motor: srvPowerMotor || '-',
+      output_speed: srvOutputSpeed || '-',                   // ถ้ามีการคำนวณแสดงไว้แล้ว
+      output_torque: srvOutputTorque || '-',                 // ถ้ามีการคำนวณแสดงไว้แล้ว
+      mounting_position: srvMountingPosition || 'B3',
+      output_shaft: srvOutputShaft || 'Ø24 mm , Ø25 mm',
+      warranty: '18 เดือน',
     };
 
-    // เปิด MODAL ฟอร์ม (อยู่หน้าเดิม) – ใช้ handler ที่ App.jsx ส่งเข้ามา
-    onRequestQuote && onRequestQuote(summary);
+    // === ส่งกลับไปให้ App.jsx เปิดโมดัลและส่งเมล ===
+    if (typeof onRequestQuote === 'function') {
+      onRequestQuote(modelCode, srvSpec);
+    }
   }}
 >
   🧾 ขอใบเสนอราคา
-</button>
-
+</button>	
 </div>
       );
     })()}
@@ -7382,7 +7565,7 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
 // ============================
 // SRV Worm Gear Flow
 // ============================
-export function renderSRVFlow(state, setState, onConfirm) {
+export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
   const {
     // Step 1
     srvSeries,              // 'SRV' | 'SDRV' | 'SVF'
@@ -8287,27 +8470,18 @@ const motorTypeLabel = srvMotorType ? (motorTypeLabelMap[srvMotorType] || srvMot
       📐 Drawing 2D
     </button>
   </div>
-
-  {/* กลาง: ขอใบเสนอราคา (เดี๋ยวคุณใส่เงื่อนไขเพิ่มได้) */}
   <div className="flex-1 flex justify-center">
     <button
       type="button"
       className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 shadow"
       onClick={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-
-        // === สร้าง summary ของ SRV สำหรับส่งไป modal/อีเมล (โครงสร้างตามที่คุณใช้กับ RKFS) ===
-        const summary = {
-          product: 'SRV Series',
-          modelCode: srvModelCode,
-          // เพิ่มฟิลด์ที่คุณต้องการในใบเสนอราคาได้เลย เช่น:
-          // series: srvState?.srvSeries, size: srvState?.srvSize, ratio: srvState?.srvRatio, ...
-        };
-
-        // ส่งออกไปยัง handler ฝั่ง App.jsx (คุณต้องส่ง onSrvRequestQuote มาจาก App เหมือนที่ RKFS ทำ)
-        onRequestQuote && onRequestQuote(summary);
-      }}
+  e.stopPropagation();
+  e.preventDefault();
+  // เรียก callback ตามซิกเนเจอร์เดิมของ renderSRVFlow
+  if (typeof onConfirm === 'function') {
+    onConfirm(code);   // ส่งเฉพาะ modelCode
+  }
+}}
     >
       🧾 ขอใบเสนอราคา
     </button>
@@ -8317,7 +8491,7 @@ const motorTypeLabel = srvMotorType ? (motorTypeLabelMap[srvMotorType] || srvMot
   <div className="flex-1 flex justify-end">
     <button
       type="button"
-      onClick={() => onConfirm(srvModelCode)}
+      onClick={() => onConfirm(code)}
       className="bg-green-500 text-white px-8 py-4 rounded-lg hover:bg-green-600 shadow"
       // ^ ใช้ class/disabled เงื่อนไขเดิมของคุณได้เลย ถ้ามี
     >
