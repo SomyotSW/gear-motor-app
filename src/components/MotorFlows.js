@@ -1904,8 +1904,126 @@ export function generateBLDCModelCode(state) {
 
 
 export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
-  const {
-    type,        // F2 หรือ F3
+function getContinuousRatingPdf(series, powerW) {
+  // series ใช้ 'F2'|'F3' หรือ 'ZDF2'|'ZDF3' ก็ได้
+  const s = (series || '').toUpperCase();
+  const isF2 = s.includes('F2');   // ครอบคลุมทั้ง F2 และ ZDF2
+  const isF3 = s.includes('F3');   // ครอบคลุมทั้ง F3 และ ZDF3
+  const p = Number(powerW);
+
+  if (isF2) {
+    if (p === 15 || p === 25) return "Specificatio&Continuous rating15W-25W.pdf";
+    if (p === 40)              return "Specificatio&Continuous rating40W.pdf";
+    if (p === 60 || p === 90)  return "Specificatio&Continuous rating60W-90W.pdf";
+    return null;
+  }
+
+  if (isF3) {
+    // ตามเงื่อนไขที่ให้มา
+    if (p === 100)  return "Specificatio&Continuous rating15W-25W.pdf";
+    if (p === 200)  return "Specificatio&Continuous rating15W-25W.pdf";
+    if (p === 400)  return "Specificatio&Continuous rating400W.pdf";
+    if (p === 750)  return "Specificatio&Continuous rating750W.pdf";
+    if (p === 1500) return "Specificatio&Continuous rating1500W.pdf";
+    if (p === 2200) return "Specificatio&Continuous rating2200W.pdf";
+    return null;
+  }
+
+  return null;
+}
+
+
+const shaftDiaMapZDF2 = {
+  A: { 15: 15, 25: 15, 40: 18, 60: 18, 90: 18 },
+  H: { 15: 12, 25: 12, 40: 15, 60: 15, 90: 15 },
+};
+
+// ZDF3: ต้องดูเป็นช่วงอัตราทด
+const shaftDiaRulesZDF3 = [
+  // 100W
+  { p: 100, low: 5,  high: 60,  A: 18, H: 20 },
+  { p: 100, low: 80, high: 240, A: 22, H: 25 },
+  // 200W
+  { p: 200, low: 5,  high: 60,  A: 22, H: 25 },
+  { p: 200, low: 80, high: 240, A: 28, H: 30 },
+  // 400W
+  { p: 400, low: 5,  high: 60,  A: 28, H: 30 },
+  { p: 400, low: 80, high: 240, A: 32, H: 35 },
+  // 750W
+  { p: 750, low: 5,  high: 60,  A: 32, H: 35 },
+  { p: 750, low: 80, high: 240, A: 40, H: 45 },
+  // 1500W
+  { p: 1500, low: 5,  high: 60,  A: 40, H: 45 },
+  // 2200W
+  { p: 2200, low: 5,  high: 30,  A: 40, H: 45 },
+];
+
+function getShaftSizeNumber(series, gearType, powerW, ratio) {
+  // ใช้ helper เดิมของคุณ ที่คืน "ØXXmm"
+  const txt = getShaftDiameter(series, gearType, powerW, ratio); 
+  if (!txt) return null;
+  const m = txt.match(/(\d+)/);
+  return m ? m[1] : null;  // คืนเฉพาะตัวเลข เช่น "45" หรือ "18"
+}
+
+function generateDisplayModelCode() {
+  const base = generateModelCode(); // เดิมของคุณ เช่น "ZDF3-H40LB-1500-SB" หรือ "F3-H40LB-1500-SB"
+  const size = getShaftSizeNumber(type, gearType, power, ratio); // เช่น "45"
+  if (!size) return base;
+
+  // แทรกหลังขีดแรก: <หัว>-<ขนาด><ที่เหลือ>
+  const idx = base.indexOf('-');
+  if (idx === -1) return base;
+  return `${base.slice(0, idx + 1)}${size}${base.slice(idx + 1)}`;
+}
+
+function getShaftDiameter(series, gearType, powerW, ratio) {
+  const s = String(series || '').toUpperCase();   // ex. 'ZDF2' | 'ZDF3'
+  const g = String(gearType || '').toUpperCase(); // 'A' | 'H'
+  const p = Number(powerW);
+  const r = Number(ratio);
+
+  if (s.includes('ZDF2')) {
+    const mm = shaftDiaMapZDF2[g]?.[p];
+    return mm ? `Ø${mm}mm` : null;
+  }
+
+  if (s.includes('ZDF3')) {
+    for (const rule of shaftDiaRulesZDF3) {
+      if (p === rule.p && r >= rule.low && r <= rule.high) {
+        const mm = rule[g];
+        return mm ? `Ø${mm}mm` : null;
+      }
+    }
+  }
+  return null;
+}
+const drawingPdfMap = {
+  ZDF2: {
+    15:  "F215W25W",
+    25:  "F215W25W",
+    40:  "F240W",
+    60:  "F260W90W",
+    90:  "F260W90W",
+  },
+  ZDF3: {
+    100:  "F3100W",
+    200:  "F3200W",
+    400:  "F3400W",
+    750:  "F3750W",
+    1500: "F31500W",
+    2200: "F32200W",
+  },
+};
+
+function getDrawingPdfSrc(series, powerW) {
+  const key = Number(powerW);
+  const base = drawingPdfMap?.[series]?.[key];
+  return base ? `/model/pdf/Hypoid/${base}.pdf` : null; // path ใต้ public
+}  
+
+const {
+    type,        // ZDF2 หรือ ZDF3
     gearType,    // H หรือ A
     ratio,       // เช่น 10, 15, ... 240
     direction,   // RL, RR, RF, RB, LL, LR, LF, LB
@@ -1913,6 +2031,17 @@ export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
     supply,      // C, A, S, S3
     optional     // B, F, P (Array)
   } = hypoidState;
+
+const r = Number(ratio) || 0;
+const pW = Number(power) || 0;
+
+// คำนวณ
+const outputSpeed = r ? 1500 / r : null;           // rpm
+const pKw = pW / 1000;                              // kW
+const outputTorqueNm = (outputSpeed && pKw)
+  ? (9550 * pKw) / outputSpeed
+  : null;
+
 
   const update = (key, value) => {
     const setterMap = {
@@ -1954,17 +2083,15 @@ const backOneStep = () => {
           <h3 className="font-semibold text-white drop-shadow mb-2">Gear Motor Type</h3>
           <div className="grid grid-cols-2 sm:grid-cols1 gap-7 sm:gap-8">
             {[
-              { label: 'F2', img: F2Img },
-              { label: 'F3', img: F3Img }
+              { label: 'ZDF2', img: F2Img },
+              { label: 'ZDF3', img: F3Img }
             ].map(({ label, img }) => (
               <ThumbCard
                 key={label}
                 img={img}
                 label={label}
-                /* กรณี label เป็น 'F2 Series'/'F3 Series' ให้จับจากข้อความ */
-                active={type === (label.includes('F2') ? 'F2' : 'F3')}
-                onClick={() => update('type', label.includes('F2') ? 'F2' : 'F3')}
-                /* ย่อขนาดให้พอดีกับกริด */
+                active={type === (label.includes('ZDF2') ? 'ZDF2' : 'ZDF3')}
+                onClick={() => update('type', label.includes('ZDF2') ? 'ZDF2' : 'ZDF3')}
                 className="w-[340px] h-[300px]"
               />
             ))}
@@ -2148,7 +2275,7 @@ const backOneStep = () => {
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Motor Power</h3>
         <div className="grid grid-cols-3 gap-3">
-            {(type === 'F2' ? [15,25,40,60,90] : [100,200,400,750,1500,2200]).map(p => (
+            {(type === 'ZDF2' ? [15,25,40,60,90] : [100,200,400,750,1500,2200]).map(p => (
               <motion.button
                 key={p}
                 whileHover={{ y: -4, scale: 1.03 }}
@@ -2208,7 +2335,7 @@ const backOneStep = () => {
         <div>
           <h3 className="font-semibold text-white drop-shadow mb-2">Power Supply</h3>
           <div className="flex flex-wrap gap-3">
-            {(type === 'F2' ? ['C','A','S','S3','S4'] : ['S']).map(s => (
+            {(type === 'ZDF2' ? ['C','A','S','S3','S4'] : ['S']).map(s => (
               <motion.button
                 key={s}
                 whileHover={{ y: -4, scale: 1.03 }}
@@ -2257,7 +2384,7 @@ const backOneStep = () => {
     className="text-emboss-3d typewriter typewriter-medium text-2xl"
     style={{ '--chars': 28 }}
   >
-    {type === 'F2' ? (
+    {type === 'ZDF2' ? (
       <>
         <strong>**C : (1เฟส-Single phase 220/50Hz/60Hz)</strong><br />
         <strong>**A : (1เฟส-Single phase 110/50Hz/60Hz)</strong><br />
@@ -2323,18 +2450,24 @@ const backOneStep = () => {
   <span className="text-emboss-3d">
     Model Code:&nbsp;
   </span>
-          <span
+<br />
+         <span
   className="typewriter typewriter-medium text-sm md:text-base lg:text-lg"
-  style={{ '--chars': 32 }}
+  style={{ '--chars': (generateDisplayModelCode() || '').length }}
+  onAnimationEnd={(e) => {
+    // ให้เคอร์เซอร์หยุดทันทีเมื่อแอนิเมชัน "type-reveal" จบ
+    if (e.animationName === 'type-reveal') {
+      e.currentTarget.classList.add('is-done');
+    }
+  }}
 >
   <strong className="text-emboss-3d" style={{ color: '#86ff6a' }}>
-    {generateModelCode()}
+    {generateDisplayModelCode()}
   </strong>
-
 <button
   type="button"
   title="Copy Model"
-  data-code={generateModelCode()}   // <<< ใส่รหัสลง data-attribute
+  data-code={generateDisplayModelCode()}   // <<< ใส่รหัสลง data-attribute
   className="ml-2 align-middle text-[10px] px-2 py-0.5 rounded border border-white/20 bg-white/10 hover:bg-white/20 transition"
   onClick={async (e) => {
     const btn = e.currentTarget;
@@ -2376,10 +2509,10 @@ const backOneStep = () => {
 <br />
 <button
   className="finish-trigger px-3 py-2 bg-green-300 rounded hover:bg-green-500 transition"
-  data-code={generateModelCode()}
+  data-code={generateDisplayModelCode()}
   onClick={(e) => {
     document.documentElement.classList.add('hyp-finished');
-    const val = e.currentTarget.dataset.code || generateModelCode();
+    const val = e.currentTarget.dataset.code || generateDisplayModelCode();
     onConfirm(val);
   }}
 >
@@ -2395,13 +2528,15 @@ const backOneStep = () => {
     <div className="text-emboss-3d">SAS Hypoid Gearmotor</div>
     <div className="text-emboss-3d">Series : {type}</div>
     <div className="text-emboss-3d">
-      Gear type : {gearType === 'A' ? 'A Solid shaft' : 'H Hollow shaft'}
-    </div>
-    <div className="text-emboss-3d">Ratio : 1/{ratio}</div>
-    <div className="text-emboss-3d">
-      Output speed : {(1500 / ratio).toFixed(0)} rpm
-    </div>
-    <div className="text-emboss-3d">
+  {(() => {
+    const typeDesc = gearType === 'A'
+      ? 'A Solid shaft / Keyway'
+      : 'H Hollow shaft / Keyway';
+    const dia = getShaftDiameter(type, gearType, power, ratio) || '-';
+    return <>Gear type : {typeDesc} / Output shaft diameter : {dia}</>;
+  })()}
+</div>
+<div className="text-emboss-3d">
   Power Motor : {power != null ? power.toLocaleString() : '-'} W
 </div>
     <div className="text-emboss-3d">
@@ -2417,7 +2552,7 @@ const backOneStep = () => {
       S: '**S : (3เฟส-220/380V/50Hz/460V/60Hz)',
     };
 
-    const desc = type === 'F2' ? f2[supply] : f3[supply];
+    const desc = type === 'ZDF2' ? f2[supply] : f3[supply];
 
     return (
       <>
@@ -2425,6 +2560,46 @@ const backOneStep = () => {
       </>
     );
   })()}
+{(() => {
+  const crFile = getContinuousRatingPdf(type, power); // 'F2'|'F3', และค่ากำลังเป็น W
+  if (!crFile) return null;
+
+  const filePath = `/model/pdf/Hypoid/${encodeURIComponent(crFile)}`;
+
+  return (
+    <button
+      type="button"
+      className="
+        ml-2 inline-flex items-center
+        px-2 py-0.5 rounded-full text-[10px]
+        bg-white/10 text-white/90 border border-white/20
+        backdrop-blur-sm shadow-sm opacity-80
+        hover:opacity-100 hover:bg-white/20 hover:shadow
+        transition
+      "
+      onClick={() => {
+        // สั่งดาวน์โหลดไฟล์จาก public/model/pdf/Hypoid
+        const a = document.createElement('a');
+        a.href = filePath;
+        // ตั้งชื่อไฟล์ตอนดาวน์โหลด (จะได้ไฟล์ชื่อเดิมถ้าต้องการให้คงไว้ก็ใส่ crFile)
+        a.setAttribute('download', crFile);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }}
+    >
+      ข้อมูลจำเพาะและระดับการทำงานต่อเนื่อง
+    </button>
+  );
+})()}
+
+</div>
+    <div className="text-emboss-3d">Ratio : 1/{ratio}</div>
+    <div className="text-emboss-3d">
+  Output speed : {outputSpeed != null ? Math.round(outputSpeed) : '-'} rpm
+</div>
+    <div className="text-emboss-3d">
+  Output Torque : {outputTorqueNm != null ? outputTorqueNm.toFixed(2) : '-'} N.m
 </div>
     <div className="text-emboss-3d">
       Motor Optional : {optional?.length ? optional.join(' ') : '-'}
@@ -2456,21 +2631,33 @@ const backOneStep = () => {
 
   {/* 2) Drawing 2D (pdf) */}
   <button
-    type="button"
-    className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
-    data-code={generateModelCode()}
-    onClick={(e) => {
-      const code = e.currentTarget.dataset.code || generateModelCode();
-      window.open(`/docs/2d/${code}.pdf`, '_blank', 'noopener,noreferrer');
-    }}
-  >
-    Drawing 2D (pdf)
-  </button>
+  type="button"
+  className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
+  onClick={() => {
+    // หาไฟล์ต้นทางตาม Series/Power
+    const src = getDrawingPdfSrc(type, power);
+    if (!src) {
+      alert('ยังไม่มีไฟล์ Drawing 2D สำหรับรุ่นนี้');
+      return;
+    }
+
+    const fileName = `${generateDisplayModelCode()}.pdf`;
+
+    const a = document.createElement('a');
+    a.href = src;          // ไฟล์ต้นทางที่อยู่ใน public
+    a.download = fileName; // ชื่อไฟล์ขาออกที่ต้องการ
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }}
+>
+  Drawing 2D (pdf)
+</button>
 
   {/* 3) ขอใบเสนอราคา */}
   <a
     className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
-    href={`mailto:sales@example.com?subject=RFQ%20-%20${encodeURIComponent(generateModelCode())}&body=ขอใบเสนอราคา%20รุ่น:%20${encodeURIComponent(generateModelCode())}`}
+    href={`mailto:sales@example.com?subject=RFQ%20-%20${encodeURIComponent(generateDisplayModelCode())}&body=ขอใบเสนอราคา%20รุ่น:%20${encodeURIComponent(generateDisplayModelCode())}`}
   >
     ขอใบเสนอราคา
   </a>

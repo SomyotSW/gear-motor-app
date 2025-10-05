@@ -13,10 +13,10 @@ import KB3D from './assets/3Dgif/KB3D.gif';
 import RC3D from './assets/3Dgif/RC3D.gif';
 import RT3D from './assets/3Dgif/RT3D.gif';
 
-import F2A from './assets/hypoid/F2A.gif';
-import F2H from './assets/hypoid/F2H.gif';
-import F3A from './assets/hypoid/F3A.gif';
-import F3H from './assets/hypoid/F3H.gif';
+import ZDF2A from './assets/hypoid/F2A.gif';
+import ZDF2H from './assets/hypoid/F2H.gif';
+import ZDF3A from './assets/hypoid/F3A.gif';
+import ZDF3H from './assets/hypoid/F3H.gif';
 import hourglass from './assets/hourglass.gif';
 
 import GNGUGIF from './assets/bldc/GNGUGIF.gif';
@@ -800,10 +800,10 @@ const gearGifForHead = () => {
 
 // เลือก GIF สำหรับ Hypoid จาก state: hypoidType(F2/F3) + hypoidGearType(H/A)
 const hypoidGif = () => {
-   if (hypoidType === 'F2' && hypoidGearType === 'A') return F2A;
-   if (hypoidType === 'F2' && hypoidGearType === 'H') return F2H;
-   if (hypoidType === 'F3' && hypoidGearType === 'A') return F3A;
-   if (hypoidType === 'F3' && hypoidGearType === 'H') return F3H;
+   if (hypoidType === 'ZDF2' && hypoidGearType === 'A') return ZDF2A;
+   if (hypoidType === 'ZDF2' && hypoidGearType === 'H') return ZDF2H;
+   if (hypoidType === 'ZDF3' && hypoidGearType === 'A') return ZDF3A;
+   if (hypoidType === 'ZDF3' && hypoidGearType === 'H') return ZDF3H;
    return null;
  };
 
