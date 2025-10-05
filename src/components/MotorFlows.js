@@ -80,6 +80,7 @@ import KIECImg from '../assets/rkfs/KIEC.png';
 import KINPUTImg from '../assets/rkfs/KINPUT.png';
 import KSERVOImg from '../assets/rkfs/KSERVO.png';
 import KWMImg from '../assets/rkfs/KWM.png';
+import hypoidImg from '../assets/hypoid/hypoid.png';
 
 // [ADD-RKFS-ASSETS] IEC drawings
 import DrawRam from '../assets/rkfs/DrawRam.png';
@@ -1904,6 +1905,7 @@ export function generateBLDCModelCode(state) {
 
 
 export function renderHypoidGearFlow(hypoidState, hypoidSetters, onConfirm) {
+
 function getContinuousRatingPdf(series, powerW) {
   // series ใช้ 'F2'|'F3' หรือ 'ZDF2'|'ZDF3' ก็ได้
   const s = (series || '').toUpperCase();
@@ -1920,8 +1922,8 @@ function getContinuousRatingPdf(series, powerW) {
 
   if (isF3) {
     // ตามเงื่อนไขที่ให้มา
-    if (p === 100)  return "Specificatio&Continuous rating15W-25W.pdf";
-    if (p === 200)  return "Specificatio&Continuous rating15W-25W.pdf";
+    if (p === 100)  return "Specificatio&Continuous rating100W.pdf";
+    if (p === 200)  return "Specificatio&Continuous rating200W.pdf";
     if (p === 400)  return "Specificatio&Continuous rating400W.pdf";
     if (p === 750)  return "Specificatio&Continuous rating750W.pdf";
     if (p === 1500) return "Specificatio&Continuous rating1500W.pdf";
@@ -2029,19 +2031,27 @@ const {
     direction,   // RL, RR, RF, RB, LL, LR, LF, LB
     power,       // 15W–2200W
     supply,      // C, A, S, S3
-    optional     // B, F, P (Array)
+    optional,
+    outputSpeed,
+    outputTorqueNm,
+    quantity, 
   } = hypoidState;
 
 const r = Number(ratio) || 0;
 const pW = Number(power) || 0;
 
-// คำนวณ
-const outputSpeed = r ? 1500 / r : null;           // rpm
-const pKw = pW / 1000;                              // kW
-const outputTorqueNm = (outputSpeed && pKw)
-  ? (9550 * pKw) / outputSpeed
-  : null;
+const calcOutputSpeed = ratio ? 1500 / ratio : null; // rpm
+const motorKw         = (typeof power === 'number') ? power / 1000 : null; // kW
 
+const calcOutputTorqueNm =
+  (calcOutputSpeed != null && motorKw != null)
+    ? (9550 * motorKw) / calcOutputSpeed
+    : null;
+
+// ถ้าใน JSX ของคุณอ้าง `outputSpeed` / `outputTorqueNm` อยู่แล้ว
+// ให้ map มาใช้ตัวใหม่ หรือถ้าก่อนหน้าคุณมีค่าที่คำนวณแล้วก็ใช้ค่านั้นแทน
+const outputSpeedToShow   = (typeof outputSpeed   !== 'undefined') ? outputSpeed   : calcOutputSpeed;
+const outputTorqueToShow  = (typeof outputTorqueNm!== 'undefined') ? outputTorqueNm: calcOutputTorqueNm;
 
   const update = (key, value) => {
     const setterMap = {
@@ -2519,149 +2529,210 @@ const backOneStep = () => {
   เสร็จสิ้น
 </button>
 {/* ===== Specification & Drawing (อยู่ระหว่าง Model Code และปุ่มเสร็จสิ้น) ===== */}
-  {/* เนื้อหาจะโผล่เฉพาะหลังคลิก "เสร็จสิ้น" */}
-  <div className="show-when-finished mt-2 flex justify-center">
-    <div id="spec-top" className="mt-4 w-full max-w-[720px] text-center">
-  <div className="text-emboss-3d font-extrabold text-lg md:text-xl leading-tight">
-    Specification and Drawing
-  </div>
-    <div className="text-emboss-3d">SAS Hypoid Gearmotor</div>
-    <div className="text-emboss-3d">Series : {type}</div>
-    <div className="text-emboss-3d">
-  {(() => {
-    const typeDesc = gearType === 'A'
-      ? 'A Solid shaft / Keyway'
-      : 'H Hollow shaft / Keyway';
-    const dia = getShaftDiameter(type, gearType, power, ratio) || '-';
-    return <>Gear type : {typeDesc} / Output shaft diameter : {dia}</>;
-  })()}
+{/* เนื้อหาจะโผล่เฉพาะหลังคลิก "เสร็จสิ้น" */}
+<div className="show-when-finished mt-2 flex justify-center">
+  <div id="spec-top" className="mt-4 w-full max-w-[1260px] text-left">
+    <div
+      className="
+        ml-4 md:ml-10 lg:ml-16
+        text-left
+        bg-white/5 rounded-2xl px-6 py-5
+        backdrop-blur-sm ring-1 ring-white/10 shadow-lg
+        max-w-[1200px] w-[calc(100%-2rem)]
+                relative
+      "
+    >
+      <div className="text-emboss-3d">SAS Hypoid Gearmotor</div>
+      <div className="text-emboss-3d">Series : {type}</div>
+
+      <div className="text-emboss-3d">
+        {(() => {
+          const typeDesc =
+            gearType === 'A' ? 'A Solid shaft / Keyway' : 'H Hollow shaft / Keyway';
+          const dia = getShaftDiameter(type, gearType, power, ratio) || '-';
+          return (
+            <>Gear type : {typeDesc} / Output shaft diameter : {dia}</>
+          );
+        })()}
+      </div>
+
+      <div className="text-emboss-3d">
+        Power Motor : {power != null ? power.toLocaleString() : '-'} W
+      </div>
+
+      <div className="text-emboss-3d">
+        {(() => {
+          const f2 = {
+            C: ' : 1เฟส-Single phase 220/50Hz/60Hz',
+            A: ' : 1เฟส-Single phase 110/50Hz/60Hz',
+            S: ' : 3เฟส-Three phase 220V/50Hz/60Hz',
+            S3: ' : 3เฟส-Three phase 380V/50Hz/60Hz',
+            S4: ' : 3เฟส-Three phase 460V/60Hz',
+          };
+          const f3 = {
+            S: '**S : (3เฟส-220/380V/50Hz/460V/60Hz)',
+          };
+          const desc = type === 'ZDF2' ? f2[supply] : f3[supply];
+          return (
+            <>
+              Power supply : {supply || '-'}
+              <strong>{desc || ''}</strong>
+            </>
+          );
+        })()}
+
+        {(() => {
+          const crFile = getContinuousRatingPdf(type, power);
+          if (!crFile) return null;
+          const filePath = `/model/pdf/Hypoid/${encodeURIComponent(crFile)}`;
+          return (
+            <button
+              type="button"
+              className="
+                ml-2 inline-flex items-center
+                px-2 py-0.5 rounded-full text-[10px]
+                bg-white/10 text-white/90 border border-white/20
+                backdrop-blur-sm shadow-sm opacity-80
+                hover:opacity-100 hover:bg-white/20 hover:shadow
+                transition
+              "
+              onClick={() => {
+                const a = document.createElement('a');
+                a.href = filePath;
+                a.setAttribute('download', crFile);
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              }}
+            >
+              ข้อมูลจำเพาะและระดับการทำงานต่อเนื่อง
+            </button>
+          );
+        })()}
+      </div>
+
+      <div className="text-emboss-3d">Ratio : 1/{ratio}</div>
+
+      <div className="text-emboss-3d">
+  Output speed : {outputSpeedToShow != null ? Math.round(outputSpeedToShow) : '-'} rpm
 </div>
 <div className="text-emboss-3d">
-  Power Motor : {power != null ? power.toLocaleString() : '-'} W
+  Output Torque : {outputTorqueToShow != null ? outputTorqueToShow.toFixed(2) : '-'} N.m
 </div>
-    <div className="text-emboss-3d">
-  {(() => {
-    const f2 = {
-      C: ' : 1เฟส-Single phase 220/50Hz/60Hz',
-      A: ' : 1เฟส-Single phase 110/50Hz/60Hz',
-      S: ' : 3เฟส-Three phase 220V/50Hz/60Hz',
-      S3: ' : 3เฟส-Three phase 380V/50Hz/60Hz',
-      S4: ' : 3เฟส-Three phase 460V/60Hz',
-    };
-    const f3 = {
-      S: '**S : (3เฟส-220/380V/50Hz/460V/60Hz)',
-    };
 
-    const desc = type === 'ZDF2' ? f2[supply] : f3[supply];
+      <div className="text-emboss-3d">
+        Motor Optional : {optional?.length ? optional.join(' ') : '-'}
+        {optional?.includes('B') && ' — B: Electromagnetic brake'}
+      </div>
+<div className="show-when-finished mt-4 flex justify-center">
+  <div
+    className="
+      inline-flex items-center gap-2
+      px-3 py-1.5 rounded-full
+      bg-white/10 text-white/90 border border-white/20
+      backdrop-blur-sm shadow-sm text-sm
+    "
+    aria-label="ตัวเลือกจำนวน"
+  >
+    <span className="text-emboss-3d mr-1 text-sm">จำนวน</span>
 
-    return (
-      <>
-        Power supply : {supply || '-'}<strong>{desc || ''}</strong>
-      </>
-    );
-  })()}
-{(() => {
-  const crFile = getContinuousRatingPdf(type, power); // 'F2'|'F3', และค่ากำลังเป็น W
-  if (!crFile) return null;
-
-  const filePath = `/model/pdf/Hypoid/${encodeURIComponent(crFile)}`;
-
-  return (
     <button
       type="button"
+      title="ลดจำนวน"
       className="
-        ml-2 inline-flex items-center
-        px-2 py-0.5 rounded-full text-[10px]
-        bg-white/10 text-white/90 border border-white/20
-        backdrop-blur-sm shadow-sm opacity-80
-        hover:opacity-100 hover:bg-white/20 hover:shadow
-        transition
+        w-7 h-7 rounded-full grid place-items-center
+        bg-white/10 border border-white/20
+        hover:bg-white/20 active:scale-95 transition text-xs
       "
-      onClick={() => {
-        // สั่งดาวน์โหลดไฟล์จาก public/model/pdf/Hypoid
-        const a = document.createElement('a');
-        a.href = filePath;
-        // ตั้งชื่อไฟล์ตอนดาวน์โหลด (จะได้ไฟล์ชื่อเดิมถ้าต้องการให้คงไว้ก็ใส่ crFile)
-        a.setAttribute('download', crFile);
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }}
+      onClick={() => hypoidSetters.setQuantity(q => Math.max(1, q - 1))}
     >
-      ข้อมูลจำเพาะและระดับการทำงานต่อเนื่อง
+      ➖
     </button>
-  );
-})()}
 
-</div>
-    <div className="text-emboss-3d">Ratio : 1/{ratio}</div>
-    <div className="text-emboss-3d">
-  Output speed : {outputSpeed != null ? Math.round(outputSpeed) : '-'} rpm
-</div>
-    <div className="text-emboss-3d">
-  Output Torque : {outputTorqueNm != null ? outputTorqueNm.toFixed(2) : '-'} N.m
-</div>
-    <div className="text-emboss-3d">
-      Motor Optional : {optional?.length ? optional.join(' ') : '-'}
-      {optional?.includes('B') && ' — B: Electromagnetic brake'}
-    </div>
+    <span
+      className="min-w-[2ch] text-center font-extrabold text-white/95 text-base select-none"
+      aria-live="polite"
+    >
+      {quantity}
+    </span>
+
+    <button
+      type="button"
+      title="เพิ่มจำนวน"
+      className="
+        w-7 h-7 rounded-full grid place-items-center
+        bg-white/10 border border-white/20
+        hover:bg-white/20 active:scale-95 transition text-xs
+      "
+      // จำกัดค่าสูงสุดตามต้องการ (เช่น 999)
+      onClick={() => hypoidSetters.setQuantity(q => q + 1)}
+    >
+      ➕
+    </button>
+
+    <span className="text-emboss-3d ml-1 text-sm">ตัว</span>
   </div>
 </div>
+          <img
+    src={`${process.env.PUBLIC_URL}/model/img/Hypoid/hypoid.png`}
+    alt="Hypoid"
+    className="hidden md:block absolute top-16 right-7 w-[390px] max-w-[45%] rounded-xl opacity-90"
+  />
+</div>
+    </div>
+  </div>
+<>
 <br />
-<div className="show-when-finished flex flex-wrap items-center justify-center gap-3 mt-4">
+<div className="show-when-finished hyp-cta-wrap mt-4">
   {/* 1) General specification */}
-<button
-  type="button"
-  className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
-  onClick={() => {
-    // ไฟล์อยู่ใน public => เสิร์ฟเป็น /model/pdf/Hypoid/...
-    const url = '/model/pdf/Hypoid/General%20specification.pdf';
-
-    // พยายามดาวน์โหลดด้วย <a download> (ทำงานกับ Chrome/Edge/Firefox ส่วนใหญ่)
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'General specification.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }}
->
-  General specification
-</button>
-
+  <button
+    type="button"
+    className="hyp-cta"
+    onClick={() => {
+      const url = '/model/pdf/Hypoid/General%20specification.pdf';
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'General specification.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }}
+  >
+    General specification
+  </button>
   {/* 2) Drawing 2D (pdf) */}
   <button
-  type="button"
-  className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
-  onClick={() => {
-    // หาไฟล์ต้นทางตาม Series/Power
-    const src = getDrawingPdfSrc(type, power);
-    if (!src) {
-      alert('ยังไม่มีไฟล์ Drawing 2D สำหรับรุ่นนี้');
-      return;
-    }
-
-    const fileName = `${generateDisplayModelCode()}.pdf`;
-
-    const a = document.createElement('a');
-    a.href = src;          // ไฟล์ต้นทางที่อยู่ใน public
-    a.download = fileName; // ชื่อไฟล์ขาออกที่ต้องการ
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }}
->
-  Drawing 2D (pdf)
-</button>
+    type="button"
+    className="hyp-cta"
+    onClick={() => {
+      const src = getDrawingPdfSrc(type, power);
+      if (!src) {
+        alert('ยังไม่มีไฟล์ Drawing 2D สำหรับรุ่นนี้');
+        return;
+      }
+      const fileName = `${generateDisplayModelCode()}.pdf`;
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }}
+  >
+    Drawing 2D (pdf)
+  </button>
 
   {/* 3) ขอใบเสนอราคา */}
   <a
-    className="px-3 py-2 rounded bg-white/10 text-white/90 border border-white/20 backdrop-blur-sm hover:bg-white/20 transition"
-    href={`mailto:sales@example.com?subject=RFQ%20-%20${encodeURIComponent(generateDisplayModelCode())}&body=ขอใบเสนอราคา%20รุ่น:%20${encodeURIComponent(generateDisplayModelCode())}`}
+    className="hyp-cta"
+    href={`mailto:sales@example.com?subject=RFQ%20-%20${encodeURIComponent(
+      generateDisplayModelCode()
+    )}&body=ขอใบเสนอราคา%20รุ่น:%20${encodeURIComponent(generateDisplayModelCode())}`}
   >
     ขอใบเสนอราคา
   </a>
 </div>
+</>
           <div className="mt-4">
   <button
     onClick={backOneStep}

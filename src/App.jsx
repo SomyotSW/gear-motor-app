@@ -385,6 +385,29 @@ const servoSetters = {
   const [hypoidPower, setHypoidPower] = useState(null);           // เช่น 90W
   const [hypoidSupply, setHypoidSupply] = useState(null);         // C, A, S, S3
   const [hypoidOptional, setHypoidOptional] = useState([]); 
+    const [hypoidQuantity, setHypoidQuantity] = useState(1);
+
+const hypoidState = {
+  type: hypoidType,
+  gearType: hypoidGearType,
+  ratio: hypoidRatio,
+  direction: hypoidDirection,
+  power: hypoidPower,
+  supply: hypoidSupply,
+  optional: hypoidOptional,
+  quantity: hypoidQuantity,                // <<< เพิ่มบรรทัดนี้
+};
+
+const hypoidSetters = {
+  setType: setHypoidType,
+  setGearType: setHypoidGearType,
+  setRatio: setHypoidRatio,
+  setDirection: setHypoidDirection,
+  setPower: setHypoidPower,
+  setSupply: setHypoidSupply,
+  setOptional: setHypoidOptional,
+  setQuantity: setHypoidQuantity,             // <<< เพิ่มบรรทัดนี้
+};
 
   const [rkfsSeries, setRkfsSeries] = useState(null);
     const [rkfsDesign, setRkfsDesign] = useState(null);
@@ -666,26 +689,6 @@ const goHomeFromBLDC = () => {
   setSelectedProduct(null);    // กลับหน้า Product
     setBldcHEType(null);
     setBldcSFDiameter(null);
-};
-
-const hypoidState = {
-  type: hypoidType,
-  gearType: hypoidGearType,
-  ratio: hypoidRatio,
-  direction: hypoidDirection,
-  power: hypoidPower,
-  supply: hypoidSupply,
-  optional: hypoidOptional
-};
-
-const hypoidSetters = {
-  setType: setHypoidType,
-  setGearType: setHypoidGearType,
-  setRatio: setHypoidRatio,
-  setDirection: setHypoidDirection,
-  setPower: setHypoidPower,
-  setSupply: setHypoidSupply,
-  setOptional: setHypoidOptional
 };
 
 // [ADD-HYPOID] รีเซ็ต Hypoid + กลับหน้า Product รวม (เรียกใช้จาก "ปุ่ม Home เดิม")

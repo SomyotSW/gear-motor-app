@@ -671,3 +671,80 @@ code {
 :root.hyp-finished .finish-trigger{
   display: none !important;
 }
+
+/* === CTA buttons (เฉพาะ 3 ปุ่มล่าง) === */
+.hyp-cta {
+  padding: 0.65rem 1.1rem;
+  border-radius: 0.75rem;
+  background: rgba(255,255,255,0.08);
+  color: #eafff0;
+  border: 1px solid rgba(255,255,255,0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    0 6px 14px rgba(0,0,0,0.25);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease;
+}
+
+.hyp-cta:hover {
+  /* โทนเขียวอ่อน + เด้ง */
+  background: linear-gradient(180deg, rgba(134,255,106,0.22), rgba(134,255,106,0.10));
+  border-color: rgba(134,255,106,0.55);
+  color: #eaffea;
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 14px 26px rgba(134,255,106,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.35);
+  animation: hyp-bounce 640ms ease-out 1;
+}
+
+.hyp-cta:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow:
+    0 8px 16px rgba(134,255,106,0.14),
+    inset 0 2px 6px rgba(0,0,0,0.25);
+}
+
+/* ลูกเล่น “เด้ง” สั้น ๆ ตอน hover */
+@keyframes hyp-bounce {
+  0%   { transform: translateY(0) scale(1); }
+  45%  { transform: translateY(-6px) scale(1.025); }
+  75%  { transform: translateY(-3px) scale(1.012); }
+  100% { transform: translateY(-4px) scale(1.02); }
+}
+
+/* กล่องครอบ 3 ปุ่ม ให้มีพื้นที่ว่างและไม่ตัดเงา/เอฟเฟ็กต์ */
+.hyp-cta-wrap{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;                 /* ช่องว่างระหว่างปุ่ม */
+  padding: 10px 12px;        /* เว้นจากขอบ container */
+  overflow: visible;         /* ไม่ตัดตอนปุ่มเด้ง */
+}
+
+/* ให้ปุ่มมี margin เองเล็กน้อย และยกตัวได้ไม่ชนขอบ */
+.hyp-cta{
+  position: relative;
+  margin: 6px 8px;           /* กันขอบเพิ่ม */
+  transform-origin: center;  /* เด้งจากกึ่งกลาง */
+  transform: translateZ(0);  /* กัน jitter บนบางเบราว์เซอร์ */
+  will-change: transform, box-shadow;
+  z-index: 0;                /* ปกติ */
+}
+
+.hyp-cta:hover{
+  transform: translateY(-6px) scale(1.02);  /* เด้งขึ้นชัดขึ้นเล็กน้อย */
+  z-index: 10;               /* ลอยทับ ไม่ถูกตัด/บัง */
+}
+
+/* เผื่อข้างล่างมี iPad frame/รูป ให้มีพื้นที่หายใจ */
+.hyp-cta-wrap + .below-block-spacing{
+  margin-top: 8px;
+}
