@@ -2982,6 +2982,7 @@ export function renderRKFSFlow(state, setState, onConfirm, onRequestQuote = null
     rkfsINPUTshaftDia,
     rkfsInputShaft,
     rkfsInputShaftDia,
+        rkfsColor,
   } = state;
 
 // [ADD-RKFS-MAPS] ผูก Series -> รูป/ไฟล์ ที่ต้องแสดง
@@ -3020,7 +3021,8 @@ const RKFS_INPUT_GIF = {
     rkfsINPUTshaftDia: setState.setRkfsINPUTshaftDia,
     rkfsInputShaft:    setState.setRkfsInputShaft,
     rkfsInputShaftDia: setState.setRkfsInputShaftDia,
-        rkfsQty: setState.setRkfsQty,
+    rkfsQty: setState.setRkfsQty,
+        rkfsColor: setState.setRkfsColor,
   };
 
   if (setterMap[key]) {
@@ -5444,10 +5446,16 @@ const MOTOR_TYPE_KEY = (type) => {
       <div>Rated Speed : <b>{ratedSpeed ?? '—'}</b> rpm</div>
       <div>Specification Motor: 3Phase 380VAC,50Hz/60Hz</div>
       <div>
-        Rated Current : 380V: <b>{a380}</b> A, 400V: <b>{a400}</b> A , 415V : <b>{a415}</b> A , Efficiency 100% : <b>{eff100}</b> %
+        Rated Current : 380V: <b>{a380}</b> A, 400V: <b>{a400}</b> A , 415V : <b>{a415}</b> A
       </div>
       <div>
-        Protection IP55, Insulation Class F: ทนอุณหภูมิได้สูงสุด 155°C, <b>{mType}</b>, <b>{motorTypeNote}</b>.
+        Protection IP55, Insulation Class F: ทนอุณหภูมิได้สูงสุด 155°C.
+      </div>
+      <div>
+        <b>IEC 60034-2-1 : {mType}</b>, <b>{motorTypeNote}</b>.
+      </div>
+      <div>
+        Efficiency % : <b>{eff100}</b> %
       </div>
       {/* <div>Power Factor : <b>{pf}</b></div> */}
     </>
@@ -5540,19 +5548,50 @@ const MOTOR_TYPE_KEY = (type) => {
 
   return (
     <div
-      className="absolute right-8 top-1/4 -translate-y-1/2
-                 w-[300px] max-w-[25%] h-[300px] pointer-events-none"
+      className="absolute right-0 top-1/3 -translate-y-1/3
+                 w-[400px] max-w-[50%] h-[400px] pointer-events-none"
       aria-hidden="true"
     >
       <img
         src={imgSrc}
         alt={rkfsDesign}
-        className="w-full h-full object-contain opacity-95 drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] rounded-xl"
-        draggable={false}
+        className={
+    "w-full h-full object-contain opacity-95 drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] rounded-xl rkfs-color-smooth " +
+    (rkfsColor === 'black' ? 'rkfs-color-black'
+      : rkfsColor === 'blue' ? 'rkfs-color-blue'
+      : rkfsColor === 'red'  ? 'rkfs-color-red'
+      : 'rkfs-color-gray') // default = เทา (Standard)
+  }
+  draggable={false}
       />
     </div>
   );
-})()}        
+})()}
+<div
+  className="absolute right-10 bottom-20 flex items-center gap-3 bg-white/5 rounded-xl px-3 py-2 border border-white/15"
+  role="group"
+  aria-label="RKFS product color options"
+>
+  {[
+    { key: 'black',  label: 'ดำ',      style: { background: '#111' } },
+    { key: 'gray',   label: 'เทา',     style: { background: 'linear-gradient(135deg,#bbb,#888)' } },
+    { key: 'blue',   label: 'น้ำเงิน', style: { background: 'linear-gradient(135deg,#7fb3ff,#2a62ff)' } },
+    { key: 'red',    label: 'แดง',     style: { background: 'linear-gradient(135deg,#ff9aa2,#ff2841)' } },
+  ].map(({ key, label, style }) => (
+    <button
+      key={key}
+      type="button"
+      onClick={() => update('rkfsColor', key)}
+      className={
+        "rkfs-tint-btn " + (rkfsColor === key ? "active" : "")
+      }
+      title={label}
+      aria-pressed={rkfsColor === key}
+      aria-label={`เลือกสี ${label}`}
+      style={style}
+    />
+  ))}
+</div>        
 <div className="absolute right-6 bottom-4 flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 border border-white/15">
   <span className="text-white/80 text-sm">จำนวน</span>
 

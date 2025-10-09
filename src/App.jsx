@@ -541,7 +541,8 @@ const hypoidSetters = {
     const [rkfsInputShaftDia, setRkfsInputShaftDia] = useState(null);
     const [rkfsINPUTshaft, setRkfsINPUTshaft]       = useState(null);
     const [rkfsINPUTshaftDia, setRkfsINPUTshaftDia] = useState(null);
-        const [rkfsQty, setRkfsQty] = useState(1);
+    const [rkfsQty, setRkfsQty] = useState(1);
+        const [rkfsColor, setRkfsColor] = useState('gray'); // [ADD] สีมาตรฐาน (เทา)
 
     // === SRV Worm Gear states ===
 const [srvSeries, setSrvSeries] = useState(null);
@@ -1140,14 +1141,14 @@ const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, 
   rkfsMountingTemp,
   rkfsInputSel, 
     rkfsInputShaft,
-  rkfsInputShaftDia,rkfsQty,              
+  rkfsInputShaftDia,rkfsQty, rkfsColor,              
 };
   const rkfsSetters = {
   setRkfsSeries, setRkfsDesign, setRkfsSize, setRkfsMotorType, setRkfsMotorPower,
   setRkfsPole, setRkfsRatio, setRkfsMounting, setRkfsPosition, setRkfsPositionSub,
   setRkfsDesignSuffix, setRkfsMountingTemp,
   setRkfsInputSel,
-    setRkfsINPUTshaft, setRkfsINPUTshaftDia, setRkfsInputShaft, setRkfsInputShaftDia, setRkfsQty,          
+    setRkfsINPUTshaft, setRkfsINPUTshaftDia, setRkfsInputShaft, setRkfsInputShaftDia, setRkfsQty, setRkfsColor,       
 };
 // [ADD] เรียกตอนกดปุ่ม "ขอใบเสนอราคา" จาก RKFS
 const handleRKFSRequestQuote = (summary) => {

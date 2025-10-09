@@ -748,3 +748,41 @@ code {
 .hyp-cta-wrap + .below-block-spacing{
   margin-top: 8px;
 }
+
+/* ===== [ADD] RKFS — สีเฉดของภาพสินค้า ด้วย CSS filter ===== */
+.rkfs-color-smooth { transition: filter 220ms ease; }
+
+/* เทา (Standard) — ไม่ปรับ filter */
+.rkfs-color-gray { filter: none; }
+
+/* ดำ — ทำให้ดูดรอปลง/เข้ม */
+.rkfs-color-black { filter: grayscale(1) brightness(0.45) contrast(1.25); }
+
+.rkfs-color-red {
+  filter:
+    invert(12%)   /* ดึงโทนฐาน */
+    sepia(13%)    /* ให้จับ hue ได้แม่น */
+    saturate(950%) /* เพิ่มความสดของสี */
+    hue-rotate(164deg) /* เอียงไป teal-blue */
+    brightness(90%)
+    contrast(100%);
+}
+
+/* แดง — หมุนเฉดไปทางแดง */
+.rkfs-color-blue { filter: hue-rotate(-1deg) saturate(2.45) brightness(0.98); }
+
+/* ปุ่มวงกลมเลือกสี */
+.rkfs-tint-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255,255,255,0.45);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  cursor: pointer;
+  outline: none;
+}
+.rkfs-tint-btn:hover { transform: translateY(-1px); }
+.rkfs-tint-btn:active { transform: scale(0.96); }
+.rkfs-tint-btn.active {
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.45);
+}
