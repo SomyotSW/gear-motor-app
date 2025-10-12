@@ -786,3 +786,114 @@ code {
 .rkfs-tint-btn.active {
   box-shadow: inset 0 0 0 2px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.45);
 }
+
+/* === HB color tints (match RKFS approach; use CSS filter on <img>) === */
+.hb-tint img{
+  transition: filter .25s ease, transform .25s ease;
+  will-change: filter, transform;
+}
+
+/* สีมาตรฐาน (เทาอมฟ้า) */
+.hb-tint-standard img{
+  /* ฐานรูปของ HB เป็นโทนฟ้าอยู่แล้ว → ลดสีให้นุ่ม */
+  filter: saturate(0.9) hue-rotate(190deg) brightness(1.04) contrast(1.02);
+}
+
+/* ขาว */
+.hb-tint-white img{
+  filter: grayscale(1) brightness(1.28) contrast(0.95);
+}
+
+/* ดำ */
+.hb-tint-black img{
+  filter: grayscale(1) brightness(.58) contrast(1.18);
+}
+
+/* น้ำเงิน (เข้มกว่ามาตรฐานเล็กน้อย) */
+.hb-tint-blue img{
+  filter: hue-rotate(0deg) saturate(1.18) brightness(1.02) contrast(1.03);
+}
+
+/* แดง */
+.hb-tint-red img{
+  /* หมุน hue จากฟ้า → แดง + ดัน saturation */
+  filter: hue-rotate(320deg) saturate(1.9) brightness(1.06) contrast(1.02);
+}
+
+/* hover ให้รูปเด้งนิดนึง (เหมือน RKFS) */
+.hb-tint:hover img{ transform: translateZ(0) scale(1.02); }
+
+/* ==== HB color tint overlay (เหมือนแนวที่ใช้กับ RKFS) ==== */
+.hb-img-wrap {
+  position: relative;
+  display: inline-block;
+}
+.hb-img-wrap > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none; /* กันทับปุ่ม */
+}
+
+/* ชั้นทับสี */
+.hb-tint {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;            /* เริ่มต้นไม่โชว์ */
+}
+
+/* สีมาตรฐาน = ไม่ทับสี (คงรูปเดิม) */
+.hb-tint.none {
+  opacity: 0;
+}
+
+/* สีอื่น ๆ ใช้ mix-blend เพื่อให้ยังเห็นเงาโลหะ */
+.hb-tint.white {
+  background: #f5f5f5;
+  mix-blend-mode: screen;   /* ทำให้สว่างขึ้น */
+  opacity: .55;
+}
+
+.hb-tint.black {
+  background: #111827;
+  mix-blend-mode: multiply; /* ทำให้มืดลง */
+  opacity: .60;
+}
+
+.hb-tint.blue {
+  background: #3b82f6;
+  mix-blend-mode: color;    /* เปลี่ยนโทนสี */
+  opacity: .65;
+}
+
+.hb-tint.red {
+  background: #ef4444;
+  mix-blend-mode: color;    /* เปลี่ยนโทนสี */
+  opacity: .65;
+}
+
+/* === HB image color filters (apply on <img>) === */
+.motor-color-standard { filter: none; }
+
+.motor-color-white {
+  /* ทำให้สว่าง/ซีดลงใกล้สีขาว */
+  filter: saturate(0.1) brightness(1.65) contrast(1.55);
+}
+
+.motor-color-black {
+  /* ลดความสว่างและอิ่มสีให้หม่นดำ */
+  filter: saturate(0.2) brightness(0.55) contrast(1.35);
+}
+
+.motor-color-red {
+  /* โทนน้ำเงินเข้ม */
+  filter: hue-rotate(155deg) saturate(1.9) brightness(0.95) contrast(1.45);
+}
+
+.motor-color-blue {
+  /* โทนแดงอุ่น */
+  filter: hue-rotate(-01deg) saturate(1.9) brightness(1.10) contrast(1.45);
+}
+

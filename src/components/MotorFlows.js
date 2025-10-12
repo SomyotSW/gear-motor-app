@@ -283,6 +283,22 @@ import ZDY1Img  from '../assets/hb/ZDY1.png';
 import HTypeImg from '../assets/hb/HType.png';
 import BTypeImg from '../assets/hb/BType.png';
 
+import HADesignImg from '../assets/hb/HADesign.png';
+import HBDesignImg from '../assets/hb/HBDesign.png';
+import HCDesignImg from '../assets/hb/HCDesign.png';
+import HDDesignImg from '../assets/hb/HDDesign.png';
+import HEDesignImg from '../assets/hb/HEDesign.png';
+import HFDesignImg from '../assets/hb/HFDesign.png';
+import HGDesignImg from '../assets/hb/HGDesign.png';
+import HHDesignImg from '../assets/hb/HHDesign.png';
+import HIDesignImg from '../assets/hb/HIDesign.png';
+import BADesignImg from '../assets/hb/BADesign.png';
+import BBDesignImg from '../assets/hb/BBDesign.png';
+import BCDesignImg from '../assets/hb/BCDesign.png';
+import BDDesignImg from '../assets/hb/BDDesign.png';
+import BEDesignImg from '../assets/hb/BEDesign.png';
+import BFDesignImg from '../assets/hb/BFDesign.png';
+
 import HST1Img  from '../assets/hb/HST1.png';
 import HST2Img  from '../assets/hb/HST2.png';
 import HST3Img  from '../assets/hb/HST3.png';
@@ -361,6 +377,145 @@ import SVFMTImg   from '../assets/srv/SVFMT.png';
 import B5Img    from '../assets/srv/B5.png';
 import B14TImg  from '../assets/srv/B14.png';
 import emailjs from '@emailjs/browser';
+
+
+/** แปลง/ดึง size เป็นตัวเลขจากรูปแบบที่อาจเป็น string (เช่น "H14") */
+function normalizeSize(size) {
+  if (typeof size === 'number' && Number.isFinite(size)) return size;
+  if (size == null) return null;
+  const m = String(size).match(/(\d{1,3})$/);
+  return m ? Number(m[1]) : null;
+}
+
+/** ใช้ lookup สเปกจาก Series/Stage/Size
+ *  @returns { od?: number, oil?: number, weight?: number } | null
+ */
+function lookupGearSpecs(series, stage, size) {
+  if (!series || !stage || !size) return null;
+  const S = String(series).toUpperCase();
+  const st = Number(stage);
+  const sz = Number(size);
+  const rec = GEAR_SPECS?.[S]?.[st]?.[sz];
+  return rec ? { ...rec } : null;
+}
+
+
+// ===== [ADD] Nominal Power tables (H/B) + helpers =====
+
+// ---------- H Series ----------
+export const H1_PN1500_BY_SIZE = {
+  1:{1.25:99, 1.4:93 , 1.6:85 , 1.8:79 , 2:73 , 2.24:67 , 2.5:63 , 2.8:56 , 3.15:50 , 3.55:44 , 4:39 , 4.5:29 , 5:25 , 5.6:17},2:{},3:{1.25:327, 1.4:303 , 1.6:285 , 1.8:209 , 2:196 , 2.24:175 , 2.5:163 , 2.8:152 , 3.15:135 , 3.55:124 , 4:110 , 4.5:77 , 5:66 , 5.6:56},4:{},5:{1.25:880, 1.4:807 , 1.6:737 , 1.8:672 , 2:644 , 2.24:589 , 2.5:528 , 2.8:471 , 3.15:419 , 3.55:368 , 4:330 , 4.5:234 , 5:198 , 5.6:168},6:{},7:{1.25:1671, 1.4:1559 , 1.6:1395 , 1.8:1326 , 2:1217 , 2.24:1087 , 2.5:974 , 2.8:836 , 3.15:758 , 3.55:687 , 4:609 , 4.5:481 , 5:377 , 5.6:320},8:{},9:{1.25:2702, 1.4:2501 , 1.6:2318 , 1.8:2128 , 2:1963 , 2.24:1754 , 2.5:1571 , 2.8:1330 , 3.15:1221 , 3.55:1103 , 4:982 , 4.5:746 , 5:644 , 5.6:491},10:{},
+  11:{1.6:3929 , 1.8:3611 , 2:3353 , 2.24:3087 , 2.5:2764 , 2.8:2470 , 3.15:2088 , 3.55:1936 , 4:1728 , 4.5:1395 , 5:1059 , 5.6:892},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{},
+  21:{},22:{},23:{},24:{},25:{},26:{},
+};
+export const H1_PN1000_BY_SIZE = {
+  1:{1.25:66, 1.4:62 , 1.6:57 , 1.8:53 , 2:49 , 2.24:45 , 2.5:42 , 2.8:37 , 3.15:33 , 3.55:30 , 4:26 , 4.5:19 , 5:16 , 5.6:12},2:{},3:{1.25:218, 1.4:202 , 1.6:190 , 1.8:140 , 2:131 , 2.24:117 , 2.5:109 , 2.8:101 , 3.15:90 , 3.55:83 , 4:73 , 4.5:51 , 5:44 , 5.6:37},4:{},5:{1.25:586, 1.4:538 , 1.6:491 , 1.8:448 , 2:429 , 2.24:392 , 2.5:352 , 2.8:557 , 3.15:279 , 3.55:245 , 4:220 , 4.5:156 , 5:132 , 5.6:112},6:{},7:{1.25:1114, 1.4:1039 , 1.6:929 , 1.8:885 , 2:812 , 2.24:724 , 2.5:649 , 2.8:557 , 3.15:505 , 3.55:458 , 4:406 , 4.5:321 , 5:251 , 5.6:214},8:{},9:{},10:{},
+  11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{},
+  21:{},22:{},23:{},24:{},25:{},26:{},
+};
+export const H1_PN750_BY_SIZE = {
+  1:{1.25:50, 1.4:47 , 1.6:43 , 1.8:40 , 2:37 , 2.24:34 , 2.5:31 , 2.8:28 , 3.15:25 , 3.55:22 , 4:20 , 4.5:14 , 5:12 , 5.6:9},2:{},3:{1.25:163, 1.4:152 , 1.6:142 , 1.8:105 , 2:98 , 2.24:88 , 2.5:82 , 2.8:76 , 3.15:67 , 3.55:62 , 4:55 , 4.5:38 , 5:33 , 5.6:28},4:{},5:{1.25:440, 1.4:404 , 1.6:368 , 1.8:336 , 2:322 , 2.24:295 , 2.5:264 , 2.8:236 , 3.15:209 , 3.55:183 , 4:165 , 4.5:117 , 5:99 , 5.6:84},6:{},7:{1.25:836, 1.4:780 , 1.6:697 , 1.8:664 , 2:609 , 2.24:544 , 2.5:487 , 2.8:418 , 3.15:379 , 3.55:342 , 4:305 , 4.5:241 , 5:188 , 5.6:160},8:{},9:{},10:{},
+  11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{},
+  21:{},22:{},23:{},24:{},25:{},26:{},
+};
+
+// ---------- H Series : STAGE 2 ----------
+export const H2_PN1500_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+export const H2_PN1000_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+export const H2_PN750_BY_SIZE  = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+// ---------- H Series : STAGE 3 ----------
+export const H3_PN1500_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{28:616, 31.5:548 , 35.5:479, 40:434, 45:377, 50:342, 56:308, 63:274, 71:240, 80:215, 90:191, 100:171, 112:153},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+export const H3_PN1000_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{28:411, 31.5:365 , 35.5:320, 40:285, 45:251, 50:228, 56:204, 63:181, 71:161, 80:143, 90:127, 100:114, 112:102},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+export const H3_PN750_BY_SIZE  = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{28:308, 31.5:274 , 35.5:240, 40:215, 45:191, 50:171, 56:153, 63:136, 71:121, 80:107, 90:95, 100:86, 112:76},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+// ---------- H Series : STAGE 4 ----------
+export const H4_PN1500_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const H4_PN1000_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const H4_PN750_BY_SIZE  = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+// ---------- B Series : STAGE 1 ----------
+export const B1_PN1500_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const B1_PN1000_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const B1_PN750_BY_SIZE  = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+// ---------- B Series : STAGE 2 ----------
+export const B2_PN1500_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const B2_PN1000_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const B2_PN750_BY_SIZE  = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+// ---------- B Series : STAGE 3 ----------
+export const B3_PN1500_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const B3_PN1000_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const B3_PN750_BY_SIZE  = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+// ---------- B Series : STAGE 4 ----------
+export const B4_PN1500_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const B4_PN1000_BY_SIZE = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+export const B4_PN750_BY_SIZE  = { 1:{},2:{},3:{},4:{},5:{},6:{},7:{},8:{},9:{},10:{}, 11:{},12:{},13:{},14:{},15:{},16:{},17:{},18:{},19:{},20:{}, 21:{},22:{},23:{},24:{},25:{},26:{} };
+
+
+// --- ตัวช่วยคั่นกลาง (log-linear) ---
+function interpLogX(mapRatioToPN, x) {
+  const keys = Object.keys(mapRatioToPN).map(Number).sort((a,b)=>a-b);
+  if (!keys.length) return null;
+  if (x <= keys[0]) return Number(mapRatioToPN[keys[0]]);
+  if (x >= keys[keys.length-1]) return Number(mapRatioToPN[keys[keys.length-1]]);
+  let lo = keys[0], hi = keys[keys.length-1];
+  for (let i=0;i<keys.length-1;i++){
+    if (x >= keys[i] && x <= keys[i+1]) { lo = keys[i]; hi = keys[i+1]; break; }
+  }
+  const yLo = Number(mapRatioToPN[lo]), yHi = Number(mapRatioToPN[hi]);
+  const t = (Math.log(x) - Math.log(lo)) / (Math.log(hi) - Math.log(lo));
+  return Math.exp((1-t)*Math.log(yLo) + t*Math.log(yHi));
+}
+
+// --- เลือกตารางตาม Series + Stage + n1 แล้วคืน PN (คั่นค่าได้เมื่อ ratio คั่นกลาง) ---
+export function getPNBySeriesStage(series /*'H'|'B'*/, stage /*1..4*/, sizeIndex, ratio, n1 /*1500|1000|750*/) {
+  if (!series || !stage || !sizeIndex || !ratio || !n1) return null;
+
+  // เลือกตาราง
+  let table = null;
+  const S = String(series).toUpperCase();
+  const R = Number(ratio);
+
+  if (S === 'H') {
+    table =
+      stage === 1 ? (n1===1500?H1_PN1500_BY_SIZE:n1===1000?H1_PN1000_BY_SIZE:n1===750?H1_PN750_BY_SIZE:null) :
+      stage === 2 ? (n1===1500?H2_PN1500_BY_SIZE:n1===1000?H2_PN1000_BY_SIZE:n1===750?H2_PN750_BY_SIZE:null) :
+      stage === 3 ? (n1===1500?H3_PN1500_BY_SIZE:n1===1000?H3_PN1000_BY_SIZE:n1===750?H3_PN750_BY_SIZE:null) :
+      stage === 4 ? (n1===1500?H4_PN1500_BY_SIZE:n1===1000?H4_PN1000_BY_SIZE:n1===750?H4_PN750_BY_SIZE:null) : null;
+  } else {
+    table =
+      stage === 1 ? (n1===1500?B1_PN1500_BY_SIZE:n1===1000?B1_PN1000_BY_SIZE:n1===750?B1_PN750_BY_SIZE:null) :
+      stage === 2 ? (n1===1500?B2_PN1500_BY_SIZE:n1===1000?B2_PN1000_BY_SIZE:n1===750?B2_PN750_BY_SIZE:null) :
+      stage === 3 ? (n1===1500?B3_PN1500_BY_SIZE:n1===1000?B3_PN1000_BY_SIZE:n1===750?B3_PN750_BY_SIZE:null) :
+      stage === 4 ? (n1===1500?B4_PN1500_BY_SIZE:n1===1000?B4_PN1000_BY_SIZE:n1===750?B4_PN750_BY_SIZE:null) : null;
+  }
+  if (!table || !table[sizeIndex]) return null;
+
+  const row = table[sizeIndex];                  // { ratio: PN, ... }
+  if (row[R] != null) return Number(row[R]);     // เจอตรง ๆ
+
+  // คั่นกลางถ้ามีอย่างน้อย 2 จุด
+  if (Object.keys(row).length >= 2) return interpLogX(row, R);
+  return null;
+}
+
+// --- คำนวณ S.F. จาก Series+Stage+timetable ---
+export function calcSFBySeriesStage(series, stage, sizeIndex, ratio, pole, kW) {
+  if (!series || !stage || !sizeIndex || !ratio || !pole || !kW) return { PN:null, SF:null };
+  const n1 = pole === 4 ? 1500 : pole === 6 ? 1000 : pole === 8 ? 750 : null; // 2-pole ไม่มีในเอกสารนี้
+  if (!n1) return { PN:null, SF:null };
+  const PN = getPNBySeriesStage(series, stage, Number(sizeIndex), Number(ratio), n1);
+  if (!PN) return { PN:null, SF:null };
+  return { PN, SF: PN / Number(kW) };
+}
+
 
 
 export const productList = [
@@ -7237,6 +7392,7 @@ const servoGifForSelection = () => {
 // รูปแบบ: (Series)(Stage)(Output)(Mounting)(Size)-(Ratio)-(ShaftDesign)
 // ตัวอย่าง: H3SH15-56-A , B2HH5-7.1-E , B2FV8-11.2-F
 export function generateHBModelCode(hbState) {
+    
   const {
     hbSeries,          // 'HB' หรือ 'ZDYFAMILY' (กดจาก Step1)
     hbHBType,          // 'H' | 'B' (เฉพาะเมื่อเลือก HB Series)
@@ -7269,18 +7425,125 @@ export function generateHBModelCode(hbState) {
   return null;
 }
 
+    function getHBShaftDesignImg(hbType, letter) {
+  if (!hbType || !letter) return null;
+  const H = { A: HADesignImg, B: HBDesignImg, C: HCDesignImg, D: HDDesignImg, E: HEDesignImg, F: HFDesignImg, G: HGDesignImg, H: HHDesignImg, I: HIDesignImg };
+  const B = { A: BADesignImg, B: BBDesignImg, C: BCDesignImg, D: BDDesignImg, E: BEDesignImg, F: BFDesignImg };
+  const table = hbType === 'H' ? H : B;
+  return table[letter] || null;
+}
+
 // === [ADD] HB: Render Flow ===
 // Step 1 → Step 9 ตามสเปกผู้ใช้
 export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownload) {
+
+const normalizeSize = (hbSize) => {
+    if (typeof hbSize === 'number') return hbSize;
+    if (!hbSize) return null;
+    const m = String(hbSize).match(/(\d{1,2})$/);
+    return m ? Number(m[1]) : null;
+  };
+
+  const H1_SPEC = {
+    1:{od:45,oil:2.5,weight:55}, 3:{od:60,oil:7,weight:128}, 5:{od:85,oil:22,weight:302},
+    7:{od:105,oil:42,weight:547}, 9:{od:125,oil:68,weight:862}, 11:{od:150,oil:120,weight:1515},
+    13:{od:180,oil:175,weight:2395}, 15:{od:220,oil:190,weight:3200}, 17:{od:240,oil:270,weight:4250},
+    19:{od:270,oil:390,weight:5800},
+  };
+  const H2_SPEC = {
+    3:{od:65,oil:6,weight:115},4:{od:80,oil:10,weight:190},5:{od:100,oil:15,weight:300},
+    6:{od:110,oil:16,weight:355},7:{od:120,oil:27,weight:505},8:{od:130,oil:30,weight:590},
+    9:{od:140,oil:42,weight:830},10:{od:160,oil:45,weight:960},11:{od:170,oil:71,weight:1335},
+    12:{od:180,oil:76,weight:1615},13:{od:200,oil:135,weight:2000},14:{od:210,oil:140,weight:2570},
+    15:{od:230,oil:210,weight:3430},16:{od:240,oil:215,weight:3655},17:{od:250,oil:290,weight:4650},
+    18:{od:270,oil:300,weight:5125},19:{od:290,oil:320,weight:5250},20:{od:300,oil:340,weight:6550},
+    21:{od:320,oil:320,weight:7200},22:{od:340,oil:340,weight:7800},
+  };
+  const SPEC_TABLE = { H: { 1: H1_SPEC, 2: H2_SPEC } }; // เผื่อ B-series, stage อื่น ๆ เพิ่มตรงนี้ภายหลัง
+
+  const lookupGearSpecs = (seriesKey, stageNum, sizeIndex) => {
+    if (!seriesKey || !stageNum || !sizeIndex) return null;
+    const seriesTbl = SPEC_TABLE[seriesKey]; if (!seriesTbl) return null;
+    const stageTbl  = seriesTbl[stageNum];   if (!stageTbl)  return null;
+    return stageTbl[sizeIndex] || null;
+  };
+
+  // … ที่เหลือของ renderHBGearFlow …
+
+
+const fmt = (val, digits = 2) => {
+  // ให้รองรับ 0, number string, null/undefined
+  if (val === 0 || val === '0') {
+    return '0';
+  }
+  const n = Number(val);
+  if (Number.isFinite(n)) {
+    return n.toLocaleString(undefined, { maximumFractionDigits: digits });
+  }
+  return '—';
+};
+
+const S = typeof hbState !== 'undefined' ? hbState : state;
   const {
     hbSeries, hbHBType, hbStage, hbOutput, hbMount,
     hbSize, hbRatio, hbShaftDesign, hbZdySelected
   } = hbState || {};
 
-  const update = (k, v) => {
-    const fn = hbSetters?.[`set${k.charAt(0).toUpperCase()}${k.slice(1)}`];
-    if (typeof fn === 'function') fn(v);
-  };
+// === HB: updater (patch) ===
+const update = (k, v) => {
+  if (typeof k !== 'string') return; // กัน k.charAt error
+
+  // [ADD] ปุ่มย้อนกลับ: ถอยทีละ Step และรีเซ็ตค่าของ step ปัจจุบัน + ขั้นต่อ ๆ ไป
+  if (k === 'goBack') {
+    // ลำดับขั้นของ HB (เรียงจากต้น -> ปลาย). ถ้ามี step เพิ่มในอนาคตให้เติมชื่อไว้ท้ายอาร์เรย์ได้
+    const stepOrder = [
+  'hbSeries',       // Step 1: เลือกซีรีส์ (HB | ZDYFAMILY)
+  'hbZdySelected',  // Step 2 (เฉพาะเมื่อเลือก ZDYFAMILY)
+  'hbHBType',       // Step 2 (เส้นทาง HB): เลือก H / B
+  'hbStage',        // Step 3: Stage of Gear
+  'hbOutput',       // Step 4: Output shaft structure
+  'hbMount',        // Step 5: Mounting Position (H/V)
+  'hbSize',         // Step 6: Gear Size
+  'hbRatioDraft',
+    'hbKW', 
+    'hbPole', 
+    'hbRatio',
+    'hbPreviewShaft',        
+  'hbShaftDesign',
+    ];
+
+    // คัดเฉพาะคีย์ที่มีจริงทั้งใน state และมี setter
+    const steps = stepOrder.filter(key =>
+      Object.prototype.hasOwnProperty.call(hbState, key) &&
+      typeof hbSetters?.[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`] === 'function'
+    );
+
+    // หา "step ล่าสุด" ที่ผู้ใช้เลือกไว้ (ค่าที่ไม่ null/undefined/'')
+    let lastIdx = -1;
+    for (let i = steps.length - 1; i >= 0; i--) {
+      const key = steps[i];
+      const val = hbState[key];
+      if (val !== null && val !== undefined && val !== '') {
+        lastIdx = i;
+        break;
+      }
+    }
+
+    // ถ้าพบ step ล่าสุด → รีเซ็ต step นั้น และรีเซ็ตทุก step หลังจากนั้น (กันค่าเก่าค้าง)
+    if (lastIdx >= 0) {
+      for (let i = lastIdx; i < steps.length; i++) {
+        const key = steps[i];
+        hbSetters[`set${key.charAt(0).toUpperCase()}${key.slice(1)}`](null);
+      }
+    }
+    return;
+  }
+
+  // อัปเดตคีย์ทั่วไป (เดิม)
+  const fn = hbSetters?.[`set${k.charAt(0).toUpperCase()}${k.slice(1)}`];
+  if (typeof fn === 'function') fn(v);
+};
+
 
 // ===== Helpers: reset / back / home =====
  const resetAll = () => {
@@ -7293,6 +7556,7 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
    update('hbRatio', null);
    update('hbShaftDesign', null);
    update('hbZdySelected', null);
+   update('hbPreviewShaft', null);
  };
 
  const goHome = () => {
@@ -7342,25 +7606,47 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
    );
  };
 
-  // --- Step 1: เลือกตระกูล ---
-  if (!hbSeries) {
-    return (
-      <div className="space-y-4 mt-6">
-        <h3 className="text-white font-bold mb-2 drop-shadow">Serier Selection</h3>
-        <div className="grid grid-cols-2 gap-5 justify-items-center">
-   <Tile img={HB1Img}  label="HB Series" onClick={() => update('hbSeries','HB')} big />
-   <Tile img={ZDY1Img} label="ZDY/ZLY/ZSY/…" onClick={() => update('hbSeries','ZDYFAMILY')} big />
- </div>
+// --- Step 1: เลือกตระกูล ---
+if (!hbSeries) {
+  return (
+    <div className="space-y-4 mt-0">
+      <h3 className="text-white font-bold mb-2 drop-shadow">Serier Selection</h3>
+      <div className="grid grid-cols-2 gap-5 justify-items-center items-start">
+        {/* ลบ prop big ออกเพื่อให้ขนาดย่อมลง */}
+        <Tile
+          img={HB1Img}
+          label="HB Series"
+          onClick={() => update('hbSeries', 'HB')}
+        />
+        <Tile
+          img={ZDY1Img}
+          label="ZDY/ZLY/ZSY/…"
+          onClick={() => update('hbSeries', 'ZDYFAMILY')}
+        />
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // --- Step 2: ถ้า HB Series → เลือก H/B | ถ้า ZDYFAMILY → แสดง 10 ปุ่ม ---
   if (hbSeries === 'HB' && !hbHBType) {
     return (
-      <div className="space-y-4 mt-6">
+      <div className="space-y-4 mt-0">
             <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+  <button
+  onClick={() => update('goBack', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-blue-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-blue-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
           Series Selection H or B
@@ -7380,9 +7666,22 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
       {k:'DBYK',img:DBYKImg},{k:'DCYK',img:DCYKImg},{k:'DFYK',img:DFYKImg},
     ];
     return (
-      <div className="space-y-4 mt-6">
+      <div className="space-y-4 mt-0">
             <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+  <button
+  onClick={() => update('goBack', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-blue-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-blue-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 2 — เลือก Series (ZDY/ZLY/…)</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center">
@@ -7411,9 +7710,22 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
     const LIST = hbHBType === 'H' ? HST : BST;
 
     return (
-      <div className="space-y-4 mt-6">
+      <div className="space-y-4 mt-0">
             <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button
+  onClick={() => update('goBack', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-blue-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-blue-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 3 — Stage of Gear</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">
@@ -7448,9 +7760,22 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
         ];
 
     return (
-      <div className="space-y-4 mt-6">
+      <div className="space-y-4 mt-0">
             <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button
+  onClick={() => update('goBack', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-blue-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-blue-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 4 — Output shaft structure</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center">
@@ -7469,9 +7794,22 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
       : [{k:'H',label:'H : Horizontal',img:BHORImg},{k:'V',label:'V : Vertical',img:BVERImg}];
 
     return (
-      <div className="space-y-4 mt-6">
+      <div className="space-y-4 mt-0">
              <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button
+  onClick={() => update('goBack', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-blue-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-blue-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 5 — Mounting Position</h3>
         <div className="grid grid-cols-2 gap-4 justify-items-center">
@@ -7497,14 +7835,27 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
       if (hbStage === 4) sizeList = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
     }
     return (
-      <div className="space-y-4 mt-6">
+      <div className="space-y-4 mt-0">
             <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
+         <button
+  onClick={() => update('goBack', null)}
+  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+             bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+             hover:text-white hover:bg-blue-500 hover:shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-blue-400/60
+             active:scale-95 transition-all duration-200"
+  style={{
+    left: 'max(1rem, env(safe-area-inset-left))',
+    bottom: 'max(1rem, env(safe-area-inset-bottom))',
+  }}
+>
+  ย้อนกลับ
+</button>
        </div>
         <h3 className="text-white font-bold mb-2 drop-shadow">Step 6 — Gear Size</h3>
         <div className="flex flex-wrap gap-2">
           {sizeList.map(s => (
-            <button key={s} onClick={() => update('hbSize', s)} className="px-4 py-2 rounded bg-white shadow hover:shadow-lg">{s}</button>
+            <button key={s} onClick={() => update('hbSize', s)} className="px-4 py-2 rounded bg-blue-200 hover:bg-blue-400">{s}</button>
           ))}
         </div>
       </div>
@@ -7525,19 +7876,180 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
       if (hbStage === 4) ratioList = [80,90,100,112,125,140,160,180,200,224,250,280,315,355,400];
     }
     return (
-      <div className="space-y-4 mt-6">
-            <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-       </div>
-        <h3 className="text-white font-bold mb-2 drop-shadow">Step 7 — Ratio</h3>
-        <div className="flex flex-wrap gap-2">
-          {ratioList.map(r => (
-            <button key={r} onClick={() => update('hbRatio', r)} className="px-4 py-2 rounded bg-blue-200 hover:bg-blue-400">{r}</button>
-          ))}
+  <div className="space-y-4 mt-0">
+    <div className="flex justify-between items-center">
+      <button
+        onClick={() => update('goBack', null)}
+        className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+                   bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+                   hover:text-white hover:bg-blue-500 hover:shadow-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-400/60
+                   active:scale-95 transition-all duration-200"
+        style={{
+          left: 'max(1rem, env(safe-area-inset-left))',
+          bottom: 'max(1rem, env(safe-area-inset-bottom))',
+        }}
+      >
+        ย้อนกลับ
+      </button>
+    </div>
+
+    <h3 className="text-white font-bold mb-2 drop-shadow">Step 7 — Ratio</h3>
+
+    {/* ปุ่มเลือก Ratio — เซ็ตแค่ hbRatioDraft ยังไม่ข้ามสเต็ป */}
+    <div className="flex flex-wrap gap-2">
+      {ratioList.map((r) => {
+        const isSel = S?.hbRatioDraft === r;
+        return (
+          <button
+            key={r}
+            type="button"
+            onClick={() => update('hbRatioDraft', r)}   // <— สำคัญ
+            className={
+              "px-4 py-2 rounded transition " +
+              (isSel ? "bg-blue-500 text-white" : "bg-blue-200 hover:bg-blue-400")
+            }
+          >
+            {r}
+          </button>
+        );
+      })}
+    </div>
+
+    {/* พาเนลคำนวณ */}
+    {(() => {
+      const ratio = Number(S?.hbRatioDraft) || null;
+      const kw    = parseFloat(S?.hbKW);
+      const pole  = Number(S?.hbPole) || null;
+      let sizeIndex = null;
+if (S?.hbSize != null) {
+  sizeIndex = typeof S.hbSize === 'number'
+    ? S.hbSize
+    : (String(S.hbSize).match(/(\d{1,2})$/)?.[1] ? Number(String(S.hbSize).match(/(\d{1,2})$/)[1]) : null);
+}
+      // base rpm ตาม pole (50Hz)
+      const baseByPole = { 2: 3000, 4: 1500, 6: 1000, 8: 750 };
+      const baseRpm    = pole ? baseByPole[pole] : null;
+   
+      // rpm หลังเกียร์
+      const rpm = ratio && baseRpm ? (baseRpm / ratio) : null;
+
+      // Torque (N·m) = (9550 * kW / rpm) * 0.88
+      const torque = (kw && rpm) ? (9550 * kw / rpm) * 0.88 : null;
+
+      const series = S?.hbHBType === 'H' ? 'H' : 'B';   
+      const stage  = Number(S?.hbStage) || null;   
+      const n1 = pole === 4 ? 1500 : pole === 6 ? 1000 : pole === 8 ? 750 : null;
+
+      const { PN, SF: sf } =
+  (series && stage && sizeIndex && ratio && pole && kw)
+    ? calcSFBySeriesStage(series, stage, sizeIndex, ratio, pole, kw)
+    : { PN:null, SF:null };
+
+      const fmt = (x) =>
+        (x || x === 0)
+          ? x.toLocaleString(undefined, { maximumFractionDigits: 2 })
+          : '—';
+
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-2">
+          {/* S.F. */}
+          <div className="rounded-2xl bg-white/10 border border-white/15 p-4">
+  <div className="text-white/70 text-sm">Service Factor : S.f.</div>
+  <div className="text-2xl font-semibold text-white mt-1">
+    { (sf || sf === 0) ? sf.toLocaleString(undefined,{ maximumFractionDigits: 2 }) : '—' }
+  </div>
+  <div className="text-white/50 text-xs mt-1">
+    { (PN && sizeIndex && series && stage && pole)
+      ? `${series}${stage}: PN=${PN.toLocaleString()} kW @ n1=${(pole===4?1500:pole===6?1000:750)} rpm, Size=${sizeIndex}`
+      : 'เลือก Ratio / ใส่ kW / เลือก Pole และมี Size ก่อน'
+    }
+  </div>
+</div>
+
+          {/* rpm */}
+          <div className="rounded-2xl bg-white/10 border border-white/15 p-4">
+            <div className="text-white/70 text-sm">Output speed (rpm)</div>
+            <div className="text-2xl font-semibold text-white mt-1">{fmt(rpm)}</div>
+            {pole && ratio && (
+              <div className="text-white/50 text-xs mt-1">= {baseRpm} / {ratio}</div>
+            )}
+          </div>
+
+          {/* N·m */}
+          <div className="rounded-2xl bg-white/10 border border-white/15 p-4">
+            <div className="text-white/70 text-sm">Output torque (N·m)</div>
+            <div className="text-2xl font-semibold text-white mt-1">{fmt(torque)}</div>
+            {kw && rpm && (
+              <div className="text-white/50 text-xs mt-1">
+                = 9550 × {kw} / {fmt(rpm)} × 0.88
+              </div>
+            )}
+          </div>
+
+          {/* กรอก kW */}
+          <div className="rounded-2xl bg-white/10 border border-white/15 p-4 lg:col-span-2">
+            <label className="text-white/70 text-sm">Motor power (kW)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={S?.hbKW ?? ''}
+              onChange={(e) => update('hbKW', e.target.value)}  // <— สำคัญ
+              placeholder="กรอกขนาดมอเตอร์ตาม kW ที่คุณต้องการ เช่น 37 "
+              className="mt-2 w-full rounded-xl bg-black/30 text-white px-3 py-2 outline-none border border-white/15 focus:border-blue-400/60"
+            />
+          </div>
+
+          {/* เลือก Pole */}
+          <div className="rounded-2xl bg-white/10 border border-white/15 p-4">
+            <div className="text-white/70 text-sm mb-2">กดเลือก Pole ของมอเตอร์</div>
+            <div className="flex gap-2">
+              {[4,6,8].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => update('hbPole', p)}  // <— สำคัญ
+                  className={
+                    "px-3 py-2 rounded-lg border " +
+                    (S?.hbPole === p
+                      ? "bg-blue-500 text-white border-blue-400"
+                      : "bg-black/30 text-white border-white/20 hover:bg-black/40")
+                  }
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            {S?.hbPole && (
+              <div className="text-white/50 text-xs mt-2">
+                Base speed: {({2:3000,4:1500,6:1000,8:750}[S.hbPole])} rpm
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    })()}
+
+    {/* ปุ่ม OK – commit ratio แล้วค่อยไป Step ถัดไป */}
+    <div className="flex justify-end mt-4">
+      <button
+        type="button"
+        disabled={!(S?.hbRatioDraft && S?.hbKW && S?.hbPole)}
+        onClick={() => { update('hbRatio', S?.hbRatioDraft); }} // <— สำคัญ
+        className={
+          "px-5 py-2 rounded-xl border " +
+          (S?.hbRatioDraft && S?.hbKW && S?.hbPole
+            ? "bg-green-500 text-white border-green-400 hover:bg-green-600"
+            : "bg-white/10 text-white/50 border-white/15 cursor-not-allowed")
+        }
+      >
+        OK
+      </button>
+    </div>
+  </div>
+);
+}
 
   // --- Step 8: Shaft Design ---
   if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize && hbRatio && !hbShaftDesign) {
@@ -7545,53 +8057,359 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
       ? ['A','B','C','D','E','F','G','H','I']
       : ['A','B','C','D','E','F'];
     return (
-      <div className="space-y-4 mt-6">
-            <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-       </div>
-        <h3 className="text-white font-bold mb-2 drop-shadow">Step 8 — Shaft Design</h3>
-        <div className="flex flex-wrap gap-2">
-          {list.map(ch => (
-            <button key={ch} onClick={() => update('hbShaftDesign', ch)} className="px-4 py-2 rounded bg-white shadow hover:shadow-lg">{ch}</button>
-          ))}
+  <div className="space-y-4 mt-0">
+    <div className="flex justify-between items-center">
+      <button
+        onClick={() => update('goBack', null)}
+        className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+                   bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+                   hover:text-white hover:bg-blue-500 hover:shadow-lg
+                   focus:outline-none focus:ring-2 focus:ring-blue-400/60
+                   active:scale-95 transition-all duration-200"
+        style={{
+          left: 'max(1rem, env(safe-area-inset-left))',
+          bottom: 'max(1rem, env(safe-area-inset-bottom))',
+        }}
+      >
+        ย้อนกลับ
+      </button>
+    </div>
+
+    <h3 className="text-white font-bold mb-2 drop-shadow">Step 8 — Shaft Design</h3>
+
+    {/* พรีวิวภาพกึ่งกลางจอ */}
+    {(() => {
+      // ใช้ค่า preview ถ้ามี, ไม่งั้นไม่แสดง
+      const previewLetter = hbState?.hbPreviewShaft || null;
+      const previewImg = getHBShaftDesignImg(hbHBType, previewLetter);
+      if (!previewImg) return null;
+      return (
+        <div
+          className="fixed inset-0 pointer-events-none z-[20] flex items-center justify-center"
+          aria-hidden="true"
+        >
+          <div className="w-[560px] h-[400px] bg-black/30 rounded-2xl border border-white/20 backdrop-blur-sm shadow-2xl flex items-center justify-center overflow-hidden">
+            <img
+              src={previewImg}
+              alt={`HB ${hbHBType} - ${previewLetter}`}
+              className="max-w-[90%] max-h-[90%] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+              draggable={false}
+            />
+          </div>
+        </div>
+      );
+    })()}
+
+    {/* แถบพรีวิวด้านล่าง (thumbnail) */}
+    <div
+      className="fixed z-[21] left-1/2 -translate-x-1/2 bottom-0 bg-black/30 border border-white/10 
+                 backdrop-blur-md rounded-2xl px-3 py-2 flex items-center gap-4"
+      role="group"
+      aria-label="HB Shaft thumbnails"
+    >
+      {list.map((ch) => {
+        const thumb = getHBShaftDesignImg(hbHBType, ch);
+        return (
+          <button
+            key={`thumb-${ch}`}
+            type="button"
+            onMouseEnter={() => update('hbPreviewShaft', ch)}
+            onFocus={() => update('hbPreviewShaft', ch)}
+            onClick={() => update('hbShaftDesign', ch)}
+            className="w-20 h-14 rounded-lg overflow-hidden bg-white/10 border border-white/20 hover:scale-[1.02] active:scale-95 transition"
+            title={`แบบ ${ch}`}
+          >
+            {thumb ? (
+              <img src={thumb} alt={`thumb ${ch}`} className="w-full h-full object-contain" />
+            ) : (
+              <span className="text-white/70">—</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+}
+
+
+// --- Step 9: Model Code + Final ---
+if (
+  hbSeries === 'HB' &&
+  hbHBType &&
+  hbStage &&
+  hbOutput &&
+  hbMount &&
+  hbSize &&
+  hbRatio &&
+  hbShaftDesign
+) {
+  const code = generateHBModelCode(hbState);
+
+  // ====== COMPUTE (ก่อน return) ======
+const S = hbState;
+
+// helper แปลง size
+const normalizeSize = (val) => {
+  if (typeof val === 'number') return val;
+  const m = String(val ?? '').match(/(\d{1,2})$/);
+  return m ? Number(m[1]) : null;
+};
+
+const sizeIndex = normalizeSize(S?.hbSize);
+const seriesKey = S?.hbHBType === 'H' ? 'H' : (S?.hbHBType === 'B' ? 'B' : null);
+const stageNum  = Number(S?.hbStage) || null;
+
+const baseByPole = { 2: 3000, 4: 1500, 6: 1000, 8: 750 };
+const n1    = baseByPole[Number(S?.hbPole)] ?? null;
+const ratio = (S?.hbRatio == null || S?.hbRatio === '') ? null : Number(S.hbRatio);
+const kw    = (S?.hbKW    == null || S?.hbKW    === '') ? null : Number(S.hbKW);
+
+const rpm    = (n1 && ratio) ? n1 / ratio : null;
+const torque = (kw && rpm) ? (9550 * kw / rpm) * 0.88 : null;
+
+let PN = null, sf = null;
+if (seriesKey && stageNum && sizeIndex && ratio && S?.hbPole && kw) {
+  const ret = calcSFBySeriesStage(seriesKey, stageNum, sizeIndex, ratio, Number(S.hbPole), kw);
+  PN = ret?.PN ?? null;
+  sf = ret?.SF ?? null;
+}
+
+// ตารางสเปก Ø / Oil / Weight
+const spec = lookupGearSpecs(seriesKey, stageNum, sizeIndex) || null;
+const inputShaftDia = S?.hbInputDia ?? null;
+const outputShaftDia = S?.hbOutputDia ?? spec?.od     ?? null; // Ø mm
+const oilLiters      = S?.hbOil       ?? spec?.oil    ?? null; // L
+const weightKg       = S?.hbWeight    ?? spec?.weight ?? null; // kg
+
+// ข้อความอ้างอิง PN
+const pnLine =
+  (PN && n1 && sizeIndex && seriesKey && stageNum)
+    ? `อ้างค่า PN จากตาราง ${seriesKey}${stageNum} @ n1 = ${n1} rpm, Size ${sizeIndex} → PN = ${Number(PN).toLocaleString()} kW`
+    : 'กรอก/เลือกข้อมูลให้ครบเพื่อคำนวณ S.F.';
+
+
+  // ---- Qty & Color (fallback ค่าตั้งต้น) ----
+  const qty   = Number(S?.hbQty) > 0 ? Number(S.hbQty) : 1;
+  const color = S?.hbColor || 'standard';
+    const IMG_FILTER_BY_COLOR = {
+  white:    'none',
+  standard: 'saturate(.9) brightness(1.06)',
+  black:    'grayscale(1) brightness(.45) contrast(1.15)',
+  blue:     'grayscale(.2) sepia(.35) hue-rotate(190deg) saturate(1.8) brightness(1.05)',
+  red:      'grayscale(.2) sepia(.55) hue-rotate(-15deg) saturate(2.2) brightness(1.05)',
+};
+
+  const COLOR_HEX = {
+    white:    '#f7f7f7',
+    standard: '#9aa8b4',
+    black:    '#111827',
+    blue:     '#3b82f6',
+    red:      '#ef4444',
+  };
+
+  const key = S?.hbOutput; // 'S','H','D','K','F','DF' ...
+  const mapH = {
+    S:  require('../assets/hb/output/H/H..S.png'),
+    H:  require('../assets/hb/output/H/H..H.png'),
+    D:  require('../assets/hb/output/H/H..D.png'),
+    K:  require('../assets/hb/output/H/H..K.png'),
+    F:  require('../assets/hb/output/H/H..F.png'),
+  };
+  const mapB = {
+    S:  require('../assets/hb/output/B/B..S.png'),
+    H:  require('../assets/hb/output/B/B..H.png'),
+    D:  require('../assets/hb/output/B/B..D.png'),
+    DF: require('../assets/hb/output/B/B..DF.png'),
+    K:  require('../assets/hb/output/B/B..K.png'),
+    F:  require('../assets/hb/output/B/B..F.png'),
+  };
+  const outputImg = (seriesKey === 'H' ? mapH : mapB)[key] || null;
+
+  // ====== RETURN (layout: ซ้ายสรุป / ขวารูป) ======
+  return (
+    <div className="space-y-5 mt-0">
+      {/* ปุ่มย้อนกลับ */}
+      <div className="flex justify-between items-center">
+        <button
+          onClick={() => update('goBack', null)}
+          className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+                     bg-blue-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+                     hover:text-white hover:bg-blue-500 hover:shadow-lg
+                     focus:outline-none focus:ring-2 focus:ring-blue-400/60
+                     active:scale-95 transition-all duration-200"
+          style={{
+            left: 'max(1rem, env(safe-area-inset-left))',
+            bottom: 'max(1rem, env(safe-area-inset-bottom))',
+          }}
+        >
+          ย้อนกลับ
+        </button>
+      </div>
+
+      <h2 className="text-center text-2xl font-bold text-blue-700">Model : {code}</h2>
+
+      {/* กริดซ้าย/ขวา */}
+      <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* LEFT: SUMMARY */}
+        <div className="lg:col-span-7">
+          <div className="rounded-2xl border border-white/15 bg-black/30 backdrop-blur-md shadow-xl p-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2 text-white">
+              <div><span className="text-white/60">Series :</span> <span className="font-semibold">{S?.hbHBType ?? '—'}</span></div>
+              <div><span className="text-white/60">Stage of Gear :</span> <span className="font-semibold">{S?.hbStage ?? '—'}</span></div>
+
+              <div><span className="text-white/60">Output shaft structure :</span> <span className="font-semibold">{S?.hbOutput ?? '—'}</span></div>
+              <div><span className="text-white/60">Mounting Position :</span> <span className="font-semibold">{S?.hbMount ?? '—'}</span></div>
+
+              <div><span className="text-white/60">Gear Size :</span> <span className="font-semibold">{S?.hbSize ?? '—'}</span></div>
+              <div><span className="text-white/60">Ratio :</span> <span className="font-semibold">{fmt(ratio,2)}</span></div>
+
+              <div><span className="text-white/60">Motor power (kW) :</span> <span className="font-semibold">{fmt(kw,2)}</span></div>
+              <div><span className="text-white/60">Pole :</span> <span className="font-semibold">{S?.hbPole ?? '—'}</span></div>
+
+              <div><span className="text-white/60">Output speed (rpm) :</span> <span className="font-semibold">{fmt(rpm,2)}</span></div>
+              <div><span className="text-white/60">Output torque (N·m) :</span> <span className="font-semibold">{fmt(torque,2)}</span></div>
+
+              <div><span className="text-white/60">Service Factor (S.F.) :</span> <span className="font-semibold">{fmt(sf,2)}</span></div>
+              <div><span className="text-white/60">Shaft Design :</span> <span className="font-semibold">{S?.hbShaftDesign ?? '—'}</span></div>
+
+              <div><span className="text-white/60">Input Shaft Diameter :</span> <span className="font-semibold">Ø {fmt(inputShaftDia,0)} mm</span></div>
+              <div><span className="text-white/60">Output Shaft Diameter :</span> <span className="font-semibold">Ø {fmt(outputShaftDia,0)} mm</span></div>
+
+              <div><span className="text-white/60">Oil :</span> <span className="font-semibold">{fmt(oilLiters,2)} Liter</span></div>
+              <div><span className="text-white/60">Weight :</span> <span className="font-semibold">{fmt(weightKg,1)} kg</span></div>
+            </div>
+
+            <div className="text-xs text-white/50 mt-3">{pnLine}</div>
+          </div>
+        </div>
+
+       {/* RIGHT: IMAGE FROM STEP 4 */}
+<div className="lg:col-span-5">
+  <div className="relative rounded-2xl border border-white/15 bg-black/30 backdrop-blur-md shadow-xl min-h-[280px] flex flex-col items-center justify-center p-3 overflow-visible">
+    {(() => {
+      const colorClass = ({
+        white: 'motor-color-white',
+        standard: 'motor-color-standard',
+        black: 'motor-color-black',
+        blue: 'motor-color-blue',
+        red: 'motor-color-red',
+      }[color]) || 'motor-color-standard';
+
+      return (
+        <img
+          src={outputImg}
+          alt={`Output structure ${S?.hbOutput || ''}`}
+          className={`max-h-[340px] max-w-[520px] w-full object-contain mx-auto drop-shadow-lg ${colorClass}`}
+        />
+      );
+    })()}
+
+    {/* แถวปุ่มเลือกสี (เหมือนเดิม) */}
+    <div className="mt-3 flex justify-center gap-3 w-full z-20">
+      {[
+        ['white','ขาว'],
+        ['standard','เทา (Standard)'],
+        ['black','ดำ'],
+        ['blue','น้ำเงิน'],
+        ['red','แดง'],
+      ].map(([key,label]) => (
+        <button
+          key={key}
+          title={label}
+          onClick={() => update('hbColor', key)}
+          className={`w-11 h-11 rounded-full border-2 border-white/30 hover:scale-105 transition
+                      ${color===key ? 'ring-2 ring-white/70' : ''}`}
+          style={{ background: ({
+            white: '#f7f7f7',
+            standard: '#9aa8b4',
+            black: '#111827',
+            blue: '#3b82f6',
+            red: '#ef4444',
+          }[key]) }}
+          aria-label={`เลือกสี ${label}`}
+        />
+      ))}
+    </div>
+  </div>
+</div>
+
+      </div>
+
+      {/* ROW: จำนวน (ใต้คอลัมน์ซ้าย) */}
+      <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 -mt-24 -translate-y-14">
+        <div className="lg:col-span-7 flex justify-center lg:justify-center pb-2">
+          <div className="flex items-center gap-2 bg-black/30 border border-white/15 rounded-xl px-3 py-1.5 shadow">
+            <button
+              onClick={() => update('hbQty', Math.max(1, qty - 1))}
+              className="w-8 h-8 grid place-items-center rounded-lg bg-white/10 hover:bg-white/20 text-white text-lg"
+              aria-label="ลดจำนวน"
+            >
+              –
+            </button>
+            <input
+              type="number"
+              min={1}
+              value={qty}
+              onChange={(e) => {
+                const v = Math.max(1, parseInt(e.target.value || '1', 10));
+                update('hbQty', v);
+              }}
+              className="w-16 text-center bg-transparent text-white outline-none"
+            />
+            <button
+              onClick={() => update('hbQty', qty + 1)}
+              className="w-8 h-8 grid place-items-center rounded-lg bg-white/10 hover:bg-white/20 text-white text-lg"
+              aria-label="เพิ่มจำนวน"
+            >
+              +
+            </button>
+          </div>
+          <span className="ml-3 self-center text-white/70 text-sm">จำนวน</span>
         </div>
       </div>
-    );
-  }
 
-  // --- Step 9: Model Code + Final ---
-  if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize && hbRatio && hbShaftDesign) {
-    const code = generateHBModelCode(hbState);
-        return (
-      <div className="text-center space-y-4 mt-6">
-            <div className="flex justify-between items-center">
-         <button onClick={goBack} className="text-white/90 hover:underline">← Back</button>
-       </div>
-        <h2 className="text-2xl font-bold text-blue-700">{code}</h2>
-                <div className="flex flex-col items-center gap-3">
-         {/* ดาวน์โหลด → ให้ App เปิดฟอร์มเดียวกับ product อื่น */}
-         <button
-           onClick={() => onDownload && code && onDownload(code)}
-           className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-         >
-           ดาวน์โหลด 3D .STEP
-         </button>
-         {/* เสร็จสิ้น → กลับ Home และ reset HB */}
-         <button
-           onClick={goHome}
-           className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-         >
-           เสร็จสิ้น
-         </button>
-       </div>
-      </div>
-    );
-  }
+{/* ROW: 3 ปุ่ม — เรียงในแถวเดียวและอยู่กึ่งกลางหน้าจอ */}
+<div className="mx-auto w-full max-w-6xl mt-4">
+  <div className="flex flex-wrap justify-center items-center gap-4">
+    {/* 3D STEP */}
+    <button
+      onClick={() => onDownload && code && onDownload(code, { qty })}
+      className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+    >
+      ดาวน์โหลด 3D .STEP
+    </button>
+
+    {/* 2D Drawing */}
+    <button
+      onClick={() => {
+        if (typeof onDownload2D === 'function') return onDownload2D(code, { qty, color, state: hbState });
+        if (typeof onDownload   === 'function') return onDownload(code, { type: '2D', qty, color, state: hbState });
+      }}
+      className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded"
+    >
+      ดาวน์โหลด 2D Drawing
+    </button>
+
+    {/* ขอใบเสนอราคา */}
+    <button
+      onClick={() => typeof onRequestQuote === 'function' && onRequestQuote({ code, qty, color, state: hbState })}
+      className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded"
+    >
+      ขอใบเสนอราคา
+    </button>
+  </div>
+</div>
+
+    </div>
+  );
+}
+
 
   // กรณี ZDYFAMILY เลือกแล้ว แต่ยังไม่มีสเปกถัดไป
   if (hbSeries === 'ZDYFAMILY' && hbZdySelected) {
     return (
-      <div className="space-y-4 mt-6">
+      <div className="space-y-4 mt-0">
         <h3 className="text-white font-bold drop-shadow">คุณเลือก: {hbZdySelected}</h3>
         <p className="text-white/80">* รอข้อมูลสเปกเพิ่มเติมเพื่อสร้างขั้นตอนต่อไป</p>
       </div>

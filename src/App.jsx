@@ -592,9 +592,16 @@ const [hbSize, setHbSize] = useState(null);                // number
 const [hbRatio, setHbRatio] = useState(null);              // number
 const [hbShaftDesign, setHbShaftDesign] = useState(null);  // 'A'..'I' or 'A'..'F'
 const [hbZdySelected, setHbZdySelected] = useState(null);  // 'ZDY', 'ZLY', ...
+const [hbPreviewShaft, setHbPreviewShaft] = useState(null);
+const [hbRatioDraft, setHbRatioDraft] = useState(null); // เลือก ratio แต่ยังไม่ commit
+const [hbKW, setHbKW] = useState('');                   // ค่ากำลังมอเตอร์ที่ผู้ใช้กรอก (kW)
+const [hbPole, setHbPole] = useState(null);
+const [hbColor, setHbColor] = useState('standard');
+const [hbQty, setHbQty]     = useState(1);     
 
-const hbState = { hbSeries, hbHBType, hbStage, hbOutput, hbMount, hbSize, hbRatio, hbShaftDesign, hbZdySelected };
-const hbSetters = { setHbSeries, setHbHBType, setHbStage, setHbOutput, setHbMount, setHbSize, setHbRatio, setHbShaftDesign, setHbZdySelected };
+const hbState = { hbSeries, hbHBType, hbStage, hbOutput, hbMount, hbSize, hbRatio, hbShaftDesign, hbZdySelected, hbPreviewShaft, hbRatioDraft,
+hbKW, 	hbPole,  hbColor, hbQty, };
+const hbSetters = { setHbSeries, setHbHBType, setHbStage, setHbOutput, setHbMount, setHbSize, setHbRatio, setHbShaftDesign, setHbZdySelected, setHbPreviewShaft, setHbRatioDraft, setHbKW, setHbPole, setHbColor, setHbQty, };
 
 const COMING_SOON = new Set([
   'DC Gear Motor',
@@ -650,6 +657,10 @@ const handleBackWithReset = () => {
   setHbRatio(null);
   setHbShaftDesign(null);
   setHbZdySelected(null);
+    setHbKW('');            
+    setHbPole(null);         
+    setHbColor('standard'); 
+    setHbQty(1);            
     resetSRV();
 };
 
@@ -1733,7 +1744,19 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   <>
     <div className="flex justify-between items-center mt-6">
       <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">HB Gearbox Selection</h2>
-      <button className="text-blue-600 hover:underline" onClick={handleBackWithReset}>Home</button>
+      <button
+  onClick={handleBackWithReset}
+  title="Home"
+  aria-label="Home"
+  className="inline-flex items-center justify-center
+             w-7 h-7 rounded-full
+             bg-black-200 text-white border border-white/5
+             hover:bg-blue-500/20 hover:shadow-lg active:scale-95
+             transition-all duration-200"
+>
+  <span className="block leading-none text-2xl -translate-y-[3px]">⌂</span>
+  <span className="sr-only">Home</span>
+</button>
     </div>
 {renderHBGearFlow(
    hbState,
@@ -1745,7 +1768,7 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
      setSelectedModel(models[0]);
    },
    // onHome → กลับหน้า Product รวม + reset ส่วนกลาง
-   handleBackUniversal,
+   handleBackWithReset,
    // onDownload → ตั้งรุ่น + เปิดฟอร์มเหมือน product อื่น
    (modelCode) => {
      const models = [modelCode];
