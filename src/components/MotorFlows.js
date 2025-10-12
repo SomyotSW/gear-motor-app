@@ -7459,7 +7459,53 @@ const normalizeSize = (hbSize) => {
     18:{od:270,oil:300,weight:5125},19:{od:290,oil:320,weight:5250},20:{od:300,oil:340,weight:6550},
     21:{od:320,oil:320,weight:7200},22:{od:340,oil:340,weight:7800},
   };
-  const SPEC_TABLE = { H: { 1: H1_SPEC, 2: H2_SPEC } }; // เผื่อ B-series, stage อื่น ๆ เพิ่มตรงนี้ภายหลัง
+
+  const H3_SPEC = {
+    5:{od:100,oil:15,weight:320},
+    6:{od:110,oil:17,weight:365},7:{od:120,oil:28,weight:540},8:{od:130,oil:30,weight:625},
+    9:{od:140,oil:45,weight:875},10:{od:160,oil:46,weight:1020},11:{od:170,oil:85,weight:1400},
+    12:{od:180,oil:90,weight:1675},13:{od:200,oil:160,weight:2295},14:{od:210,oil:165,weight:2625},
+    15:{od:230,oil:235,weight:3475},16:{od:240,oil:245,weight:3875},17:{od:250,oil:305,weight:4560},
+    18:{od:270,oil:315,weight:5030},19:{od:290,oil:420,weight:5050},20:{od:300,oil:450,weight:6650},
+    21:{od:320,oil:470,weight:6950},22:{od:340,oil:490,weight:7550},23:{od:360,oil:620,weight:11500},24:{od:380,oil:650,weight:13400},
+    25:{od:400,oil:880,weight:16100},26:{od:420,oil:935,weight:17600},
+  };
+  const H4_SPEC = {
+    7:{od:120,oil:25,weight:550},8:{od:130,oil:27,weight:645},
+    9:{od:140,oil:48,weight:875},10:{od:160,oil:50,weight:1010},11:{od:170,oil:80,weight:1460},
+    12:{od:180,oil:87,weight:1725},13:{od:200,oil:130,weight:2390},14:{od:210,oil:140,weight:2730},
+    15:{od:230,oil:230,weight:3635},16:{od:240,oil:235,weight:3965},17:{od:250,oil:290,weight:4680},
+    18:{od:270,oil:305,weight:5185},19:{od:290,oil:360,weight:5700},20:{od:300,oil:380,weight:6400},
+    21:{od:320,oil:395,weight:7750},22:{od:340,oil:420,weight:8350},23:{od:360,oil:520,weight:11600},24:{od:380,oil:550,weight:13500},
+    25:{od:400,oil:735,weight:16100},26:{od:420,oil:780,weight:16500},
+  };
+  const B2_SPEC = {
+    1:{od:45,oil:2,weight:65},2:{od:55,oil:4,weight:90},3:{od:65,oil:6,weight:140},4:{od:80,oil:10,weight:235},5:{od:100,oil:16,weight:360},
+    6:{od:110,oil:19,weight:410},7:{od:120,oil:31,weight:615},8:{od:130,oil:34,weight:700},
+    9:{od:140,oil:48,weight:1000},10:{od:160,oil:50,weight:1155},11:{od:170,oil:80,weight:1640},
+    12:{od:180,oil:95,weight:1910},13:{od:200,oil:140,weight:2450},14:{od:210,oil:155,weight:2825},
+    15:{od:230,oil:220,weight:3990},16:{od:240,oil:230,weight:4345},17:{od:250,oil:320,weight:5620},
+    18:{od:270,oil:335,weight:6150},
+  }; 
+  const B3_SPEC = {
+    3:{od:65,oil:6,weight:130},4:{od:80,oil:9,weight:210},5:{od:100,oil:14,weight:325},
+    6:{od:110,oil:15,weight:380},7:{od:120,oil:25,weight:550},8:{od:130,oil:28,weight:635},
+    9:{od:140,oil:40,weight:890},10:{od:160,oil:42,weight:1020},11:{od:170,oil:66,weight:1455},
+    12:{od:180,oil:72,weight:1730},13:{od:200,oil:130,weight:2380},14:{od:210,oil:140,weight:2750},
+    15:{od:230,oil:210,weight:3730},16:{od:240,oil:220,weight:3955},17:{od:250,oil:290,weight:4990},
+    18:{od:270,oil:300,weight:5495},19:{od:290,oil:380,weight:6240},20:{od:300,oil:420,weight:6950},
+21:{od:320,oil:370,weight:8480},22:{od:340,oil:430,weight:9240},23:{od:360,oil:520,weight:11500},24:{od:380,oil:600,weight:13400},25:{od:400,oil:720,weight:16000},26:{od:420,oil:840,weight:17500},
+  };
+  const B4_SPEC = {
+    5:{od:100,oil:16,weight:335},
+    6:{od:110,oil:18,weight:385},7:{od:120,oil:30,weight:555},8:{od:130,oil:33,weight:655},
+    9:{od:140,oil:48,weight:890},10:{od:160,oil:50,weight:1025},11:{od:170,oil:80,weight:1485},
+    12:{od:180,oil:90,weight:1750},13:{od:200,oil:145,weight:2395},14:{od:210,oil:150,weight:2735},
+    15:{od:230,oil:230,weight:3630},16:{od:240,oil:235,weight:3985},17:{od:250,oil:295,weight:4695},
+    18:{od:270,oil:305,weight:5200},19:{od:290,oil:480,weight:5750},20:{od:300,oil:550,weight:6450},
+21:{od:320,oil:540,weight:7850},22:{od:340,oil:620,weight:8400},23:{od:360,oil:710,weight:11600},24:{od:380,oil:810,weight:13500},25:{od:400,oil:1000,weight:16100},26:{od:420,oil:1100,weight:17600},
+  };    
+  const SPEC_TABLE = { H: { 1: H1_SPEC, 2: H2_SPEC, 3: H3_SPEC, 4: H4_SPEC } , B: { 2: B2_SPEC, 3: B3_SPEC, 4: B4_SPEC }  };
 
   const lookupGearSpecs = (seriesKey, stageNum, sizeIndex) => {
     if (!seriesKey || !stageNum || !sizeIndex) return null;
@@ -7468,7 +7514,628 @@ const normalizeSize = (hbSize) => {
     return stageTbl[sizeIndex] || null;
   };
 
-  // … ที่เหลือของ renderHBGearFlow …
+// [ADD] ===== Rules: Input Shaft Ø by Ratio (H1–H4, B2–B4) =====
+// หมายเหตุ: ใส่ข้อมูลจริงที่รู้แล้ว (H1 size 1–2 ตามที่สั่ง) ที่เหลือปล่อยว่างรอเติม
+const INPUT_DIA_RULES = {
+  H: {
+    1: { // H1 = Stage 1
+      1: [
+        { min: 1.25, max: 2.80, dia: 40 },
+        { min: 3.15, max: 4.00, dia: 30 },
+        { min: 4.50, max: 5.60, dia: 24 },
+      ],
+      3: [
+        { min: 1.25, max: 2.80, dia: 60 },
+        { min: 3.15, max: 4.00, dia: 45 },
+        { min: 4.50, max: 5.60, dia: 32 },
+      ],
+      5: [
+        { min: 1.25, max: 2.80, dia: 85 },
+        { min: 3.15, max: 4.00, dia: 60 },
+        { min: 4.50, max: 5.60, dia: 50 },
+      ],
+      7: [
+        { min: 1.25, max: 2.80, dia: 100 },
+        { min: 3.15, max: 4.00, dia: 75 },
+        { min: 4.50, max: 5.60, dia: 60 },
+      ],
+      9: [
+        { min: 1.25, max: 2.80, dia: 110 },
+        { min: 3.15, max: 4.00, dia: 90 },
+        { min: 4.50, max: 5.60, dia: 75 },
+      ],
+      11: [
+        { min: 1.6, max: 2.80, dia: 130 },
+        { min: 3.15, max: 4.00, dia: 110 },
+        { min: 4.50, max: 5.60, dia: 90 },
+      ],
+      13: [
+        { min: 1.6, max: 2.80, dia: 150 },
+        { min: 3.15, max: 4.00, dia: 130 },
+        { min: 4.50, max: 5.60, dia: 100 },
+      ],
+      15: [
+        { min: 2, max: 2.80, dia: 180 },
+        { min: 3.15, max: 4.00, dia: 150 },
+        { min: 4.50, max: 5.60, dia: 125 },
+      ],
+      17: [
+        { min: 2, max: 2.80, dia: 200 },
+        { min: 3.15, max: 4.00, dia: 170 },
+        { min: 4.50, max: 5.60, dia: 140 },
+      ],
+      19: [
+        { min: 2, max: 2.80, dia: 220 },
+        { min: 3.15, max: 4.00, dia: 190 },
+        { min: 4.50, max: 5.60, dia: 160 },
+      ],
+    },
+    2: { // H2
+      3: [
+        { min: 6.3, max: 11.2, dia: 35 },
+        { min: 12.5, max: 22.4, dia: 28 },
+      ],
+      4: [
+        { min: 6.3, max: 11.2, dia: 35 },
+        { min: 12.5, max: 22.4, dia: 28 },
+      ],
+      5: [
+        { min: 6.3, max: 11.2, dia: 50 },
+        { min: 12.5, max: 22.4, dia: 38 },
+      ],
+      6: [
+        { min: 8, max: 14, dia: 50 },
+        { min: 16, max: 28, dia: 38 },
+      ],
+      7: [
+        { min: 6.3, max: 11.2, dia: 60 },
+        { min: 12.5, max: 22.4, dia: 50 },
+      ],
+      8: [
+        { min: 8, max: 14, dia: 60 },
+        { min: 16, max: 28, dia: 50 },
+      ],
+      9: [
+        { min: 6.3, max: 11.2, dia: 75 },
+        { min: 12.5, max: 22.4, dia: 60 },
+      ],
+      10: [
+        { min: 8, max: 14, dia: 75 },
+        { min: 16, max: 28, dia: 60 },
+      ],
+      11: [
+        { min: 6.3, max: 11.2, dia: 90 },
+        { min: 12.5, max: 22.4, dia: 70 },
+      ],
+      12: [
+        { min: 8, max: 14, dia: 90 },
+        { min: 16, max: 28, dia: 70 },
+      ],
+      13: [
+        { min: 6.3, max: 11.2, dia: 100 },
+        { min: 12.5, max: 20, dia: 85 },
+      ],
+      14: [
+        { min: 8, max: 14, dia: 100 },
+        { min: 16, max: 25, dia: 85 },
+      ],
+      15: [
+        { min: 6.3, max: 11.2, dia: 120 },
+        { min: 12.5, max: 20, dia: 100 },
+      ],
+      16: [
+        { min: 7.1, max: 12.5, dia: 120 },
+        { min: 14, max: 22.4, dia: 100 },
+      ],
+      17: [
+        { min: 6.3, max: 11.2, dia: 125 },
+        { min: 12.5, max: 20, dia: 110 },
+      ],
+      18: [
+        { min: 7.1, max: 12.5, dia: 125 },
+        { min: 14, max: 22.4, dia: 110 },
+      ],
+      19: [
+        { min: 6.3, max: 11.2, dia: 150 },
+        { min: 12.5, max: 20, dia: 120 },
+      ],
+      20: [
+        { min: 7.1, max: 12.5, dia: 150 },
+        { min: 14, max: 22.4, dia: 120 },
+      ],
+      21: [
+        { min: 6.3, max: 11.2, dia: 170 },
+        { min: 12.5, max: 20, dia: 140 },
+      ],
+      22: [
+        { min: 7.1, max: 12.5, dia: 170 },
+        { min: 14, max: 22.4, dia: 140 },
+      ],
+      23: [
+        { min: 6.3, max: 11.2, dia: 190 },
+        { min: 12.5, max: 20, dia: 150 },
+      ],
+      24: [
+        { min: 7.1, max: 12.5, dia: 190 },
+        { min: 14, max: 22.4, dia: 150 },
+      ],
+      25: [
+        { min: 6.3, max: 11.2, dia: 200 },
+        { min: 12.5, max: 20, dia: 170 },
+      ],
+      26: [
+        { min: 7.1, max: 12.5, dia: 200 },
+        { min: 14, max: 22.4, dia: 170 },
+      ],
+    },
+    3: { // H3
+      5: [
+        { min: 25, max: 45, dia: 40 },
+        { min: 50, max: 63, dia: 30 },
+        { min: 71, max: 90, dia: 24 },        
+      ],
+      6: [
+        { min: 31.5, max: 56, dia: 40 },
+        { min: 63, max: 80, dia: 30 },
+        { min: 90, max: 112, dia: 24 }, 
+      ],
+      7: [
+        { min: 25, max: 45, dia: 45 },
+        { min: 50, max: 63, dia: 35 },
+        { min: 71, max: 90, dia: 28 },        
+      ],
+      8: [
+        { min: 31.5, max: 56, dia: 45 },
+        { min: 63, max: 80, dia: 35 },
+        { min: 90, max: 112, dia: 28 }, 
+      ],
+      9: [
+        { min: 25, max: 45, dia: 60 },
+        { min: 50, max: 63, dia: 45 },
+        { min: 71, max: 90, dia: 32 },        
+      ],
+      10: [
+        { min: 31.5, max: 56, dia: 60 },
+        { min: 63, max: 80, dia: 45 },
+        { min: 90, max: 112, dia: 32 }, 
+      ],
+      11: [
+        { min: 25, max: 45, dia: 70 },
+        { min: 50, max: 63, dia: 50 },
+        { min: 71, max: 90, dia: 42 },        
+      ],
+      12: [
+        { min: 31.5, max: 56, dia: 70 },
+        { min: 63, max: 80, dia: 50 },
+        { min: 90, max: 112, dia: 42 }, 
+      ],
+      13: [
+        { min: 22.4, max: 45, dia: 85 },
+        { min: 50, max: 63, dia: 60 },
+        { min: 71, max: 90, dia: 50 },        
+      ],
+      14: [
+        { min: 28, max: 56, dia: 85 },
+        { min: 63, max: 80, dia: 60 },
+        { min: 90, max: 112, dia: 50 }, 
+      ],
+      15: [
+        { min: 22.4, max: 45, dia: 100 },
+        { min: 50, max: 63, dia: 75 },
+        { min: 71, max: 90, dia: 60 },        
+      ],
+      16: [
+        { min: 28, max: 56, dia: 100 },
+        { min: 63, max: 80, dia: 75 },
+        { min: 90, max: 112, dia: 60 }, 
+      ],
+      17: [
+        { min: 22.4, max: 45, dia: 100 },
+        { min: 50, max: 63, dia: 75 },
+        { min: 71, max: 90, dia: 60 },        
+      ],
+      18: [
+        { min: 28, max: 56, dia: 100 },
+        { min: 63, max: 80, dia: 75 },
+        { min: 90, max: 112, dia: 60 }, 
+      ],
+      19: [
+        { min: 22.4, max: 45, dia: 110 },
+        { min: 50, max: 63, dia: 90 },
+        { min: 71, max: 90, dia: 75 },        
+      ],
+      20: [
+        { min: 28, max: 56, dia: 110 },
+        { min: 63, max: 80, dia: 90 },
+        { min: 90, max: 112, dia: 75 }, 
+      ],
+      21: [
+        { min: 22.4, max: 45, dia: 130 },
+        { min: 50, max: 63, dia: 110 },
+        { min: 71, max: 90, dia: 90 },        
+      ],
+      22: [
+        { min: 28, max: 56, dia: 130 },
+        { min: 63, max: 80, dia: 110 },
+        { min: 90, max: 112, dia: 90 }, 
+      ],
+      23: [
+        { min: 22.4, max: 45, dia: 130 },
+        { min: 50, max: 63, dia: 110 },
+        { min: 71, max: 90, dia: 90 },        
+      ],
+      24: [
+        { min: 25, max: 50, dia: 130 },
+        { min: 56, max: 71, dia: 110 },
+        { min: 80, max: 100, dia: 90 }, 
+      ],
+      25: [
+        { min: 22.4, max: 45, dia: 150 },
+        { min: 50, max: 63, dia: 130 },
+        { min: 71, max: 90, dia: 100 },        
+      ],
+      26: [
+        { min: 25, max: 50, dia: 150 },
+        { min: 56, max: 71, dia: 130 },
+        { min: 80, max: 100, dia: 100 }, 
+      ],
+    },
+    4: { // H4
+      7: [
+        { min: 100, max: 180, dia: 30 },
+        { min: 200, max: 355, dia: 24 },
+      ],
+      8: [
+        { min: 125, max: 224, dia: 30 },
+        { min: 250, max: 450, dia: 24 },
+      ],
+      9: [
+        { min: 100, max: 180, dia: 35 },
+        { min: 200, max: 355, dia: 28 },
+      ],
+      10: [
+        { min: 125, max: 224, dia: 35 },
+        { min: 250, max: 450, dia: 28 },
+      ],
+      11: [
+        { min: 100, max: 180, dia: 45 },
+        { min: 200, max: 355, dia: 32 },
+      ],
+      12: [
+        { min: 125, max: 224, dia: 45 },
+        { min: 250, max: 450, dia: 32 },
+      ],
+      13: [
+        { min: 100, max: 180, dia: 50 },
+        { min: 200, max: 355, dia: 38 },
+      ],
+      14: [
+        { min: 125, max: 224, dia: 50 },
+        { min: 250, max: 450, dia: 38 },
+      ],
+      15: [
+        { min: 100, max: 180, dia: 60 },
+        { min: 200, max: 355, dia: 50 },
+      ],
+      16: [
+        { min: 112, max: 200, dia: 60 },
+        { min: 224, max: 400, dia: 50 },
+      ],
+      17: [
+        { min: 100, max: 180, dia: 60 },
+        { min: 200, max: 355, dia: 50 },
+      ],
+      18: [
+        { min: 112, max: 200, dia: 60 },
+        { min: 224, max: 400, dia: 50 },
+      ],
+      19: [
+        { min: 100, max: 180, dia: 75 },
+        { min: 200, max: 355, dia: 60 },
+      ],
+      20: [
+        { min: 112, max: 200, dia: 75 },
+        { min: 224, max: 400, dia: 60 },
+      ],
+      21: [
+        { min: 100, max: 180, dia: 90 },
+        { min: 200, max: 355, dia: 70 },
+      ],
+      22: [
+        { min: 112, max: 200, dia: 90 },
+        { min: 224, max: 400, dia: 70 },
+      ],
+      23: [
+        { min: 100, max: 180, dia: 90 },
+        { min: 200, max: 355, dia: 70 },
+      ],
+      24: [
+        { min: 112, max: 200, dia: 90 },
+        { min: 224, max: 400, dia: 70 },
+      ],
+      25: [
+        { min: 100, max: 180, dia: 100 },
+        { min: 200, max: 355, dia: 85 },
+      ],
+      26: [
+        { min: 112, max: 200, dia: 100 },
+        { min: 224, max: 400, dia: 85 },
+      ],
+    },
+  },
+  B: {
+    2: { // B2
+      1: [
+        { min: 5, max: 11.2, dia: 28 },
+        { min: 12.5, max: 18, dia: 20 },
+      ],
+      2: [
+        { min: 5, max: 11.2, dia: 30 },
+        { min: 12.5, max: 18, dia: 25 },
+      ],
+      3: [
+        { min: 5, max: 11.2, dia: 35 },
+        { min: 12.5, max: 18, dia: 28 },
+      ],
+      4: [
+        { min: 5, max: 11.2, dia: 45 },
+      ],
+      5: [
+        { min: 5, max: 11.2, dia: 55 },
+      ],
+      6: [
+        { min: 6.3, max: 14, dia: 55 },
+      ],
+      7: [
+        { min: 5, max: 11.2, dia: 70 },
+      ],
+      8: [
+        { min: 6.3, max: 14, dia: 70 },
+      ],
+      9: [
+        { min: 5, max: 11.2, dia: 80 },
+      ],
+      10: [
+        { min: 6.3, max: 14, dia: 80 },
+      ],
+      11: [
+        { min: 5, max: 11.2, dia: 90 },
+      ],
+      12: [
+        { min: 6.3, max: 14, dia: 90 },
+      ],
+      13: [
+        { min: 5, max: 11.2, dia: 110 },
+      ],
+      14: [
+        { min: 6.3, max: 14, dia: 110 },
+      ],
+      15: [
+        { min: 5, max: 11.2, dia: 130 },
+      ],
+      16: [
+        { min: 5.6, max: 12.5, dia: 130 },
+      ],
+      17: [
+        { min: 5.6, max: 11.2, dia: 150 },
+      ],
+      18: [
+        { min: 7.1, max: 12.5, dia: 150 },
+      ],
+    },
+    3: { // B3
+      3: [
+        { min: 20, max: 45, dia: 28 },
+        { min: 50, max: 71, dia: 20 },
+      ],
+      4: [
+        { min: 12.5, max: 45, dia: 30 },
+        { min:  50, max: 71, dia: 25 },
+      ],
+      5: [
+        { min: 12.5, max: 45, dia: 35 },
+        { min:  50, max: 71, dia: 28 },
+      ],
+      6: [
+        { min: 16, max: 56, dia: 35 },
+        { min: 63, max: 90, dia: 28 },
+      ],
+      7: [
+        { min: 12.5, max: 45, dia: 45 },
+        { min:  50, max: 71, dia: 35 },
+      ],
+      8: [
+        { min: 16, max: 56, dia: 45 },
+        { min: 63, max: 90, dia: 35 },
+      ],
+      9: [
+        { min: 12.5, max: 45, dia: 55 },
+        { min:  50, max: 71, dia: 40 },
+      ],
+      10: [
+        { min: 16, max: 56, dia: 55 },
+        { min: 63, max: 90, dia: 40 },
+      ],
+      11: [
+        { min: 12.5, max: 45, dia: 70 },
+        { min:  50, max: 71, dia: 50 },
+      ],
+      12: [
+        { min: 16, max: 56, dia: 70 },
+        { min: 63, max: 90, dia: 50 },
+      ],
+      13: [
+        { min: 12.5, max: 45, dia: 80 },
+        { min:  50, max: 71, dia: 60 },
+      ],
+      14: [
+        { min: 16, max: 56, dia: 80 },
+        { min: 63, max: 90, dia: 60 },
+      ],
+      15: [
+        { min: 12.5, max: 45, dia: 90 },
+        { min: 50, max: 71, dia: 70 },
+      ],
+      16: [
+        { min: 14, max: 50, dia: 90 },
+        { min: 56, max: 80, dia: 70 },
+      ],
+      17: [
+        { min: 12.5, max: 45, dia: 110 },
+        { min: 50, max: 71, dia: 80 },
+      ],
+      18: [
+        { min: 14, max: 50, dia: 110 },
+        { min: 56, max: 80, dia: 80 },
+      ],
+      19: [
+        { min: 12.5, max: 45, dia: 130 },
+        { min: 50, max: 71, dia: 100 },
+      ],
+      20: [
+        { min: 14, max: 50, dia: 130 },
+        { min: 56, max: 80, dia: 100 },
+      ],
+      21: [
+        { min: 12.5, max: 45, dia: 130 },
+        { min: 50, max: 71, dia: 100 },
+      ],
+      22: [
+        { min: 14, max: 50, dia: 130 },
+        { min: 56, max: 80, dia: 100 },
+      ],
+      23: [
+        { min: 20, max: 45, dia: 150 },
+        { min: 50, max: 71, dia: 110 },
+      ],
+      24: [
+        { min: 22.4, max: 50, dia: 150 },
+        { min: 56, max: 80, dia: 110 },
+      ],
+      25: [
+        { min: 20, max: 45, dia: 150 },
+        { min: 50, max: 71, dia: 110 },
+      ],
+      26: [
+        { min: 22.4, max: 50, dia: 150 },
+        { min: 56, max: 80, dia: 110 },
+      ],
+    },
+    4: { // B4
+      5: [
+        { min: 80, max: 180, dia: 28 },
+        { min: 200, max: 315, dia: 20 },
+      ],
+      6: [
+        { min: 100, max: 224, dia: 28 },
+        { min: 250, max: 400, dia: 20 },
+      ],
+      7: [
+        { min: 80, max: 180, dia: 30 },
+        { min: 200, max: 315, dia: 25 },
+      ],
+      8: [
+        { min: 100, max: 224, dia: 30 },
+        { min: 250, max: 400, dia: 25 },
+      ],
+      9: [
+        { min: 80, max: 180, dia: 35 },
+        { min: 200, max: 315, dia: 28 },
+      ],
+      10: [
+        { min: 100, max: 224, dia: 35 },
+        { min: 250, max: 400, dia: 28 },
+      ],
+      11: [
+        { min: 80, max: 180, dia: 45 },
+        { min: 200, max: 315, dia: 35 },
+      ],
+      12: [
+        { min: 100, max: 224, dia: 45 },
+        { min: 250, max: 400, dia: 35 },
+      ],
+      13: [
+        { min: 80, max: 180, dia: 55 },
+        { min: 200, max: 315, dia: 40 },
+      ],
+      14: [
+        { min: 100, max: 224, dia: 55 },
+        { min: 250, max: 400, dia: 40 },
+      ],
+      15: [
+        { min: 80, max: 180, dia: 70 },
+        { min: 200, max: 315, dia: 50 },
+      ],
+      16: [
+        { min: 90, max: 200, dia: 70 },
+        { min: 224, max: 355, dia: 50 },
+      ],
+      17: [
+        { min: 80, max: 180, dia: 70 },
+        { min: 200, max: 315, dia: 50 },
+      ],
+      18: [
+        { min: 90, max: 200, dia: 70 },
+        { min: 224, max: 355, dia: 50 },
+      ],
+      19: [
+        { min: 80, max: 180, dia: 80 },
+        { min: 200, max: 315, dia: 60 },
+      ],
+      20: [
+        { min: 90, max: 200, dia: 80 },
+        { min: 224, max: 355, dia: 60 },
+      ],
+      21: [
+        { min: 80, max: 180, dia: 90 },
+        { min: 200, max: 315, dia: 70 },
+      ],
+      22: [
+        { min: 90, max: 200, dia: 90 },
+        { min: 224, max: 355, dia: 70 },
+      ],
+      23: [
+        { min: 80, max: 180, dia: 90 },
+        { min: 200, max: 315, dia: 70 },
+      ],
+      24: [
+        { min: 90, max: 200, dia: 90 },
+        { min: 224, max: 355, dia: 70 },
+      ],
+      25: [
+        { min: 80, max: 180, dia: 110 },
+        { min: 200, max: 315, dia: 80 },
+      ],
+      26: [
+        { min: 90, max: 200, dia: 110 },
+        { min: 224, max: 355, dia: 80 },
+      ],
+
+    },
+  },
+};
+
+// [ADD] ตัวช่วยอ่าน Ø จากกติกา (seriesKey: 'H'|'B', stageNum: 1..4, sizeIndex: 1..N, ratio: number)
+function getInputDiaFromRules(seriesKey, stageNum, sizeIndex, ratio) {
+  const r = Number(ratio);
+  if (!Number.isFinite(r)) return null;
+
+  const sKey = String(seriesKey).toUpperCase();
+  const rules = INPUT_DIA_RULES?.[sKey]?.[Number(stageNum)]?.[Number(sizeIndex)];
+  if (!rules || !Array.isArray(rules) || rules.length === 0) return null;
+
+  for (const rule of rules) {
+    if (r >= rule.min && r <= rule.max) return rule.dia;
+  }
+  return null; // ไม่เข้า range ใด ๆ → ไม่มี override
+}
+
+// [ADD - OPTIONAL] ถ้าคุณเก็บ code อย่าง "H1","H2","B3" ใน state แล้วอยาก map เป็น seriesKey/stageNum
+function parseSeriesState(code) {
+  if (typeof code !== 'string') return { seriesKey: null, stageNum: null };
+  const m = code.trim().toUpperCase().match(/^([HB])(\d)$/);
+  return m ? { seriesKey: m[1], stageNum: Number(m[2]) } : { seriesKey: null, stageNum: null };
+}
 
 
 const fmt = (val, digits = 2) => {
@@ -7826,13 +8493,13 @@ if (!hbSeries) {
     let sizeList = [];
     if (hbHBType === 'H') {
       if (hbStage === 1) sizeList = [1,3,5,7,9,11,13,15,17,19];
-      if (hbStage === 2) sizeList = [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
-      if (hbStage === 3) sizeList = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
-      if (hbStage === 4) sizeList = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+      if (hbStage === 2) sizeList = [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26];
+      if (hbStage === 3) sizeList = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26];
+      if (hbStage === 4) sizeList = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26];
     } else {
       if (hbStage === 2) sizeList = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
-      if (hbStage === 3) sizeList = [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
-      if (hbStage === 4) sizeList = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+      if (hbStage === 3) sizeList = [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26];
+      if (hbStage === 4) sizeList = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26];
     }
     return (
       <div className="space-y-4 mt-0">
@@ -8177,7 +8844,22 @@ if (seriesKey && stageNum && sizeIndex && ratio && S?.hbPole && kw) {
 
 // ตารางสเปก Ø / Oil / Weight
 const spec = lookupGearSpecs(seriesKey, stageNum, sizeIndex) || null;
-const inputShaftDia = S?.hbInputDia ?? null;
+// [ADD] อ่าน ratio ที่ผู้ใช้เลือก (ใช้ key ที่คุณเก็บอยู่แล้ว)
+const ratioVal = Number(S?.hbRatio ?? S?.ratio ?? ratio);
+
+// [ADD] ถ้าคุณใช้ tag อย่าง 'H1','B3' ใน state (เช่น S.hbSeriesState) และอยาก map อัตโนมัติ:
+// const { seriesKey: sk2, stageNum: st2 } = parseSeriesState(S?.hbSeriesState);
+// const seriesKeyEff = sk2 ?? seriesKey;
+// const stageNumEff  = st2 ?? stageNum;
+
+// ถ้าไม่ได้ใช้ parseSeriesState ก็ใช้ seriesKey & stageNum เดิมได้เลย:
+const seriesKeyEff = seriesKey;
+const stageNumEff  = stageNum;
+
+// [ADD] หา Ø จากกติกา (ครอบคลุม H1–H4, B2–B4; ถ้าไม่เข้าเงื่อนไขจะคืน null)
+const ratioBasedDia = getInputDiaFromRules(seriesKeyEff, stageNumEff, sizeIndex, ratioVal);
+
+const inputShaftDia  = S?.hbInputDia ?? ratioBasedDia ?? spec?.id ?? null; // Ø mm
 const outputShaftDia = S?.hbOutputDia ?? spec?.od     ?? null; // Ø mm
 const oilLiters      = S?.hbOil       ?? spec?.oil    ?? null; // L
 const weightKg       = S?.hbWeight    ?? spec?.weight ?? null; // kg
@@ -8185,8 +8867,8 @@ const weightKg       = S?.hbWeight    ?? spec?.weight ?? null; // kg
 // ข้อความอ้างอิง PN
 const pnLine =
   (PN && n1 && sizeIndex && seriesKey && stageNum)
-    ? `อ้างค่า PN จากตาราง ${seriesKey}${stageNum} @ n1 = ${n1} rpm, Size ${sizeIndex} → PN = ${Number(PN).toLocaleString()} kW`
-    : 'กรอก/เลือกข้อมูลให้ครบเพื่อคำนวณ S.F.';
+    ? `Ref PN จากตารางผู้ผลิต ${seriesKey}${stageNum} @ n1 = ${n1} rpm, Size ${sizeIndex} → PN = ${Number(PN).toLocaleString()} kW` 
+    : 'ระบบไม่รองรับ Gear size นี้ กรุณาเลือก Gear Size ที่ใกล้เคียง';
 
 
   // ---- Qty & Color (fallback ค่าตั้งต้น) ----
@@ -8246,9 +8928,12 @@ const pnLine =
           ย้อนกลับ
         </button>
       </div>
-
-      <h2 className="text-center text-2xl font-bold text-blue-700">Model : {code}</h2>
-
+<div className="grid grid-cols-4 md:grid-cols-4 gap-x-15 gap-y-4 text-white">
+  <div className="col-span-4 md:col-span-4 justify-self-center text-center">
+    <span className="text-white/60 text-1xl md:text-2xl">Model :</span>{' '}
+    <span className="font-semibold text-1xl md:text-2xl">{code}</span>
+  </div>
+</div>
       {/* กริดซ้าย/ขวา */}
       <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT: SUMMARY */}
