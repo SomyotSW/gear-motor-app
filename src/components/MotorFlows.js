@@ -8718,12 +8718,18 @@ if (S?.hbSize != null) {
 );
 }
 
-  // --- Step 8: Shaft Design ---
-  if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize && hbRatio && !hbShaftDesign) {
-    const list = hbHBType === 'H'
-      ? ['A','B','C','D','E','F','G','H','I']
-      : ['A','B','C','D','E','F'];
-    return (
+// --- Step 8: Shaft Design ---
+if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize && hbRatio && !hbShaftDesign) {
+  const list = hbHBType === 'H'
+    ? ['A','B','C','D','E','F','G','H','I']
+    : ['A','B','C','D','E','F'];
+
+  // ตรวจเครื่องทัช (สำหรับ logic แตะ 2 ครั้ง)
+  const isTouchDevice =
+    typeof window !== 'undefined' &&
+    (('ontouchstart' in window) || (navigator && navigator.maxTouchPoints > 0));
+
+  return (
   <div className="space-y-4 mt-0">
     <div className="flex justify-between items-center">
       <button
@@ -8744,7 +8750,7 @@ if (S?.hbSize != null) {
 
     <h3 className="text-white font-bold mb-2 drop-shadow">Step 8 — Shaft Design</h3>
 
-    {/* พรีวิวภาพกึ่งกลางจอ */}
+    {/* พรีวิวภาพกึ่งกลางจอ (ปรับ responsive ให้พอดี iPad แนวตั้ง) */}
     {(() => {
       // ใช้ค่า preview ถ้ามี, ไม่งั้นไม่แสดง
       const previewLetter = hbState?.hbPreviewShaft || null;
@@ -8752,14 +8758,21 @@ if (S?.hbSize != null) {
       if (!previewImg) return null;
       return (
         <div
-          className="fixed inset-0 pointer-events-none z-[20] flex items-center justify-center"
+          className="fixed inset-0 pointer-events-none z-[20] flex items-center justify-center px-3"
           aria-hidden="true"
         >
-          <div className="w-[560px] h-[400px] bg-black/30 rounded-2xl border border-white/20 backdrop-blur-sm shadow-2xl flex items-center justify-center overflow-hidden">
+          <div
+            className="
+              w-[92vw] max-w-[680px]
+              aspect-[7/5]
+              bg-black/30 rounded-2xl border border-white/20 backdrop-blur-sm shadow-2xl
+              flex items-center justify-center overflow-hidden
+            "
+          >
             <img
               src={previewImg}
               alt={`HB ${hbHBType} - ${previewLetter}`}
-              className="max-w-[90%] max-h-[90%] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+              className="max-w-[88%] max-h-[88%] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
               draggable={false}
             />
           </div>
@@ -8767,10 +8780,12 @@ if (S?.hbSize != null) {
       );
     })()}
 
-    {/* แถบพรีวิวด้านล่าง (thumbnail) */}
+    {/* แถบพรีวิวด้านล่าง (thumbnail) : ทำให้เลื่อนแนวนอนได้ พอดีกับ iPad แนวตั้ง */}
     <div
-      className="fixed z-[21] left-1/2 -translate-x-1/2 bottom-0 bg-black/30 border border-white/10 
-                 backdrop-blur-md rounded-2xl px-3 py-2 flex items-center gap-4"
+      className="fixed z-[21] left-1/2 -translate-x-1/2 bottom-2 md:bottom-4
+                 bg-black/30 border border-white/10 backdrop-blur-md rounded-2xl
+                 px-3 py-2 flex items-center gap-2 md:gap-4
+                 w-[94vw] max-w-[900px] overflow-x-auto"
       role="group"
       aria-label="HB Shaft thumbnails"
     >
@@ -8782,8 +8797,20 @@ if (S?.hbSize != null) {
             type="button"
             onMouseEnter={() => update('hbPreviewShaft', ch)}
             onFocus={() => update('hbPreviewShaft', ch)}
-            onClick={() => update('hbShaftDesign', ch)}
-            className="w-20 h-14 rounded-lg overflow-hidden bg-white/10 border border-white/20 hover:scale-[1.02] active:scale-95 transition"
+            onClick={() => {
+              // ทัช: แตะครั้งแรก → ดูตัวอย่าง, แตะซ้ำที่แบบเดิม → ยืนยันเลือก
+              if (isTouchDevice) {
+                if (hbState?.hbPreviewShaft !== ch) {
+                  update('hbPreviewShaft', ch);
+                } else {
+                  update('hbShaftDesign', ch);
+                }
+              } else {
+                // เดสก์ท็อป/มีเมาส์ → คลิกเดียวไปต่อเหมือนเดิม
+                update('hbShaftDesign', ch);
+              }
+            }}
+            className="w-16 h-12 md:w-20 md:h-14 rounded-lg overflow-hidden bg-white/10 border border-white/20 hover:scale-[1.02] active:scale-95 transition"
             title={`แบบ ${ch}`}
           >
             {thumb ? (
@@ -8798,7 +8825,6 @@ if (S?.hbSize != null) {
   </div>
 );
 }
-
 
 // --- Step 9: Model Code + Final ---
 if (
