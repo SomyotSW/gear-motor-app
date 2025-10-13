@@ -8724,10 +8724,14 @@ if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize &&
     ? ['A','B','C','D','E','F','G','H','I']
     : ['A','B','C','D','E','F'];
 
-  // ตรวจเครื่องทัช (สำหรับ logic แตะ 2 ครั้ง)
+  // ตรวจเครื่องทัช (ให้ครอบคลุม iPad/iPhone)
   const isTouchDevice =
     typeof window !== 'undefined' &&
-    (('ontouchstart' in window) || (navigator && navigator.maxTouchPoints > 0));
+    (
+      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+      ('ontouchstart' in window) ||
+      (navigator && navigator.maxTouchPoints > 0)
+    );
 
   return (
   <div className="space-y-4 mt-0">
@@ -8750,9 +8754,8 @@ if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize &&
 
     <h3 className="text-white font-bold mb-2 drop-shadow">Step 8 — Shaft Design</h3>
 
-    {/* พรีวิวภาพกึ่งกลางจอ (ปรับ responsive ให้พอดี iPad แนวตั้ง) */}
+    {/* พรีวิวภาพกึ่งกลางจอ — ไม่มีกรอบ ปรับให้พอดีกับ iPad แนวตั้ง */}
     {(() => {
-      // ใช้ค่า preview ถ้ามี, ไม่งั้นไม่แสดง
       const previewLetter = hbState?.hbPreviewShaft || null;
       const previewImg = getHBShaftDesignImg(hbHBType, previewLetter);
       if (!previewImg) return null;
@@ -8761,31 +8764,30 @@ if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize &&
           className="fixed inset-0 pointer-events-none z-[20] flex items-center justify-center px-3"
           aria-hidden="true"
         >
-          <div
+          <img
+            src={previewImg}
+            alt={`HB ${hbHBType} - ${previewLetter}`}
             className="
-              w-[92vw] max-w-[680px]
-              aspect-[7/5]
-              bg-black/30 rounded-2xl border border-white/20 backdrop-blur-sm shadow-2xl
-              flex items-center justify-center overflow-hidden
+              object-contain
+              w-[86vw] md:w-[80vw] lg:w-[56vw]
+              max-h-[64vh] md:max-h-[66vh] lg:max-h-[70vh]
+              drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]
             "
-          >
-            <img
-              src={previewImg}
-              alt={`HB ${hbHBType} - ${previewLetter}`}
-              className="max-w-[88%] max-h-[88%] object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
-              draggable={false}
-            />
-          </div>
+            draggable={false}
+          />
         </div>
       );
     })()}
 
-    {/* แถบพรีวิวด้านล่าง (thumbnail) : ทำให้เลื่อนแนวนอนได้ พอดีกับ iPad แนวตั้ง */}
+    {/* แถบพรีวิวด้านล่าง (thumbnail) — เลื่อนแนวนอน, เคารพ safe-area */}
     <div
-      className="fixed z-[21] left-1/2 -translate-x-1/2 bottom-2 md:bottom-4
+      className="fixed z-[21] left-1/2 -translate-x-1/2
                  bg-black/30 border border-white/10 backdrop-blur-md rounded-2xl
-                 px-3 py-2 flex items-center gap-2 md:gap-4
-                 w-[94vw] max-w-[900px] overflow-x-auto"
+                 px-3 py-2 flex items-center gap-2 md:gap-3
+                 w-[94vw] max-w-[980px] overflow-x-auto"
+      style={{
+        bottom: 'max(0.75rem, env(safe-area-inset-bottom))'
+      }}
       role="group"
       aria-label="HB Shaft thumbnails"
     >
@@ -8795,21 +8797,23 @@ if (hbSeries === 'HB' && hbHBType && hbStage && hbOutput && hbMount && hbSize &&
           <button
             key={`thumb-${ch}`}
             type="button"
-            onMouseEnter={() => update('hbPreviewShaft', ch)}
-            onFocus={() => update('hbPreviewShaft', ch)}
+            // บนอุปกรณ์ทัช: แตะครั้งแรก = preview, แตะซ้ำแบบเดิม = ยืนยัน
             onClick={() => {
-              // ทัช: แตะครั้งแรก → ดูตัวอย่าง, แตะซ้ำที่แบบเดิม → ยืนยันเลือก
               if (isTouchDevice) {
                 if (hbState?.hbPreviewShaft !== ch) {
                   update('hbPreviewShaft', ch);
-                } else {
-                  update('hbShaftDesign', ch);
+                  return; // จบที่พรีวิว
                 }
-              } else {
-                // เดสก์ท็อป/มีเมาส์ → คลิกเดียวไปต่อเหมือนเดิม
+                // แตะซ้ำตัวเดิม → ยืนยันเลือก
                 update('hbShaftDesign', ch);
+                return;
               }
+              // เดสก์ท็อป / เมาส์ → คลิกเดียวไปต่อ
+              update('hbShaftDesign', ch);
             }}
+            // ไม่ตั้ง preview จาก hover/focus บนทัช เพื่อไม่ให้เด้งไปต่อทันที
+            onMouseEnter={!isTouchDevice ? () => update('hbPreviewShaft', ch) : undefined}
+            onFocus={!isTouchDevice ? () => update('hbPreviewShaft', ch) : undefined}
             className="w-16 h-12 md:w-20 md:h-14 rounded-lg overflow-hidden bg-white/10 border border-white/20 hover:scale-[1.02] active:scale-95 transition"
             title={`แบบ ${ch}`}
           >
