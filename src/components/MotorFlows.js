@@ -9023,7 +9023,7 @@ const pnLine =
 
       {/* ROW: จำนวน (ใต้คอลัมน์ซ้าย) */}
       <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 -mt-24 -translate-y-14">
-        <div className="lg:col-span-7 flex justify-center lg:justify-center pb-2">
+        <div className="lg:col-span-7 flex justify-center lg:justify-center pb-2 mt-2 md:mt-12 lg:mt-0">
           <div className="flex items-center gap-2 bg-black/30 border border-white/15 rounded-xl px-3 py-1.5 shadow">
             <button
               onClick={() => update('hbQty', Math.max(1, qty - 1))}
