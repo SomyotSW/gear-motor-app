@@ -1164,11 +1164,10 @@ const acSetters = { setAcMotorType, setAcPower, setAcSpeedAdjust, setAcVoltage, 
 // [ADD] เรียกตอนกดปุ่ม "ขอใบเสนอราคา" จาก RKFS
 const handleRKFSRequestQuote = (summary) => {
   setQuoteInfo(summary);
-    setRkfsQuote(q => ({ ...q, qty: rkfsState?.rkfsQty ?? 1 }));
- setShowForm(false);
- setShowRKFSQuote(true);                       
+  setRkfsQuote(q => ({ ...q, qty: rkfsState?.rkfsQty ?? 1 })); // ← แก้เป็น ...q
+  setShowForm(false);
+  setShowRKFSQuote(true);
 };
-
 
 const getFileUrl = () => {
   if (!selectedModel) return '#';
@@ -1873,7 +1872,13 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
       <h3 className="text-xl font-bold mb-4">ขอใบเสนอราคา RKFS Series</h3>
 
       <div className="mb-4 text-sm">
-        <div>Model code: <b>{quoteInfo?.modelCode || selectedModel || '-'}</b></div>
+        <div>Model code: <b>
+  {(quoteInfo?.model?.replace(/^(RXXRXX|RFXXRXX)/,''))
+   || quoteInfo?.modelCode
+   || quoteInfo?.model_code
+   || selectedModel
+   || '-'}
+</b></div>
         <div className="mt-2 flex items-center gap-3">
           <label className="w-32">จำนวนที่ต้องการ</label>
           <input type="number" min={1}
@@ -1908,60 +1913,90 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
             value={rkfsQuote.email}
             onChange={e => setRkfsQuote(q => ({ ...q, email: e.target.value }))} />
         </div>
+                <div className="flex items-start gap-3">
+  <label className="w-32 mt-2">หมายเหตุ</label>
+  <textarea
+    rows={3}
+    className="border rounded px-3 py-2 flex-1"
+    value={rkfsQuote.extra_note || ''}
+    onChange={e => setRkfsQuote(q => ({ ...q, extra_note: e.target.value }))}
+    placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"
+  />
+</div>
       </div>
 
       <div className="mt-6 flex justify-center">
         <button
-          onClick={async () => {
-            const { requester_name, company, phone, email, qty } = rkfsQuote;
-            const model_code = quoteInfo?.modelCode || selectedModel || '';
-            if (!requester_name || !company || !phone || !email || !model_code) { alert('กรอกให้ครบ'); return; }
-            try {
-  const { requester_name, company, phone, email, qty } = rkfsQuote;
-  const model_code = quoteInfo?.modelCode || quoteInfo?.model_code || selectedModel || '';
-  if (!requester_name || !company || !phone || !email || !model_code) {
-    alert('กรอกให้ครบ'); return;
+onClick={async () => {
+  try {
+    const { requester_name, company, phone, email, qty } = rkfsQuote;
+
+    // model_code: รับจาก summary (model/modelCode) แล้ว trim prefix
+    const model_code_raw =
+      quoteInfo?.model?.replace(/^(RXXRXX|RFXXRXX)/,'') ||
+      quoteInfo?.modelCode ||
+      quoteInfo?.model_code ||
+      selectedModel || '';
+    const model_code = String(model_code_raw);
+
+    if (!requester_name || !company || !phone || !email || !model_code) {
+      alert('กรอกให้ครบ'); return;
+    }
+
+    // ---- ค่า params ที่ส่งเข้า EmailJS (template_s1b15j8) ----
+    const params = {
+      requester_name,
+      company,
+      phone,
+      email,
+      time: new Date().toLocaleString('th-TH'),
+
+      product:   String(quoteInfo?.product ?? 'RKFS Series'),
+      qty:       String(qty ?? rkfsState?.rkfsQty ?? 1),
+
+      series:    String(quoteInfo?.series ?? rkfsState?.rkfsSeries ?? ''),
+      design:    String(quoteInfo?.design ?? rkfsState?.rkfsDesign ?? ''),
+      gear_size: String(quoteInfo?.gearSize ?? rkfsState?.rkfsSize   ?? ''),
+      ratio:     String(quoteInfo?.ratio    ?? rkfsState?.rkfsRatio  ?? ''),
+      model_code,
+
+      // Motor
+      motor_kw:   String(quoteInfo?.motor_kw   ?? rkfsState?.rkfsMotorPower ?? ''),
+      pole:       String(quoteInfo?.pole       ?? rkfsState?.rkfsPole       ?? ''),
+      motor_type: String(quoteInfo?.motor_type ?? rkfsState?.rkfsMotorType  ?? ''),
+      motor_note: String(quoteInfo?.motor_note ?? (rkfsState?.rkfsDesignSuffix ? `(${rkfsState.rkfsDesignSuffix})` : '') ),
+
+      // Performance & electric
+      rated_speed: String(quoteInfo?.rated_speed ?? rkfsState?.rkfsRatedSpeed ?? ''),
+      eff100:      String(quoteInfo?.eff100      ?? rkfsState?.rkfsEfficiency ?? ''),
+      current_380: String(quoteInfo?.current_380 ?? rkfsState?.rkfsI380 ?? ''),
+      current_400: String(quoteInfo?.current_400 ?? rkfsState?.rkfsI400 ?? ''),
+      current_415: String(quoteInfo?.current_415 ?? rkfsState?.rkfsI415 ?? ''),
+      out_speed:   String(quoteInfo?.out_speed   ?? rkfsState?.rkfsOutSpeed ?? ''),
+      out_torque:  String(quoteInfo?.out_torque  ?? rkfsState?.rkfsOutTorque ?? ''),
+
+      // เพิ่มสองช่องใหม่
+      service_factor:   String(quoteInfo?.service_factor   ?? rkfsState?.rkfsServiceFactor ?? rkfsState?.rkfsSF ?? ''),
+      output_shaft_dia: String(quoteInfo?.output_shaft_dia ?? rkfsState?.rkfsOutputShaftDia ?? rkfsState?.rkfsOutShaftDia ?? ''),
+
+      // หมายเหตุลูกค้า
+      extra_note:  String(rkfsQuote?.extra_note ?? ''),
+    };
+
+    // === ส่งอีเมล (ใช้ SDK แบบ global ตามที่คุณใช้อยู่) ===
+    if (window?.emailjs?.init) {
+      window.emailjs.init('BvIT5-X7LnkaS3LKq'); // ใส่ Public Key ของคุณ
+    }
+    await window.emailjs.send('service_fwgn6cw', 'template_s1b15j8', params);
+
+    alert('ส่งคำขอใบเสนอราคาเรียบร้อย');
+    setShowRKFSQuote(false); setShowForm(false); setQuoteInfo(null);
+  } catch (e) {
+    console.error(e);
+    alert('ส่งไม่สำเร็จ');
   }
+}}
 
-  // === ส่งค่าตรงจาก MotorFlows.js (summary -> quoteInfo) ===
-  const params = {
-    // ผู้ติดต่อ + เวลาบนหัวจดหมาย
-    requester_name,
-    company,
-    phone,
-    email,
-    time: new Date().toLocaleString('th-TH'),
-
-    // สรุปสินค้า
-    product:    String(quoteInfo?.product ?? 'RKFS Series'),
-    qty:        String(qty ?? rkfsState?.rkfsQty ?? 1),
-
-    series:     String(quoteInfo?.series ?? ''),
-    design:     String(quoteInfo?.design ?? ''),
-    gear_size:  String(quoteInfo?.gearSize ?? ''),
-    ratio:      String(quoteInfo?.ratio ?? ''),
-    model_code: String(model_code),
-
-    motor_kw:   String(quoteInfo?.motor_kw ?? ''),
-    pole:       String(quoteInfo?.pole ?? ''),
-    motor_type: String(quoteInfo?.motor_type ?? ''),
-    motor_note: String(quoteInfo?.motor_note ?? ''),
-     rated_speed: String(quoteInfo?.rated_speed ?? quoteInfo?.ratedSpeed ?? ''),
-    eff100:      String(quoteInfo?.eff100 ?? ''),
-    current_380: String(quoteInfo?.current_380 ?? quoteInfo?.current380 ?? ''),
-    current_400: String(quoteInfo?.current_400 ?? quoteInfo?.current400 ?? ''),
-    current_415: String(quoteInfo?.current_415 ?? quoteInfo?.current415 ?? ''),
-    out_speed:   String(quoteInfo?.out_speed ?? quoteInfo?.outSpeed ?? ''),
-    out_torque:  String(quoteInfo?.out_torque ?? quoteInfo?.outTorque ?? ''),
-
-    // ช่องหมายเหตุในเทมเพลต (ถ้ามี)
-    extra_note:  String(rkfsQuote?.extra_note ?? ''),
-  };
-               await window.emailjs.send('service_fwgn6cw', 'template_s1b15j8', params);
-              alert('ส่งคำขอใบเสนอราคาเรียบร้อย');
-              setShowRKFSQuote(false); setShowForm(false); setQuoteInfo(null);
-            } catch (e) { console.error(e); alert('ส่งไม่สำเร็จ'); }
-          }}
           className="px-6 py-3 rounded-2xl font-semibold text-slate-900 bg-green-300 hover:bg-green-400 shadow-[0_8px_0_#72b37a] active:translate-y-[2px] active:shadow-[0_6px_0_#72b37a]"
         >
           ✅ ยืนยัน

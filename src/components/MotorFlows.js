@@ -25,13 +25,15 @@ import RFImg from '../assets/rkfs/RF.png';
 import RXImg from '../assets/rkfs/RX.png';
 import RXFImg from '../assets/rkfs/RXF.png';
 import RMImg from '../assets/rkfs/RM.png';
+import RXXRXXImg from '../assets/rkfs/RR.png';
+import RFXXRXXImg from '../assets/rkfs/RFR.png';
 
 import KImg from '../assets/rkfs/K.png';
 import KAImg from '../assets/rkfs/KA.png';
 import KABImg from '../assets/rkfs/KAB.png';
 import KAFImg from '../assets/rkfs/KAF.png';
 import KATImg from '../assets/rkfs/KAT.png';
-import KAZImg from '../assets/rkfs/KAZ.png';
+import KAHImg from '../assets/rkfs/KAH.png';
 import KAAAImg from '../assets/rkfs/KAAA.png';
 import KAABImg from '../assets/rkfs/KAAB.png';
 import KAAABImg from '../assets/rkfs/KAAAB.png';
@@ -61,7 +63,7 @@ import SAZImg from '../assets/rkfs/SAZ.png';
 import FImg from '../assets/rkfs/F.png';
 import FAImg from '../assets/rkfs/FA.png';
 import FAFImg from '../assets/rkfs/FAF.png';
-import FAZImg from '../assets/rkfs/FAZ.png';
+import FAHImg from '../assets/rkfs/FAH.png';
 import FFImg from '../assets/rkfs/FF.png';
 
 import RIECImg from '../assets/rkfs/RIEC.png';
@@ -3209,9 +3211,9 @@ const sweepThen = (el, fn, ms = RKFS_SWEEP_MS) => {
 };
 
   const designOptions = {
-    R: ["R", "RF", "RM", "RX", "RXF"],   // ⬅️ เพิ่ม RX, RXF
-    K: ["K", "KA", "KAB", "KAF", "KAT", "KAZ" ],
-    F: ["F", "FA", "FAF", "FAZ", "FF"],
+    R: ["R", "RF", "RM", "RX", "RXF", "RXXRXX", "RFXXRXX" ],
+    K: ["K", "KA", "KAB", "KAF", "KAT", "KAH" ],
+    F: ["F", "FA", "FAF", "FAH", "FF"],
     S: ["S", "SA", "SAF", "SAT", "SAZ"]
   };
 
@@ -3657,44 +3659,64 @@ function getServiceFactorFB(series, sizeCode, motorKw, pole, ratio) {
   return Number(lo.fB) + t * (Number(hi.fB) - Number(lo.fB));
 }
 
-// [UPDATE] RKFS Drawing 2D path resolver — อิง rkfsDesign
+// [REPLACE] RKFS Drawing 2D path resolver — รองรับ RXXRXX / RFXXRXX (ดึงตัวหน้า)
 function rkfsDrawingPdfPathByDesign(design, size) {
-  const d = String(design || '').toUpperCase().replace(/\s+/g, ''); // เช่น 'R', 'RF', 'RX', 'RXF', ...
-  const n = Number(size);
+  const dRaw = String(design || '').toUpperCase().replace(/\s+/g, '');
+  let d = dRaw;
+  let n;
+
+  // ดึง "ตัวหน้า" จากค่า size ที่เป็นคู่ เช่น R147R87 / RF167R109
+  const m = String(size || '').toUpperCase().match(/^(RF|R)(\d+)R(\d+)$/);
+  if (m) {
+    d = m[1];                // 'R' หรือ 'RF' (ตัวหน้า)
+    n = Number(m[2]);        // เลขตัวหน้า
+  } else {
+    n = Number(size);
+  }
+
   if (!Number.isFinite(n)) return null;
 
   // กติกา:
-  // - ถ้า Design ขึ้นต้นด้วย 'RX' (เช่น RX, RXF) => GRX + เลขเดิม (ไม่ +2)
-  // - อื่น ๆ (R, RF, R...) => GR + (เลข +2)
+  // - ถ้า Design ขึ้นต้นด้วย 'RX' (เช่น RX, RXF) => GRX + n
+  // - อื่น ๆ (R, RF, ...) => GR + (n + 2)
   if (d.startsWith('RX')) {
     return `/model/pdf/RKFS/R/GRX${n}.pdf`;
   }
   return `/model/pdf/RKFS/R/GR${n + 2}.pdf`;
 }
 
-// [REPLACE] ดาวน์โหลด Drawing 2D แบบลองหลาย candidate และตรวจว่าเป็น PDF จริง
+// [REPLACE] ดาวน์โหลด Drawing 2D — รองรับ RXXRXX / RFXXRXX และตั้งชื่อไฟล์เท่ากับ Model Code แบบ "ตัด prefix"
 async function downloadRkfsDrawingPDF(design, size, modelCode) {
-  const d = String(design || '').toUpperCase().replace(/\s+/g, ''); // 'R','RF','RX','RXF',...
-  const n = Number(size);
+  const dRaw = String(design || '').toUpperCase().replace(/\s+/g, '');
+  let d = dRaw;
+  let n;
+
+  // ดึง "ตัวหน้า" จาก size แบบคู่ เช่น R147R87 / RF167R109
+  const m = String(size || '').toUpperCase().match(/^(RF|R)(\d+)R(\d+)$/);
+  if (m) {
+    d = m[1];          // 'R' หรือ 'RF' ของตัวหน้า
+    n = Number(m[2]);  // เลขตัวหน้า
+  } else {
+    n = Number(size);
+  }
+
   if (!Number.isFinite(n)) {
     alert('ขนาด (size) ไม่ถูกต้อง');
     return;
   }
 
-  // --- กำหนด candidate ตามกติกา ---
+  // --- สร้าง candidates ตามกติกาเดิม ---
   let candidates = [];
   if (d.startsWith('RX')) {
-    // RX / RXF: ก่อนหน้าอยากได้ GRX{n} ตรง ๆ แต่ไฟล์จริงในโฟลเดอร์เป็นระยะห่าง 2
+    // RX / RXF: ให้ลอง GRX n, n+2, n-2
     candidates = [`GRX${n}`, `GRX${n + 2}`, `GRX${n - 2}`];
   } else {
-    // R / RF: ใช้ +2 เป็นหลัก แต่กันพลาดด้วย n และ n-2
+    // R / RF / อื่น ๆ: ใช้ GR (n+2) เป็นหลัก แล้วกันพลาดด้วย n และ n-2
     candidates = [`GR${n + 2}`, `GR${n}`, `GR${n - 2}`];
   }
 
-  // พาธภายใต้ public: /public/model/pdf/RKFS/R/xxx.pdf -> URL = /model/pdf/RKFS/R/xxx.pdf
   const base = `/model/pdf/RKFS/R/`;
 
-  // --- ลองทีละตัวและตรวจว่าเป็น PDF จริง ---
   for (const fileBase of candidates) {
     const relPath = `${base}${fileBase}.pdf`;
     try {
@@ -3708,19 +3730,22 @@ async function downloadRkfsDrawingPDF(design, size, modelCode) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const safeName = String(modelCode || fileBase).replace(/[^\w.-]/g, "_");
-           a.download = `${safeName}.pdf`;    
+
+      // [ADD] ชื่อไฟล์ = Model Code ที่ "ตัด RXXRXX/RFXXRXX ด้านหน้าออก"
+      const displayName = String(modelCode || fileBase).replace(/^(RXXRXX|RFXXRXX)/, '');
+      const safeName = displayName.replace(/[^\w.-]/g, '_');
+
+      a.download = `${safeName}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 0);
-      return; // ✅ เจอแล้ว ออกเลย
+      return; // ✅ เจอไฟล์แล้ว
     } catch (_) {
       // ลองตัวถัดไป
     }
   }
 
-  // ถ้าไม่เจอเลย
   alert(`ไม่พบไฟล์ PDF ใด ๆ ตามตัวเลือกต่อไปนี้:\n${candidates
     .map(x => `${base}${x}.pdf`)
     .join('\n')}\n\nตรวจชื่อไฟล์ใน: C:\\Users\\Haruj\\gear-motor-app\\public\\model\\pdf\\RKFS\\R`);
@@ -3799,12 +3824,25 @@ const rkfsInputShaftBySeries = {
     '97': [{code:'AD3', dia:'Ø28'}, {code:'AD4', dia:'Ø38'}, {code:'AD5', dia:'Ø42'}, {code:'AD6', dia:'Ø48'}],
   }
 };
-  
+    
+   // [ADD] Normalize size key for RKFS pair labels (RXXRXX / RFXXRXX)
+// ใช้ดึง "ไซซ์ตัวหน้า" เพื่อนำไป lookup ratioMapping
+function normalizeRKFSSizeKey(design, sizeVal) {
+  const raw = String(sizeVal ?? '');
+  if (design === 'RXXRXX' || design === 'RFXXRXX') {
+    // ตัวอย่าง: "R27R17" หรือ "RF37R17" → ดึง "27" / "37"
+    const m = raw.match(/^RF?(\d+)R(\d+)$/i) || raw.match(/^R(\d+)R(\d+)$/i);
+    if (m) return m[1];
+  }
+  return raw;
+}  
+// [CHANGE] ใช้คีย์ไซซ์ที่ normalize แล้ว เพื่อรองรับ RXXRXX / RFXXRXX
+const _sizeKey = normalizeRKFSSizeKey(rkfsDesign, rkfsSize);
+const ratioList =
+  rkfsSeries && ratioMapping[rkfsSeries]?.[_sizeKey]
+    ? ratioMapping[rkfsSeries][_sizeKey]
+    : [];
 
-  const ratioList =
-   rkfsSeries && ratioMapping[rkfsSeries]?.[rkfsSize]
-      ? ratioMapping[rkfsSeries][rkfsSize]
-      : [];
 
   const mountingImageMap = {
     R: RMTImg,
@@ -3864,9 +3902,9 @@ const clickSweep = (e, run) => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {designOptions[rkfsSeries].map(design => {
               const imageMap = {
-                R: { R: RImg, RF: RFImg, RX: RXImg, RXF: RXFImg, RM: RMImg },
-                K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg },
-                F: { F: FImg, FA: FAImg, FAF: FAFImg, FAZ: FAZImg, FF: FFImg },
+                R: { R: RImg, RF: RFImg, RX: RXImg, RXF: RXFImg, RM: RMImg, RXXRXX: RXXRXXImg, RFXXRXX: RFXXRXXImg  },
+                K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAH: KAHImg },
+                F: { F: FImg, FA: FAImg, FAF: FAFImg, FAH: FAHImg, FF: FFImg },
                 S: { S: SImg, SA: SAImg, SAF: SAFImg, SAT: SATImg, SAZ: SAZImg }
               };
               const imgSrc = imageMap[rkfsSeries][design];
@@ -3893,23 +3931,41 @@ const clickSweep = (e, run) => {
         </>
       )}
 
-      {/* Step 3: Size */}
+     {/* Step 3: Size */}
 {rkfsDesign && !rkfsSize && (
   <>
     <h3 className="font-semibold text-blue-500 drop-shadow mb-3">
       เลือก Size Gear ที่คุณต้องการ
     </h3>
     <div className="flex flex-wrap gap-4 justify-center">
-  {(
-    rkfsSeries === "R"
-      ? ["17","27","37","47","57","67","77","87","97","107","137","147","167"]
-      : rkfsSeries === "K"
-      ? ["37","47","57","67","77","87","97","107","127","157","167","187"]
-      : rkfsSeries === "F"
-      ? ["37","47","57","67","77","87","97","107","127","157"]   // ← ตามที่สั่ง
-      : ["37","47","57","67","77","87","97"]
-  )
+      {(
+        // --- เงื่อนไขพิเศษ: แสดงปุ่มเป็นคู่ต่อท้าย (เฉพาะ RXXRXX / RFXXRXX) ---
+        rkfsDesign === "RXXRXX"
+          ? [
+              "R27R17","R37R17","R47R37","R57R37","R67R37","R77R37",
+              "R87R57","R97R57","R97R57","R107R77","R137R77",
+              "R147R77","R147R87","R167R97","R167R109"
+            ]
+          : rkfsDesign === "RFXXRXX"
+          ? [
+              "RF27R17","RF37R17","RF47R37","RF57R37","RF67R37","RF77R37",
+              "RF87R57","RF97R57","RF97R57","RF107R77","RF137R77",
+              "RF147R77","RF147R87","RF167R97","RF167R109"
+            ]
+          // --- เคสทั่วไป: ทำงานเหมือนเดิม ---
+          : (
+              rkfsSeries === "R"
+                ? ["17","27","37","47","57","67","77","87","97","107","137","147","167"]
+                : rkfsSeries === "K"
+                ? ["37","47","57","67","77","87","97","107","127","157","167","187"]
+                : rkfsSeries === "F"
+                ? ["37","47","57","67","77","87","97","107","127","157"]   // ← ตามที่สั่ง
+                : ["37","47","57","67","77","87","97"]
+            )
+      )
+        // เงื่อนไข filter เดิม (ใช้เฉพาะเมื่อเป็นเคสทั่วไปที่เป็นตัวเลขเดี่ยว)
         .filter((size) => {
+          if (rkfsDesign === "RXXRXX" || rkfsDesign === "RFXXRXX") return true;
           const n = parseInt(size, 10);
           if (rkfsDesign === "RM") return n >= 57 && n <= 167;
           if (rkfsDesign === "RX" || rkfsDesign === "RXF") return n >= 57 && n <= 107;
@@ -3919,9 +3975,13 @@ const clickSweep = (e, run) => {
           <button
             key={size}
             onClick={(e) => clickSweep(e, () => update("rkfsSize", size))}
-            className="w-24 h-24 bg-white shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 rounded-xl flex items-center justify-center text-blue-800 font-bold text-lg border border-gray-300 hover:bg-blue-100"
+            className="w-24 h-24 bg-white shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 rounded-xl flex items-center justify-center text-blue-800 font-bold text-sm sm:text-base border border-gray-300 hover:bg-blue-100 text-center"
           >
-            {rkfsDesign}{size}
+            {/* ถ้าเป็น RXXRXX/RFXXRXX ให้แสดงข้อความตามรายการ
+                ถ้าเป็นเคสทั่วไป ให้แสดง 'rkfsDesign + size' เหมือนเดิม */}
+            {rkfsDesign === "RXXRXX" || rkfsDesign === "RFXXRXX"
+              ? size
+              : `${rkfsDesign}${size}`}
           </button>
         ))}
     </div>
@@ -3930,11 +3990,11 @@ const clickSweep = (e, run) => {
   **ขนาด Size Gear จะเป็นตัวบ่งบอกขนาดของเพลา , ความสูงของกึ่งกลางเพลา ,ระยะขาตั้ง, หน้าแปลน , ขนาด Housing , น้ำหนัก ที่แตกต่างกันออกไป สามารถเลือกได้ตามความเหมาะสมของเครื่องจักรของท่าน
 </h2>
     <div className="fixed z-[999]"
-    style={{
-      left: 'max(1.5rem, env(safe-area-inset-right))',
-      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-    }}
-  >
+      style={{
+        left: 'max(1.5rem, env(safe-area-inset-right))',
+        bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+      }}
+    >
       <button
         onClick={(e) => clickSweep(e, () => update("rkfsDesign", null))}
         className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
@@ -3944,6 +4004,7 @@ const clickSweep = (e, run) => {
     </div>
   </>
 )}
+
       {/* Step 3.1: Input Selection */}
 {rkfsSize && !rkfsInputSel && (
   <>
@@ -4179,10 +4240,13 @@ const clickSweep = (e, run) => {
 )}
 
       {/* Step 5: Motor Power */}
-      {rkfsMotorType && !rkfsMotorPower && (
-        <>
-          <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">เลือกกำลังของมอเตอร์(หน่วย kW)</h3>
-          <div className="flex flex-wrap gap-3">
+{rkfsMotorType && !rkfsMotorPower && (
+  <>
+    <h3 className="text-blue-500 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      เลือกกำลังของมอเตอร์(หน่วย kW)
+    </h3>
+
+    <div className="flex flex-wrap gap-3">
       {(() => {
         // Fallback เดิม (กรณีไม่เจอ mapping หรือยังไม่เลือก Size)
         const defaultPowerOptions = [
@@ -4200,37 +4264,53 @@ const clickSweep = (e, run) => {
 
         const sizeKey = rkfsSize ? String(rkfsSize) : null; // กันกรณีได้ค่าตัวเลข
         const seriesTable = tableMap[rkfsSeries];
-        const mapped = (seriesTable && sizeKey) ? seriesTable[sizeKey] : null;
+
+        // [ADD] รองรับ RXXRXX / RFXXRXX → ใช้ "ไซซ์ตัวหน้า" ไป map กำลังจาก R-series
+        let overrideByPair = null;
+        if (rkfsDesign === "RXXRXX" || rkfsDesign === "RFXXRXX") {
+          // ตัวอย่าง: "R27R17" หรือ "RF37R17" → จับ "27" เป็น primary size
+          const m = sizeKey && sizeKey.match(/^RF?(\d+)R(\d+)$/i);
+          const primarySize = m ? m[1] : null;
+          if (primarySize && rSeriesPowerBySize[primarySize]) {
+            overrideByPair = rSeriesPowerBySize[primarySize];
+          }
+        }
+
+        // เดิม: map ตามซีรีส์และ sizeKey
+        const mapped = overrideByPair ?? ((seriesTable && sizeKey) ? seriesTable[sizeKey] : null);
 
         const powerOptions = mapped ?? defaultPowerOptions;
 
-  return powerOptions.map((p) => (
-  <button
-  key={String(p)}
-  onClick={(e) => clickSweep(e, () => update("rkfsMotorPower", p))}
-  className="btn-3d-rkfs text-sm md:text-base font-semibold px-4 py-2"
-  title={`${p} kW`}
->
-  {p} kW
-</button>
-));
+        return powerOptions.map((p) => (
+          <button
+            key={String(p)}
+            onClick={(e) => clickSweep(e, () => update("rkfsMotorPower", p))}
+            className="btn-3d-rkfs text-sm md:text-base font-semibold px-4 py-2"
+            title={`${p} kW`}
+          >
+            {p} kW
+          </button>
+        ));
       })()}
     </div>
-          <div className="fixed z-[999]"
-    style={{
-      left: 'max(1.5rem, env(safe-area-inset-right))',
-      bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-    }}
-  >
+
+    <div
+      className="fixed z-[999]"
+      style={{
+        left: 'max(1.5rem, env(safe-area-inset-right))',
+        bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+      }}
+    >
       <button
         onClick={(e) => clickSweep(e, () => update("rkfsMotorType", null))}
         className="bg-blue-400 text-white font-bold px-4 py-2 rounded-xl shadow"
       >
         ย้อนกลับ
       </button>
-          </div>
-        </>
-      )}
+    </div>
+  </>
+)}
+
 
       {/* Step 6: Pole */}
       {rkfsMotorPower && !rkfsPole && rkfsInputSel !== 'IEC Adapter Motor' && (
@@ -4437,11 +4517,11 @@ if (rkfsInputSel === 'INPUT Shaft') {
               if (rkfsDesign === "RX") return "RX";
               if (rkfsDesign === "RXF") return "RXF";
               if (rkfsDesign === "FF") return "FF";
-              if (["F", "FA", "FAF", "FAZ", "FH", "FHF", "FHZ", "FV", "FVF", "FVZ", "FT"].includes(rkfsDesign)) return "F";
+              if (["F", "FA", "FAF", "FAH", "FH", "FHF", "FHZ", "FV", "FVF", "FVZ", "FT"].includes(rkfsDesign)) return "F";
               if (rkfsDesign === "S") return "S";
               if (rkfsDesign === "SF") return "SF";
               if (["SA", "SAF", "SAZ", "SAT", "SH", "SHF", "SHZ", "ST"].includes(rkfsDesign)) return "S_OTHER";
-              if (["K", "KA", "KAB", "KAF", "KAT", "KAZ"].includes(rkfsDesign)) return "K";
+              if (["K", "KA", "KAB", "KAF", "KAT", "KAH"].includes(rkfsDesign)) return "K";
               return "R"; // ดีไซน์ R
             })();
 
@@ -4831,7 +4911,7 @@ if (rkfsInputSel === 'INPUT Shaft') {
           );
         }
 
-        if (['KA', 'KAB', 'KAF', 'KAZ'].includes(rkfsDesign)) {
+        if (['KA', 'KAB', 'KAF', 'KAH'].includes(rkfsDesign)) {
           return (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
               <Card img={KAXXAImg} code="A" label="KAXXA (A)" />
@@ -4918,7 +4998,7 @@ if (rkfsInputSel === 'INPUT Shaft') {
   </div>
 )}
 
-      {/* Step 10: Confirm */}
+    {/* Step 10: Confirm */}
 {(
   // IEC / INPUT
   ((rkfsInputSel === 'IEC Adapter Motor' || rkfsInputSel === 'INPUT Shaft') &&
@@ -4937,37 +5017,43 @@ if (rkfsInputSel === 'INPUT Shaft') {
     <h3 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Model Code</h3>
     <p className="text-blue-400 font-extrabold text-xl">
       {(() => {
-        // ── IEC Adapter Motor ──
-        if (rkfsInputSel === 'IEC Adapter Motor') {
-          const amCode = (typeof getRkfsIECByPower === 'function') ? getRkfsIECByPower(rkfsMotorPower) : null;
-          if (!rkfsRatio || !rkfsMounting || !amCode) return '-';
-          return `${rkfsDesign}${rkfsSize}-${rkfsRatio}-${amCode}-${rkfsMounting}`;
-        }
+  const needTrim = rkfsDesign === 'RXXRXX' || rkfsDesign === 'RFXXRXX';
 
-        // ── INPUT Shaft ── (อ่านจาก state เสมอ เพื่อกันกรณีตัวแปรโลคัลไม่ได้ map)
-        if (rkfsInputSel === 'INPUT Shaft') {
-          const shaftCode = state?.rkfsINPUTshaft ?? state?.rkfsInputShaft ?? null;
-          const diaVal    = state?.rkfsINPUTshaftDia ?? state?.rkfsInputShaftDia ?? null;
-          if (!rkfsRatio || !rkfsMounting || !shaftCode) return '-';
-          const dia = diaVal ? `-${diaVal}` : '';
-          return `${rkfsDesign}${rkfsSize}-${rkfsRatio}-${shaftCode}-${rkfsMounting}${dia}`;
-        }
+  if (rkfsInputSel === 'IEC Adapter Motor') {
+    const amCode = (typeof getRkfsIECByPower === 'function') ? getRkfsIECByPower(rkfsMotorPower) : null;
+    if (!rkfsRatio || !rkfsMounting || !amCode) return '-';
+    let code = `${rkfsDesign}${rkfsSize}-${rkfsRatio}-${amCode}-${rkfsMounting}`;
+    return needTrim ? code.replace(/^(RXXRXX|RFXXRXX)/,'') : code;
+  }
 
-        // ── With motor (โครงสร้างเดิม 100%) ──
-        return `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}${rkfsPosition ? `-${rkfsPosition}` : ''}${rkfsPositionSub ? `-${rkfsPositionSub}` : ''}${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`;
-      })()}
+  if (rkfsInputSel === 'INPUT Shaft') {
+    const shaftCode = state?.rkfsINPUTshaft ?? state?.rkfsInputShaft ?? null;
+    const diaVal    = state?.rkfsINPUTshaftDia ?? state?.rkfsInputShaftDia ?? null;
+    if (!rkfsRatio || !rkfsMounting || !shaftCode) return '-';
+    const dia = diaVal ? `-${diaVal}` : '';
+    let code = `${rkfsDesign}${rkfsSize}-${rkfsRatio}-${shaftCode}-${rkfsMounting}${dia}`;
+    return needTrim ? code.replace(/^(RXXRXX|RFXXRXX)/,'') : code;
+  }
+
+  let code =
+    `${rkfsDesign}${rkfsSize}-${rkfsMotorType}-${rkfsMotorPower}-${rkfsPole}-${rkfsRatio}-${rkfsMounting}` +
+    `${rkfsPosition ? `-${rkfsPosition}` : ''}` +
+    `${rkfsPositionSub ? `-${rkfsPositionSub}` : ''}` +
+    `${state.rkfsDesignSuffix ? `-${state.rkfsDesignSuffix}` : ''}`;
+  return needTrim ? code.replace(/^(RXXRXX|RFXXRXX)/,'') : code;
+})()}
     </p>
     <br />
     {(() => {
-  const isIEC   = rkfsInputSel === 'IEC Adapter Motor';
-  const isINPUT = rkfsInputSel === 'INPUT Shaft';
-  const thumbIEC   = isIEC   ? RKFS_IEC_IMG?.[rkfsSeries]   : null;
-  const thumbINPUT = isINPUT ? RKFS_INPUT_GIF?.[rkfsSeries] : null;
-  const thumbSrc = thumbIEC || thumbINPUT;
-  const thumbAlt = isIEC ? `${rkfsSeries} IEC adapter drawing` :
-                   isINPUT ? `${rkfsSeries} input shaft animation` : '';
+      const isIEC   = rkfsInputSel === 'IEC Adapter Motor';
+      const isINPUT = rkfsInputSel === 'INPUT Shaft';
+      const thumbIEC   = isIEC   ? RKFS_IEC_IMG?.[rkfsSeries]   : null;
+      const thumbINPUT = isINPUT ? RKFS_INPUT_GIF?.[rkfsSeries] : null;
+      const thumbSrc = thumbIEC || thumbINPUT;
+      const thumbAlt = isIEC ? `${rkfsSeries} IEC adapter drawing`
+                             : isINPUT ? `${rkfsSeries} input shaft animation` : '';
 
-  if (!thumbSrc) return null;
+      if (!thumbSrc) return null;
 
   return (
     <div className="group mx-auto mt-3 block w-full">
@@ -5050,7 +5136,7 @@ if (!inputShaftDia && rkfsSeries && rkfsSize) {
         F:   "F : Parallel-shaft helical gearmotor / Foot-mounted / Solid shaft.",
         FA:  "FA : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft / Keyway.",
         FAF: "FAF : Parallel-shaft helical gearmotor / B5 Flange-mounted / Hollow shaft / Keyway.",
-        FAZ: "FAZ : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft and shrink disk.",
+        FAH: "FAH : Parallel-shaft helical gearmotor / Foot-mounted / Hollow shaft and shrink disk.",
         FF:  "FF : Parallel-shaft helical gearmotor / B5 Flange-mounted / Solid shaft.",
         // K-series
         K:   "K : Helical-bevel gearmotor / Foot-mounted / Solid shaft.",
@@ -5058,7 +5144,7 @@ if (!inputShaftDia && rkfsSeries && rkfsSize) {
         KAB: "KAB : Helical-bevel gearmotor / Foot-mounted / Hollow shaft / Keyway.",
         KAF: "KAF : Helical-bevel gearmotor / Flange-mounted / Hollow shaft / Keyway.",
         KAT: "KAT : Helical-bevel gearmotor / Hollow shaft / Keyway / Torque Arm.",
-        KAZ: "KAZ : Helical-bevel gearmotor / Hollow shaft and shrink disk.",
+        KAH: "KAH : Helical-bevel gearmotor / Hollow shaft and shrink disk.",
         // S-series
         S:   "S : Helical-worm gearmotor / Foot-mounted / Solid shaft.",
         SA:  "SA : Helical-worm gearmotor / Hollow shaft / Keyway.",
@@ -5084,6 +5170,10 @@ if (!inputShaftDia && rkfsSeries && rkfsSize) {
 const MOTOR_DB = {
   '4P': {
   YE3: {
+    '0.12': { speed: 1330, eff: 64.8, pf: 0.72, current: { '380': 0.4,  '400': 0.37,  '415': 0.36 } },
+        '0.18': { speed: 1330, eff: 69.9, pf: 0.73, current: { '380': 0.5,  '400': 0.51,  '415': 0.49 } },
+        '0.25': { speed: 1350, eff: 73.5, pf: 0.74, current: { '380': 0.7,  '400': 0.66,  '415': 0.64 } },
+    '0.37': { speed: 1350, eff: 77.3, pf: 0.75, current: { '380': 1.0,  '400': 0.92,  '415': 0.89 } },
     '0.55': { speed: 1400, eff: 80.8, pf: 0.75, current: { '380': 1.4,  '400': 1.3,  '415': 1.3 } },
     '0.75': { speed: 1420, eff: 82.5, pf: 0.75, current: { '380': 1.8,  '400': 1.7,  '415': 1.7 } },
     '1.1' : { speed: 1445, eff: 84.1, pf: 0.76, current: { '380': 2.6,  '400': 2.5,  '415': 2.4 } },
@@ -5122,6 +5212,9 @@ const MOTOR_DB = {
 
   '6P': {
     YE3: {
+        '0.12': { speed: 895, eff: 62.0, pf: 0.70, current: { '380': 1.3,  '400': 1.2,  '415': 1.2 } },
+        '0.18': { speed: 895, eff: 62.0, pf: 0.70, current: { '380': 1.3,  '400': 1.2,  '415': 1.2 } },
+        '0.25': { speed: 895, eff: 62.0, pf: 0.70, current: { '380': 1.3,  '400': 1.2,  '415': 1.2 } },
     '0.37': { speed: 895, eff: 62.0, pf: 0.70, current: { '380': 1.3,  '400': 1.2,  '415': 1.2 } },
     '0.55': { speed: 890, eff: 73.6, pf: 0.72, current: { '380': 1.6,  '400': 1.5,  '415': 1.4 } },
     '0.75': { speed: 935, eff: 78.9, pf: 0.72, current: { '380': 2.0,  '400': 1.9,  '415': 1.8 } },
@@ -5205,7 +5298,22 @@ const MOTOR_TYPE_KEY = (type) => {
       const motorTypeNote = motorTypeDescMap[rkfsMotorType] || "-";
 
       // --- NEW: Key สำหรับแมปค่าตามดีไซน์+ไซซ์ ---
-      const dsKey = `${rkfsDesign || ''}${rkfsSize || ''}`;
+// [ADD] ใช้ดึง key สำหรับ lookup กรณี RXXRXX / RFXXRXX ให้ใช้โมดูลตัวหน้า (เช่น R147 / RF147)
+function getFrontModuleKey(design, size) {
+  const d = String(design || '').toUpperCase();
+  const s = String(size || '').toUpperCase();
+
+  // ถ้าเป็น two-stage (RXXRXX/RFXXRXX) ให้ตัดเอาโมดูลตัวหน้า เช่น "R147R87" -> "R147", "RF167R97" -> "RF167"
+  if (d === 'RXXRXX' || d === 'RFXXRXX') {
+    const m = s.match(/^(RF|R)\d+/);
+    return m ? m[0] : '';
+  }
+
+  // เคสปกติ: ใช้ {design}{size} ตามเดิม เช่น R + 87 -> R87, RXF + 67 -> RXF67
+  return (d && s) ? `${d}${s}` : '';
+}
+
+      const dsKey = getFrontModuleKey(rkfsDesign, rkfsSize);
 
       // --- NEW: Output Shaft Diameter ตาม {rkfsDesign}{rkfsSize} ---
       const shaftDiaMap = {
@@ -5214,29 +5322,29 @@ const MOTOR_TYPE_KEY = (type) => {
         R37:'Ø25',  RF37:'Ø25',
         R47:'Ø30',  RF47:'Ø30',
 
-        F37:'Ø25',  FA37:'Ø30', FAF37:'Ø30',  FAZ37:'Ø30', FF37:'Ø25',
-        F47:'Ø30',  FA47:'Ø35', FAF47:'Ø35',  FAZ47:'Ø35', FF47:'Ø30',
-        F57:'Ø35',  FA57:'Ø40', FAF57:'Ø40',  FAZ57:'Ø40', FF57:'Ø35',
-        F67:'Ø40',  FA67:'Ø40', FAF67:'Ø40',  FAZ67:'Ø40', FF67:'Ø40',
-        F77:'Ø50',  FA77:'Ø50', FAF77:'Ø50',  FAZ77:'Ø50', FF77:'Ø50',
-        F87:'Ø60',  FA87:'Ø60', FAF87:'Ø60',  FAZ87:'Ø65', FF87:'Ø60',
-        F97:'Ø70',  FA97:'Ø70', FAF97:'Ø70',  FAZ97:'Ø75', FF97:'Ø70',
-        F107:'Ø90',  FA107:'Ø90', FAF107:'Ø90',  FAZ107:'Ø95', FF107:'Ø90',
-        F127:'Ø110',  FA127:'Ø100', FAF127:'Ø100',  FAZ127:'Ø105', FF37:'Ø110',
-        F157:'Ø120',  FA157:'Ø120', FAF157:'Ø120',  FAZ157:'Ø125', FF157:'Ø120',
+        F37:'Ø25',  FA37:'Ø30', FAF37:'Ø30',  FAH37:'Ø30', FF37:'Ø25',
+        F47:'Ø30',  FA47:'Ø35', FAF47:'Ø35',  FAH47:'Ø35', FF47:'Ø30',
+        F57:'Ø35',  FA57:'Ø40', FAF57:'Ø40',  FAH57:'Ø40', FF57:'Ø35',
+        F67:'Ø40',  FA67:'Ø40', FAF67:'Ø40',  FAH67:'Ø40', FF67:'Ø40',
+        F77:'Ø50',  FA77:'Ø50', FAF77:'Ø50',  FAH77:'Ø50', FF77:'Ø50',
+        F87:'Ø60',  FA87:'Ø60', FAF87:'Ø60',  FAH87:'Ø65', FF87:'Ø60',
+        F97:'Ø70',  FA97:'Ø70', FAF97:'Ø70',  FAH97:'Ø75', FF97:'Ø70',
+        F107:'Ø90',  FA107:'Ø90', FAF107:'Ø90',  FAH107:'Ø95', FF107:'Ø90',
+        F127:'Ø110',  FA127:'Ø100', FAF127:'Ø100',  FAH127:'Ø105', FF37:'Ø110',
+        F157:'Ø120',  FA157:'Ø120', FAF157:'Ø120',  FAH157:'Ø125', FF157:'Ø120',
 
-        K37:'Ø25',  KF37:'Ø25', KA37:'Ø30', KAB37:'Ø30',  KAF37:'Ø30', KAT37:'Ø30', KAZ37:'Ø30',
-        K47:'Ø30',  KF47:'Ø30', KA47:'Ø35', KAB47:'Ø35',  KAF47:'Ø35', KAT47:'Ø35', KAZ47:'Ø35',
-        K57:'Ø35',  KF57:'Ø35', KA57:'Ø40', KAB57:'Ø40',  KAF57:'Ø40', KAT57:'Ø40', KAZ57:'Ø40',
-        K67:'Ø40',  KF67:'Ø40', KA67:'Ø40', KAB67:'Ø40',  KAF67:'Ø40', KAT67:'Ø40', KAZ67:'Ø40',
-        K77:'Ø50',  KF77:'Ø50', KA77:'Ø50', KAB77:'Ø50',  KAF77:'Ø50', KAT77:'Ø50', KAZ77:'Ø50',
-        K87:'Ø60',  KF87:'Ø60', KA87:'Ø60', KAB87:'Ø60',  KAF87:'Ø60', KAT87:'Ø60', KAZ87:'Ø65',
-        K97:'Ø70',  KF97:'Ø70', KA97:'Ø70', KAB97:'Ø70',  KAF97:'Ø70', KAT97:'Ø70', KAZ97:'Ø75',
-        K107:'Ø90',  KF107:'Ø90', KA107:'Ø90', KAB107:'Ø90',  KAF107:'Ø90', KAT107:'Ø90', KAZ107:'Ø95',
-        K127:'Ø110',  KF127:'Ø110', KA127:'Ø100', KAB127:'Ø100',  KAF127:'Ø100', KAT127:'Ø100', KAZ127:'Ø105',
-        K157:'Ø120',  KF157:'Ø120', KA157:'Ø120', KAB157:'Ø120',  KAF157:'Ø120', KAT157:'Ø120', KAZ157:'Ø125',
-        K167:'Ø160', KAZ167:'Ø140',
-        K187:'Ø190',  KAZ187:'Ø160',
+        K37:'Ø25',  KF37:'Ø25', KA37:'Ø30', KAB37:'Ø30',  KAF37:'Ø30', KAT37:'Ø30', KAH37:'Ø30',
+        K47:'Ø30',  KF47:'Ø30', KA47:'Ø35', KAB47:'Ø35',  KAF47:'Ø35', KAT47:'Ø35', KAH47:'Ø35',
+        K57:'Ø35',  KF57:'Ø35', KA57:'Ø40', KAB57:'Ø40',  KAF57:'Ø40', KAT57:'Ø40', KAH57:'Ø40',
+        K67:'Ø40',  KF67:'Ø40', KA67:'Ø40', KAB67:'Ø40',  KAF67:'Ø40', KAT67:'Ø40', KAH67:'Ø40',
+        K77:'Ø50',  KF77:'Ø50', KA77:'Ø50', KAB77:'Ø50',  KAF77:'Ø50', KAT77:'Ø50', KAH77:'Ø50',
+        K87:'Ø60',  KF87:'Ø60', KA87:'Ø60', KAB87:'Ø60',  KAF87:'Ø60', KAT87:'Ø60', KAH87:'Ø65',
+        K97:'Ø70',  KF97:'Ø70', KA97:'Ø70', KAB97:'Ø70',  KAF97:'Ø70', KAT97:'Ø70', KAH97:'Ø75',
+        K107:'Ø90',  KF107:'Ø90', KA107:'Ø90', KAB107:'Ø90',  KAF107:'Ø90', KAT107:'Ø90', KAH107:'Ø95',
+        K127:'Ø110',  KF127:'Ø110', KA127:'Ø100', KAB127:'Ø100',  KAF127:'Ø100', KAT127:'Ø100', KAH127:'Ø105',
+        K157:'Ø120',  KF157:'Ø120', KA157:'Ø120', KAB157:'Ø120',  KAF157:'Ø120', KAT157:'Ø120', KAH157:'Ø125',
+        K167:'Ø160', KAH167:'Ø140',
+        K187:'Ø190',  KAH187:'Ø160',
 
         S37:'Ø20',  SF37:'Ø20', SA37:'Ø20', SAF37:'Ø20', SAT37:'Ø20',  SAZ37:'Ø20',
         S47:'Ø25',  SF47:'Ø30', SA47:['Ø30',',','Ø25'], SAF47:['Ø30',',','Ø25'], SAT47:['Ø30',',','Ø25'],  SAZ47:'Ø30', 
@@ -5395,11 +5503,11 @@ const MOTOR_TYPE_KEY = (type) => {
         if (rkfsDesign === 'RX') return 'RX';
         if (rkfsDesign === 'RXF') return 'RXF';
         if (rkfsDesign === 'FF') return 'FF';
-        if (['F','FA','FAF','FAZ','FH','FHF','FHZ','FV','FVF','FVZ','FT'].includes(rkfsDesign)) return 'F';
+        if (['F','FA','FAF','FAH','FH','FHF','FHZ','FV','FVF','FVZ','FT'].includes(rkfsDesign)) return 'F';
         if (rkfsDesign === 'S') return 'S';
         if (rkfsDesign === 'SF') return 'SF';
         if (['SA','SAF','SAZ','SAT','SH','SHF','SHZ','ST'].includes(rkfsDesign)) return 'S_OTHER';
-        if (['K','KA','KAB','KAF','KAT','KAZ'].includes(rkfsDesign)) return 'K';
+        if (['K','KA','KAB','KAF','KAT','KAH'].includes(rkfsDesign)) return 'K';
         return 'R';
       })();
 
@@ -5450,7 +5558,7 @@ const MOTOR_TYPE_KEY = (type) => {
     "97":[2.10,3.70,7.10,6.30,4.80,4.80],
     "107":[3.10,5.70,11.20,9.30,7.20,7.20],
   },
-  // F-family: F, FA, FAZ, FAF, FH, FV ... (เท่ากันตามตาราง)
+  // F-family: F, FA, FAH, FAF, FH, FV ... (เท่ากันตามตาราง)
   F: {
     "27":[0.60,0.80,0.65,0.70,0.60,0.60],
     "37":[0.95,1.25,0.70,1.25,1.00,1.10],
@@ -5477,7 +5585,7 @@ const MOTOR_TYPE_KEY = (type) => {
     "127":[41.50,55.50,34.00,63.00,46.30,49.00],
     "157":[72.00,105.00,64.00,106.00,87.00,79.00],
   },
-  // K-family: K, KA, KAB, KAF, KAT, KAZ (เท่ากันตามตาราง K.., KA..B, KH..B, KV..B)
+  // K-family: K, KA, KAB, KAF, KAT, KAH (เท่ากันตามตาราง K.., KA..B, KH..B, KV..B)
   K: {
     "37":[0.50,1.00,1.00,1.25,0.95,0.95],
     "47":[0.80,1.30,1.50,2.00,1.60,1.60],
@@ -5543,8 +5651,16 @@ const MOTOR_TYPE_KEY = (type) => {
       return (
         <div className="max-w-3xl mx-auto text-left bg-black/25 rounded-xl px-5 py-4 backdrop-blur-sm text-white/90 text-sm md:text-base leading-7">
           <div>Series : <b>{series}</b></div>
-          <div>Design : <b>{designDesc}</b></div>
-          <div>Gear Size : <b>{design}{size}</b></div>
+          <div>Design : <b>
+  {(rkfsDesign === 'RXXRXX' || rkfsDesign === 'RFXXRXX')
+    ? `${rkfsDesign} / 2 Gear Reducer`
+    : (designDesc || rkfsDesign || '-')}
+</b></div>
+          <div>Gear Size : <b>
+  {(rkfsDesign === 'RXXRXX' || rkfsDesign === 'RFXXRXX')
+    ? String(rkfsSize || '-')
+    : `${rkfsDesign || ''}${rkfsSize || ''}`}
+</b></div>
           <div>Ratio : <b>{ratioS}</b></div>
           <div>Input Selection : <b>{inpSel}</b></div>
           {/* [ADD] IEC: แสดงขนาดหน้าแปลน/รูตาม AM */}
@@ -5604,13 +5720,19 @@ const MOTOR_TYPE_KEY = (type) => {
         Rated Current : 380V: <b>{a380}</b> A, 400V: <b>{a400}</b> A , 415V : <b>{a415}</b> A
       </div>
       <div>
-        Protection IP55, Insulation Class F: ทนอุณหภูมิได้สูงสุด 155°C.
+        Duty:S1 , IP55 , Class F , Cooling method: IC411
+      </div>
+      <div>
+        Optional : Encoder , Rainproof wind hood , Thermistor , 
+      </div>
+            <div>
+        Thermal protector , Backstop **หากต้องการโปรดแจ้งทีมงาน
       </div>
       <div>
         <b>IEC 60034-2-1 : {mType}</b>, <b>{motorTypeNote}</b>.
       </div>
       <div>
-        Efficiency % : <b>{eff100}</b> %
+        Efficiency : <b>{eff100}</b> %
       </div>
       {/* <div>Power Factor : <b>{pf}</b></div> */}
     </>
@@ -5683,16 +5805,15 @@ const MOTOR_TYPE_KEY = (type) => {
           <div>Output Shaft Diameter : <b>{outShaftDia}</b></div>
           <div>
             Output Flange Diameter : <b>{outFlangeList ? outFlangeList.join(' , ') : '—'}</b>
-            {' '}<span className="text-red-200 font-semibold">**โปรดระบุขนาดก่อนยืนยันสั่งซื้อ</span>
-          </div>
+            {' '}</div>
           <div><span className="text-yellow-400 font-extrabold text-l">Warranty : <b>2 Years</b></span></div>
           {/* [ADD] RKFS Design preview (ขวากลางการ์ด) */}
 {(() => {
   // map รูปสำหรับสรุป (ใช้เฉพาะตรงนี้ ไม่กระทบส่วนเลือกดีไซน์เดิม)
   const designImageMap = {
-    R: { R: RImg, RF: RFImg, RX: RXImg, RXF: RXFImg, RM: RMImg },
-    K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAZ: KAZImg },
-    F: { F: FImg, FA: FAImg, FAF: FAFImg, FAZ: FAZImg, FF: FFImg },
+    R: { R: RImg, RF: RFImg, RX: RXImg, RXF: RXFImg, RM: RMImg , RXXRXX: RXXRXXImg , RFXXRXX: RFXXRXXImg },
+    K: { K: KImg, KA: KAImg, KAB: KABImg, KAF: KAFImg, KAT: KATImg, KAH: KAHImg },
+    F: { F: FImg, FA: FAImg, FAF: FAFImg, FAH: FAHImg, FF: FFImg },
     S: { S: SImg, SA: SAImg, SAF: SAFImg, SAT: SATImg, SAZ: SAZImg }
   };
 
@@ -5824,43 +5945,57 @@ const MOTOR_TYPE_KEY = (type) => {
   >
     ✅ รับไฟล์ 3D
   </button>
+{/* === CTA: ขอใบเสนอราคา (RKFS) === */}
+<div className="mt-2 flex justify-center">
+  <button
+    type="button"
+    className="bg-pink-500 hover:bg-pink-600 text-white font-bold px-4 py-2 rounded-xl shadow"
+onClick={(e) => {
+  e.preventDefault();
+  if (typeof onRequestQuote !== 'function') return;
 
-  // สมมติอยู่ใน Step Summary ของ SRV
-<button
-  type="button"
-  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl shadow"
-  onClick={() => {
-    // === เตรียม modelCode (ของ SRV) ตามที่คุณสรุปไว้ใน Summary ===
-    const modelCode = confirmModel || srvModelCode || selectedModel || '-';
+  // --- อ่าน model code ที่ขึ้นหน้าจอ แล้วตัด prefix RXXRXX/RFXXRXX ออกเพื่อแสดงผล ---
+  const modelTxt = document.querySelector('#rkfs-confirm-step p')?.innerText || '';
+  const modelTrimmed = String(modelTxt).replace(/^(RXXRXX|RFXXRXX)/, '');
 
-    // === รวบรวมข้อมูล Spec จาก state เดิมของ SRV (ใช้ตัวแปรที่คุณแสดงใน Summary) ===
-    const srvSpec = {
-      srv_series: 'SRV',
-      size_gear: srvSize || sizeGear || '-',                 // เช่น "050"
-      ratio: srvRatio || '-',                                // เช่น "1/15"
-      gear_mounting_type: srvMountingType || 'Hollow & Solid shaft',
-      direction_type: srvDirectionType || '-',               // เช่น "-"
-      output_shaft_design: srvOutputShaftDesign || 'DS1',
-      flange_mounted: srvFlange || 'B5',
-      input_shaft_hole_dia: srvInputShaftHole || 'Ø19 mm',
-      input_flange_dia: srvInputFlangeDia || 'Ø120 mm B14 , Ø200 mm B5',
-      input_power: srvInputPower || 'IEC Adapter Motor',
-      power_motor: srvPowerMotor || '-',
-      output_speed: srvOutputSpeed || '-',                   // ถ้ามีการคำนวณแสดงไว้แล้ว
-      output_torque: srvOutputTorque || '-',                 // ถ้ามีการคำนวณแสดงไว้แล้ว
-      mounting_position: srvMountingPosition || 'B3',
-      output_shaft: srvOutputShaft || 'Ø24 mm , Ø25 mm',
-      warranty: '18 เดือน',
-    };
+  // --- รวบรวม summary ให้ครบ key ที่จะส่งเข้า EmailJS ---
+  const summary = {
+    product:   'RKFS Series',
+    series:    rkfsSeries || '',
+    design:    rkfsDesign || '',
+    gearSize:  rkfsSize   || '',
+    ratio:     rkfsRatio  || '',
+    model:     modelTrimmed,                  // << ใช้คีย์ model
 
-    // === ส่งกลับไปให้ App.jsx เปิดโมดัลและส่งเมล ===
-    if (typeof onRequestQuote === 'function') {
-      onRequestQuote(modelCode, srvSpec);
-    }
-  }}
->
-  🧾 ขอใบเสนอราคา
-</button>	
+    // Motor
+    motor_kw:  rkfsMotorPower || '',
+    pole:      rkfsPole || '',
+    motor_type: rkfsMotorType || rkfsInputSel || '',
+    motor_note: state?.rkfsDesignSuffix ? `(${state.rkfsDesignSuffix})` : '',
+
+    // Performance & electric (อ่านจาก state ที่แสดงในหน้า Summary)
+    rated_speed: state?.rkfsRatedSpeed ?? '',
+    eff100:      state?.rkfsEfficiency ?? '',
+    current_380: state?.rkfsI380 ?? '',
+    current_400: state?.rkfsI400 ?? '',
+    current_415: state?.rkfsI415 ?? '',
+    out_speed:   state?.rkfsOutSpeed ?? '',
+    out_torque:  state?.rkfsOutTorque ?? '',
+
+    // เพิ่มตามที่ขอ
+    service_factor:   state?.rkfsServiceFactor ?? state?.rkfsSF ?? '',
+    output_shaft_dia: state?.rkfsOutputShaftDia ?? state?.rkfsOutShaftDia ?? '',
+  };
+
+  onRequestQuote(summary);
+}}
+  >
+    🧾 ขอใบเสนอราคา
+  </button>
+</div>
+
+
+	
 </div>
       );
     })()}
