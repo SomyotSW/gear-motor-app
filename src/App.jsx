@@ -675,8 +675,8 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
-    rkfsSetters.setRkfsINPUTShaft(null);
-    rkfsSetters.setRkfsINPUTShaftDia(null);
+    rkfsSetters.setRkfsINPUTshaft(null);
+    rkfsSetters.setRkfsINPUTshaftDia(null);
     setRkfsDesignSuffix(null); 
   setSelectedModel(null);
   setModelCodeList([]);
@@ -693,8 +693,8 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsMounting(null);
   rkfsSetters.setRkfsPosition(null);
   rkfsSetters.setRkfsPositionSub(null);
-  rkfsSetters.setRkfsINPUTShaft(null);
-  rkfsSetters.setRkfsINPUTShaftDia(null);
+  rkfsSetters.setRkfsINPUTshaft(null);
+  rkfsSetters.setRkfsINPUTshaftDia(null);
     setRkfsDesignSuffix(null);
   setSelectedModel(null);
   setModelCodeList([]); // ถ้ามี
