@@ -647,6 +647,51 @@ const handleBackWithReset = () => {
   rkfsSetters.setRkfsInputShaftDia(null);
     setRkfsDesignSuffix(null);
 
+// === Deep-link helper: เปิดหน้า RKFS Series Selection ทันที ===
+function openRKFSFromLink() {
+  // รีเซ็ตสเต็ป RKFS
+  rkfsSetters.setRkfsSeries(null);
+  rkfsSetters.setRkfsDesign(null);
+  rkfsSetters.setRkfsSize(null);
+  rkfsSetters.setRkfsMotorType(null);
+  rkfsSetters.setRkfsMotorPower(null);
+  rkfsSetters.setRkfsPole(null);
+  rkfsSetters.setRkfsRatio(null);
+  rkfsSetters.setRkfsMounting(null);
+  rkfsSetters.setRkfsPosition(null);
+  rkfsSetters.setRkfsPositionSub(null);
+  rkfsSetters.setRkfsInputSel(null);
+  rkfsSetters.setRkfsINPUTshaft(null);
+  rkfsSetters.setRkfsINPUTshaftDia(null);
+  setRkfsDesignSuffix(null);
+
+  // เคลียร์ modal/ตัวแปรค้าง
+  setShowForm(false);
+  setShowRKFSQuote(false);
+  setQuoteInfo(null);
+  setSelectedModel(null);
+  setModelCodeList([]);
+
+window.history.replaceState({}, '', '#rkfs');
+  // ไปที่หน้า RKFS
+  setSelectedProduct('RKFS Series');
+}
+
+// Deep link: #rkfs หรือ ?flow=rkfs -> เปิด RKFS อัตโนมัติ
+useEffect(() => {
+  try {
+    const url  = new URL(window.location.href);
+    const hash = (url.hash || '').toLowerCase();
+    const flow = (url.searchParams.get('flow') || '').toLowerCase();
+
+    if (hash === '#rkfs' || flow === 'rkfs') {
+      openRKFSFromLink();
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
+    }
+  } catch {}
+}, []); // ไม่ต้องใส่ dependency
+
+
 // [ADD] เคลียร์สถานะ HB ทั้งหมด
   setHbSeries(null);
   setHbHBType(null);
