@@ -1417,7 +1417,7 @@ const gifForHead = (() => {
                   ];
                 case '60W AC Motor':
                   return [
-                    { label: 'SQUARE BOX (Low)', img: GBKlowImg },
+                    { label: 'SQUARE BOX WITH WING', img: GBKImg },
                     { label: 'SQUARE BOX', img: GBKBImg },
                     { label: 'RIGHT ANGLE GEAR/HOLLOW SHAFT', img: GBRCImg },
                     { label: 'RIGHT ANGLE GEAR/SOLID SHAFT', img: GBRTImg },
