@@ -625,8 +625,12 @@ const getGearGif = () => {
       // 60W + RC/RT → 1 บรรทัด (GU เท่านั้น)
       const end = `${powerCode}GU${acRatio}${gearCode}`;
       results.push(`${frontGU}-${end}`);
+    } else if (acGearHead === 'SQUARE BOX WITH WING') {
+      // 60W + SQUARE BOX WITH WING → แสดงเฉพาะ GU ตัวเดียว
+      const endGU = `${powerCode}GU${acRatio}K`;
+      results.push(`${frontGU}-${endGU}`);
     } else {
-      // 60W + K/KB → 2 บรรทัดให้เลือก
+      // 60W + K/KB (กรณีอื่น) → 2 บรรทัดให้เลือกเหมือนเดิม
       const endGN = `${powerCode}GN${acRatio}K`;
       const endGU = `${powerCode}GU${acRatio}KB`;
       results.push(`${frontGN}-${endGN}`);
