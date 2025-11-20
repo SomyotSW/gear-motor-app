@@ -4062,37 +4062,118 @@ function getServiceFactorFB(series, sizeCode, motorKw, pole, ratio) {
   return Number(lo.fB) + t * (Number(hi.fB) - Number(lo.fB));
 }
 
-// [REPLACE] RKFS Drawing 2D path resolver — รองรับ RXXRXX / RFXXRXX (ดึงตัวหน้า)
+// [REPLACE] RKFS Drawing 2D path resolver — รองรับ R / K / F / S
 function rkfsDrawingPdfPathByDesign(design, size) {
   const dRaw = String(design || '').toUpperCase().replace(/\s+/g, '');
   let d = dRaw;
   let n;
 
-  // ดึง "ตัวหน้า" จากค่า size ที่เป็นคู่ เช่น R147R87 / RF167R109
-  const m = String(size || '').toUpperCase().match(/^(RF|R)(\d+)R(\d+)$/);
-  if (m) {
-    d = m[1];                // 'R' หรือ 'RF' (ตัวหน้า)
-    n = Number(m[2]);        // เลขตัวหน้า
-  } else {
-    n = Number(size);
+  // ระบุ Series จากตัวหน้า design
+  const series =
+    d.startsWith('K') ? 'K' :
+    d.startsWith('F') ? 'F' :
+    d.startsWith('S') ? 'S' :
+    'R';
+
+  // ------- เคส R-Series (ใช้กติกาเดิม) -------
+  if (series === 'R') {
+    // ดึง "ตัวหน้า" จากค่า size ที่เป็นคู่ เช่น R147R87 / RF167R109
+    const m = String(size || '').toUpperCase().match(/^(RF|R)(\d+)R(\d+)$/);
+    if (m) {
+      d = m[1];                // 'R' หรือ 'RF' (ตัวหน้า)
+      n = Number(m[2]);        // เลขตัวหน้า
+    } else {
+      n = Number(size);
+    }
+
+    if (!Number.isFinite(n)) return null;
+
+    // กติกา:
+    // - ถ้า Design ขึ้นต้นด้วย 'RX' (เช่น RX, RXF) => GRX + n
+    // - อื่น ๆ (R, RF, ...) => GR + (n + 2)
+    if (d.startsWith('RX')) {
+      return `/model/pdf/RKFS/R/GRX${n}.pdf`;
+    }
+    return `/model/pdf/RKFS/R/GR${n + 2}.pdf`;
   }
 
-  if (!Number.isFinite(n)) return null;
+  // ------- เคส K / F / S -------
+  // size จะเป็นเลขล้วน เช่น 87, 57, 37 ฯลฯ
+  const mSize = String(size || '').match(/(\d+)/);
+  if (!mSize) return null;
 
-  // กติกา:
-  // - ถ้า Design ขึ้นต้นด้วย 'RX' (เช่น RX, RXF) => GRX + n
-  // - อื่น ๆ (R, RF, ...) => GR + (n + 2)
-  if (d.startsWith('RX')) {
-    return `/model/pdf/RKFS/R/GRX${n}.pdf`;
-  }
-  return `/model/pdf/RKFS/R/GR${n + 2}.pdf`;
+  const numStr = mSize[1];        // "87" , "57" , ...
+  const fileBase = `${series}${numStr}`;   // K87 / F37 / S57
+  return `/model/pdf/RKFS/${series}/${fileBase}.pdf`;
 }
 
-// [REPLACE] ดาวน์โหลด Drawing 2D — รองรับ RXXRXX / RFXXRXX และตั้งชื่อไฟล์เท่ากับ Model Code แบบ "ตัด prefix"
+// [REPLACE] ดาวน์โหลด Drawing 2D — รองรับ R + K + F + S
 async function downloadRkfsDrawingPDF(design, size, modelCode) {
   const dRaw = String(design || '').toUpperCase().replace(/\s+/g, '');
   let d = dRaw;
   let n;
+
+  // [NEW] ระบุ Series หลักจาก design
+  const series =
+    d.startsWith('K') ? 'K' :
+    d.startsWith('F') ? 'F' :
+    d.startsWith('S') ? 'S' :
+    'R';
+
+  // ================= K / F / S SERIES =================
+  if (series === 'K' || series === 'F' || series === 'S') {
+    // ดึงตัวเลขจาก size เช่น 87 จาก K87 / KA87 / SAF57 (จริง ๆ ใน state คือ "87","57" อยู่แล้ว)
+    const mSize = String(size || '').match(/(\d+)/);
+    const numStr = mSize ? mSize[1] : null;
+
+    if (!numStr) {
+      alert('ขนาด (size) ไม่ถูกต้อง');
+      return;
+    }
+
+    const base = `/model/pdf/RKFS/${series}/`;
+    const fileBase = `${series}${numStr}`;      // K87, F37, S57 ...
+    const relPath = `${base}${fileBase}.pdf`;
+
+    try {
+      const res = await fetch(relPath, { cache: 'no-store' });
+      if (!res.ok) {
+        alert(
+          `ไม่พบไฟล์ PDF: ${relPath}\n\n` +
+          `ตรวจชื่อไฟล์ใน: C:\\Users\\Haruj\\gear-motor-app\\public\\model\\pdf\\RKFS\\${series}`
+        );
+        return;
+      }
+
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+      const blob = await res.blob();
+      const isPdf = ct.includes('pdf') || (blob.type && blob.type.toLowerCase().includes('pdf'));
+      if (!isPdf) {
+        alert('ไฟล์ที่พบไม่ใช่ PDF');
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // ชื่อไฟล์ = Model Code (ไม่ต้องตัด prefix แบบ RXXRXX)
+      const displayName = String(modelCode || fileBase);
+      const safeName = displayName.replace(/[^\w.-]/g, '_');
+
+      a.download = `${safeName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      return; // ✅ เจอไฟล์แล้ว
+    } catch (_) {
+      alert(`เกิดข้อผิดพลาดระหว่างดาวน์โหลดไฟล์:\n${relPath}`);
+      return;
+    }
+  }
+
+  // ================= R SERIES (ตรรกะเดิมทั้งหมด) =================
 
   // ดึง "ตัวหน้า" จาก size แบบคู่ เช่น R147R87 / RF167R109
   const m = String(size || '').toUpperCase().match(/^(RF|R)(\d+)R(\d+)$/);
@@ -4134,7 +4215,7 @@ async function downloadRkfsDrawingPDF(design, size, modelCode) {
       const a = document.createElement('a');
       a.href = url;
 
-      // [ADD] ชื่อไฟล์ = Model Code ที่ "ตัด RXXRXX/RFXXRXX ด้านหน้าออก"
+      // [KEEP] ชื่อไฟล์ = Model Code ที่ "ตัด RXXRXX/RFXXRXX ด้านหน้าออก"
       const displayName = String(modelCode || fileBase).replace(/^(RXXRXX|RFXXRXX)/, '');
       const safeName = displayName.replace(/[^\w.-]/g, '_');
 
