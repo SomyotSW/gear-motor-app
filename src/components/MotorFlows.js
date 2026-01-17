@@ -9,11 +9,14 @@ import ServoImg from '../assets/servo/servo.png';
 import PlanetaryImg from '../assets/planetary/planetary.png';
 import HypoidImg from '../assets/hypoid/hypoid.png';
 import RKFSImg from '../assets/rkfs/rkfs.png';
+import CYCLOImg from '../assets/cyclo/cyclo.png';
 import SPNImg from '../assets/spn/spn.png';
 import HBImg from '../assets/hb/hb.png';
 import PPlanetaryImg from '../assets/pplanetary/pplanetary.png';
-import DriverImg from '../assets/driver/driver.png';
+import SMRImg from '../assets/smr/smr.png';
 import SRVImg from '../assets/srv/srv.png';
+import SMALLACImg from '../assets/smallac/smallac.png';
+import DriverImg from '../assets/driver/driver.png';
 
 import R1Img from '../assets/rkfs/4Series/1R.png';
 import K1Img from '../assets/rkfs/4Series/1K.png';
@@ -528,11 +531,14 @@ export const productList = [
   { name: 'Planetary Gear', image: PlanetaryImg },
   { name: 'Hypoid Gear', image: HypoidImg },
   { name: 'RKFS Series', image: RKFSImg },
+  { name: 'Cycloidal Series', image: CYCLOImg },
   { name: 'SPN Series', image: SPNImg },
   { name: 'HB Gearbox Series', image: HBImg },
   { name: 'P Planetary Gearbox', image: PPlanetaryImg },
-  { name: 'Servo Driver and Speed Controller', image: DriverImg },
-  { name: 'SRV Worm Gear', image: SRVImg }
+  { name: 'SRV Worm Gear', image: SRVImg },
+  { name: 'SMR Series', image: SMRImg },
+  { name: 'Small AC Series', image: SMALLACImg },
+  { name: 'Servo Driver and Speed Controller', image: DriverImg }
 ];
 
 export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio , acConfirm }) {
