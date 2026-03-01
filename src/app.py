@@ -7,13 +7,36 @@
 from flask import Flask, request, send_file, jsonify
 from openpyxl import load_workbook
 import tempfile
-import os
+import shutil
 import subprocess
-
+import os, subprocess
 app = Flask(__name__)
 
-# =========================
-# CONFIG: ปรับ path ตามเครื่องจริง
+# ✅ FIX CORS แบบไม่ล็อค origin ตายตัว (แก้ Failed to fetch ตรงจุด)
+ALLOWED_ORIGINS = {
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    # ถ้าจะยิงจาก Vercel ด้วย ให้เปิดไว้:
+    "https://sas-gear-motor-app.vercel.app",
+}
+
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin")
+    # ✅ DEV MODE: อนุญาตทุก origin (กัน localhost/127 สลับกันแล้วพัง)
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+    response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+@app.before_request
+def handle_preflight():
+    # ✅ ให้ preflight ผ่านทุก /api/*
+    if request.method == "OPTIONS" and request.path.startswith("/api/"):
+        return ("", 204)
+
 # =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -104,10 +127,15 @@ except Exception as e:
 # =========================
 # UTIL: convert xlsx -> pdf ด้วย LibreOffice (soffice)
 # =========================
+
 def xlsx_to_pdf(xlsx_path: str, out_dir: str) -> str:
-    # ต้องมีคำสั่ง soffice ใน PATH
+    # ✅ ชี้ soffice.exe แบบ fix path (ชัวร์สุดบน Windows)
+    soffice = r"C:\Program Files\LibreOffice\program\soffice.exe"
+    if not os.path.exists(soffice):
+        raise FileNotFoundError(f"LibreOffice soffice.exe not found at: {soffice}")
+
     subprocess.check_call([
-        "soffice",
+        soffice,
         "--headless",
         "--nologo",
         "--nolockcheck",
@@ -118,10 +146,8 @@ def xlsx_to_pdf(xlsx_path: str, out_dir: str) -> str:
 
     base = os.path.splitext(os.path.basename(xlsx_path))[0]
     pdf_path = os.path.join(out_dir, base + ".pdf")
-
     if not os.path.exists(pdf_path):
-        raise FileNotFoundError("PDF convert failed (pdf not found after conversion).")
-
+        raise FileNotFoundError("PDF convert failed: output pdf not created.")
     return pdf_path
 
 

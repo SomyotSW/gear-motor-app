@@ -830,7 +830,8 @@ function splitACModelCode(full) {
 
     // 3) เรียก Backend ให้สร้าง PDF จาก Excel จริง
       //const res = await fetch('/api/ac-quote', {
-      const res = await fetch('http://localhost:5000/api/ac-quote', {
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+      const res = await fetch(`${API_BASE}/api/ac-quote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
