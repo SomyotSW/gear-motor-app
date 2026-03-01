@@ -789,69 +789,88 @@ const playThanksAudio = () => {
   } catch (_) {}
 };
 
- const handleRequestQuote = () => setShowQuote(true);
- const submitQuote = async () => {
-   // ตรวจสอบฟิลด์
-   if (!qName || !qCompany || !qPhone || !qEmail) {
-     alert('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return;
-   }
-   try {
-     setSending(true);
-     // โหลด html2canvas + jsPDF (CDN) เฉพาะตอนใช้งาน
-     await ensureLib('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', 'html2canvas');
-     await ensureLib('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'jspdf');
+// [ADD] AC: แยก code จาก Model Code เช่น 6IK200GU-CF-6GU12.5KB
+function splitACModelCode(full) {
+  const s = String(full || '').trim();
+  const parts = s.split('-').filter(Boolean);
 
-     // จับภาพกล่อง Summary → Canvas → PDF
-     const node = summaryRef.current;
-     // 1) จับภาพ Summary
-const canvas = await window.html2canvas(summaryRef.current, { scale: 1, backgroundColor: null });
+  // เคสปกติของคุณ: [6IK200GU, CF, 6GU12.5KB]
+  const motorCode = parts.slice(0, 2).join('-');   // 6IK200GU-CF
+  const gearCode  = parts.slice(2).join('-');      // 6GU12.5KB
 
-// 2) สร้าง PDF ขนาดเล็กกว่า 50KB (ถ้าเกินจะลด size/quality อัตโนมัติ)
-const { jsPDF } = window.jspdf;
-const raw  = generateModelCode({ ...acState, acConfirm: true });
-const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
-const chosenModel =
-  (typeof selectedModel === 'string' && selectedModel) ||
-  (list && list[0]) ||
-  'SAS_Model';
-
-async function makeSmallPdfBlob(maxBytes = 37000) {
-  let scaleFactor = 0.6;   // เริ่มย่อขนาดลง
-  let quality     = 0.55;  // เริ่มลดคุณภาพ JPEG
-
-  for (let i = 0; i < 6; i++) {
-    const w = Math.max(320, Math.floor(canvas.width  * scaleFactor));
-    const h = Math.max(240, Math.floor(canvas.height * scaleFactor));
-
-    // ย่อภาพลงบน offscreen canvas
-    const off = document.createElement('canvas');
-    off.width = w; off.height = h;
-    off.getContext('2d').drawImage(canvas, 0, 0, w, h);
-
-    const imgData = off.toDataURL('image/jpeg', quality);
-
-    const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-
-    // ให้รูปพอดีหน้ากระดาษโดยคงสัดส่วน
-    const imgW = pageW - 72; // margin 36pt ซ้ายขวา
-    const ratio = h / w;
-    const imgH = Math.min((imgW * ratio), pageH - 72);
-
-    pdf.addImage(imgData, 'JPEG', 36, 36, imgW, imgH, undefined, 'FAST');
-    const blob = pdf.output('blob');
-
-    if (blob.size <= maxBytes) return blob;
-
-    // ถ้ายังเกิน ให้ลดลงอีกหน่อยแล้วลองใหม่
-    scaleFactor *= 0.85;
-    quality     *= 0.85;
-  }
-  // ถ้ายังเกินหลังจากลองหลายครั้ง ก็คืนค่าเวอร์ชันล่าสุด (อาจ >50KB)
-  return pdf.output('blob');
+  return { motorCode, gearCode };
 }
 
+  const handleRequestQuote = () => setShowQuote(true);
+
+  const submitQuote = async () => {
+    if (!qName || !qCompany || !qPhone || !qEmail) {
+      alert('กรุณากรอกข้อมูลให้ครบทุกช่อง'); 
+      return;
+    }
+
+    try {
+      setSending(true);
+
+      // 1) เอา model ที่ผู้ใช้เลือกจริง (selectedModel มาก่อน ไม่งั้นตัวแรก)
+      const raw  = generateModelCode({ ...acState, acConfirm: true });
+      const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
+      const chosenModel =
+        (typeof selectedModel === 'string' && selectedModel) ||
+        (list && list[0]) ||
+        '';
+
+      if (!chosenModel) {
+        alert('ไม่พบ Model Code'); 
+        return;
+      }
+
+    // 2) แยก motor/gear code
+      const { motorCode, gearCode } = splitACModelCode(chosenModel);
+
+    // 3) เรียก Backend ให้สร้าง PDF จาก Excel จริง
+      //const res = await fetch('/api/ac-quote', {
+      const res = await fetch('http://localhost:5000/api/ac-quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelCode: chosenModel,
+          motorCode,
+          gearCode,
+          qtyMotor,
+          qtyGear,
+          customer: { name: qName, company: qCompany, phone: qPhone, email: qEmail }
+        })
+      });
+
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '');
+        throw new Error(msg || 'สร้างใบเสนอราคาไม่สำเร็จ');
+      }
+
+      // 4) รับไฟล์ PDF แล้วให้ผู้ใช้ดาวน์โหลดทันที
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `QMO26-${motorCode}-${gearCode}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+
+    // 5) ปิด modal
+      setShowQuote(false);
+
+    } catch (err) {
+      alert(String(err?.message || err));
+    } finally {
+      setSending(false);
+    }
+  };
+/*
 const blob = await makeSmallPdfBlob(49000);
 
  // ถ้ามี instance จาก App.jsx แล้ว ให้ใช้เลย
@@ -1007,7 +1026,7 @@ if (!sent) {
      setSending(false);
    }
  };
-
+*/
 // NEW: Download PDF from /model/pdf/AC/<power>.pdf with filename = <ModelCode>.pdf
 const handleDownloadPDF = async () => {
   try {
@@ -1849,7 +1868,7 @@ const gifForHead = (() => {
           className="px-5 py-2 rounded-2xl bg-green-300 hover:bg-green-400 font-semibold shadow
                      active:scale-95 transition transform"
         >
-          {sending ? 'กำลังส่ง…' : 'ขอใบเสนอราคา'}
+          {sending ? 'กำลังส่ง…' : 'รับใบเสนอราคา'}
         </button>
       </div>
 
