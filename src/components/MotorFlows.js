@@ -848,10 +848,31 @@ function splitACModelCode(full) {
         const msg = await res.text().catch(() => '');
         throw new Error(msg || 'สร้างใบเสนอราคาไม่สำเร็จ');
       }
-
       // 4) รับไฟล์ PDF แล้วให้ผู้ใช้ดาวน์โหลดทันที
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
+      try {
+  if (window.emailjs && window.__EMAILJS_SERVICE_ID && window.__EMAILJS_TEMPLATE_ID) {
+    // ถ้า App.jsx init ไว้แล้ว ไม่ต้อง init ซ้ำ
+    await window.emailjs.send(
+      window.__EMAILJS_SERVICE_ID,
+      window.__EMAILJS_TEMPLATE_ID,
+      {
+        requester_name: qName,
+        company: qCompany,
+        phone: qPhone,
+        email: qEmail,
+        model_code: chosenModel,
+        motor_code: motorCode,
+        gear_code: gearCode,
+        qty_motor: qtyMotor,
+        qty_gear: qtyGear,
+      }
+    );
+  }
+} catch (e) {
+  console.error('EmailJS send failed:', e);
+}
 
       const a = document.createElement('a');
       a.href = url;

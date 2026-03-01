@@ -367,6 +367,9 @@ function App() {
   if (!window.__EMAILJS_PK) {
     // emailjs-com ใช้รูปแบบ init(pk) (v2)
     window.emailjs.init(pk);
+    window.__EMAILJS_SERVICE_ID = SERVICE_ID;
+    window.__EMAILJS_TEMPLATE_ID = TEMPLATE_ID;
+    window.__EMAILJS_PUBLIC_KEY  = PUBLIC_KEY;
     window.__EMAILJS_PK = pk; // บันทึกว่ามีการ init แล้ว
   }
 }, []);

@@ -1,30 +1,49 @@
-# app.py
-# AC Gear Motor Quote PDF Generator (Excel -> Fill Template -> Convert PDF)
-# Requirement:
-#   pip install flask openpyxl
-#   ต้องมี LibreOffice (soffice) สำหรับ convert xlsx -> pdf
+"""app.py
+AC Gear Motor Quote PDF Generator
+- Reads price from: AC Gear Motor Price List 2026 (sheet1)
+- Fills template: QMO26-SAS.xlsx (sheet: Sales Quote  (2))
+- Converts filled XLSX -> PDF using LibreOffice (soffice)
+- Returns PDF for download
+- Saves PDF to output_pdfs/ and auto-deletes files older than 7 days
+- (Optional) Emails the PDF to customer via SMTP if SMTP env vars are configured
 
-from flask import Flask, request, send_file, jsonify
-from openpyxl import load_workbook
-import tempfile
+Minimal-impact design:
+- Only backend responsibilities; frontend can keep downloading PDF blob.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import time
 import shutil
+import smtplib
+import tempfile
 import subprocess
-import os, subprocess
+from datetime import datetime
+from pathlib import Path
+from email.message import EmailMessage
+
+from flask import Flask, request, send_file, jsonify, abort
+from openpyxl import load_workbook
+
 app = Flask(__name__)
 
-# ✅ FIX CORS แบบไม่ล็อค origin ตายตัว (แก้ Failed to fetch ตรงจุด)
+# =========================
+# CORS (dev + vercel)
+# - Reflect Origin if it's in allowlist
+# - Always allow OPTIONS preflight for /api/*
+# =========================
 ALLOWED_ORIGINS = {
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    # ถ้าจะยิงจาก Vercel ด้วย ให้เปิดไว้:
     "https://sas-gear-motor-app.vercel.app",
 }
 
 @app.after_request
 def add_cors_headers(response):
     origin = request.headers.get("Origin")
-    # ✅ DEV MODE: อนุญาตทุก origin (กัน localhost/127 สลับกันแล้วพัง)
-    if origin:
+    if origin in ALLOWED_ORIGINS:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Vary"] = "Origin"
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
@@ -33,127 +52,88 @@ def add_cors_headers(response):
 
 @app.before_request
 def handle_preflight():
-    # ✅ ให้ preflight ผ่านทุก /api/*
     if request.method == "OPTIONS" and request.path.startswith("/api/"):
         return ("", 204)
 
 # =========================
+# Paths
+# =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
-
-import time
-import shutil
-from datetime import datetime
-
-OUTPUT_DIR = os.path.join(BASE_DIR, "output_pdfs")
-RETENTION_DAYS = 7
-RETENTION_SECONDS = RETENTION_DAYS * 24 * 60 * 60
-
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-def cleanup_old_pdfs():
-    """ลบไฟล์ใน output_pdfs ที่เก่ากว่า 7 วัน"""
-    now = time.time()
-    try:
-        for fname in os.listdir(OUTPUT_DIR):
-            fpath = os.path.join(OUTPUT_DIR, fname)
-            if not os.path.isfile(fpath):
-                continue
-            mtime = os.path.getmtime(fpath)
-            if (now - mtime) > RETENTION_SECONDS:
-                os.remove(fpath)
-    except Exception as e:
-        # ไม่ให้ cleanup ทำให้ request ล้ม
-        print(f"[WARN] cleanup_old_pdfs failed: {e}")
 
 PRICE_FILE = os.path.join(DATA_DIR, "AC Gear Motor Price List 2026 14-02-26.xlsx")
 TEMPLATE_FILE = os.path.join(DATA_DIR, "QMO26-SAS.xlsx")
 
-PRICE_SHEET_NAME = "sheet1"              # ถ้าในไฟล์จริงชื่อไม่ใช่ sheet1 ให้แก้ตรงนี้
+PRICE_SHEET_NAME = "sheet1"              # หากชื่อชีทจริงไม่ใช่ sheet1 ให้แก้ตรงนี้
 TEMPLATE_SHEET_NAME = "Sales Quote  (2)" # ชื่อชีทใน QMO26-SAS.xlsx
 
 # =========================
-# UTIL: สร้าง mapping จาก price list (โหลดครั้งเดียวเพื่อความเร็ว)
-# Col A = Code
-# Col B = Description
-# Col D = Unitprice
+# Output storage (7 days retention)
 # =========================
-def build_price_map():
+OUTPUT_DIR = Path(os.path.join(BASE_DIR, "output_pdfs"))
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+RETENTION_SECONDS = 7 * 24 * 60 * 60
+
+def cleanup_old_pdfs() -> None:
+    now = time.time()
+    for p in OUTPUT_DIR.glob("*.pdf"):
+        try:
+            if p.is_file() and (now - p.stat().st_mtime) > RETENTION_SECONDS:
+                p.unlink(missing_ok=True)
+        except Exception:
+            # don't break requests because cleanup failed
+            pass
+
+# =========================
+# Price map helpers
+# =========================
+
+def norm_code(x: str) -> str:
+    s = str(x or "")
+    s = s.replace("\u00A0", "")  # NBSP
+    s = s.replace("\u200B", "")  # zero-width
+    s = s.strip().upper()
+    s = re.sub(r"\s+", "", s)
+    return s
+
+def build_price_map() -> dict[str, dict[str, object]]:
     if not os.path.exists(PRICE_FILE):
         raise FileNotFoundError(f"Price file not found: {PRICE_FILE}")
 
     wb = load_workbook(PRICE_FILE, data_only=True)
+    ws = wb[PRICE_SHEET_NAME] if PRICE_SHEET_NAME in wb.sheetnames else wb.active
 
-    # เลือกชีท
-    if PRICE_SHEET_NAME in wb.sheetnames:
-        ws = wb[PRICE_SHEET_NAME]
-    else:
-        # fallback: ใช้ active
-        ws = wb.active
-
-    price_map = {}
+    out: dict[str, dict[str, object]] = {}
     max_row = ws.max_row or 0
-
     for r in range(1, max_row + 1):
-        code = ws.cell(r, 1).value  # A
+        code = ws.cell(r, 1).value  # Col A
         if not code:
             continue
-        code = str(code).strip()
+        raw = str(code).strip()
+        key = norm_code(raw)
 
-        desc = ws.cell(r, 2).value  # B
-        unitprice = ws.cell(r, 4).value  # D
+        desc = ws.cell(r, 2).value  # Col B
+        price = ws.cell(r, 4).value # Col D
 
-        # unitprice อาจเป็น None/""/string
         try:
-            unitprice_val = float(unitprice) if unitprice not in (None, "") else 0.0
+            price_val = float(price) if price not in (None, "") else 0.0
         except Exception:
-            unitprice_val = 0.0
+            price_val = 0.0
 
-        price_map[code] = {
+        out[key] = {
+            "raw": raw,
             "desc": str(desc).strip() if desc is not None else "",
-            "price": unitprice_val
+            "price": price_val,
         }
 
-    return price_map
+    return out
 
-# โหลดครั้งเดียวตอน start server เพื่อให้เร็ว
 try:
     PRICE_MAP = build_price_map()
 except Exception as e:
     PRICE_MAP = {}
     print(f"[WARN] Cannot load PRICE_MAP: {e}")
 
-
-# =========================
-# UTIL: convert xlsx -> pdf ด้วย LibreOffice (soffice)
-# =========================
-
-def xlsx_to_pdf(xlsx_path: str, out_dir: str) -> str:
-    # ✅ ชี้ soffice.exe แบบ fix path (ชัวร์สุดบน Windows)
-    soffice = r"C:\Program Files\LibreOffice\program\soffice.exe"
-    if not os.path.exists(soffice):
-        raise FileNotFoundError(f"LibreOffice soffice.exe not found at: {soffice}")
-
-    subprocess.check_call([
-        soffice,
-        "--headless",
-        "--nologo",
-        "--nolockcheck",
-        "--convert-to", "pdf",
-        "--outdir", out_dir,
-        xlsx_path
-    ])
-
-    base = os.path.splitext(os.path.basename(xlsx_path))[0]
-    pdf_path = os.path.join(out_dir, base + ".pdf")
-    if not os.path.exists(pdf_path):
-        raise FileNotFoundError("PDF convert failed: output pdf not created.")
-    return pdf_path
-
-
-# =========================
-# UTIL: ตรวจ/โหลด PRICE_MAP ใหม่ (เผื่อแก้ราคาแล้วไม่อยาก restart)
-# =========================
 @app.get("/api/ac-price-reload")
 def reload_price():
     global PRICE_MAP
@@ -163,28 +143,112 @@ def reload_price():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
+# =========================
+# XLSX -> PDF via LibreOffice
+# =========================
+
+def find_soffice() -> str:
+    # 1) explicit env override
+    env_path = os.environ.get("SOFFICE_PATH", "").strip()
+    if env_path and os.path.exists(env_path):
+        return env_path
+
+    # 2) PATH lookup (Linux / some Windows setups)
+    p = shutil.which("soffice")
+    if p:
+        return p
+
+    # 3) common Windows default install paths
+    candidates = [
+        r"C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+        r"C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+
+    raise FileNotFoundError(
+        "LibreOffice soffice not found. Install LibreOffice or set SOFFICE_PATH env var."
+    )
+
+def xlsx_to_pdf(xlsx_path: str, out_dir: str) -> str:
+    soffice = find_soffice()
+
+    subprocess.check_call([
+        soffice,
+        "--headless",
+        "--nologo",
+        "--nolockcheck",
+        "--convert-to", "pdf",
+        "--outdir", out_dir,
+        xlsx_path,
+    ])
+
+    base = os.path.splitext(os.path.basename(xlsx_path))[0]
+    pdf_path = os.path.join(out_dir, base + ".pdf")
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError("PDF convert failed: output pdf not created.")
+    return pdf_path
 
 # =========================
-# API: สร้างใบเสนอราคา AC Gear Motor (PDF)
-# POST /api/ac-quote
-# body JSON:
-# {
-#   "modelCode": "6IK200GU-CF-6GU12.5KB",
-#   "motorCode": "6IK200GU-CF",
-#   "gearCode": "6GU12.5KB",
-#   "qtyMotor": 1,
-#   "qtyGear": 1,
-#   "customer": { "name": "", "company": "", "phone": "", "email": "" }
-# }
+# Optional email sending (SMTP)
 # =========================
+
+def smtp_is_configured() -> bool:
+    return all(os.environ.get(k) for k in ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"]) 
+
+def send_email_with_pdf(to_email: str, subject: str, body: str, pdf_path: str) -> None:
+    SMTP_HOST = os.environ.get("SMTP_HOST", "")
+    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+    SMTP_USER = os.environ.get("SMTP_USER", "")
+    SMTP_PASS = os.environ.get("SMTP_PASS", "")
+    FROM_EMAIL = os.environ.get("FROM_EMAIL", SMTP_USER)
+
+    if not (SMTP_HOST and SMTP_USER and SMTP_PASS and FROM_EMAIL):
+        raise RuntimeError("SMTP env not set (SMTP_HOST/SMTP_USER/SMTP_PASS/FROM_EMAIL)")
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = FROM_EMAIL
+    msg["To"] = to_email
+    msg.set_content(body)
+
+    with open(pdf_path, "rb") as f:
+        pdf_bytes = f.read()
+
+    msg.add_attachment(
+        pdf_bytes,
+        maintype="application",
+        subtype="pdf",
+        filename=os.path.basename(pdf_path),
+    )
+
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
+        s.starttls()
+        s.login(SMTP_USER, SMTP_PASS)
+        s.send_message(msg)
+
+# =========================
+# Download endpoint (served from output_pdfs)
+# =========================
+
+@app.get("/api/download/<filename>")
+def download_pdf(filename: str):
+    p = OUTPUT_DIR / filename
+    if not p.exists():
+        abort(404)
+    return send_file(str(p), mimetype="application/pdf", as_attachment=True, download_name=filename)
+
+# =========================
+# Main quote endpoint
+# =========================
+
 @app.post("/api/ac-quote")
 def ac_quote():
-    # 1) parse input
-    payload = request.get_json(force=True, silent=False)
+    payload = request.get_json(force=True, silent=False) or {}
 
-    model_code = str(payload.get("modelCode", "")).strip()
     motor_code = str(payload.get("motorCode", "")).strip()
-    gear_code  = str(payload.get("gearCode", "")).strip()
+    gear_code = str(payload.get("gearCode", "")).strip()
 
     try:
         qty_motor = int(payload.get("qtyMotor", 1) or 1)
@@ -196,7 +260,6 @@ def ac_quote():
     except Exception:
         qty_gear = 1
 
-    # 2) validate
     if not motor_code or not gear_code:
         return "Invalid motorCode/gearCode", 400
 
@@ -206,83 +269,97 @@ def ac_quote():
     if not PRICE_MAP:
         return "PRICE_MAP is empty. Check PRICE_FILE path or reload /api/ac-price-reload", 500
 
-    if motor_code not in PRICE_MAP:
-        return f"Motor code not found in price list: {motor_code}", 404
+    mkey = norm_code(motor_code)
+    gkey = norm_code(gear_code)
 
-    if gear_code not in PRICE_MAP:
+    if mkey not in PRICE_MAP:
+        return f"Motor code not found in price list: {motor_code}", 404
+    if gkey not in PRICE_MAP:
         return f"Gear code not found in price list: {gear_code}", 404
 
-    motor = PRICE_MAP[motor_code]
-    gear  = PRICE_MAP[gear_code]
+    motor = PRICE_MAP[mkey]
+    gear = PRICE_MAP[gkey]
 
-    # 3) fill template cells ตามที่คุณกำหนด
     wb = load_workbook(TEMPLATE_FILE)
     if TEMPLATE_SHEET_NAME not in wb.sheetnames:
         return f"Template sheet not found: {TEMPLATE_SHEET_NAME}", 500
 
     ws = wb[TEMPLATE_SHEET_NAME]
 
-    # ==== Row 20 Motor ====
+    # Motor row (A20..G20)
     ws["A20"] = 1
     ws["B20"] = motor_code
-    ws["C20"] = motor["desc"]
+    ws["C20"] = motor.get("desc", "")
     ws["F20"] = qty_motor
-    ws["G20"] = motor["price"]
+    ws["G20"] = motor.get("price", 0.0)
 
-    # ==== Row 22 Gear ====
+    # Gear row (A22..G22)
     ws["A22"] = 2
     ws["B22"] = gear_code
-    ws["C22"] = gear["desc"]
+    ws["C22"] = gear.get("desc", "")
     ws["F22"] = qty_gear
-    ws["G22"] = gear["price"]
+    ws["G22"] = gear.get("price", 0.0)
 
-    # (Optional) ถ้าคุณอยากใส่ชื่อบริษัท/ชื่อลูกค้าในตำแหน่งอื่นของ template
-    # customer = payload.get("customer", {}) or {}
-    # ws["B10"] = customer.get("company","")
-    # ws["B11"] = customer.get("name","")
-    # ws["B12"] = customer.get("phone","")
-    # ws["B13"] = customer.get("email","")
-
-    # 4) save filled xlsx + convert to pdf + return pdf
     cleanup_old_pdfs()
 
+    # Create filled xlsx and convert to pdf
     with tempfile.TemporaryDirectory() as td:
         filled_xlsx = os.path.join(td, "QMO26-SAS-FILLED.xlsx")
         wb.save(filled_xlsx)
 
-        pdf_temp = xlsx_to_pdf(filled_xlsx, td)
+        try:
+            pdf_temp = xlsx_to_pdf(filled_xlsx, td)
+        except Exception as e:
+            return f"PDF convert failed (LibreOffice): {e}", 500
 
-        # ตั้งชื่อไฟล์ไม่ให้ชนกัน (ใส่เวลา)
         ts = datetime.now().strftime("%Y%m%d-%H%M%S")
         saved_name = f"QMO26-{motor_code}-{gear_code}-{ts}.pdf"
-        saved_path = os.path.join(OUTPUT_DIR, saved_name)
-
-        # copy จาก temp ไป output_pdfs (ถาวร)
+        saved_path = OUTPUT_DIR / saved_name
         shutil.copy2(pdf_temp, saved_path)
 
-        # ส่ง “ไฟล์ที่เก็บถาวร” กลับให้ผู้ใช้โหลด
+        # Optional: email to customer if SMTP configured
+        customer = payload.get("customer", {}) or {}
+        to_email = (customer.get("email") or "").strip()
+        if to_email and smtp_is_configured():
+            subject = f"SAS Quotation: {motor_code} + {gear_code}"
+            body = (
+                f"เรียนคุณ {customer.get('name','')}\n\n"
+                f"ใบเสนอราคาของท่านถูกสร้างเรียบร้อยแล้ว\n"
+                f"Model: {payload.get('modelCode','')}\n"
+                f"Qty Motor: {qty_motor}\n"
+                f"Qty Gear: {qty_gear}\n\n"
+                f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
+            )
+            try:
+                send_email_with_pdf(to_email, subject, body, str(saved_path))
+            except Exception as e:
+                # do not fail the download if email fails
+                print("[WARN] send_email_with_pdf failed:", e)
+
+        # Keep compatibility with existing frontend (expects PDF as response)
         return send_file(
-            saved_path,
+            str(saved_path),
             mimetype="application/pdf",
             as_attachment=True,
-            download_name=saved_name
+            download_name=saved_name,
         )
 
+# =========================
+# Health
+# =========================
 
-# =========================
-# Health check
-# =========================
 @app.get("/health")
 def health():
-    return jsonify({
-        "ok": True,
-        "price_loaded": bool(PRICE_MAP),
-        "price_count": len(PRICE_MAP),
-        "price_file": PRICE_FILE,
-        "template_file": TEMPLATE_FILE
-    })
-
+    return jsonify(
+        {
+            "ok": True,
+            "price_loaded": bool(PRICE_MAP),
+            "price_count": len(PRICE_MAP),
+            "price_file": PRICE_FILE,
+            "template_file": TEMPLATE_FILE,
+            "output_dir": str(OUTPUT_DIR),
+        }
+    )
 
 if __name__ == "__main__":
-    # ใช้งานจริงแนะนำ debug=False
     app.run(host="0.0.0.0", port=5000, debug=True)
