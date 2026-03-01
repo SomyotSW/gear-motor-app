@@ -1370,27 +1370,29 @@ const gifForHead = (() => {
           </div>
 
           <div className="flex justify-end mt-4">
-            <button
-              onClick={() => {
-                const finalSel = optSelected.length
-                  ? optSelected
-                  : (highPowers.includes(acPower) ? ['With Fan'] : ['Standard']);
-                update('acOption', finalSel);
-                setOptConfirmed(true);
-              }}
-              className="fixed z-30 px-1 py-0.5 rounded text-white/70 
-             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
-             hover:text-white hover:bg-green-500 hover:shadow-lg
-             focus:outline-none focus:ring-2 focus:ring-green-400/60
-             active:scale-95 transition-all duration-200"
-  style={{
-    left: 'max(75rem, env(safe-area-inset-left))',
-    bottom: 'max(1rem, env(safe-area-inset-bottom))',
-  }}
->
-              ถัดไป
-            </button>
-          </div>
+  {optSelected.length > 0 && (
+    <button
+      onClick={() => {
+        const finalSel = optSelected.length
+          ? optSelected
+          : (highPowers.includes(acPower) ? ['With Fan'] : ['Standard']);
+        update('acOption', finalSel);
+        setOptConfirmed(true);
+      }}
+      className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+                 bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
+                 hover:text-white hover:bg-green-500 hover:shadow-lg
+                 focus:outline-none focus:ring-2 focus:ring-green-400/60
+                 active:scale-95 transition-all duration-200"
+      style={{
+        right: 'max(1rem, env(safe-area-inset-right))',
+        bottom: 'max(1rem, env(safe-area-inset-bottom))',
+      }}
+    >
+      ถัดไป
+    </button>
+  )}
+                     </div>
 <button
   onClick={() => update('acVoltage', null)}
   className="fixed z-30 px-1 py-0.5 rounded text-white/70 
