@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode, renderSRVFlow } from './components/MotorFlows.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
+// ✅ ADD: EmailJS IDs (ใช้ค่าเดิมจาก ENV ถ้ามี / ไม่ทำให้แอปล้ม)
+const SERVICE_ID  = process.env.REACT_APP_EMAILJS_SERVICE_ID || '';
+const TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || '';
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || 'BvIT5-X7LnkaS3LKq';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -358,20 +362,20 @@ function App() {
   const EMAILJS_PUBLIC_KEY = 'BvIT5-X7LnkaS3LKq';
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
-    useEffect(() => {
-    // 1) โยน instance ไว้ให้ทั้งแอปใช้ร่วมกัน
+  useEffect(() => {
+  // 1) โยน instance ไว้ให้ทั้งแอปใช้ร่วมกัน
   if (!window.emailjs) window.emailjs = emailjs;
 
-  // 2) init เพียงครั้งเดียว และใช้คีย์ "อันเดียวทั้งแอป"
-  const pk = EMAILJS_PUBLIC_KEY.trim();
-  if (!window.__EMAILJS_PK) {
-    // emailjs-com ใช้รูปแบบ init(pk) (v2)
+  // 2) init เพียงครั้งเดียว
+  const pk = (EMAILJS_PUBLIC_KEY || '').trim();
+  if (pk && !window.__EMAILJS_PK) {
     window.emailjs.init(pk);
-    window.__EMAILJS_SERVICE_ID = SERVICE_ID;
-    window.__EMAILJS_TEMPLATE_ID = TEMPLATE_ID;
-    window.__EMAILJS_PUBLIC_KEY  = PUBLIC_KEY;
-    window.__EMAILJS_PK = pk; // บันทึกว่ามีการ init แล้ว
+    window.__EMAILJS_PK = pk;
   }
+
+  // ✅ ADD: โยน Service/Template ไว้ให้ส่วนอื่นใช้ โดยไม่ทำให้แอปล้ม
+  window.__EMAILJS_SERVICE_ID = (SERVICE_ID || '').trim();
+  window.__EMAILJS_TEMPLATE_ID = (TEMPLATE_ID || '').trim();
 }, []);
   const [isDownloading, setIsDownloading] = useState(false);
 
