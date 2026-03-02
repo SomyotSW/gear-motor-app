@@ -27,16 +27,19 @@ from email.message import EmailMessage
 from flask import Flask, request, send_file, jsonify, abort
 from openpyxl import load_workbook
 
-app = Flask(__name__)
-
 from flask_cors import CORS
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/api/*": {"origins": [
-    "https://sas-gear-motor-app.vercel.app",   # production domain
-    "https://sas-gear-motor-q9s9l76vq-somyot442s-projects.vercel.app"  # preview domain ที่คุณใช้ตอนนี้
-]}})
+CORS(
+    app,
+    resources={r"/api/*": {"origins": [
+        "https://sas-gear-motor-app.vercel.app",
+        "https://sas-gear-motor-q9s9l76vq-somyot442s-projects.vercel.app",
+    ]}},
+    methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+)
 
 # =========================
 # CORS (dev + vercel)
