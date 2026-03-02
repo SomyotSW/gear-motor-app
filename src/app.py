@@ -20,7 +20,7 @@ import shutil
 import smtplib
 import tempfile
 import subprocess
-from datetime import datetime
+from datetime import datetime   
 from pathlib import Path
 from email.message import EmailMessage
 
@@ -28,6 +28,15 @@ from flask import Flask, request, send_file, jsonify, abort
 from openpyxl import load_workbook
 
 app = Flask(__name__)
+
+from flask_cors import CORS
+
+app = Flask(__name__)
+
+CORS(app, resources={r"/api/*": {"origins": [
+    "https://sas-gear-motor-app.vercel.app",   # production domain
+    "https://sas-gear-motor-q9s9l76vq-somyot442s-projects.vercel.app"  # preview domain ที่คุณใช้ตอนนี้
+]}})
 
 # =========================
 # CORS (dev + vercel)
@@ -40,20 +49,35 @@ ALLOWED_ORIGINS = {
     "https://sas-gear-motor-app.vercel.app",
 }
 
+from flask import request
+
 @app.after_request
 def add_cors_headers(response):
     origin = request.headers.get("Origin")
-    if origin in ALLOWED_ORIGINS:
+
+    is_vercel_preview = (
+        origin
+        and origin.endswith(".vercel.app")
+        and ("sas-gear-motor" in origin)
+    )
+
+    if origin in ALLOWED_ORIGINS or is_vercel_preview:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Vary"] = "Origin"
+
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+
     return response
 
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS" and request.path.startswith("/api/"):
         return ("", 204)
+    
+@app.route("/api/ac-quote", methods=["OPTIONS"])
+def ac_quote_preflight():
+    return ("", 204)
 
 # =========================
 # Paths
