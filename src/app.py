@@ -55,6 +55,7 @@ from flask import request
 def add_cors_headers(response):
     origin = request.headers.get("Origin")
 
+    # ✅ ADD: allow vercel preview domains too
     is_vercel_preview = (
         origin
         and origin.endswith(".vercel.app")
@@ -66,8 +67,8 @@ def add_cors_headers(response):
         response.headers["Vary"] = "Origin"
 
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    # ✅ ADD: allow common headers used by browsers
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-
     return response
 
 @app.before_request
