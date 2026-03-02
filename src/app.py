@@ -313,6 +313,37 @@ def ac_quote():
         return f"Template sheet not found: {TEMPLATE_SHEET_NAME}", 500
 
     ws = wb[TEMPLATE_SHEET_NAME]
+    # ===== ADD: customer fields -> template cells =====
+    cust = payload.get("customer", {}) or {}
+    cust_name = str(cust.get("name", "")).strip()
+    cust_company = str(cust.get("company", "")).strip()
+    cust_phone = str(cust.get("phone", "")).strip()
+    cust_email = str(cust.get("email", "")).strip()
+
+    # B8: "คุณ : ..."
+    ws["B8"] = f"คุณ : {cust_name}" if cust_name else "คุณ :"
+    # B9: company
+    ws["B9"] = cust_company
+    # B13: email
+    ws["B13"] = cust_email
+    # B14: phone
+    ws["B14"] = cust_phone
+
+    # ===== ADD: keep only 1 sheet (print only this sheet) =====
+    for name in list(wb.sheetnames):
+        if name != TEMPLATE_SHEET_NAME:
+            del wb[name]
+    # ===== ADD: fit to 1 page (1 sheet -> 1 page) =====
+    ws.page_setup.fitToPage = True
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 1
+
+    # (ช่วยให้ LibreOffice เคารพ fit-to-page มากขึ้น)
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+    # ตั้ง print area ให้พิมพ์เฉพาะช่วงที่มีข้อมูล (กันหลุดไปหลายหน้า)
+    ws.print_area = ws.calculate_dimension()
+
 
     # Motor row (A20..G20)
     ws["A20"] = 1
@@ -341,7 +372,11 @@ def ac_quote():
             return f"PDF convert failed (LibreOffice): {e}", 500
 
         ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        saved_name = f"QMO26-{motor_code}-{gear_code}-{ts}.pdf"
+        company_for_file = cust_company or "NO-COMPANY"
+        company_for_file = re.sub(r'[\\/:*?"<>|]+', "", company_for_file).strip()   # กันอักขระต้องห้ามในชื่อไฟล์
+        company_for_file = re.sub(r"\s+", "_", company_for_file)                   # เว้นวรรค -> _
+        company_for_file = company_for_file[:60] if company_for_file else "NO-COMPANY"
+        saved_name = f"QMO26-{company_for_file}-{ts}.pdf"
         saved_path = OUTPUT_DIR / saved_name
         shutil.copy2(pdf_temp, saved_path)
 
