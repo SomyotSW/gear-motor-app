@@ -15,4 +15,4 @@ ENV PORT=10000
 EXPOSE 10000
 
 RUN pip install --no-cache-dir gunicorn
-CMD ["sh", "-c", "gunicorn -w 2 -b 0.0.0.0:$PORT app:app"]
+CMD ["sh", "-c", "gunicorn -w 2 -b 0.0.0.0:$PORT src.app:app"]
