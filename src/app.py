@@ -314,6 +314,8 @@ def ac_quote():
             return f"Template sheet not found: {TEMPLATE_SHEET_NAME}", 500
 
         ws = wb[TEMPLATE_SHEET_NAME]
+        if ws is None:
+            return jsonify({"ok": False, "error": "Worksheet is None (failed to load template sheet)"}), 500
     # ===== ADD: customer fields -> template cells =====
         cust = payload.get("customer", {}) or {}
         cust_name = str(cust.get("name", "")).strip()
@@ -340,11 +342,10 @@ def ac_quote():
         ws.page_setup.fitToHeight = 1
 
     # (ช่วยให้ LibreOffice เคารพ fit-to-page มากขึ้น)
-        try:
-            if ws.sheet_properties and ws.sheet_properties.pageSetUpPr:
-                ws.sheet_properties.pageSetUpPr.fitToPage = True
-        except Exception:
-            pass
+        # ===== ADD: safe fitToPage (no crash if properties missing) =====
+        page_setup_pr = getattr(getattr(ws, "sheet_properties", None), "pageSetUpPr", None)
+        if page_setup_pr is not None:
+            page_setup_pr.fitToPage = True
 
         # ตั้ง print area ให้พิมพ์เฉพาะช่วงที่มีข้อมูล (กันหลุดไปหลายหน้า)
         ws.print_area = ws.calculate_dimension()
