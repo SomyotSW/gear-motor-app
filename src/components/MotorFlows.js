@@ -1589,12 +1589,6 @@ const gifForHead = (() => {
   if (!src) return null;
   return (
     <div className="md:hidden mt-4 flex flex-col items-center gap-3">
-      <img
-        src={src}
-        alt={acGearHead}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-        className="w-48 max-w-full h-auto object-contain opacity-95 drop-shadow"
-      />
 
       <div className="w-full flex flex-col gap-2">
         {/* Row 1 — Gear Head */}
@@ -1859,12 +1853,13 @@ const gifForHead = (() => {
     </div>
   </div>
 )}
-    {/* Bottom action bar — mobile friendly (AC Summary only) */}
+
+{/* Bottom action bar — mobile friendly (AC Summary only) */}
 <div
-  className="fixed left-0 right-0 z-[1000] px-3"
-  style={{ bottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+  className="sticky bottom-0 md:fixed md:bottom-3 md:left-0 md:right-0 z-[1000] px-3"
+  style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
 >
-  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-between">
+  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-between bg-black/20 backdrop-blur-sm rounded-2xl p-2">
     {/* Left: Drawing PDF */}
     <button
       type="button"
