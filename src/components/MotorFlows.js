@@ -1499,11 +1499,26 @@ const gifForHead = (() => {
   Copy
 </button>
 </h3>
+{/* ===== ADD: Mobile Product Image under Model Code (center) ===== */}
+{acGearHead && (() => {
+  const src = getGearPreviewUrl(acGearHead);
+  if (!src) return null;
+  return (
+    <div className="md:hidden flex justify-center my-3">
+      <img
+        src={src}
+        alt={acGearHead}
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        className="w-56 max-w-full h-auto object-contain opacity-95 drop-shadow"
+      />
+    </div>
+  );
+})()}
     <div
       ref={summaryRef}
       className="bg-black/25 rounded-xl px-3 sm:px-5 py-4 sm:py-5 text-white/90 backdrop-blur-sm
-                  text-[13px] sm:text-base leading-6 sm:leading-7 relative group
-                  max-h-[58vh] overflow-y-auto pb-28 sm:pb-6"
+                text-[13px] sm:text-base leading-6 sm:leading-7 relative group
+                max-h-[58vh] overflow-y-auto pb-44 sm:pb-6"
     >
       <div>Motor Type : <b>{acMotorType||'-'}</b></div>
       <div>Frame size : <b>{frameSizeMap[acPower] || '—'}</b></div>
@@ -1890,11 +1905,18 @@ const gifForHead = (() => {
     >
       รับไฟล์ 3D
     </button>
+    <button
+      type="button"
+      onClick={() => update('acRatio', null)}
+      className="md:hidden w-full text-center text-xs text-white/80 underline underline-offset-4 mt-1"
+    >
+      ย้อนกลับ
+    </button>
   </div>
 </div>
 <button
   onClick={() => update('acRatio', null)}
-  className="fixed z-30 px-1 py-0.5 rounded text-white/70 
+  className="hidden md:block fixed z-30 px-1 py-0.5 rounded text-white/70 
              bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
              hover:text-white hover:bg-green-500 hover:shadow-lg
              focus:outline-none focus:ring-2 focus:ring-green-400/60
