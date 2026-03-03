@@ -273,143 +273,148 @@ def download_pdf(filename: str):
 
 @app.post("/api/ac-quote")
 def ac_quote():
-    payload = request.get_json(force=True, silent=False) or {}
-
-    motor_code = str(payload.get("motorCode", "")).strip()
-    gear_code = str(payload.get("gearCode", "")).strip()
-
     try:
-        qty_motor = int(payload.get("qtyMotor", 1) or 1)
-    except Exception:
-        qty_motor = 1
+        payload = request.get_json(silent=True) or {}
 
-    try:
-        qty_gear = int(payload.get("qtyGear", 1) or 1)
-    except Exception:
-        qty_gear = 1
-
-    if not motor_code or not gear_code:
-        return "Invalid motorCode/gearCode", 400
-
-    if not os.path.exists(TEMPLATE_FILE):
-        return f"Template file not found: {TEMPLATE_FILE}", 500
-
-    if not PRICE_MAP:
-        return "PRICE_MAP is empty. Check PRICE_FILE path or reload /api/ac-price-reload", 500
-
-    mkey = norm_code(motor_code)
-    gkey = norm_code(gear_code)
-
-    if mkey not in PRICE_MAP:
-        return f"Motor code not found in price list: {motor_code}", 404
-    if gkey not in PRICE_MAP:
-        return f"Gear code not found in price list: {gear_code}", 404
-
-    motor = PRICE_MAP[mkey]
-    gear = PRICE_MAP[gkey]
-
-    wb = load_workbook(TEMPLATE_FILE)
-    if TEMPLATE_SHEET_NAME not in wb.sheetnames:
-        return f"Template sheet not found: {TEMPLATE_SHEET_NAME}", 500
-
-    ws = wb[TEMPLATE_SHEET_NAME]
-    # ===== ADD: customer fields -> template cells =====
-    cust = payload.get("customer", {}) or {}
-    cust_name = str(cust.get("name", "")).strip()
-    cust_company = str(cust.get("company", "")).strip()
-    cust_phone = str(cust.get("phone", "")).strip()
-    cust_email = str(cust.get("email", "")).strip()
-
-    # B8: "คุณ : ..."
-    ws["B8"] = f"คุณ : {cust_name}" if cust_name else "คุณ :"
-    # B9: company
-    ws["B9"] = cust_company
-    # B13: email
-    ws["B13"] = cust_email
-    # B14: phone
-    ws["B14"] = cust_phone
-
-    # ===== ADD: keep only 1 sheet (print only this sheet) =====
-    for name in list(wb.sheetnames):
-        if name != TEMPLATE_SHEET_NAME:
-            del wb[name]
-    # ===== ADD: fit to 1 page (1 sheet -> 1 page) =====
-    ws.page_setup.fitToPage = True
-    ws.page_setup.fitToWidth = 1
-    ws.page_setup.fitToHeight = 1
-
-    # (ช่วยให้ LibreOffice เคารพ fit-to-page มากขึ้น)
-    try:
-        if ws.sheet_properties and ws.sheet_properties.pageSetUpPr:
-            ws.sheet_properties.pageSetUpPr.fitToPage = True
-    except Exception:
-        pass
-
-    # ตั้ง print area ให้พิมพ์เฉพาะช่วงที่มีข้อมูล (กันหลุดไปหลายหน้า)
-    ws.print_area = ws.calculate_dimension()
-
-
-    # Motor row (A20..G20)
-    ws["A20"] = 1
-    ws["B20"] = motor_code
-    ws["C20"] = motor.get("desc", "")
-    ws["F20"] = qty_motor
-    ws["G20"] = motor.get("price", 0.0)
-
-    # Gear row (A22..G22)
-    ws["A22"] = 2
-    ws["B22"] = gear_code
-    ws["C22"] = gear.get("desc", "")
-    ws["F22"] = qty_gear
-    ws["G22"] = gear.get("price", 0.0)
-
-    cleanup_old_pdfs()
-
-    # Create filled xlsx and convert to pdf
-    with tempfile.TemporaryDirectory() as td:
-        filled_xlsx = os.path.join(td, "QMO26-SAS-FILLED.xlsx")
-        wb.save(filled_xlsx)
+        motor_code = str(payload.get("motorCode", "")).strip()
+        gear_code = str(payload.get("gearCode", "")).strip()
 
         try:
-            pdf_temp = xlsx_to_pdf(filled_xlsx, td)
-        except Exception as e:
-            return f"PDF convert failed (LibreOffice): {e}", 500
+            qty_motor = int(payload.get("qtyMotor", 1) or 1)
+        except Exception:
+            qty_motor = 1
 
-        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        company_for_file = cust_company or "NO-COMPANY"
-        company_for_file = re.sub(r'[\\/:*?"<>|]+', "", company_for_file).strip()   # กันอักขระต้องห้ามในชื่อไฟล์
-        company_for_file = re.sub(r"\s+", "_", company_for_file)                   # เว้นวรรค -> _
-        company_for_file = company_for_file[:60] if company_for_file else "NO-COMPANY"
-        saved_name = f"QMO26-{company_for_file}-{ts}.pdf"
-        saved_path = OUTPUT_DIR / saved_name
-        shutil.copy2(pdf_temp, saved_path)
+        try:
+            qty_gear = int(payload.get("qtyGear", 1) or 1)
+        except Exception:
+            qty_gear = 1
 
-        # Optional: email to customer if SMTP configured
-        customer = payload.get("customer", {}) or {}
-        to_email = (customer.get("email") or "").strip()
-        if to_email and smtp_is_configured():
-            subject = f"SAS Quotation: {motor_code} + {gear_code}"
-            body = (
-                f"เรียนคุณ {customer.get('name','')}\n\n"
-                f"ใบเสนอราคาของท่านถูกสร้างเรียบร้อยแล้ว\n"
-                f"Model: {payload.get('modelCode','')}\n"
-                f"Qty Motor: {qty_motor}\n"
-                f"Qty Gear: {qty_gear}\n\n"
-                f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
-            )
+        if not motor_code or not gear_code:
+            return "Invalid motorCode/gearCode", 400
+
+        if not os.path.exists(TEMPLATE_FILE):
+            return f"Template file not found: {TEMPLATE_FILE}", 500
+
+        if not PRICE_MAP:
+            return "PRICE_MAP is empty. Check PRICE_FILE path or reload /api/ac-price-reload", 500
+
+        mkey = norm_code(motor_code)
+        gkey = norm_code(gear_code)
+
+        if mkey not in PRICE_MAP:
+            return f"Motor code not found in price list: {motor_code}", 404
+        if gkey not in PRICE_MAP:
+            return f"Gear code not found in price list: {gear_code}", 404
+
+        motor = PRICE_MAP[mkey]
+        gear = PRICE_MAP[gkey]
+
+        wb = load_workbook(TEMPLATE_FILE)
+        if TEMPLATE_SHEET_NAME not in wb.sheetnames:
+            return f"Template sheet not found: {TEMPLATE_SHEET_NAME}", 500
+
+        ws = wb[TEMPLATE_SHEET_NAME]
+    # ===== ADD: customer fields -> template cells =====
+        cust = payload.get("customer", {}) or {}
+        cust_name = str(cust.get("name", "")).strip()
+        cust_company = str(cust.get("company", "")).strip()
+        cust_phone = str(cust.get("phone", "")).strip()
+        cust_email = str(cust.get("email", "")).strip()
+
+    # B8: "คุณ : ..."
+        ws["B8"] = f"คุณ : {cust_name}" if cust_name else "คุณ :"
+    # B9: company
+        ws["B9"] = cust_company
+    # B13: email
+        ws["B13"] = cust_email
+    # B14: phone
+        ws["B14"] = cust_phone
+
+    # ===== ADD: keep only 1 sheet (print only this sheet) =====
+        for name in list(wb.sheetnames):
+            if name != TEMPLATE_SHEET_NAME:
+                del wb[name]
+    # ===== ADD: fit to 1 page (1 sheet -> 1 page) =====
+        ws.page_setup.fitToPage = True
+        ws.page_setup.fitToWidth = 1
+        ws.page_setup.fitToHeight = 1
+
+    # (ช่วยให้ LibreOffice เคารพ fit-to-page มากขึ้น)
+        try:
+            if ws.sheet_properties and ws.sheet_properties.pageSetUpPr:
+                ws.sheet_properties.pageSetUpPr.fitToPage = True
+        except Exception:
+            pass
+
+        # ตั้ง print area ให้พิมพ์เฉพาะช่วงที่มีข้อมูล (กันหลุดไปหลายหน้า)
+        ws.print_area = ws.calculate_dimension()
+
+
+        # Motor row (A20..G20)
+        ws["A20"] = 1
+        ws["B20"] = motor_code
+        ws["C20"] = motor.get("desc", "")
+        ws["F20"] = qty_motor
+        ws["G20"] = motor.get("price", 0.0)
+
+        # Gear row (A22..G22)
+        ws["A22"] = 2
+        ws["B22"] = gear_code
+        ws["C22"] = gear.get("desc", "")
+        ws["F22"] = qty_gear
+        ws["G22"] = gear.get("price", 0.0)
+
+        cleanup_old_pdfs()
+
+        # Create filled xlsx and convert to pdf
+        with tempfile.TemporaryDirectory() as td:
+            filled_xlsx = os.path.join(td, "QMO26-SAS-FILLED.xlsx")
+            wb.save(filled_xlsx)
+
             try:
-                send_email_with_pdf(to_email, subject, body, str(saved_path))
+                pdf_temp = xlsx_to_pdf(filled_xlsx, td)
             except Exception as e:
-                # do not fail the download if email fails
-                print("[WARN] send_email_with_pdf failed:", e)
+                return f"PDF convert failed (LibreOffice): {e}", 500
+
+            ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+            company_for_file = cust_company or "NO-COMPANY"
+            company_for_file = re.sub(r'[\\/:*?"<>|]+', "", company_for_file).strip()   # กันอักขระต้องห้ามในชื่อไฟล์
+            company_for_file = re.sub(r"\s+", "_", company_for_file)                   # เว้นวรรค -> _
+            company_for_file = company_for_file[:60] if company_for_file else "NO-COMPANY"
+            saved_name = f"QMO26-{company_for_file}-{ts}.pdf"
+            saved_path = OUTPUT_DIR / saved_name
+            shutil.copy2(pdf_temp, saved_path)
+
+            # Optional: email to customer if SMTP configured
+            customer = payload.get("customer", {}) or {}
+            to_email = (customer.get("email") or "").strip()
+            if to_email and smtp_is_configured():
+                subject = f"SAS Quotation: {motor_code} + {gear_code}"
+                body = (
+                    f"เรียนคุณ {customer.get('name','')}\n\n"
+                    f"ใบเสนอราคาของท่านถูกสร้างเรียบร้อยแล้ว\n"
+                    f"Model: {payload.get('modelCode','')}\n"
+                    f"Qty Motor: {qty_motor}\n"
+                    f"Qty Gear: {qty_gear}\n\n"
+                    f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
+                )
+                try:
+                    send_email_with_pdf(to_email, subject, body, str(saved_path))
+                except Exception as e:
+                    # do not fail the download if email fails
+                    print("[WARN] send_email_with_pdf failed:", e)
 
         # Keep compatibility with existing frontend (expects PDF as response)
-        return send_file(
-            str(saved_path),
-            mimetype="application/pdf",
-            as_attachment=True,
-            download_name=saved_name,
-        )
+            return send_file(
+                str(saved_path),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=saved_name,
+            ) 
+    except Exception as e:
+        # ✅ จุดนี้ทำให้ "ไม่เห็น HTML 500 อีก" และจะรู้สาเหตุจริง 100%
+        app.logger.exception("ac_quote crashed")
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 # =========================
 # Health
