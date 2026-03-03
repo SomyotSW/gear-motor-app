@@ -339,7 +339,11 @@ def ac_quote():
     ws.page_setup.fitToHeight = 1
 
     # (ช่วยให้ LibreOffice เคารพ fit-to-page มากขึ้น)
-    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    try:
+        if ws.sheet_properties and ws.sheet_properties.pageSetUpPr:
+            ws.sheet_properties.pageSetUpPr.fitToPage = True
+    except Exception:
+        pass
 
     # ตั้ง print area ให้พิมพ์เฉพาะช่วงที่มีข้อมูล (กันหลุดไปหลายหน้า)
     ws.print_area = ws.calculate_dimension()
