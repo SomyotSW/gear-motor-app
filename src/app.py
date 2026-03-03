@@ -23,7 +23,10 @@ import subprocess
 from datetime import datetime   
 from pathlib import Path
 from email.message import EmailMessage
-
+try:
+    import fcntl  # Render/Linux มี
+except ImportError:
+    fcntl = None  # Windows local dev อาจไม่มี
 from flask import Flask, request, send_file, jsonify, abort
 from openpyxl import load_workbook
 
@@ -101,6 +104,30 @@ TEMPLATE_SHEET_NAME = "Sales Quote  (2)" # ชื่อชีทใน QMO26-SAS
 OUTPUT_DIR = Path(os.path.join(BASE_DIR, "output_pdfs"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 RETENTION_SECONDS = 7 * 24 * 60 * 60
+# ===== ADD: running quotation number (QMO26-SAS-001...) =====
+SEQ_FILE = os.environ.get("QMO_SEQ_FILE", str(OUTPUT_DIR / "qmo_seq.txt"))
+
+def next_qmo_no() -> int:
+    os.makedirs(os.path.dirname(SEQ_FILE), exist_ok=True)
+
+    with open(SEQ_FILE, "a+", encoding="utf-8") as f:
+        if fcntl:
+            fcntl.flock(f, fcntl.LOCK_EX)
+
+        f.seek(0)
+        raw = f.read().strip()
+        last_no = int(raw) if raw.isdigit() else 0
+        new_no = last_no + 1
+
+        f.seek(0)
+        f.truncate()
+        f.write(str(new_no))
+        f.flush()
+
+        if fcntl:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+    return new_no
 
 def cleanup_old_pdfs() -> None:
     now = time.time()
@@ -339,29 +366,8 @@ def ac_quote():
         for name in list(wb.sheetnames):
             if name != TEMPLATE_SHEET_NAME:
                 del wb[name]
-    # ===== ADD: fit to 1 page (1 sheet -> 1 page) =====
-        from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
-
-        if ws.sheet_properties is None:
-            ws.sheet_properties = WorksheetProperties()
-
-        if ws.sheet_properties.pageSetUpPr is None:
-            ws.sheet_properties.pageSetUpPr = PageSetupProperties()
-            
-        ws.sheet_properties.pageSetUpPr.fitToPage = True
-        ws.page_setup.fitToWidth = 1
-        ws.page_setup.fitToHeight = 1
-
-    # (ช่วยให้ LibreOffice เคารพ fit-to-page มากขึ้น)
-        # ===== ADD: safe fitToPage (no crash if properties missing) =====
-        page_setup_pr = getattr(getattr(ws, "sheet_properties", None), "pageSetUpPr", None)
-        if page_setup_pr is not None:
-            page_setup_pr.fitToPage = True
-
-        # ตั้ง print area ให้พิมพ์เฉพาะช่วงที่มีข้อมูล (กันหลุดไปหลายหน้า)
-        ws.print_area = ws.calculate_dimension()
-
-
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
         # Motor row (A20..G20)
         ws["A20"] = 1
         ws["B20"] = motor_code
@@ -388,12 +394,15 @@ def ac_quote():
             except Exception as e:
                 return f"PDF convert failed (LibreOffice): {e}", 500
 
-            ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+            run_no = next_qmo_no()
+            run_no_str = f"{run_no:03d}"  # 001,002,003...
+
             company_for_file = cust_company or "NO-COMPANY"
-            company_for_file = re.sub(r'[\\/:*?"<>|]+', "", company_for_file).strip()   # กันอักขระต้องห้ามในชื่อไฟล์
-            company_for_file = re.sub(r"\s+", "_", company_for_file)                   # เว้นวรรค -> _
-            company_for_file = company_for_file[:60] if company_for_file else "NO-COMPANY"
-            saved_name = f"QMO26-{company_for_file}-{ts}.pdf"
+            company_for_file = re.sub(r'[\\/:*?"<>|]+', "", company_for_file).strip()
+            company_for_file = re.sub(r"\s+", "_", company_for_file)[:60] or "NO-COMPANY"
+
+            date_str = datetime.now().strftime("%Y%m%d")  # วันที่
+            saved_name = f"QMO26-SAS-{run_no_str}-{company_for_file}-{date_str}.pdf"
             saved_path = OUTPUT_DIR / saved_name
             shutil.copy2(pdf_temp, saved_path)
 
