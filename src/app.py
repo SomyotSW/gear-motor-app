@@ -340,7 +340,12 @@ def ac_quote():
             if name != TEMPLATE_SHEET_NAME:
                 del wb[name]
     # ===== ADD: fit to 1 page (1 sheet -> 1 page) =====
-        ws.page_setup.fitToPage = True
+        from openpyxl.worksheet.properties import WorksheetProperties, PageSetupProperties
+        if ws.sheet_properties is None:
+        ws.sheet_properties = WorksheetProperties()
+        if ws.sheet_properties.pageSetUpPr is None:
+        ws.sheet_properties.pageSetUpPr = PageSetupProperties()
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
         ws.page_setup.fitToWidth = 1
         ws.page_setup.fitToHeight = 1
 
