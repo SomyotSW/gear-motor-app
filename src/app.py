@@ -274,6 +274,9 @@ def download_pdf(filename: str):
 @app.post("/api/ac-quote")
 def ac_quote():
     try:
+        app.logger.info("RUNNING FILE = %s", __file__)
+        APP_VERSION = "2026-03-03-fix-sheetprops-v1"
+        app.logger.info("APP_VERSION = %s", APP_VERSION)
         payload = request.get_json(silent=True) or {}
 
         motor_code = str(payload.get("motorCode", "")).strip()
