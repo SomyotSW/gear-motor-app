@@ -368,6 +368,7 @@ def ac_quote():
                 del wb[name]
         ws.page_setup.paperSize = ws.PAPERSIZE_A4
         ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
+        ws.print_area = "A1:I63"
         # Motor row (A20..G20)
         ws["A20"] = 1
         ws["B20"] = motor_code

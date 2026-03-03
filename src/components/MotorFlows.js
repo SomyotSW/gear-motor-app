@@ -873,10 +873,13 @@ function splitACModelCode(full) {
 } catch (e) {
   console.error('EmailJS send failed:', e);
 }
-
+      const cd = res.headers.get('content-disposition') || '';
+      const match = cd.match(/filename\*?=(?:UTF-8''|")?([^\";]+)"?/i);
+      const filenameFromServer = match ? decodeURIComponent(match[1]) : '';
       const a = document.createElement('a');
+
       a.href = url;
-      a.download = `QMO26-${motorCode}-${gearCode}.pdf`;
+      a.download = filenameFromServer || 'quotation.pdf';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1420,16 +1423,16 @@ const gifForHead = (() => {
 
 {/* Step (AC): Summary */}
 {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && !showAcFinal && (
-  <div id="ac-summary" className="relative max-w-4xl mx-auto mt-6">
+  <div id="ac-summary" className="relative max-w-4xl mx-auto mt-6 px-3 sm:px-0">
     <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)] flex items-center gap-3 flex-wrap">
   Model Code :{' '}
-  <span className="font-mono text-white/90 px-2 py-0.5 rounded">
+  <span className="font-mono text-white/90 px-2 py-0.5 rounded max-w-full">
     {(() => {
   const raw = generateModelCode({ ...acState, acConfirm: true });
   const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
   if (!list.length) return null;
   return (
-    <div className="flex flex-col items-center space-y-2">
+    <div className="flex flex-col items-start space-y-2 max-w-full">
       {list.map((code, idx) => (
         <label key={idx} className="flex items-center space-x-2">
           <input
@@ -1439,7 +1442,7 @@ const gifForHead = (() => {
             checked={selectedModel === code}
             onChange={() => setSelectedModel(code)}
           />
-          <span className="font-mono">{code}</span>
+          <span className="font-mono break-all text-[12px] sm:text-sm">{code}</span>
         </label>
       ))}
     </div>
@@ -1496,7 +1499,12 @@ const gifForHead = (() => {
   Copy
 </button>
 </h3>
-    <div ref={summaryRef} className="bg-black/25 rounded-xl px-5 py-5 text-white/90 backdrop-blur-sm leading-7 relative group">
+    <div
+      ref={summaryRef}
+      className="bg-black/25 rounded-xl px-3 sm:px-5 py-4 sm:py-5 text-white/90 backdrop-blur-sm
+                  text-[13px] sm:text-base leading-6 sm:leading-7 relative group
+                  max-h-[58vh] overflow-y-auto pb-28 sm:pb-6"
+    >
       <div>Motor Type : <b>{acMotorType||'-'}</b></div>
       <div>Frame size : <b>{frameSizeMap[acPower] || '—'}</b></div>
       <div>Motor Power : <b>{acPower||'-'}</b></div>
@@ -1756,61 +1764,54 @@ const gifForHead = (() => {
     </div>
   </div>
 )}
-    <div
-  className="fixed z-[1000]"
-  style={{
-    left: 'max(1rem, env(safe-area-inset-left))',
-    bottom: 'max(1rem, env(safe-area-inset-bottom))',
-  }}
->
-  <button
-    type="button"
-    onClick={handleDownloadPDF}
-    className="bg-white/90 text-slate-900 px-5 py-3 rounded-xl font-semibold shadow hover:bg-white"
-  >
-    Drawing PDF
-  </button>
-</div>
-
-{/* CENTER — ขอใบเสนอราคา (fixed, safe-area) */}
+    {/* Bottom action bar — mobile friendly (AC Summary only) */}
 <div
-  className="fixed z-[1000] flex justify-center"
-  style={{
-    left: '50%',
-    transform: 'translateX(-50%)',
-    bottom: 'max(1rem, env(safe-area-inset-bottom))',
-  }}
+  className="fixed left-0 right-0 z-[1000] px-3"
+  style={{ bottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
 >
-  <button
-    type="button"
-    onClick={handleRequestQuote}
-    className="bg-green-300 hover:bg-green-400 text-slate-900 px-6 py-3 rounded-2xl font-semibold shadow-lg flex items-center gap-2"
-    title="ขอใบเสนอราคา"
-  >
-    {/* ไอคอนตะกร้า (inline SVG, ไม่พึ่ง lib เพิ่ม) */}
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-      <path d="M7 4a1 1 0 1 1 0-2h1a1 1 0 0 1 .95.684L9.76 4H19a1 1 0 0 1 .98 1.197l-1.5 9A1 1 0 0 1 17.5 15H9a1 1 0 0 1-.98-.804L6.24 5H4a1 1 0 1 1 0-2h3Zm3.28 11h7.96l1.17-7H10.45l.83 7ZM9 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 .001 4.001A2 2 0 0 0 17 18Z"/>
-    </svg>
-    ขอใบเสนอราคา
-  </button>
+  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-between">
+    {/* Left: Drawing PDF */}
+    <button
+      type="button"
+      onClick={handleDownloadPDF}
+      className="bg-white/90 text-slate-900 px-4 py-2.5 rounded-xl font-semibold shadow hover:bg-white
+                 w-full sm:w-auto"
+    >
+      Drawing PDF
+    </button>
+
+    {/* Center: ขอใบเสนอราคา */}
+    <button
+      type="button"
+      onClick={handleRequestQuote}
+      className="bg-green-300 hover:bg-green-400 text-slate-900 px-4 py-2.5 rounded-2xl font-semibold shadow-lg
+                 flex items-center justify-center gap-2 w-full sm:w-auto"
+      title="ขอใบเสนอราคา"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+        <path d="M7 4a1 1 0 1 1 0-2h1a1 1 0 0 1 .95.684L9.76 4H19a1 1 0 0 1 .98 1.197l-1.5 9A1 1 0 0 1 17.5 15H9a1 1 0 0 1-.98-.804L6.24 5H4a1 1 0 1 1 0-2h3Zm3.28 11h7.96l1.17-7H10.45l.83 7ZM9 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 .001 4.001A2 2 0 0 0 17 18Z"/>
+      </svg>
+      ขอใบเสนอราคา
+    </button>
+
+    {/* Right: รับไฟล์ 3D */}
+    <button
+      type="button"
+      className="btn-3d-rkfs px-6 py-2.5 font-bold w-full sm:w-auto"
+      onClick={() => {
+        const base = Array.isArray(codes)
+          ? (Array.isArray(codes[0]) ? codes.flat() : codes)
+          : (codes ? [codes] : []);
+        const list = (selectedModel && base.length)
+          ? [selectedModel, ...base.filter(c => c !== selectedModel)]
+          : base;
+        if (list.length) onConfirm(list);
+      }}
+    >
+      รับไฟล์ 3D
+    </button>
+  </div>
 </div>
-    {/* ถัดไป (มุมขวาล่างของจอ) */}
-    <div className="fixed right-6 bottom-6 z-[999]">
-  <button
-    className="btn-3d-rkfs px-6 py-3 font-bold"
-    onClick={() => {
-  const base = Array.isArray(codes)
-    ? (Array.isArray(codes[0]) ? codes.flat() : codes)
-    : (codes ? [codes] : []);
-  const list = (selectedModel && base.length)
-    ? [selectedModel, ...base.filter(c => c !== selectedModel)] // ★ จัดลำดับ โดยเอาตัวที่ติ๊กไว้ขึ้นก่อน
-    : base;
-  if (list.length) onConfirm(list); // App.jsx จะตั้ง selectedModel = ตัวแรก → ตรงกับที่ผู้ใช้เลือก
-}}
->
-  รับไฟล์ 3D
-</button>
-    </div>
 <button
   onClick={() => update('acRatio', null)}
   className="fixed z-30 px-1 py-0.5 rounded text-white/70 
