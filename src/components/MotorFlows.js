@@ -628,16 +628,6 @@ const getGearGif = () => {
   const isVariable     = acMotorType === 'Variable Speed Motor';
   const frontSuffixGN  = isVariable ? 'RGN' : 'GN';
   const frontSuffixGU  = isVariable ? 'RGU' : 'GU';
-  const powerKey = (acPower || "").toString().replace(/\s+/g, "").toUpperCase(); // เช่น "200W"
-  const controllerOptions = CONTROLLER_MAP[powerKey] || [];
-  // ===== ADD: auto set default controller model when variable speed motor =====
-  useEffect(() => {
-    if (isVariable) {
-      setCtrlModel(controllerOptions[0] || "");
-    } else {
-      setCtrlModel("");
-    }
-  }, [isVariable, powerKey]);
 
   const results = [];
 
@@ -687,6 +677,21 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const [qPhone, setQPhone]     = useState('');
   const [qEmail, setQEmail]     = useState('');
   const [ctrlModel, setCtrlModel] = useState("");
+  // ===== ADD: variable-speed + controller options (component scope) =====
+  const motorTypeNorm = (acMotorType || "").trim().toLowerCase();
+  const isVariable = motorTypeNorm === "variable speed motor" || motorTypeNorm.includes("variable");
+
+  const powerKey = (acPower || "").toString().replace(/\s+/g, "").toUpperCase(); // เช่น "200W"
+  const controllerOptions = CONTROLLER_MAP[powerKey] || [];
+
+// ===== ADD: auto set default controller model when variable speed motor =====
+  useEffect(() => {
+    if (isVariable) {
+      setCtrlModel(controllerOptions[0] || "");
+    } else {
+      setCtrlModel("");
+    }
+  }, [isVariable, powerKey]);
   const [sending, setSending]   = useState(false);
 
  // อ้างอิงกล่อง Summary เพื่อจับภาพ
