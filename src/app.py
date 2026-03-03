@@ -319,6 +319,12 @@ def ac_quote():
             qty_gear = int(payload.get("qtyGear", 1) or 1)
         except Exception:
             qty_gear = 1
+        
+        ctrl_model = str(payload.get("controllerModel", "") or "").strip()
+        try:
+            qty_ctrl = int(payload.get("qtyCtrl", 0) or 0)
+        except Exception:
+            qty_ctrl = 0
 
         if not motor_code or not gear_code:
             return "Invalid motorCode/gearCode", 400
@@ -328,6 +334,13 @@ def ac_quote():
 
         if not PRICE_MAP:
             return "PRICE_MAP is empty. Check PRICE_FILE path or reload /api/ac-price-reload", 500
+        
+        ctrl = None
+        if ctrl_model and qty_ctrl > 0:
+            ckey = norm_code(ctrl_model)
+            if ckey not in PRICE_MAP:
+                return f"Controller code not found in price list: {ctrl_model}", 404
+            ctrl = PRICE_MAP[ckey]
 
         mkey = norm_code(motor_code)
         gkey = norm_code(gear_code)
@@ -383,6 +396,13 @@ def ac_quote():
         ws["C22"] = gear.get("desc", "")
         ws["F22"] = qty_gear
         ws["G22"] = gear.get("price", 0.0)
+
+        if ctrl_model and qty_ctrl > 0:
+            ws["A24"] = 3
+            ws["B24"] = ctrl_model
+            ws["C24"] = ctrl.get("desc", "")
+            ws["F24"] = qty_ctrl
+            ws["G24"] = ctrl.get("price", 0.0)
 
         cleanup_old_pdfs()
 

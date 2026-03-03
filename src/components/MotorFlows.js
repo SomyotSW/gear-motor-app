@@ -596,6 +596,18 @@ const getGearGif = () => {
     '200W AC Motor': '6'
   };
 
+  const CONTROLLER_MAP = {
+  "10W": ["US206C", "UX52-10"],
+  "15W": ["US315C", "UX52-15"],
+  "25W": ["US425C", "UX52-25"],
+  "40W": ["US540C", "UX52-40"],
+  "60W": ["US560C", "UX52-60"],
+  "90W": ["US590C", "UX52-90"],
+  "120W": ["US5120C", "UX52-120"],
+  "140W": ["US6140C", "UX52-140"],
+  "200W": ["US6200C", "UX52-200"],
+  };
+
   const phase = phaseMap[acVoltage];
   const gearCode = gearHeadMap[acGearHead];
   const motorCode = motorMap[acMotorType];
@@ -616,6 +628,16 @@ const getGearGif = () => {
   const isVariable     = acMotorType === 'Variable Speed Motor';
   const frontSuffixGN  = isVariable ? 'RGN' : 'GN';
   const frontSuffixGU  = isVariable ? 'RGU' : 'GU';
+  const powerKey = (acPower || "").toString().replace(/\s+/g, "").toUpperCase(); // เช่น "200W"
+  const controllerOptions = CONTROLLER_MAP[powerKey] || [];
+  // ===== ADD: auto set default controller model when variable speed motor =====
+  useEffect(() => {
+    if (isVariable) {
+      setCtrlModel(controllerOptions[0] || "");
+    } else {
+      setCtrlModel("");
+    }
+  }, [isVariable, powerKey]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const results = [];
 
@@ -664,6 +686,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const [qCompany, setQCompany] = useState('');
   const [qPhone, setQPhone]     = useState('');
   const [qEmail, setQEmail]     = useState('');
+  const [ctrlModel, setCtrlModel] = useState("");
   const [sending, setSending]   = useState(false);
 
  // อ้างอิงกล่อง Summary เพื่อจับภาพ
@@ -840,7 +863,9 @@ function splitACModelCode(full) {
           gearCode,
           qtyMotor,
           qtyGear,
-          customer: { name: qName, company: qCompany, phone: qPhone, email: qEmail }
+          customer: { name: qName, company: qCompany, phone: qPhone, email: qEmail },
+          controllerModel: isVariable ? ctrlModel : "",
+          qtyCtrl: isVariable ? qtyCtrl : 0
         })
       });
 
@@ -1779,6 +1804,63 @@ const gifForHead = (() => {
             onClick={() => setQtyCtrl(q => Math.min(999, q + 1))}
             className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
           >+</button>
+          {/* Row — Speed controller (เฉพาะ Variable Speed Motor) */}
+{isVariable && (
+  <div className="flex items-center justify-between gap-2">
+    <span className="text-white/90 select-none">Speed controller :</span>
+
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        aria-label="ลดจำนวน Speed controller"
+        onClick={() => setQtyCtrl(q => Math.max(1, q - 1))}
+        className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+      >
+        –
+      </button>
+
+      <input
+        type="number"
+        min={1}
+        step={1}
+        value={qtyCtrl}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          setQtyCtrl(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
+        }}
+        onWheel={(e) => e.currentTarget.blur()}
+        className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
+      />
+
+      {/* ===== ADD: controller model select ===== */}
+      <select
+        value={ctrlModel}
+        onChange={(e) => setCtrlModel(e.target.value)}
+        className="px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none
+                   w-32 sm:w-40"
+        disabled={controllerOptions.length === 0}
+        title="เลือก Model Controller"
+      >
+        {controllerOptions.length === 0 ? (
+          <option value="">No Controller</option>
+        ) : (
+          controllerOptions.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))
+        )}
+      </select>
+
+      <button
+        type="button"
+        aria-label="เพิ่มจำนวน Speed controller"
+        onClick={() => setQtyCtrl(q => Math.min(999, q + 1))}
+        className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+      >
+        +
+      </button>
+    </div>
+  </div>
+)}
         </div>
       </div>
     )}
