@@ -637,7 +637,7 @@ const getGearGif = () => {
     } else {
       setCtrlModel("");
     }
-  }, [isVariable, powerKey]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isVariable, powerKey]);
 
   const results = [];
 
