@@ -1568,6 +1568,86 @@ const gifForHead = (() => {
       <div>Weight : <b>— kg</b></div>
     </div>
 	{/* NEW: Gear preview image on the right side */}
+{/* ===== ADD: Mobile Gear preview + qty controls (show on phone) ===== */}
+{acGearHead && (() => {
+  const src = getGearPreviewUrl(acGearHead);
+  if (!src) return null;
+  return (
+    <div className="md:hidden mt-4 flex flex-col items-center gap-3">
+      <img
+        src={src}
+        alt={acGearHead}
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        className="w-48 max-w-full h-auto object-contain opacity-95 drop-shadow"
+      />
+
+      <div className="w-full flex flex-col gap-2">
+        {/* Row 1 — Gear Head */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-white/90 select-none">Gear Head :</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="ลดจำนวน Gear Head"
+              onClick={() => setQtyGear(q => Math.max(1, q - 1))}
+              className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+            >–</button>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={qtyGear}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setQtyGear(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
+              }}
+              onWheel={(e) => e.currentTarget.blur()}
+              className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
+            />
+            <button
+              type="button"
+              aria-label="เพิ่มจำนวน Gear Head"
+              onClick={() => setQtyGear(q => Math.min(999, q + 1))}
+              className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+            >+</button>
+          </div>
+        </div>
+
+        {/* Row 2 — AC Motor */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-white/90 select-none">AC Motor :</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="ลดจำนวน AC Motor"
+              onClick={() => setQtyMotor(q => Math.max(1, q - 1))}
+              className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+            >–</button>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={qtyMotor}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setQtyMotor(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
+              }}
+              onWheel={(e) => e.currentTarget.blur()}
+              className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
+            />
+            <button
+              type="button"
+              aria-label="เพิ่มจำนวน AC Motor"
+              onClick={() => setQtyMotor(q => Math.min(999, q + 1))}
+              className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+            >+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+})()}
+
 {acGearHead && (() => {
   const src = getGearPreviewUrl(acGearHead);
   if (!src) return null;

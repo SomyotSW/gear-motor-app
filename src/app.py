@@ -75,6 +75,7 @@ def add_cors_headers(response):
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
     # ✅ ADD: allow common headers used by browsers
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
     return response
 
 @app.before_request
@@ -368,7 +369,7 @@ def ac_quote():
                 del wb[name]
         ws.page_setup.paperSize = ws.PAPERSIZE_A4
         ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
-        ws.print_area = "A1:I63"
+        ws.print_area = "A1:I80"
         # Motor row (A20..G20)
         ws["A20"] = 1
         ws["B20"] = motor_code
