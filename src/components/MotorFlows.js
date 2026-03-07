@@ -1853,36 +1853,69 @@ const gifForHead = (() => {
     </div>
     {/* Row 3 — Speed controller (เฉพาะ Variable Speed Motor) */}
     {acMotorType === 'Variable Speed Motor' && (
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-white/90 select-none">Speed controller :</span>
-        <div className="flex items-center gap-2">
+  <div className="flex flex-col gap-2">
+    {/* แถว label + controller buttons */}
+    <div className="flex items-center justify-between gap-2 flex-wrap">
+      <span className="text-white/90 select-none">Speed controller :</span>
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setCtrlModel("")}
+          className={`px-3 py-2 rounded-xl shadow outline-none border transition
+            ${ctrlModel === ""
+              ? "bg-green-300 text-slate-900 border-green-400"
+              : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
+            }`}
+          title="No Controller"
+        >
+          No Ctrl
+        </button>
+        {controllerOptions.map((m) => (
           <button
+            key={m}
             type="button"
-            aria-label="ลดจำนวน Speed controller"
-            onClick={() => setQtyCtrl(q => Math.max(1, q - 1))}
-            className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-          >–</button>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={qtyCtrl}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              setQtyCtrl(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
-            }}
-            onWheel={(e) => e.currentTarget.blur()}
-            className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
-          />
-          <button
-            type="button"
-            aria-label="เพิ่มจำนวน Speed controller"
-            onClick={() => setQtyCtrl(q => Math.min(999, q + 1))}
-            className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-          >+</button>
-        </div>
+            onClick={() => setCtrlModel(m)}
+            className={`px-3 py-2 rounded-xl shadow outline-none border transition
+              ${ctrlModel === m
+                ? "bg-green-300 text-slate-900 border-green-400"
+                : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
+              }`}
+            title={`เลือก ${m}`}
+          >
+            {m}
+          </button>
+        ))}
       </div>
-    )}
+    </div>
+    {/* แถว qty controls */}
+    <div className="flex items-center justify-end gap-2">
+      <button
+        type="button"
+        aria-label="ลดจำนวน Speed controller"
+        onClick={() => setQtyCtrl(q => Math.max(1, q - 1))}
+        className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+      >–</button>
+      <input
+        type="number"
+        min={1}
+        step={1}
+        value={qtyCtrl}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          setQtyCtrl(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
+        }}
+        onWheel={(e) => e.currentTarget.blur()}
+        className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
+      />
+      <button
+        type="button"
+        aria-label="เพิ่มจำนวน Speed controller"
+        onClick={() => setQtyCtrl(q => Math.min(999, q + 1))}
+        className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
+      >+</button>
+    </div>
+  </div>
+)}
   </div>
 )}
 {showQuote && (
