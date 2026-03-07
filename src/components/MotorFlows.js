@@ -681,7 +681,12 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const motorTypeNorm = (acMotorType || "").trim().toLowerCase();
   const isVariable = motorTypeNorm === "variable speed motor" || motorTypeNorm.includes("variable");
 
-  const powerKey = (acPower || "").toString().replace(/\s+/g, "").toUpperCase(); // เช่น "200W"
+  const powerKey = (() => {
+  const s = (acPower || "").toString();
+  const m = s.match(/(\d+)\s*W/i);   // ดึง 10W / 120W จาก "120W AC Motor"
+  return m ? `${m[1]}W` : "";
+})();
+
   const controllerOptions = CONTROLLER_MAP[powerKey] || [];
 
 // ===== ADD: auto set default controller model when variable speed motor =====
@@ -1685,53 +1690,49 @@ const gifForHead = (() => {
                 {/* Row 3 — Speed controller (Variable Speed Motor only) */}
         {/* Row 3 — Speed controller (Variable Speed Motor only) */}
 {isVariable && (
-  <div className="grid grid-cols-[170px_1fr_auto] items-center gap-3">
-    {/* Label */}
-    <span className="text-white/90 select-none">Speed controller :</span>
-
-    {/* ✅ Model Controller buttons (อยู่ตรงกรอบแดง) */}
-    <div className="flex items-center gap-2 flex-wrap">
-      <button
-        type="button"
-        onClick={() => setCtrlModel("")}
-        className={`px-3 py-2 rounded-xl shadow outline-none border transition
-          ${ctrlModel === ""
-            ? "bg-green-300 text-slate-900 border-green-400"
-            : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
-          }`}
-        title="No Controller"
-      >
-        No Ctrl
-      </button>
-
-      {controllerOptions.map((m) => (
+  <div className="flex flex-col gap-2">
+    {/* แถว label + controller buttons */}
+    <div className="flex items-center justify-between gap-2 flex-wrap">
+      <span className="text-white/90 select-none">Speed controller :</span>
+      <div className="flex items-center gap-2 flex-wrap">
         <button
-          key={m}
           type="button"
-          onClick={() => setCtrlModel(m)}
+          onClick={() => setCtrlModel("")}
           className={`px-3 py-2 rounded-xl shadow outline-none border transition
-            ${ctrlModel === m
+            ${ctrlModel === ""
               ? "bg-green-300 text-slate-900 border-green-400"
               : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
             }`}
-          title={`เลือก ${m}`}
+          title="No Controller"
         >
-          {m}
+          No Ctrl
         </button>
-      ))}
+        {controllerOptions.map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setCtrlModel(m)}
+            className={`px-3 py-2 rounded-xl shadow outline-none border transition
+              ${ctrlModel === m
+                ? "bg-green-300 text-slate-900 border-green-400"
+                : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
+              }`}
+            title={`เลือก ${m}`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
     </div>
 
-    {/* Qty controls (อยู่ขวาสุดเหมือนเดิม) */}
-    <div className="flex items-center gap-2 justify-end">
+    {/* แถว qty controls */}
+    <div className="flex items-center justify-end gap-2">
       <button
         type="button"
         aria-label="ลดจำนวน Speed controller"
         onClick={() => setQtyCtrl(q => Math.max(1, q - 1))}
         className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-      >
-        –
-      </button>
-
+      >–</button>
       <input
         type="number"
         min={1}
@@ -1744,15 +1745,12 @@ const gifForHead = (() => {
         onWheel={(e) => e.currentTarget.blur()}
         className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
       />
-
       <button
         type="button"
         aria-label="เพิ่มจำนวน Speed controller"
         onClick={() => setQtyCtrl(q => Math.min(999, q + 1))}
         className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-      >
-        +
-      </button>
+      >+</button>
     </div>
   </div>
 )}
