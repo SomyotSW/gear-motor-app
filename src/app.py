@@ -96,7 +96,7 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 PRICE_FILE = os.path.join(DATA_DIR, "AC Gear Motor Price List 2026 14-02-26.xlsx")
 TEMPLATE_FILE = os.path.join(DATA_DIR, "QMO26-SAS.xlsx")
 
-PRICE_SHEET_NAME = "sheet1"              # หากชื่อชีทจริงไม่ใช่ sheet1 ให้แก้ตรงนี้
+PRICE_SHEET_NAME = "Sheet1"              # หากชื่อชีทจริงไม่ใช่ sheet1 ให้แก้ตรงนี้
 TEMPLATE_SHEET_NAME = "Sales Quote  (2)" # ชื่อชีทใน QMO26-SAS.xlsx
 # เพิ่มใหม่ — ข้อมูล Sale Person
 SALE_PERSONS = {
@@ -169,8 +169,10 @@ def cleanup_old_pdfs() -> None:
 
 def norm_code(x: str) -> str:
     s = str(x or "")
-    s = s.replace("\u00A0", "")  # NBSP
-    s = s.replace("\u200B", "")  # zero-width
+    s = s.replace("\u00A0", "")   # NBSP
+    s = s.replace("\u2011", "-")  # non-breaking hyphen → hyphen
+    s = s.replace("\u2013", "-")  # en-dash → hyphen
+    s = s.replace("\u2014", "-")  # em-dash → hyphen
     s = s.strip().upper()
     s = re.sub(r"\s+", "", s)
     return s
