@@ -405,6 +405,24 @@ const [rkfsQuote, setRkfsQuote] = useState({
 const [rfqOpen, setRfqOpen] = useState(false);
 const [rfqForm, setRfqForm] = useState({ name:'', phone:'', company:'', email:'', quantity:1 });
 const [rfqSending, setRfqSending] = useState(false);
+// === AC Motor RFQ ===
+const [acRfqOpen, setAcRfqOpen] = useState(false);
+const [acRfqForm, setAcRfqForm] = useState({ name:'', phone:'', company:'', email:'', quantity:1 });
+const [acRfqSending, setAcRfqSending] = useState(false);
+const [selectedSalePerson, setSelectedSalePerson] = useState(null);
+const [showSalePersonPicker, setShowSalePersonPicker] = useState(false);
+
+const SALE_PERSONS = [
+  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER', phone: '081-921-6225' },
+  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Engineer',                phone: '089-9899989' },
+  { abbr: 'WS',  name: 'Ms.Warissara S.(WS)',    position: 'Sale Engineer',                phone: '081-18118181' },
+  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',         position: 'Sale Supervisor',              phone: '082-2222222' },
+];
+
+const handleAcRfqChange = (e) => {
+  const { name, value } = e.target;
+  setAcRfqForm(s => ({ ...s, [name]: value }));
+};
 
 const handleRfqChange = (e) => {
   const { name, value } = e.target;

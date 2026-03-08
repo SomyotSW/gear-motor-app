@@ -664,6 +664,13 @@ const getGearGif = () => {
   return results;
 }
 
+// เพิ่มก่อน export default function ACMotorFlow
+const SALE_PERSONS = [
+  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER', phone: '081-921-6225' },
+  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Engineer',                phone: '089-9899989' },
+  { abbr: 'WS',  name: 'Ms.Warissara S.(WS)',    position: 'Sale Engineer',                phone: '081-18118181' },
+  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',        position: 'Sale Supervisor',              phone: '082-2222222' },
+];
 
 // Render AC Motor Flow: Motor Type → Power → Voltage → Optional → Gear Type → Ratio → Summary
 export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
@@ -697,8 +704,9 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
       setCtrlModel("");
     }
   }, [isVariable, powerKey]);
-  const [sending, setSending]   = useState(false);
-
+  const [sending, setSending] = useState(false);
+  const [salePerson, setSalePerson]           = useState('');
+  const [showSalePersonPicker, setShowSalePersonPicker] = useState(false);
  // อ้างอิงกล่อง Summary เพื่อจับภาพ
  const summaryRef = useRef(null);
 
@@ -875,7 +883,8 @@ function splitACModelCode(full) {
           qtyGear,
           customer: { name: qName, company: qCompany, phone: qPhone, email: qEmail },
           controllerModel: isVariable ? ctrlModel : "",
-          qtyCtrl: isVariable ? qtyCtrl : 0
+          qtyCtrl: isVariable ? qtyCtrl : 0,
+          salePerson: salePerson   // ← เพิ่มบรรทัดนี้
         })
       });
 
@@ -1924,7 +1933,40 @@ const gifForHead = (() => {
     <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setShowQuote(false)} />
     {/* modal */}
     <div className="relative bg-white rounded-2xl shadow-2xl w-[92%] max-w-xl p-6 text-slate-900">
-      <h3 className="text-xl font-bold mb-4">ขอใบเสนอราคา</h3>
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <h3 className="text-xl font-bold">ขอใบเสนอราคา</h3>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowSalePersonPicker(v => !v)}
+            title="เลือก Sale Person"
+            className="text-2xl leading-none select-none hover:scale-110 active:scale-95 transition-transform"
+            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}
+          >
+            🧑‍💼
+          </button>
+          {showSalePersonPicker && (
+            <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] sm:w-[300px] overflow-hidden">
+              {SALE_PERSONS.map(sp => (
+                <button
+                  key={sp.abbr}
+                  type="button"
+                  onClick={() => { setSalePerson(sp.abbr); setShowSalePersonPicker(false); }}
+                  className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition text-sm border-b last:border-b-0 ${salePerson === sp.abbr ? 'bg-green-100 font-semibold' : ''}`}
+                >
+                  <div className="font-semibold text-slate-800">{sp.name}</div>
+                  <div className="text-slate-500 text-xs">{sp.position} · {sp.phone}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {salePerson && (
+          <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
+            {SALE_PERSONS.find(s => s.abbr === salePerson)?.name || salePerson}
+          </span>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-3">
         <div>
           <label className="block text-sm mb-1">ชื่อผู้ขอราคา :</label>

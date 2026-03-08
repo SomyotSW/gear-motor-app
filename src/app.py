@@ -98,6 +98,13 @@ TEMPLATE_FILE = os.path.join(DATA_DIR, "QMO26-SAS.xlsx")
 
 PRICE_SHEET_NAME = "sheet1"              # หากชื่อชีทจริงไม่ใช่ sheet1 ให้แก้ตรงนี้
 TEMPLATE_SHEET_NAME = "Sales Quote  (2)" # ชื่อชีทใน QMO26-SAS.xlsx
+# เพิ่มใหม่ — ข้อมูล Sale Person
+SALE_PERSONS = {
+    'CA':  {'name': 'Mr. Chottanin A. (CA)',  'position': 'TRANSMISSION PRODUCT MANAGER : 081-921-6225'},
+    'TWS': {'name': 'Ms.Thitikan W. (TWS)',   'position': 'Sale Engineer 089-9899989'},
+    'WS':  {'name': 'Ms.Warissara S.(WS)',    'position': 'Sale Engineer 081-18118181'},
+    'SK':  {'name': 'Mr.Sanya K.(SK)',        'position': 'Sale Supervisor 082-2222222'},
+}
 
 # =========================
 # Output storage (7 days retention)
@@ -367,6 +374,10 @@ def ac_quote():
         cust_phone = str(cust.get("phone", "")).strip()
         cust_email = str(cust.get("email", "")).strip()
 
+    # ===== salePerson fields =====
+        sale_person_abbr = str(payload.get("salePerson", "CA")).strip() or "CA"
+        sp = SALE_PERSONS.get(sale_person_abbr, SALE_PERSONS["CA"])
+
     # B8: "คุณ : ..."
         ws["B8"] = f"คุณ : {cust_name}" if cust_name else "คุณ :"
     # B9: company
@@ -403,6 +414,19 @@ def ac_quote():
             ws["C24"] = ctrl.get("desc", "")
             ws["F24"] = qty_ctrl
             ws["G24"] = ctrl.get("price", 0.0)
+            # H3: QMO26-SAS-XXX (จะอัปเดตหลังได้ run_no จริง)
+            run_no = next_qmo_no()
+            run_no_str = f"{run_no:03d}"
+            ws["H3"] = f"QMO26-SAS-{run_no_str}"
+
+            # A17: ชื่อย่อ Sale Person
+            ws["A17"] = sp["abbr"] if hasattr(sp, "__getitem__") and "abbr" in sp else sale_person_abbr
+
+            # D60: ชื่อเต็ม Sale Person
+            ws["D60"] = sp["name"]
+
+            # D61: ตำแหน่ง + เบอร์
+            ws["D61"] = sp["position"]
 
         cleanup_old_pdfs()
 
@@ -415,9 +439,6 @@ def ac_quote():
                 pdf_temp = xlsx_to_pdf(filled_xlsx, td)
             except Exception as e:
                 return f"PDF convert failed (LibreOffice): {e}", 500
-
-            run_no = next_qmo_no()
-            run_no_str = f"{run_no:03d}"  # 001,002,003...
 
             company_for_file = cust_company or "NO-COMPANY"
             company_for_file = re.sub(r'[\\/:*?"<>|]+', "", company_for_file).strip()
