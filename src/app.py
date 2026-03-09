@@ -108,17 +108,32 @@ SALE_PERSONS = {
     'TWS': {
         'abbr': 'TWS',
         'name': 'Ms.Thitikan W. (TWS)',
-        'position': 'Sale Engineer 089-9899989'
+        'position': 'Sale Exclusive 080-4632394'
     },
     'WS':  {
         'abbr': 'WS',
         'name': 'Ms.Warissara S.(WS)',
-        'position': 'Sale Engineer 081-18118181'
+        'position': 'Sale Exclusive 065-5051798'
+    },
+    'SI':  {
+        'abbr': 'SI',
+        'name': 'Ms.Suphak I.(SI)',
+        'position': 'Sale Exclusive 096-0787776'
+    },
+    'NM':  {
+        'abbr': 'NM',
+        'name': 'Mr.Naphaphat M.(NM)',
+        'position': 'Sale Exclusive 065-7176332'
     },
     'SK':  {
         'abbr': 'SK',
         'name': 'Mr.Sanya K.(SK)',
-        'position': 'Sale Supervisor 082-2222222'
+        'position': 'Sale Supervisor 086-9819616'
+    },
+    'PL':  {
+        'abbr': 'PL',
+        'name': 'Mr.Pongsakorn L.(PL)',
+        'position': 'Sale Engineer 063-2159056'
     },
 }
 

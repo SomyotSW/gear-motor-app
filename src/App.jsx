@@ -413,10 +413,13 @@ const [selectedSalePerson, setSelectedSalePerson] = useState(null);
 const [showSalePersonPicker, setShowSalePersonPicker] = useState(false);
 
 const SALE_PERSONS = [
-  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER', phone: '081-921-6225' },
-  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Engineer',                phone: '089-9899989' },
-  { abbr: 'WS',  name: 'Ms.Warissara S.(WS)',    position: 'Sale Engineer',                phone: '081-18118181' },
-  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',         position: 'Sale Supervisor',              phone: '082-2222222' },
+  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER',  phone: '081-921-6225' },
+  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Exclusive',                phone: '080-4632394' },
+  { abbr: 'WS',  name: 'Ms.Warissara S.(WS)',    position: 'Sale Exclusive',                phone: '065-5051798' },
+  { abbr: 'SI',  name: 'Ms.Suphak I.(SI)',       position: 'Sale Exclusive',                phone: '096-0787776' },
+  { abbr: 'NM',  name: 'Mr.Naphaphat M.(NM)',    position: 'Sale Exclusive',                phone: '065-7176332' }, 
+  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',        position: 'Sale Supervisor',               phone: '086-9819616' },
+  { abbr: 'PL',  name: 'Mr.Pongsakorn L.(PL)',   position: 'Sale Engineer',                 phone: '063-2159056' },
 ];
 
 const handleAcRfqChange = (e) => {
