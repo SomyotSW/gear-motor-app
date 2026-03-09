@@ -1561,11 +1561,12 @@ const gifForHead = (() => {
     </div>
   );
 })()}
+    <div className="flex flex-row gap-4 items-start">
     <div
       ref={summaryRef}
-      className="bg-black/25 rounded-xl px-3 sm:px-5 py-4 sm:py-5 text-white/90 backdrop-blur-sm
+      className="flex-1 bg-black/25 rounded-xl px-3 sm:px-5 py-4 sm:py-5 text-white/90 backdrop-blur-sm
                 text-[13px] sm:text-base leading-6 sm:leading-7 relative group
-                max-h-[58vh] overflow-y-auto pb-44 sm:pb-6"
+                max-h-[58vh] overflow-y-auto"
     >
       <div>Motor Type : <b>{acMotorType||'-'}</b></div>
       <div>Frame size : <b>{frameSizeMap[acPower] || '—'}</b></div>
@@ -1771,37 +1772,29 @@ const gifForHead = (() => {
   );
 })()}
 
+{/* NEW: Desktop — image on top, qty controls below (no absolute positioning) */}
 {acGearHead && (() => {
   const src = getGearPreviewUrl(acGearHead);
-  if (!src) return null;
   return (
     <div
-      className="hidden md:block absolute"
-      style={{
-        right: '1.25rem',    // ~20px
-        top:   '1.25rem',
-        bottom:'10.25rem',
-        width: '23%',
-        pointerEvents: 'none', // ไม่บังการคลิกตัวอื่น
-      }}
+      className="hidden md:flex flex-col items-center gap-3"
+      style={{ width: '34%', flexShrink: 0 }}
     >
-      <img
-        src={src}
-        alt={acGearHead}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }} // ถ้าหาไม่พบ ให้ซ่อนตัวเอง
-        className="w-full h-full object-contain opacity-95 drop-shadow
-             transition-transform duration-500 ease-out
-             group-hover:scale-155 will-change-transform"
-      />
-    </div>
-  );
-})()}
-{/* NEW: Multi-line quantity selectors (เฉพาะ AC Summary) */}
-{acGearHead && (
-  <div
-    className="hidden md:flex flex-col gap-2 absolute"
-    style={{ right: '1.25rem', bottom: '1.25rem', width: '34%' }}
-  >
+      {/* รูปภาพ */}
+      {src && (
+        <div className="w-full flex justify-center">
+          <img
+            src={src}
+            alt={acGearHead}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            className="w-full max-h-48 object-contain opacity-95 drop-shadow
+                 transition-transform duration-500 ease-out
+                 group-hover:scale-105 will-change-transform"
+          />
+        </div>
+      )}
+      {/* ปุ่ม qty — อยู่ใต้รูปภาพ */}
+      <div className="w-full flex flex-col gap-2">
     {/* Row 1 — Gear Head */}
     <div className="flex items-center justify-between gap-2">
       <span className="text-white/90 select-none">Gear Head :</span>
@@ -1928,8 +1921,11 @@ const gifForHead = (() => {
     </div>
   </div>
 )}
-  </div>
-)}
+      </div>
+    </div>
+  );
+})()}
+    </div>
 {showQuote && (
   <div className="fixed inset-0 z-[1200] flex items-center justify-center">
     {/* backdrop */}
