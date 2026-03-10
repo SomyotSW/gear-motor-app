@@ -138,6 +138,14 @@ SALE_PERSONS = {
 }
 
 # =========================
+# Internal notify recipients (always CC'd when quote PDF is generated)
+# =========================
+INTERNAL_NOTIFY_EMAILS = [
+    "Chottanin@synergy-as.com",
+    "sas04@synergy-as.com",
+]
+
+# =========================
 # Output storage (7 days retention)
 # =========================
 OUTPUT_DIR = Path(os.path.join(BASE_DIR, "output_pdfs"))
@@ -504,21 +512,44 @@ def ac_quote():
             # Optional: email to customer if SMTP configured
             customer = payload.get("customer", {}) or {}
             to_email = (customer.get("email") or "").strip()
-            if to_email and smtp_is_configured():
+            if smtp_is_configured():
                 subject = f"SAS Quotation: {motor_code} + {gear_code}"
-                body = (
-                    f"เรียนคุณ {customer.get('name','')}\n\n"
-                    f"ใบเสนอราคาของท่านถูกสร้างเรียบร้อยแล้ว\n"
-                    f"Model: {payload.get('modelCode','')}\n"
-                    f"Qty Motor: {qty_motor}\n"
-                    f"Qty Gear: {qty_gear}\n\n"
+
+                # 1) ส่งให้ลูกค้า (ถ้ามีอีเมล)
+                if to_email:
+                    body_customer = (
+                        f"เรียนคุณ {customer.get('name','')}\n\n"
+                        f"ใบเสนอราคาของท่านถูกสร้างเรียบร้อยแล้ว\n"
+                        f"Model: {payload.get('modelCode','')}\n"
+                        f"Qty Motor: {qty_motor}\n"
+                        f"Qty Gear: {qty_gear}\n\n"
+                        f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
+                    )
+                    try:
+                        send_email_with_pdf(to_email, subject, body_customer, str(saved_path))
+                    except Exception as e:
+                        # do not fail the download if email fails
+                        print("[WARN] send_email_with_pdf (customer) failed:", e)
+
+                # 2) ส่งสำเนาให้ทีม internal ทุกครั้งที่มีการดาวน์โหลดใบเสนอราคา
+                body_internal = (
+                    f"แจ้งเตือน: มีการดาวน์โหลดใบเสนอราคา AC Gear Motor\n\n"
+                    f"ลูกค้า  : {customer.get('name', '-')}\n"
+                    f"บริษัท  : {customer.get('company', '-')}\n"
+                    f"เบอร์   : {customer.get('phone', '-')}\n"
+                    f"อีเมล   : {customer.get('email', '-')}\n\n"
+                    f"Model   : {payload.get('modelCode', '')}\n"
+                    f"Motor   : {motor_code}  x{qty_motor}\n"
+                    f"Gear    : {gear_code}   x{qty_gear}\n"
+                    f"Sale    : {sp.get('name', sale_person_abbr)}\n"
+                    f"เลขที่  : QMO26-SAS-{run_no_str}\n\n"
                     f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
                 )
-                try:
-                    send_email_with_pdf(to_email, subject, body, str(saved_path))
-                except Exception as e:
-                    # do not fail the download if email fails
-                    print("[WARN] send_email_with_pdf failed:", e)
+                for internal_email in INTERNAL_NOTIFY_EMAILS:
+                    try:
+                        send_email_with_pdf(internal_email, subject, body_internal, str(saved_path))
+                    except Exception as e:
+                        print(f"[WARN] send_email_with_pdf (internal {internal_email}) failed:", e)
 
         # Keep compatibility with existing frontend (expects PDF as response)
             return send_file(
