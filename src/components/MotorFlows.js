@@ -1546,27 +1546,27 @@ const gifForHead = (() => {
   Copy
 </button>
 </h3>
-{/* ===== ADD: Mobile Product Image under Model Code (center) ===== */}
-{acGearHead && (() => {
-  const src = getGearPreviewUrl(acGearHead);
-  if (!src) return null;
-  return (
-    <div className="md:hidden flex justify-center my-3">
-      <img
-        src={src}
-        alt={acGearHead}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-        className="w-56 max-w-full h-auto object-contain opacity-95 drop-shadow"
-      />
-    </div>
-  );
-})()}
-    <div className="flex flex-row gap-4 items-start">
+    <div className="flex flex-col md:flex-row gap-4 items-start">
+    {/* === Mobile: รูปภาพอยู่บน summaryRef === */}
+    {acGearHead && (() => {
+      const src = getGearPreviewUrl(acGearHead);
+      if (!src) return null;
+      return (
+        <div className="md:hidden flex justify-center mb-2">
+          <img
+            src={src}
+            alt={acGearHead}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            className="w-48 max-w-full h-auto object-contain opacity-95 drop-shadow"
+          />
+        </div>
+      );
+    })()}
     <div
       ref={summaryRef}
-      className="flex-1 bg-black/25 rounded-xl px-3 sm:px-5 py-4 sm:py-5 text-white/90 backdrop-blur-sm
+      className="w-full md:flex-1 bg-black/25 rounded-xl px-3 sm:px-5 py-4 sm:py-5 text-white/90 backdrop-blur-sm
                 text-[13px] sm:text-base leading-6 sm:leading-7 relative group
-                max-h-[58vh] overflow-y-auto"
+                overflow-y-auto md:max-h-[58vh]"
     >
       <div>Motor Type : <b>{acMotorType||'-'}</b></div>
       <div>Frame size : <b>{frameSizeMap[acPower] || '—'}</b></div>
@@ -1631,14 +1631,10 @@ const gifForHead = (() => {
       <div>Weight : <b>— kg</b></div>
     </div>
 	{/* NEW: Gear preview image on the right side */}
-{/* ===== ADD: Mobile Gear preview + qty controls (show on phone) ===== */}
+{/* ===== ADD: Mobile Gear qty controls (show on phone, below spec) ===== */}
 {acGearHead && (() => {
-  const src = getGearPreviewUrl(acGearHead);
-  if (!src) return null;
   return (
-    <div className="md:hidden mt-4 flex flex-col items-center gap-3">
-
-      <div className="w-full flex flex-col gap-2">
+    <div className="md:hidden w-full mt-3 flex flex-col gap-2 bg-black/20 rounded-xl px-3 py-3">
         {/* Row 1 — Gear Head */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-white/90 select-none">Gear Head :</span>
@@ -1767,7 +1763,6 @@ const gifForHead = (() => {
     </div>
   </div>
 )}
-      </div>
     </div>
   );
 })()}
