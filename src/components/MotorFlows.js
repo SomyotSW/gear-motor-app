@@ -3,6 +3,8 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import FinalResult from './FinalResult';
 import ACImg from '../assets/ac/ac.png';
+import USImg from '../assets/ac/US.png';
+import UXImg from '../assets/ac/UX.png';
 import DCImg from '../assets/dc/dc.png';
 import BLDCImg from '../assets/bldc/bldc.png';
 import ServoImg from '../assets/servo/servo.png';
@@ -687,6 +689,7 @@ export default function ACMotorFlow({ acState, acSetters, onConfirm }) {
   const [qPhone, setQPhone]     = useState('');
   const [qEmail, setQEmail]     = useState('');
   const [ctrlModel, setCtrlModel] = useState("");
+  const [hoveredCtrl, setHoveredCtrl] = useState(null); // 'US' | 'UX' | null
   // ===== ADD: variable-speed + controller options (component scope) =====
   const motorTypeNorm = (acMotorType || "").trim().toLowerCase();
   const isVariable = motorTypeNorm === "variable speed motor" || motorTypeNorm.includes("variable");
@@ -898,69 +901,35 @@ function splitACModelCode(full) {
       // 4) รับไฟล์ PDF แล้วให้ผู้ใช้ดาวน์โหลดทันที
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-
-      // แปลงชื่อไฟล์จาก header (ใช้ทั้งใน email และ download)
-      const cd = res.headers.get('content-disposition') || '';
-      const cdMatch = cd.match(/filename\*?=(?:UTF-8''|")?([^\";]+)"?/i);
-      const pdfFilename = cdMatch ? decodeURIComponent(cdMatch[1]) : 'quotation.pdf';
-
-      // ส่ง EmailJS: ลูกค้า + admin (ใช้ service/template ที่กำหนดไว้ในไฟล์นี้)
       try {
-        // แปลง PDF blob เป็น base64 สำหรับแนบไฟล์
-        const pdfBase64 = await blobToBase64(blob);
-
-        const emailParams = {
-          requester_name: qName,
-          company:        qCompany,
-          phone:          qPhone,
-          email:          qEmail,
-          model_code:     chosenModel,
-          motor_code:     motorCode,
-          gear_code:      gearCode,
-          qty_motor:      String(qtyMotor),
-          qty_gear:       String(qtyGear),
-          qty_ctrl:       String(isVariable ? qtyCtrl : 0),
-          controller:     isVariable ? ctrlModel : '-',
-          sale_person:    salePerson || 'CA',
-          time:           new Date().toLocaleString('th-TH'),
-          pdf_content:    pdfBase64,
-          pdf_name:       pdfFilename,
-        };
-
-        // ใช้ emailjs ที่ import ไว้ในไฟล์นี้โดยตรง (ไม่พึ่ง window.__)
-        const ejs = window.emailjs || emailjs;
-
-        // 1) ส่งให้ลูกค้า
-        await ejs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          { ...emailParams, to_email: qEmail },
-          EMAILJS_PUBLIC_KEY
-        );
-
-        // 2) ส่งให้ admin คนที่ 1
-        await ejs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          { ...emailParams, to_email: 'Chottanin@synergy-as.com' },
-          EMAILJS_PUBLIC_KEY
-        );
-
-        // 3) ส่งให้ admin คนที่ 2
-        await ejs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          { ...emailParams, to_email: 'sas04@synergy-as.com' },
-          EMAILJS_PUBLIC_KEY
-        );
-
-      } catch (e) {
-        console.error('EmailJS send failed:', e);
-        // ไม่ block การดาวน์โหลด PDF
+  if (window.emailjs && window.__EMAILJS_SERVICE_ID && window.__EMAILJS_TEMPLATE_ID) {
+    // ถ้า App.jsx init ไว้แล้ว ไม่ต้อง init ซ้ำ
+    await window.emailjs.send(
+      window.__EMAILJS_SERVICE_ID,
+      window.__EMAILJS_TEMPLATE_ID,
+      {
+        requester_name: qName,
+        company: qCompany,
+        phone: qPhone,
+        email: qEmail,
+        model_code: chosenModel,
+        motor_code: motorCode,
+        gear_code: gearCode,
+        qty_motor: qtyMotor,
+        qty_gear: qtyGear,
       }
+    );
+  }
+} catch (e) {
+  console.error('EmailJS send failed:', e);
+}
+      const cd = res.headers.get('content-disposition') || '';
+      const match = cd.match(/filename\*?=(?:UTF-8''|")?([^\";]+)"?/i);
+      const filenameFromServer = match ? decodeURIComponent(match[1]) : '';
       const a = document.createElement('a');
+
       a.href = url;
-      a.download = pdfFilename;
+      a.download = filenameFromServer || 'quotation.pdf';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1755,7 +1724,11 @@ const gifForHead = (() => {
             key={m}
             type="button"
             onClick={() => setCtrlModel(m)}
-            className={`px-3 py-2 rounded-xl shadow outline-none border transition
+            onMouseEnter={() => setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null)}
+            onMouseLeave={() => setHoveredCtrl(null)}
+            onTouchStart={() => setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null)}
+            onTouchEnd={() => setTimeout(() => setHoveredCtrl(null), 2000)}
+            className={`relative px-3 py-2 rounded-xl shadow outline-none border transition
               ${ctrlModel === m
                 ? "bg-green-300 text-slate-900 border-green-400"
                 : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
@@ -1763,6 +1736,15 @@ const gifForHead = (() => {
             title={`เลือก ${m}`}
           >
             {m}
+            {hoveredCtrl && ((m.startsWith('US') && hoveredCtrl === 'US') || (m.startsWith('UX') && hoveredCtrl === 'UX')) && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[9999] pointer-events-none">
+                <img
+                  src={hoveredCtrl === 'US' ? USImg : UXImg}
+                  alt={hoveredCtrl}
+                  className="w-48 h-auto rounded-xl shadow-2xl border-2 border-white object-contain bg-white"
+                />
+              </div>
+            )}
           </button>
         ))}
       </div>
@@ -1909,7 +1891,11 @@ const gifForHead = (() => {
             key={m}
             type="button"
             onClick={() => setCtrlModel(m)}
-            className={`px-3 py-2 rounded-xl shadow outline-none border transition
+            onMouseEnter={() => setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null)}
+            onMouseLeave={() => setHoveredCtrl(null)}
+            onTouchStart={() => setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null)}
+            onTouchEnd={() => setTimeout(() => setHoveredCtrl(null), 2000)}
+            className={`relative px-3 py-2 rounded-xl shadow outline-none border transition
               ${ctrlModel === m
                 ? "bg-green-300 text-slate-900 border-green-400"
                 : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
@@ -1917,6 +1903,15 @@ const gifForHead = (() => {
             title={`เลือก ${m}`}
           >
             {m}
+            {hoveredCtrl && ((m.startsWith('US') && hoveredCtrl === 'US') || (m.startsWith('UX') && hoveredCtrl === 'UX')) && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[9999] pointer-events-none">
+                <img
+                  src={hoveredCtrl === 'US' ? USImg : UXImg}
+                  alt={hoveredCtrl}
+                  className="w-48 h-auto rounded-xl shadow-2xl border-2 border-white object-contain bg-white"
+                />
+              </div>
+            )}
           </button>
         ))}
       </div>

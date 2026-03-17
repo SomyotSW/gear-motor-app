@@ -474,8 +474,10 @@ def ac_quote():
         run_no = next_qmo_no()
         run_no_str = f"{run_no:03d}"  # 001,002,003...
 
-        # H3: QMO26-SAS-XXX ให้ตรงกับชื่อไฟล์ PDF
-        ws["H3"] = f"QMO26-SAS-{run_no_str}"
+        # H3: QMO26-{abbr}-XXX — ใช้ชื่อย่อ Sale Person แทน SAS ถ้าเลือก Sale
+        sp_abbr = sp.get("abbr", "").strip() if isinstance(sp, dict) else str(sp).strip()
+        brand_tag = sp_abbr if sp_abbr else "SAS"
+        ws["H3"] = f"QMO26-{brand_tag}-{run_no_str}"
 
         # A17: ชื่อย่อ Sale Person
         ws["A17"] = sp["abbr"]
@@ -505,7 +507,7 @@ def ac_quote():
             company_for_file = re.sub(r"\s+", "_", company_for_file)[:60] or "NO-COMPANY"
 
             date_str = datetime.now().strftime("%Y%m%d")  # วันที่
-            saved_name = f"QMO26-SAS-{run_no_str}-{company_for_file}-{date_str}.pdf"
+            saved_name = f"QMO26-{brand_tag}-{run_no_str}-{company_for_file}-{date_str}.pdf"
             saved_path = OUTPUT_DIR / saved_name
             shutil.copy2(pdf_temp, saved_path)
 
