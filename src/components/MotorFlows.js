@@ -1741,7 +1741,7 @@ const gifForHead = (() => {
                 <img
                   src={hoveredCtrl === 'US' ? USImg : UXImg}
                   alt={hoveredCtrl}
-                  className="w-48 h-auto rounded-xl shadow-2xl border-2 border-white object-contain bg-white"
+                  className="w-[700px] h-auto rounded-xl shadow-2xl border-2 border-white object-contain bg-black/30"
                 />
               </div>
             )}
@@ -1781,6 +1781,7 @@ const gifForHead = (() => {
 )}
     </div>
   );
+
 })()}
 
 {/* NEW: Desktop — image on top, qty controls below (no absolute positioning) */}
@@ -1908,7 +1909,7 @@ const gifForHead = (() => {
                 <img
                   src={hoveredCtrl === 'US' ? USImg : UXImg}
                   alt={hoveredCtrl}
-                  className="w-48 h-auto rounded-xl shadow-2xl border-2 border-white object-contain bg-white"
+                  className="w-[700px] h-auto rounded-xl shadow-2xl border-2 border-white object-contain bg-white"
                 />
               </div>
             )}
