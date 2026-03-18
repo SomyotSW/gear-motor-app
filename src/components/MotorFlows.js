@@ -669,6 +669,8 @@ const getGearGif = () => {
 // เพิ่มก่อน export default function ACMotorFlow
 const SALE_PERSONS = [
   { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER',  phone: '081-921-6225' },
+  { abbr: 'AP', name: 'Ms.Apichaya P. (AP)',   position: 'Sale Supervisor',                 phone: '098-3697494' },
+  { abbr: 'MY', name: 'Ms.Matavee Y. (MY)',   position: 'Sale Supervisor',                 phone: '092-2715371' },
   { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Exclusive',                phone: '080-4632394' },
   { abbr: 'WS',  name: 'Ms.Warissara S.(WS)',    position: 'Sale Exclusive',                phone: '065-5051798' },
   { abbr: 'SI',  name: 'Ms.Suphak I.(SI)',       position: 'Sale Exclusive',                phone: '096-0787776' },

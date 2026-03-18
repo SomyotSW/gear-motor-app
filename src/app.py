@@ -105,6 +105,16 @@ SALE_PERSONS = {
         'name': 'Mr. Chottanin A. (CA)',
         'position': 'TRANSMISSION PRODUCT MANAGER : 081-921-6225'
     },
+    'AP': {
+        'abbr': 'AP',
+        'name': 'Ms.Apichaya P. (AP)',
+        'position': 'Sale Supervisor 098-3697494'
+    },
+    'MY': {
+        'abbr': 'MY',
+        'name': 'Ms.Matavee Y. (MY)',
+        'position': 'Sale Supervisor 092-2715371'
+    },
     'TWS': {
         'abbr': 'TWS',
         'name': 'Ms.Thitikan W. (TWS)',
