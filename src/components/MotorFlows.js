@@ -901,35 +901,48 @@ function splitACModelCode(full) {
       // 4) รับไฟล์ PDF แล้วให้ผู้ใช้ดาวน์โหลดทันที
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      try {
-  if (window.emailjs && window.__EMAILJS_SERVICE_ID && window.__EMAILJS_TEMPLATE_ID) {
-    // ถ้า App.jsx init ไว้แล้ว ไม่ต้อง init ซ้ำ
-    await window.emailjs.send(
-      window.__EMAILJS_SERVICE_ID,
-      window.__EMAILJS_TEMPLATE_ID,
-      {
-        requester_name: qName,
-        company: qCompany,
-        phone: qPhone,
-        email: qEmail,
-        model_code: chosenModel,
-        motor_code: motorCode,
-        gear_code: gearCode,
-        qty_motor: qtyMotor,
-        qty_gear: qtyGear,
-      }
-    );
-  }
-} catch (e) {
-  console.error('EmailJS send failed:', e);
-}
+
+      // ดึงชื่อไฟล์จาก header
       const cd = res.headers.get('content-disposition') || '';
       const match = cd.match(/filename\*?=(?:UTF-8''|")?([^\";]+)"?/i);
-      const filenameFromServer = match ? decodeURIComponent(match[1]) : '';
-      const a = document.createElement('a');
+      const filenameFromServer = match ? decodeURIComponent(match[1]) : 'quotation.pdf';
 
+      // ส่ง EmailJS: ลูกค้า + admin (ใช้ service/template ที่กำหนดไว้ในไฟล์นี้)
+      try {
+        const pdfBase64 = await blobToBase64(blob);
+        const emailParams = {
+          to_email:       qEmail,
+          requester_name: qName,
+          company:        qCompany,
+          phone:          qPhone,
+          email:          qEmail,
+          model_code:     chosenModel,
+          motor_code:     motorCode,
+          gear_code:      gearCode,
+          qty_motor:      String(qtyMotor),
+          qty_gear:       String(qtyGear),
+          qty_ctrl:       String(isVariable ? qtyCtrl : 0),
+          controller:     isVariable ? ctrlModel : '-',
+          sale_person:    salePerson || 'CA',
+          time:           new Date().toLocaleString('th-TH'),
+          pdf_content:    pdfBase64,
+          pdf_name:       filenameFromServer,
+        };
+        const ejs = emailjs;
+        // 1) ส่งให้ลูกค้า
+        await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: qEmail }, EMAILJS_PUBLIC_KEY);
+        // 2) ส่งให้ admin คนที่ 1
+        await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: 'Chottanin@synergy-as.com' }, EMAILJS_PUBLIC_KEY);
+        // 3) ส่งให้ admin คนที่ 2
+        await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: 'sas04@synergy-as.com' }, EMAILJS_PUBLIC_KEY);
+      } catch (e) {
+        console.error('EmailJS send failed:', e);
+        // ไม่ block การดาวน์โหลด PDF
+      }
+
+      const a = document.createElement('a');
       a.href = url;
-      a.download = filenameFromServer || 'quotation.pdf';
+      a.download = filenameFromServer;
       document.body.appendChild(a);
       a.click();
       a.remove();
