@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode, renderSRVFlow } from './components/MotorFlows.js';
+import { renderIECMotorFlow } from './components/IECMotorFlow.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 // ✅ ADD: EmailJS IDs (ใช้ค่าเดิมจาก ENV ถ้ามี / ไม่ทำให้แอปล้ม)
@@ -632,6 +633,38 @@ const [hbQty, setHbQty]     = useState(1);
 const hbState = { hbSeries, hbHBType, hbStage, hbOutput, hbMount, hbSize, hbRatio, hbShaftDesign, hbZdySelected, hbPreviewShaft, hbRatioDraft,
 hbKW, 	hbPole,  hbColor, hbQty, };
 const hbSetters = { setHbSeries, setHbHBType, setHbStage, setHbOutput, setHbMount, setHbSize, setHbRatio, setHbShaftDesign, setHbZdySelected, setHbPreviewShaft, setHbRatioDraft, setHbKW, setHbPole, setHbColor, setHbQty, };
+
+// ส่วนที่ 2  —  เพิ่ม useState สำหรับ IEC (วางในกลุ่ม useState เดิม)
+// ──────────────────────────────────────────────────────────────────────
+const [iecMotorType, setIecMotorType] = useState(null);
+const [iecPower,     setIecPower]     = useState(null);
+const [iecPole,      setIecPole]      = useState(null);
+const [iecMount,     setIecMount]     = useState(null);
+const [iecTerminal,  setIecTerminal]  = useState(null);
+const [iecCable,     setIecCable]     = useState(null);
+
+// state object ส่งเข้า renderIECMotorFlow
+const iecState = { iecMotorType, iecPower, iecPole, iecMount, iecTerminal, iecCable };
+
+// setters object ส่งเข้า renderIECMotorFlow
+const iecSetters = {
+  setIecMotorType,
+  setIecPower,
+  setIecPole,
+  setIecMount,
+  setIecTerminal,
+  setIecCable,
+};
+
+// reset ทั้ง flow
+const resetIEC = () => {
+  setIecMotorType(null);
+  setIecPower(null);
+  setIecPole(null);
+  setIecMount(null);
+  setIecTerminal(null);
+  setIecCable(null);
+};
 
 const COMING_SOON = new Set([
   'DC Gear Motor',
@@ -1766,6 +1799,48 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
         </button>
       </div>
     </div>
+  </>
+)}
+
+{selectedProduct === 'IEC STANDARD MOTOR' && (
+  <>
+    {/* Header + Home */}
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-blue-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+        IEC Standard Motor Selection
+      </h2>
+      <button
+        type="button"
+        className="inline-flex items-center justify-center w-9 h-9 rounded-full
+                   bg-white/10 text-white border border-white/20
+                   hover:bg-blue-500/30 active:scale-95 transition-all"
+        onClick={() => { resetIEC(); setSelectedProduct(null); }}
+        title="Home"
+        aria-label="Home"
+      >
+        <span className="text-xl leading-none -translate-y-[2px]">⌂</span>
+      </button>
+    </div>
+
+    {/* ─── Flow ─── */}
+    {renderIECMotorFlow(
+      iecState,
+      iecSetters,
+      (modelCode, action) => {
+        // action = 'quote' | '3d'
+        setSelectedModel(modelCode);
+        setModelCodeList([modelCode]);
+
+        if (action === 'quote') {
+          // เปิด modal quote เดิม (ถ้าต้องการ) หรือ alert
+          alert(`ขอใบเสนอราคา: ${modelCode}\n(กรุณาติดต่อทีม SAS)`);
+        } else if (action === '3d') {
+          // เปิดฟอร์มดาวน์โหลด 3D Step file
+          setShowForm(true);
+        }
+      },
+      () => { resetIEC(); setSelectedProduct(null); }
+    )}
   </>
 )}
 

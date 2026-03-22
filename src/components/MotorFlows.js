@@ -19,6 +19,9 @@ import SMRImg from '../assets/smr/smr.png';
 import SRVImg from '../assets/srv/srv.png';
 import SMALLACImg from '../assets/smallac/smallac.png';
 import DriverImg from '../assets/driver/driver.png';
+import BMKImg from '../assets/bmk/bmk.png';
+import IECImg from '../assets/iec/iec.png';
+import WPImg from '../assets/wp/wp.png';
 
 const CONTROLLER_MAP = {
   "10W": ["US206C", "UX52-10"],
@@ -552,7 +555,10 @@ export const productList = [
   { name: 'SRV Worm Gear', image: SRVImg },
   { name: 'SMR Series', image: SMRImg },
   { name: 'Small AC Series', image: SMALLACImg },
-  { name: 'Servo Driver and Speed Controller', image: DriverImg }
+  { name: 'IEC STANDARD MOTOR', image: IECImg },
+  { name: 'BMK SERIES', image: BMKImg },
+  { name: 'WP WORMGEAR REDUCER', image: WPImg },
+  { name: 'Servo Driver and Speed Controller', image: DriverImg },
 ];
 
 export function generateModelCode({ acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio , acConfirm }) {
