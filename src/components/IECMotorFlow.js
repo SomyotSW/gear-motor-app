@@ -48,12 +48,8 @@ function getIECFrame(kw, pole) {
 
   // ───── 2 Pole ─────
   if (pol === 2) {
-    if (p <= 0.18) return 'YE3-631-2';
-    if (p <= 0.25) return 'YE3-632-2';
-    if (p <= 0.37) return 'YE3-711-2';
-    if (p <= 0.55) return 'YE3-712-2';
-    if (p <= 0.75) return 'YE3-801-2';
-    if (p <= 1.1)  return 'YE3-802-2';
+    if (p <= 0.75) return 'YE3-80M1-2';
+    if (p <= 1.1)  return 'YE3-80M2-2';
     if (p <= 1.5)  return 'YE3-90S-2';
     if (p <= 2.2)  return 'YE3-90L-2';
     if (p <= 3)    return 'YE3-100L-2';
@@ -77,12 +73,11 @@ function getIECFrame(kw, pole) {
   }
   // ───── 4 Pole ─────
   if (pol === 4) {
-    if (p <= 0.12) return 'YE3-631-4';
-    if (p <= 0.18) return 'YE3-632-4';
-    if (p <= 0.25) return 'YE3-711-4';
-    if (p <= 0.37) return 'YE3-712-4';
-    if (p <= 0.55) return 'YE3-801-4';
-    if (p <= 0.75) return 'YE3-802-4';
+    if (p <= 0.18) return 'YE3-71M10-4';
+    if (p <= 0.25) return 'YE3-71M11-4';
+    if (p <= 0.37) return 'YE3-71M22-4';
+    if (p <= 0.55) return 'YE3-80M1-4-4';
+    if (p <= 0.75) return 'YE3-80M2-4';
     if (p <= 1.1)  return 'YE3-90S-4';
     if (p <= 1.5)  return 'YE3-90L-4';
     if (p <= 2.2)  return 'YE3-100L1-4';
@@ -109,10 +104,7 @@ function getIECFrame(kw, pole) {
   }
   // ───── 6 Pole ─────
   if (pol === 6) {
-    if (p <= 0.18) return 'YE3-711-6';
-    if (p <= 0.25) return 'YE3-712-6';
-    if (p <= 0.37) return 'YE3-801-6';
-    if (p <= 0.55) return 'YE3-802-6';
+    if (p <= 0.55) return 'YE3-80M2-6';
     if (p <= 0.75) return 'YE3-90S-6';
     if (p <= 1.1)  return 'YE3-90L-6';
     if (p <= 1.5)  return 'YE3-100L-6';
@@ -187,8 +179,8 @@ const YE3_DB = {
   'YE3-632-2':   { kw:0.25, hp:0.34, speed:2735, eff:69.7, pf:0.81, i380:0.7,   i400:0.64,  i415:0.62,  torque:0.87,  weight:4.5  },
   'YE3-711-2':   { kw:0.37, hp:0.5,  speed:2760, eff:73.8, pf:0.81, i380:0.9,   i400:0.89,  i415:0.86,  torque:1.28,  weight:6.5  },
   'YE3-712-2':   { kw:0.55, hp:0.75, speed:2760, eff:77.8, pf:0.82, i380:1.3,   i400:1.24,  i415:1.20,  torque:1.90,  weight:7.5  },
-  'YE3-801-2':   { kw:0.75, hp:1,    speed:2880, eff:80.7, pf:0.82, i380:1.7,   i400:1.6,   i415:1.6,   torque:2.49,  weight:18.1 },
-  'YE3-802-2':   { kw:1.1,  hp:1.5,  speed:2880, eff:82.7, pf:0.83, i380:2.4,   i400:2.3,   i415:2.2,   torque:3.65,  weight:19.5 },
+  'YE3-80M1-2':   { kw:0.75, hp:1,    speed:2880, eff:80.7, pf:0.82, i380:1.7,   i400:1.6,   i415:1.6,   torque:2.49,  weight:18.1 },
+  'YE3-80M2-2':   { kw:1.1,  hp:1.5,  speed:2880, eff:82.7, pf:0.83, i380:2.4,   i400:2.3,   i415:2.2,   torque:3.65,  weight:19.5 },
   'YE3-90S-2':   { kw:1.5,  hp:2,    speed:2895, eff:84.2, pf:0.84, i380:3.2,   i400:3.1,   i415:3.0,   torque:4.95,  weight:23.3 },
   'YE3-90L-2':   { kw:2.2,  hp:3,    speed:2895, eff:85.9, pf:0.85, i380:4.6,   i400:4.3,   i415:4.2,   torque:7.26,  weight:27.1 },
   'YE3-100L-2':  { kw:3,    hp:4,    speed:2895, eff:87.1, pf:0.87, i380:6.0,   i400:5.7,   i415:5.5,   torque:9.9,   weight:38.8 },
@@ -211,11 +203,11 @@ const YE3_DB = {
   'YE3-315L2-2': { kw:200,  hp:270,  speed:2980, eff:95.8, pf:0.91, i380:348.6, i400:331.1, i415:319.2, torque:640.9, weight:1194 },
   // ── 4 Pole ──────────────────────────────────────────────────────────────────
   'YE3-631-4':   { kw:0.12, hp:0.16, speed:1330, eff:64.8, pf:0.72, i380:0.4,   i400:0.37,  i415:0.36,  torque:0.86,  weight:4.0  },
-  'YE3-632-4':   { kw:0.18, hp:0.24, speed:1330, eff:69.9, pf:0.73, i380:0.5,   i400:0.51,  i415:0.49,  torque:1.29,  weight:4.5  },
-  'YE3-711-4':   { kw:0.25, hp:0.34, speed:1350, eff:73.5, pf:0.74, i380:0.7,   i400:0.66,  i415:0.64,  torque:1.77,  weight:6.5  },
-  'YE3-712-4':   { kw:0.37, hp:0.5,  speed:1350, eff:77.3, pf:0.75, i380:1.0,   i400:0.92,  i415:0.89,  torque:2.62,  weight:7.5  },
-  'YE3-801-4':   { kw:0.55, hp:0.75, speed:1400, eff:80.8, pf:0.75, i380:1.4,   i400:1.3,   i415:1.3,   torque:3.75,  weight:17.6 },
-  'YE3-802-4':   { kw:0.75, hp:1,    speed:1420, eff:82.5, pf:0.75, i380:1.8,   i400:1.7,   i415:1.7,   torque:5.04,  weight:18.4 },
+  'YE3-71M10-4':   { kw:0.18, hp:0.24, speed:1330, eff:69.9, pf:0.73, i380:0.5,   i400:0.51,  i415:0.49,  torque:1.29,  weight:4.5  },
+  'YE3-71M11-4':   { kw:0.25, hp:0.34, speed:1350, eff:73.5, pf:0.74, i380:0.7,   i400:0.66,  i415:0.64,  torque:1.77,  weight:6.5  },
+  'YE3-71M22-4':   { kw:0.37, hp:0.5,  speed:1350, eff:77.3, pf:0.75, i380:1.0,   i400:0.92,  i415:0.89,  torque:2.62,  weight:7.5  },
+  'YE3-80M1-4':   { kw:0.55, hp:0.75, speed:1400, eff:80.8, pf:0.75, i380:1.4,   i400:1.3,   i415:1.3,   torque:3.75,  weight:17.6 },
+  'YE3-80M2-4':   { kw:0.75, hp:1,    speed:1420, eff:82.5, pf:0.75, i380:1.8,   i400:1.7,   i415:1.7,   torque:5.04,  weight:18.4 },
   'YE3-90S-4':   { kw:1.1,  hp:1.5,  speed:1445, eff:84.1, pf:0.76, i380:2.6,   i400:2.5,   i415:2.4,   torque:7.27,  weight:24.2 },
   'YE3-90L-4':   { kw:1.5,  hp:2,    speed:1445, eff:85.3, pf:0.77, i380:3.5,   i400:3.3,   i415:3.2,   torque:9.91,  weight:29.7 },
   'YE3-100L1-4': { kw:2.2,  hp:3,    speed:1435, eff:86.7, pf:0.81, i380:4.8,   i400:4.5,   i415:4.4,   torque:14.6,  weight:41.5 },
@@ -243,7 +235,7 @@ const YE3_DB = {
   'YE3-711-6':   { kw:0.18, hp:0.24, speed:860,  eff:63.9, pf:0.66, i380:0.6,   i400:0.62,  i415:0.59,  torque:2.00,  weight:6.0  },
   'YE3-712-6':   { kw:0.25, hp:0.34, speed:860,  eff:68.6, pf:0.68, i380:0.8,   i400:0.77,  i415:0.75,  torque:2.78,  weight:7.5  },
   'YE3-801-6':   { kw:0.37, hp:0.5,  speed:890,  eff:62.0, pf:0.70, i380:1.3,   i400:1.2,   i415:1.2,   torque:3.97,  weight:15.2 },
-  'YE3-802-6':   { kw:0.55, hp:0.75, speed:890,  eff:73.6, pf:0.72, i380:1.6,   i400:1.5,   i415:1.4,   torque:5.9,   weight:16.6 },
+  'YE3-80M2-6':   { kw:0.55, hp:0.75, speed:890,  eff:73.6, pf:0.72, i380:1.6,   i400:1.5,   i415:1.4,   torque:5.9,   weight:16.6 },
   'YE3-90S-6':   { kw:0.75, hp:1,    speed:935,  eff:78.9, pf:0.72, i380:2.0,   i400:1.9,   i415:1.8,   torque:7.66,  weight:24.1 },
   'YE3-90L-6':   { kw:1.1,  hp:1.5,  speed:945,  eff:81.0, pf:0.73, i380:2.8,   i400:2.7,   i415:2.6,   torque:11.1,  weight:25.7 },
   'YE3-100L-6':  { kw:1.5,  hp:2,    speed:949,  eff:82.5, pf:0.74, i380:3.7,   i400:3.5,   i415:3.4,   torque:15.1,  weight:34.9 },
@@ -471,7 +463,7 @@ const IEC_MOTOR_TYPES = [
   { code:'YE4',   label:'YE4',   sub:'Super Premium Efficiency IE4',   img:YE4Img   },
   { code:'YEJ',   label:'YEJ',   sub:'Electromagnetic Brake Motor',    img:YEJImg   },
   { code:'YVP',   label:'YVP',   sub:'Variable Frequency Motor',       img:YVPImg   },
-  { code:'YVPEJ', label:'YVPEJ', sub:'Variable Frequency Brake Motor', img:YVPEJImg },
+  { code:'YPEJ', label:'YPEJ', sub:'Variable Frequency Brake Motor', img:YVPEJImg },
   { code:'YB',    label:'YB',    sub:'Explosion-proof Motor',           img:YBImg    },
 ];
 
@@ -534,7 +526,7 @@ const ImgCard = ({ img, label, sub, active, onClick }) => (
     className={`relative flex flex-col items-center rounded-2xl overflow-hidden shadow transition cursor-pointer border-2 w-full
       ${active ? 'border-blue-500 shadow-blue-400/40' : 'border-transparent bg-white/90'}`}>
     <img src={img} alt={label} className="w-full object-contain"
-      style={{ maxHeight:100, background:'#fff', padding:6 }} />
+      style={{ maxHeight:400, background:'#fff', padding:6 }} />
     <div className={`w-full text-center py-2 px-1 ${active ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'}`}>
       <p className="font-bold text-xs">{label}</p>
       {sub && <p className="text-[9px] opacity-70 leading-tight mt-0.5">{sub}</p>}
@@ -701,15 +693,17 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
     startY: tableStartY,
     head: [],
     body: [
-      ['Motor Type',     iecMotorType + ' - ' + (motorInfo?.sub || '-')],
-      ['Frame Size',     fl],
-      ['Power',          iecPower + ' kW  (' + (parseFloat(iecPower) * 1.341).toFixed(2) + ' HP)'],
-      ['Pole',           (poleInfo?.label||'-') + '  (' + (poleInfo?.rpm||'-') + ')'],
-      ['Mounting',       (mountInfo?.label||'-') + ' - ' + (mountInfo?.desc||'-')],
-      ['Terminal Box',   iecTerminal + ' deg'],
-      ['Cable Position', iecCable],
+      ['Motor Type',           iecMotorType + ' - ' + (motorInfo?.sub || '-')],
+      ['Frame Size',           fl],
+      ['Power',                iecPower + ' kW  (' + (parseFloat(iecPower) * 1.341).toFixed(2) + ' HP)'],
+      ['Pole',                 (poleInfo?.label||'-') + '  (' + (poleInfo?.rpm||'-') + ')'],
+      ['Mounting',             (mountInfo?.label||'-') + ' - ' + (mountInfo?.desc||'-')],
+      ['Terminal Box',         iecTerminal + ' deg'],
+      ['Cable Position',       iecCable],
+      ['Direction of Rotation','CW / CCW'],
+      ['Casing Material',      'Iron'],
     ],
-    margin: { left: margin, right: margin + 58 },  // ← เว้นขวา 58mm สำหรับรูป
+    margin: { left: margin, right: margin + 58 },
     styles: { fontSize: 9, cellPadding: 2.5 },
     columnStyles: {
       0: { fontStyle:'bold', fillColor:LGRAY, textColor:NAVY, cellWidth:46 },
@@ -763,14 +757,22 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
 
   y = Math.max(doc.lastAutoTable.finalY, imgY + imgH + 14) + 4;
 
-  // ── Technical Specifications ───────────────────────────────────────────────
+  // ── Technical Specifications (ซ้าย) + Connection Diagram (ขวา) side-by-side ─
+  const techSpecsStartY = y;
+  const techColW = (W - margin*2) * 0.55;   // 55% ซ้าย
+  const diagColX = margin + techColW + 4;    // เริ่ม column ขวา
+  const diagColW = (W - margin*2) * 0.45 - 4; // 45% ขวา
+
+  // Section header ข้าม full width
   sectionTitle('TECHNICAL SPECIFICATIONS');
+  const techBodyY = y;
+
   doc.autoTable({
-    startY: y, head: [],
+    startY: techBodyY, head: [],
     body: [
       ['Standard',        'IEC 60034 / GB18613'],
       ['Power Supply',    '3 Phase 380V, 50Hz'],
-      ['Protection',      'IP54 / IP55'],
+      ['Protection',      'IP55'],
       ['Insulation',      'Class F (105K), examined by Class B'],
       ['Cooling',         'TEFC  IC411 (IEC60034-6), Plastic Fan'],
       ['Winding',         '100% Copper Wire'],
@@ -780,104 +782,111 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
       ['Voltage Range',   '200-660V, 50/60Hz (+/-5% nominal)'],
       ['Quality',         'ISO 9001 Documented System'],
     ],
-    margin: { left:margin, right:margin },
-    styles: { fontSize:9, cellPadding:2.5 },
-    columnStyles: { 0:{ fontStyle:'bold', fillColor:LGRAY, textColor:NAVY, cellWidth:52 }, 1:{ textColor:[20,20,20] } },
+    margin: { left:margin, right: margin + diagColW + 6 },
+    styles: { fontSize:8.5, cellPadding:2.2 },
+    columnStyles: { 0:{ fontStyle:'bold', fillColor:LGRAY, textColor:NAVY, cellWidth:38 }, 1:{ textColor:[20,20,20] } },
     theme: 'plain',
   });
-  y = doc.lastAutoTable.finalY + 6;
+  const techFinalY = doc.lastAutoTable.finalY;
 
-  // ── Connection Diagrams ────────────────────────────────────────────────────
-  sectionTitle('CONNECTION DIAGRAMS  (Three Phase Motor)');
-
-  // วาด diagram แบบ vector ใน jsPDF
+  // วาด Connection Diagram ในกรอบขวา
   const drawConnectionDiagram = (startX, startY, isStar) => {
-    const bw = 62; const bh = 46;
-    const nc = isStar ? '#1e3a8a' : '#0d5c2e';
+    const bw = diagColW - 2;
+    const bh = 46;
     const [nr, ng, nb] = isStar ? [30,58,138] : [13,92,46];
-    const terminals = [[startX+8, startY+10], [startX+31, startY+10], [startX+54, startY+10]];
+    const cx = startX + bw/2;
+    const pad = bw * 0.12;
+    const terminals = [
+      [startX + pad,       startY+10],
+      [startX + bw/2,      startY+10],
+      [startX + bw - pad,  startY+10],
+    ];
     const labels_top = ['W2','U2','V2'];
-    const bot = [[startX+8, startY+36], [startX+31, startY+36], [startX+54, startY+36]];
+    const bot = [
+      [startX + pad,       startY+36],
+      [startX + bw/2,      startY+36],
+      [startX + bw - pad,  startY+36],
+    ];
     const labels_bot = ['U1','V1','W1'];
 
-    // box bg
     doc.setFillColor(isStar ? 250 : 245, isStar ? 252 : 255, isStar ? 255 : 250);
     doc.roundedRect(startX, startY - 2, bw, bh, 2, 2, 'F');
     doc.setDrawColor(nr, ng, nb); doc.setLineWidth(0.3);
     doc.roundedRect(startX, startY - 2, bw, bh, 2, 2, 'S');
 
-    // title
-    doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.setFontSize(7); doc.setFont('helvetica','bold');
     doc.setTextColor(nr, ng, nb);
-    doc.text(isStar ? 'Y  Star Connection' : '\u25B3  Delta Connection', startX + bw/2, startY + 4, { align:'center' });
+    doc.text(isStar ? 'Y  Star Connection' : 'Delta Connection', cx, startY + 4, { align:'center' });
 
-    // top terminals
     terminals.forEach(([tx, ty], i) => {
       doc.setFillColor(255,255,255); doc.setDrawColor(nr, ng, nb); doc.setLineWidth(0.8);
-      doc.ellipse(tx, ty, 4.5, 2.8, 'FD');
-      doc.setFontSize(5.5); doc.setFont('helvetica','bold'); doc.setTextColor(nr, ng, nb);
-      doc.text(labels_top[i], tx, ty+1.2, { align:'center' });
+      doc.ellipse(tx, ty, 4.2, 2.6, 'FD');
+      doc.setFontSize(5); doc.setFont('helvetica','bold'); doc.setTextColor(nr, ng, nb);
+      doc.text(labels_top[i], tx, ty+1.1, { align:'center' });
     });
-    // connecting bar (Star only)
     if (isStar) {
       doc.setDrawColor(nr, ng, nb); doc.setLineWidth(2);
       doc.line(terminals[0][0], terminals[0][1], terminals[2][0], terminals[2][1]);
     }
-    // vertical lines
     terminals.forEach(([tx, ty], i) => {
       doc.setDrawColor(nr, ng, nb); doc.setLineWidth(0.8);
-      doc.line(tx, ty + 2.8, bot[i][0], bot[i][1] - 2.8);
+      doc.line(tx, ty + 2.6, bot[i][0], bot[i][1] - 2.6);
     });
-    // bottom terminals
     bot.forEach(([tx, ty], i) => {
       doc.setFillColor(255,255,255); doc.setDrawColor(nr, ng, nb); doc.setLineWidth(0.8);
-      doc.ellipse(tx, ty, 4.5, 2.8, 'FD');
-      doc.setFontSize(5.5); doc.setFont('helvetica','bold'); doc.setTextColor(nr, ng, nb);
-      doc.text(labels_bot[i], tx, ty+1.2, { align:'center' });
+      doc.ellipse(tx, ty, 4.2, 2.6, 'FD');
+      doc.setFontSize(5); doc.setFont('helvetica','bold'); doc.setTextColor(nr, ng, nb);
+      doc.text(labels_bot[i], tx, ty+1.1, { align:'center' });
     });
-    // sub-label
-    doc.setFontSize(6); doc.setFont('helvetica','normal');
+    doc.setFontSize(5.5); doc.setFont('helvetica','normal');
     doc.setTextColor(100,100,100);
-    doc.text(isStar ? '<= 3 kW' : '>= 4 kW', startX + bw/2, startY + bh - 6, { align:'center' });
+    doc.text(isStar ? '<= 3 kW' : '>= 4 kW', cx, startY + bh - 6, { align:'center' });
 
-    // "SELECTED" badge
     if ((isStar && isStarConnection) || (!isStar && !isStarConnection)) {
       doc.setFillColor(255, 200, 0);
-      doc.roundedRect(startX + bw - 18, startY - 2, 18, 7, 1.5, 1.5, 'F');
-      doc.setFontSize(5.5); doc.setFont('helvetica','bold'); doc.setTextColor(80, 50, 0);
-      doc.text('SELECTED', startX + bw - 9, startY + 3, { align:'center' });
+      doc.roundedRect(startX + bw - 16, startY - 2, 16, 6, 1.5, 1.5, 'F');
+      doc.setFontSize(5); doc.setFont('helvetica','bold'); doc.setTextColor(80, 50, 0);
+      doc.text('SELECTED', startX + bw - 8, startY + 2.5, { align:'center' });
     }
   };
 
-  const diagW = (W - margin*2 - 6) / 2;
-  drawConnectionDiagram(margin,           y, true);
-  drawConnectionDiagram(margin + diagW + 6, y, false);
-  y += 48;
+  // header กรอบขวา "CONNECTION DIAGRAMS"
+  doc.setFillColor(...BLUE);
+  doc.rect(diagColX, techBodyY, diagColW, 7, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+  doc.text('CONNECTION DIAGRAMS', diagColX + diagColW/2, techBodyY + 5, { align:'center' });
 
-  // ── Rated Performance Data ─────────────────────────────────────────────────
-  if (spec) {
-    sectionTitle('RATED PERFORMANCE DATA');
-    const perfRows = [['Rated Speed', spec.speed + ' rpm']];
-    if (spec.eff)    perfRows.push(['Efficiency (100%)',    spec.eff  + ' %']);
-    if (spec.pf)     perfRows.push(['Power Factor (cos p)', String(spec.pf)]);
-    if (spec.i380)   perfRows.push(['Rated Current 380V',   spec.i380 + ' A']);
-    if (spec.i400)   perfRows.push(['Rated Current 400V',   spec.i400 + ' A']);
-    if (spec.i415)   perfRows.push(['Rated Current 415V',   spec.i415 + ' A']);
-    perfRows.push(['Rated Torque', spec.torque + ' N.m']);
-    if (spec.weight) perfRows.push(['Weight',               spec.weight + ' kg']);
+  // วาด diagram 2 อัน ซ้อนกันในคอลัมน์ขวา
+  const dStartY = techBodyY + 10;
+  drawConnectionDiagram(diagColX + 1, dStartY, true);
+  drawConnectionDiagram(diagColX + 1, dStartY + 52, false);
 
-    doc.autoTable({
-      startY: y, head:[['Parameter','Value']],
-      body: perfRows,
-      margin: { left:margin, right:margin },
-      styles: { fontSize:9, cellPadding:2.5 },
-      headStyles: { fillColor:BLUE, textColor:255, fontStyle:'bold', fontSize:8.5 },
-      columnStyles: { 0:{ fontStyle:'bold', fillColor:LGRAY, textColor:NAVY, cellWidth:52 }, 1:{ textColor:[20,20,20], fontStyle:'bold' } },
-      theme: 'striped',
-      alternateRowStyles: { fillColor:[250,250,255] },
-    });
-    y = doc.lastAutoTable.finalY + 6;
-  }
+  y = Math.max(techFinalY, dStartY + 52 + 48) + 6;
+
+  // ── Rated Performance Data — แสดงตารางเสมอ ถ้าไม่มีข้อมูลใส่ "-" ─────────
+  sectionTitle('RATED PERFORMANCE DATA');
+  const perfRows = [
+    ['Rated Speed',          spec?.speed  ? spec.speed  + ' rpm' : '-'],
+    ['Efficiency (100%)',    spec?.eff    ? spec.eff    + ' %'   : '-'],
+    ['Power Factor (cos p)', spec?.pf     ? String(spec.pf)      : '-'],
+    ['Rated Current 380V',   spec?.i380   ? spec.i380   + ' A'   : '-'],
+    ['Rated Current 400V',   spec?.i400   ? spec.i400   + ' A'   : '-'],
+    ['Rated Current 415V',   spec?.i415   ? spec.i415   + ' A'   : '-'],
+    ['Rated Torque',         spec?.torque ? spec.torque + ' N.m' : '-'],
+    ['Weight',               spec?.weight ? spec.weight + ' kg'  : '-'],
+  ];
+  doc.autoTable({
+    startY: y, head:[['Parameter','Value']],
+    body: perfRows,
+    margin: { left:margin, right:margin },
+    styles: { fontSize:9, cellPadding:2.5 },
+    headStyles: { fillColor:BLUE, textColor:255, fontStyle:'bold', fontSize:8.5 },
+    columnStyles: { 0:{ fontStyle:'bold', fillColor:LGRAY, textColor:NAVY, cellWidth:52 }, 1:{ textColor:[20,20,20], fontStyle:'bold' } },
+    theme: 'striped',
+    alternateRowStyles: { fillColor:[250,250,255] },
+  });
+  y = doc.lastAutoTable.finalY + 6;
 
   // ── Warranty Bar ───────────────────────────────────────────────────────────
   doc.setFillColor(255, 245, 205);
@@ -891,7 +900,7 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
   doc.rect(0, pageH - 12, W, 12, 'F');
   doc.setTextColor(180, 200, 255);
   doc.setFontSize(7.5); doc.setFont('helvetica','normal');
-  doc.text('Synergy Asia Solution Co., Ltd.  |  www.synergy-as.com  |  ฝ่ายขาย: 080-7780778 ', W / 2, pageH - 4.5, { align:'center' });
+  doc.text('Synergy Asia Solution Co., Ltd.  |  www.synergy-as.com  |  Sales : 080-7780778 ', W / 2, pageH - 4.5, { align:'center' });
 
   doc.save(modelCode + '.pdf');
 }
@@ -935,7 +944,7 @@ export function renderIECMotorFlow(state, setState, onConfirm, onHome) {
             {IEC_CABLE_LIST.map(({ code, label, img }) => (
               <button key={code} type="button" onClick={() => update('iecCable', code)}
                 className="rounded-2xl shadow overflow-hidden bg-white active:scale-95 transition border-2 border-transparent hover:border-blue-400">
-                <img src={img} alt={`C${code}`} className="w-full object-contain" style={{ maxHeight:100 }} />
+                <img src={img} alt={`C${code}`} className="w-full object-contain" style={{ maxHeight:220 }} />
                 <p className="text-center py-2 font-bold text-gray-800 text-sm">{label}</p>
               </button>
             ))}
@@ -955,7 +964,7 @@ export function renderIECMotorFlow(state, setState, onConfirm, onHome) {
             {IEC_TERMINAL_LIST.map(({ code, label, img }) => (
               <button key={code} type="button" onClick={() => update('iecTerminal', code)}
                 className="rounded-2xl shadow overflow-hidden bg-white active:scale-95 transition border-2 border-transparent hover:border-blue-400">
-                <img src={img} alt={`T${code}`} className="w-full object-contain" style={{ maxHeight:100 }} />
+                <img src={img} alt={`T${code}`} className="w-full object-contain" style={{ maxHeight:200 }} />
                 <p className="text-center py-2 font-bold text-gray-800 text-sm">{label}</p>
               </button>
             ))}
@@ -1051,19 +1060,19 @@ function MountStep({ iecMount, update }) {
       </h3>
 
       {/* Preview image area — compact for mobile */}
-      <div className="mb-3 flex justify-center" style={{ minHeight: 130 }}>
+      <div className="mb-3 flex justify-center" style={{ minHeight: 330 }}>
         {preview ? (
           <motion.div
             key={preview.code}
-            initial={{ opacity:0, scale:0.88 }}
+            initial={{ opacity:1, scale:0.88 }}
             animate={{ opacity:1, scale:1 }}
             exit={{ opacity:0 }}
-            transition={{ duration:0.18 }}
-            className="bg-white rounded-2xl shadow-xl px-4 py-3 flex flex-col items-center"
-            style={{ maxWidth: 200 }}
+            transition={{ duration:0.58 }}
+            className="bg-blur rounded-2xl shadow-xl px-4 py-3 flex flex-col items-center"
+            style={{ maxWidth: 400 }}
           >
-            <img src={preview.img} alt={preview.label} className="object-contain" style={{ maxHeight:100, maxWidth:180 }} />
-            <p className="mt-1 font-bold text-gray-800 text-sm">{preview.label}</p>
+            <img src={preview.img} alt={preview.label} className="object-contain" style={{ maxHeight:300, maxWidth:380 }} />
+            <p className="mt-1 font-bold text-yellow-400 text-sm">{preview.label}</p>
             <p className="text-gray-500 text-xs">{preview.desc}</p>
           </motion.div>
         ) : (
@@ -1139,6 +1148,111 @@ const MOTOR_COLORS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SALE PERSONS (shared with AC Motor flow)
+// ─────────────────────────────────────────────────────────────────────────────
+const IEC_SALE_PERSONS = [
+  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER', phone: '081-921-6225' },
+  { abbr: 'AP',  name: 'Ms.Apichaya P. (AP)',    position: 'Sale Supervisor',               phone: '098-3697494' },
+  { abbr: 'MY',  name: 'Ms.Matavee Y. (MY)',     position: 'Sale Supervisor',               phone: '092-2715371' },
+  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Exclusive',                phone: '080-4632394' },
+  { abbr: 'WS',  name: 'Ms.Warissara S.(WS)',    position: 'Sale Exclusive',                phone: '065-5051798' },
+  { abbr: 'SI',  name: 'Ms.Suphak I.(SI)',       position: 'Sale Exclusive',                phone: '096-0787776' },
+  { abbr: 'NM',  name: 'Mr.Naphaphat M.(NM)',    position: 'Sale Exclusive',                phone: '065-7176332' },
+  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',        position: 'Sale Supervisor',               phone: '086-9819616' },
+  { abbr: 'PL',  name: 'Mr.Pongsakorn L.(PL)',   position: 'Sale Engineer',                 phone: '063-2159056' },
+];
+
+const IEC_EMAILJS_SERVICE_ID  = 'service_fwgn6cw';
+const IEC_EMAILJS_TEMPLATE_ID = 'template_7eppr2x';
+const IEC_EMAILJS_PUBLIC_KEY  = 'BvIT5-X7LnkaS3LKq'.trim();
+
+const iecBlobToBase64 = (blob) =>
+  new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IEC MOTOR PRICE DATABASE  (คำนวณจาก IECMotorPriceList2026.xlsx)
+// key: 'YE3-{frame}-{pole}'  → { YE3B5, YE3B3, YE3B14, YE3B35, YE3B34,
+//                                 YVPB5, YVPB3, YVPB14, YVPB35, YVPB34,
+//                                 YEJB5, YEJB3, YEJB14, YEJB35, YEJB34,
+//                                 YPEJB5, YPEJB3, YPEJB14, YPEJB35, YPEJB34 }
+// ราคาขาย (บาท) = (motorBase + mountAdj) × 33 × 1.1 × 1.2 × 1.1 × 1.7
+// ─────────────────────────────────────────────────────────────────────────────
+const IEC_PRICE_DB = {
+  'YE3-71M10-4': {"YE3B5":3331,"YE3B3":3005,"YE3B14":3168,"YE3B35":3738,"YE3B34":3738,"YVPB5":5047,"YVPB3":4721,"YVPB14":4884,"YVPB35":5454,"YVPB34":5454,"YEJB5":6113,"YEJB3":5788,"YEJB14":5950,"YEJB35":6521,"YEJB34":6521,"YPEJB5":9250,"YPEJB3":8924,"YPEJB14":9087,"YPEJB35":9658,"YPEJB34":9658},
+  'YE3-71M11-4': {"YE3B5":3737,"YE3B3":3411,"YE3B14":3574,"YE3B35":4145,"YE3B34":4145,"YVPB5":5504,"YVPB3":5178,"YVPB14":5341,"YVPB35":5911,"YVPB34":5911,"YEJB5":6489,"YEJB3":6163,"YEJB14":6326,"YEJB35":6896,"YEJB34":6896,"YPEJB5":9423,"YPEJB3":9097,"YPEJB14":9260,"YPEJB35":9830,"YPEJB34":9830},
+  'YE3-71M22-4': {"YE3B5":3960,"YE3B3":3635,"YE3B14":3798,"YE3B35":4368,"YE3B34":4368,"YVPB5":5748,"YVPB3":5422,"YVPB14":5585,"YVPB35":6155,"YVPB34":6155,"YEJB5":6895,"YEJB3":6570,"YEJB14":6732,"YEJB35":7303,"YEJB34":7303,"YPEJB5":9748,"YPEJB3":9422,"YPEJB14":9585,"YPEJB35":10155,"YPEJB34":10155},
+  'YE3-71M23-4': {"YE3B5":4255,"YE3B3":3929,"YE3B14":4092,"YE3B35":4663,"YE3B34":4663,"YVPB5":6459,"YVPB3":6133,"YVPB14":6296,"YVPB35":6866,"YVPB34":6866,"YEJB5":7342,"YEJB3":7016,"YEJB14":7179,"YEJB35":7749,"YEJB34":7749,"YPEJB5":9971,"YPEJB3":9645,"YPEJB14":9808,"YPEJB35":10378,"YPEJB34":10378},
+  'YE3-71M24-4': {"YE3B5":4458,"YE3B3":4132,"YE3B14":4295,"YE3B35":4865,"YE3B34":4865,"YVPB5":6682,"YVPB3":6356,"YVPB14":6519,"YVPB35":7089,"YVPB34":7089,"YEJB5":7769,"YEJB3":7443,"YEJB14":7606,"YEJB35":8176,"YEJB34":8176,"YPEJB5":10317,"YPEJB3":9991,"YPEJB14":10154,"YPEJB35":10724,"YPEJB34":10724},
+  'YE3-80M1-4': {"YE3B5":5129,"YE3B3":4803,"YE3B14":4966,"YE3B35":5536,"YE3B34":5536,"YVPB5":7251,"YVPB3":6925,"YVPB14":7088,"YVPB35":7658,"YVPB34":7658,"YEJB5":8317,"YEJB3":7991,"YEJB14":8154,"YEJB35":8724,"YEJB34":8724,"YPEJB5":10601,"YPEJB3":10275,"YPEJB14":10438,"YPEJB35":11008,"YPEJB34":11008},
+  'YE3-80M2-4': {"YE3B5":5738,"YE3B3":5412,"YE3B14":5575,"YE3B35":6145,"YE3B34":6145,"YVPB5":7910,"YVPB3":7584,"YVPB14":7747,"YVPB35":8318,"YVPB34":8318,"YEJB5":8611,"YEJB3":8285,"YEJB14":8448,"YEJB35":9018,"YEJB34":9018,"YPEJB5":11210,"YPEJB3":10884,"YPEJB14":11047,"YPEJB35":11617,"YPEJB34":11617},
+  'YE3-90S-4': {"YE3B5":6682,"YE3B3":6356,"YE3B14":6519,"YE3B35":7089,"YE3B34":7089,"YVPB5":8966,"YVPB3":8640,"YVPB14":8803,"YVPB35":9373,"YVPB34":9373,"YEJB5":10012,"YEJB3":9686,"YEJB14":9849,"YEJB35":10419,"YEJB34":10419,"YPEJB5":12784,"YPEJB3":12458,"YPEJB14":12621,"YPEJB35":13191,"YPEJB34":13191},
+  'YE3-90L-4': {"YE3B5":7667,"YE3B3":7341,"YE3B14":7504,"YE3B35":8074,"YE3B34":8074,"YVPB5":9789,"YVPB3":9463,"YVPB14":9626,"YVPB35":10196,"YVPB34":10196,"YEJB5":10905,"YEJB3":10580,"YEJB14":10743,"YEJB35":11313,"YEJB34":11313,"YPEJB5":13698,"YPEJB3":13372,"YPEJB14":13535,"YPEJB35":14105,"YPEJB34":14105},
+  'YE3-100L1-4': {"YE3B5":10449,"YE3B3":10123,"YE3B14":10286,"YE3B35":10856,"YE3B34":10856,"YVPB5":12865,"YVPB3":12540,"YVPB14":12702,"YVPB35":13273,"YVPB34":13273,"YEJB5":13769,"YEJB3":13443,"YEJB14":13606,"YEJB35":14176,"YEJB34":14176,"YPEJB5":16733,"YPEJB3":16407,"YPEJB14":16570,"YPEJB35":17140,"YPEJB34":17140},
+  'YE3-100L2-4': {"YE3B5":11444,"YE3B3":11118,"YE3B14":11281,"YE3B35":11851,"YE3B34":11851,"YVPB5":13708,"YVPB3":13382,"YVPB14":13545,"YVPB35":14115,"YVPB34":14115,"YEJB5":14713,"YEJB3":14387,"YEJB14":14550,"YEJB35":15120,"YEJB34":15120,"YPEJB5":19170,"YPEJB3":18844,"YPEJB14":19007,"YPEJB35":19577,"YPEJB34":19577},
+  'YE3-112M-4': {"YE3B5":13423,"YE3B3":13098,"YE3B14":13260,"YE3B35":13831,"YE3B34":13831,"YVPB5":16601,"YVPB3":16275,"YVPB14":16438,"YVPB35":17008,"YVPB34":17008,"YEJB5":17627,"YEJB3":17301,"YEJB14":17464,"YEJB35":18034,"YEJB34":18034,"YPEJB5":22693,"YPEJB3":22367,"YPEJB14":22530,"YPEJB35":23100,"YPEJB34":23100},
+  'YE3-132S-4': {"YE3B5":18693,"YE3B3":18367,"YE3B14":18530,"YE3B35":19100,"YE3B34":19100,"YVPB5":22946,"YVPB3":22621,"YVPB14":22784,"YVPB35":23354,"YVPB34":23354,"YEJB5":25018,"YEJB3":24692,"YEJB14":24855,"YEJB35":25425,"YEJB34":25425,"YPEJB5":31150,"YPEJB3":30824,"YPEJB14":30987,"YPEJB35":31557,"YPEJB34":31557},
+  'YE3-132M-4': {"YE3B5":21261,"YE3B3":20935,"YE3B14":21098,"YE3B35":21668,"YE3B34":21668,"YVPB5":25343,"YVPB3":25017,"YVPB14":25180,"YVPB35":25750,"YVPB34":25750,"YEJB5":27515,"YEJB3":27190,"YEJB14":27353,"YEJB35":27923,"YEJB34":27923,"YPEJB5":34765,"YPEJB3":34439,"YPEJB14":34602,"YPEJB35":35172,"YPEJB34":35172},
+  'YE3-160M-4': {"YE3B5":30369,"YE3B3":30043,"YE3B14":30206,"YE3B35":30776,"YE3B34":30776,"YVPB5":36501,"YVPB3":36175,"YVPB14":36338,"YVPB35":36908,"YVPB34":36908,"YEJB5":39344,"YEJB3":39018,"YEJB14":39181,"YEJB35":39751,"YEJB34":39751,"YPEJB5":51111,"YPEJB3":50785,"YPEJB14":50948,"YPEJB35":51518,"YPEJB34":51518},
+  'YE3-160L-4': {"YE3B5":35070,"YE3B3":34744,"YE3B14":34907,"YE3B35":35477,"YE3B34":35477,"YVPB5":41222,"YVPB3":40896,"YVPB14":41059,"YVPB35":41630,"YVPB34":41630,"YEJB5":45436,"YEJB3":45110,"YEJB14":45273,"YEJB35":45843,"YEJB34":45843,"YPEJB5":59021,"YPEJB3":58695,"YPEJB14":58858,"YPEJB35":59428,"YPEJB34":59428},
+  'YE3-180M-4': {"YE3B5":43751,"YE3B3":43425,"YE3B14":43588,"YE3B35":44158,"YE3B34":44158,"YVPB5":51111,"YVPB3":50785,"YVPB14":50948,"YVPB35":51518,"YVPB34":51518,"YEJB5":55416,"YEJB3":55090,"YEJB14":55253,"YEJB35":55823,"YEJB34":55823,"YPEJB5":74849,"YPEJB3":74523,"YPEJB14":74686,"YPEJB35":75256,"YPEJB34":75256},
+  'YE3-180L-4': {"YE3B5":48644,"YE3B3":48318,"YE3B14":48481,"YE3B35":49051,"YE3B34":49051,"YVPB5":53660,"YVPB3":53334,"YVPB14":53497,"YVPB35":54067,"YVPB34":54067,"YEJB5":61143,"YEJB3":60817,"YEJB14":60980,"YEJB35":61550,"YEJB34":61550,"YPEJB5":78169,"YPEJB3":77843,"YPEJB14":78006,"YPEJB35":78576,"YPEJB34":78576},
+  'YE3-200L-4': {"YE3B5":65123,"YE3B3":64797,"YE3B14":64960,"YE3B35":65530,"YE3B34":65530,"YVPB5":71620,"YVPB3":71295,"YVPB14":71458,"YVPB35":72028,"YVPB34":72028,"YEJB5":83763,"YEJB3":83437,"YEJB14":83600,"YEJB35":84171,"YEJB34":84171,"YPEJB5":102891,"YPEJB3":102565,"YPEJB14":102728,"YPEJB35":103298,"YPEJB34":103298},
+  'YE3-225S-4': {"YE3B5":78027,"YE3B3":77701,"YE3B14":77864,"YE3B35":78434,"YE3B34":78434,"YVPB5":87296,"YVPB3":86970,"YVPB14":87133,"YVPB35":87703,"YVPB34":87703,"YEJB5":100059,"YEJB3":99733,"YEJB14":99896,"YEJB35":100466,"YEJB34":100466,"YPEJB5":126741,"YPEJB3":126415,"YPEJB14":126578,"YPEJB35":127148,"YPEJB34":127148},
+  'YE3-225M-4': {"YE3B5":84819,"YE3B3":84493,"YE3B14":84656,"YE3B35":85226,"YE3B34":85226,"YVPB5":97653,"YVPB3":97327,"YVPB14":97490,"YVPB35":98060,"YVPB34":98060,"YEJB5":118811,"YEJB3":118485,"YEJB14":118648,"YEJB35":119218,"YEJB34":119218,"YPEJB5":141665,"YPEJB3":141340,"YPEJB14":141503,"YPEJB35":142073,"YPEJB34":142073},
+  'YE3-250M-4': {"YE3B5":107633,"YE3B3":107307,"YE3B14":107470,"YE3B35":108040,"YE3B34":108040,"YVPB5":122263,"YVPB3":121937,"YVPB14":122100,"YVPB35":122670,"YVPB34":122670,"YEJB5":137360,"YEJB3":137035,"YEJB14":137198,"YEJB35":137768,"YEJB34":137768,"YPEJB5":175475,"YPEJB3":175149,"YPEJB14":175312,"YPEJB35":175882,"YPEJB34":175882},
+  'YE3-280S-4': {"YE3B5":141645,"YE3B3":141319,"YE3B14":141482,"YE3B35":142052,"YE3B34":142052,"YVPB5":153544,"YVPB3":153219,"YVPB14":153381,"YVPB35":153952,"YVPB34":153952,"YEJB5":173119,"YEJB3":172794,"YEJB14":172956,"YEJB35":173527,"YEJB34":173527,"YPEJB5":220361,"YPEJB3":220035,"YPEJB14":220198,"YPEJB35":220769,"YPEJB34":220769},
+  'YE3-280M-4': {"YE3B5":162418,"YE3B3":162092,"YE3B14":162255,"YE3B35":162826,"YE3B34":162826,"YVPB5":172175,"YVPB3":171849,"YVPB14":172012,"YVPB35":172583,"YVPB34":172583,"YEJB5":196238,"YEJB3":195912,"YEJB14":196075,"YEJB35":196645,"YEJB34":196645,"YPEJB5":249876,"YPEJB3":249550,"YPEJB14":249713,"YPEJB35":250283,"YPEJB34":250283},
+  'YE3-80M2-6': {"YE3B5":5666,"YE3B3":5340,"YE3B14":5503,"YE3B35":6073,"YE3B34":6073,"YVPB5":9210,"YVPB3":8884,"YVPB14":9047,"YVPB35":9617,"YVPB34":9617,"YEJB5":9372,"YEJB3":9047,"YEJB14":9210,"YEJB35":9780,"YEJB34":9780,"YPEJB5":11251,"YPEJB3":10925,"YPEJB14":11088,"YPEJB35":11658,"YPEJB34":11658},
+  'YE3-90S-6': {"YE3B5":6621,"YE3B3":6295,"YE3B14":6458,"YE3B35":7028,"YE3B34":7028,"YVPB5":10510,"YVPB3":10184,"YVPB14":10347,"YVPB35":10917,"YVPB34":10917,"YEJB5":10733,"YEJB3":10407,"YEJB14":10570,"YEJB35":11140,"YEJB34":11140,"YPEJB5":13535,"YPEJB3":13209,"YPEJB14":13372,"YPEJB35":13942,"YPEJB34":13942},
+  'YE3-90L-6': {"YE3B5":7576,"YE3B3":7250,"YE3B14":7413,"YE3B35":7983,"YE3B34":7983,"YVPB5":11718,"YVPB3":11392,"YVPB14":11555,"YVPB35":12125,"YVPB34":12125,"YEJB5":11718,"YEJB3":11392,"YEJB14":11555,"YEJB35":12125,"YEJB34":12125,"YPEJB5":15779,"YPEJB3":15453,"YPEJB14":15616,"YPEJB35":16186,"YPEJB34":16186},
+  'YE3-100L-6': {"YE3B5":10439,"YE3B3":10113,"YE3B14":10276,"YE3B35":10846,"YE3B34":10846,"YVPB5":13444,"YVPB3":13118,"YVPB14":13281,"YVPB35":13851,"YVPB34":13851,"YEJB5":14094,"YEJB3":13768,"YEJB14":13931,"YEJB35":14501,"YEJB34":14501,"YPEJB5":18804,"YPEJB3":18479,"YPEJB14":18641,"YPEJB35":19212,"YPEJB34":19212},
+  'YE3-112M-6': {"YE3B5":13312,"YE3B3":12986,"YE3B14":13149,"YE3B35":13719,"YE3B34":13719,"YVPB5":16287,"YVPB3":15961,"YVPB14":16124,"YVPB35":16694,"YVPB34":16694,"YEJB5":17271,"YEJB3":16946,"YEJB14":17108,"YEJB35":17679,"YEJB34":17679,"YPEJB5":22257,"YPEJB3":21931,"YPEJB14":22094,"YPEJB35":22664,"YPEJB34":22664},
+  'YE3-132S-6': {"YE3B5":16337,"YE3B3":16011,"YE3B14":16174,"YE3B35":16744,"YE3B34":16744,"YVPB5":22500,"YVPB3":22174,"YVPB14":22337,"YVPB35":22907,"YVPB34":22907,"YEJB5":24531,"YEJB3":24205,"YEJB14":24368,"YEJB35":24938,"YEJB34":24938,"YPEJB5":30531,"YPEJB3":30205,"YPEJB14":30368,"YPEJB35":30938,"YPEJB34":30938},
+  'YE3-132M1-6': {"YE3B5":18632,"YE3B3":18306,"YE3B14":18469,"YE3B35":19039,"YE3B34":19039,"YVPB5":24825,"YVPB3":24499,"YVPB14":24662,"YVPB35":25232,"YVPB34":25232,"YEJB5":26642,"YEJB3":26316,"YEJB14":26479,"YEJB35":27049,"YEJB34":27049,"YPEJB5":34085,"YPEJB3":33759,"YPEJB14":33922,"YPEJB35":34492,"YPEJB34":34492},
+  'YE3-132M2-6': {"YE3B5":20845,"YE3B3":20519,"YE3B14":20682,"YE3B35":21252,"YE3B34":21252,"YVPB5":25221,"YVPB3":24895,"YVPB14":25058,"YVPB35":25628,"YVPB34":25628,"YEJB5":27221,"YEJB3":26896,"YEJB14":27058,"YEJB35":27629,"YEJB34":27629,"YPEJB5":42207,"YPEJB3":41881,"YPEJB14":42044,"YPEJB35":42614,"YPEJB34":42614},
+  'YE3-160M-6': {"YE3B5":29769,"YE3B3":29444,"YE3B14":29606,"YE3B35":30177,"YE3B34":30177,"YVPB5":35770,"YVPB3":35444,"YVPB14":35607,"YVPB35":36178,"YVPB34":36178,"YEJB5":38562,"YEJB3":38236,"YEJB14":38399,"YEJB35":38969,"YEJB34":38969,"YPEJB5":51741,"YPEJB3":51415,"YPEJB14":51578,"YPEJB35":52148,"YPEJB34":52148},
+  'YE3-160L-6': {"YE3B5":34369,"YE3B3":34043,"YE3B14":34206,"YE3B35":34777,"YE3B34":34777,"YVPB5":40400,"YVPB3":40074,"YVPB14":40237,"YVPB35":40807,"YVPB34":40807,"YEJB5":44552,"YEJB3":44226,"YEJB14":44389,"YEJB35":44959,"YEJB34":44959,"YPEJB5":57843,"YPEJB3":57517,"YPEJB14":57680,"YPEJB35":58250,"YPEJB34":58250},
+  'YE3-180L-6': {"YE3B5":45324,"YE3B3":44998,"YE3B14":45161,"YE3B35":45731,"YE3B34":45731,"YVPB5":52603,"YVPB3":52278,"YVPB14":52441,"YVPB35":53011,"YVPB34":53011,"YEJB5":59934,"YEJB3":59608,"YEJB14":59771,"YEJB35":60341,"YEJB34":60341,"YPEJB5":76606,"YPEJB3":76280,"YPEJB14":76443,"YPEJB35":77013,"YPEJB34":77013},
+  'YE3-200L1-6': {"YE3B5":56776,"YE3B3":56451,"YE3B14":56614,"YE3B35":57184,"YE3B34":57184,"YVPB5":70199,"YVPB3":69873,"YVPB14":70036,"YVPB35":70606,"YVPB34":70606,"YEJB5":82098,"YEJB3":81772,"YEJB14":81935,"YEJB35":82506,"YEJB34":82506,"YPEJB5":100841,"YPEJB3":100515,"YPEJB14":100678,"YPEJB35":101248,"YPEJB34":101248},
+  'YE3-200L2-6': {"YE3B5":61955,"YE3B3":61629,"YE3B14":61792,"YE3B35":62362,"YE3B34":62362,"YVPB5":71132,"YVPB3":70807,"YVPB14":70970,"YVPB35":71540,"YVPB34":71540,"YEJB5":82595,"YEJB3":82269,"YEJB14":82432,"YEJB35":83002,"YEJB34":83002,"YPEJB5":101927,"YPEJB3":101601,"YPEJB14":101764,"YPEJB35":102334,"YPEJB34":102334},
+  'YE3-225M-6': {"YE3B5":81519,"YE3B3":81193,"YE3B14":81356,"YE3B35":81926,"YE3B34":81926,"YVPB5":95713,"YVPB3":95387,"YVPB14":95550,"YVPB35":96120,"YVPB34":96120,"YEJB5":103551,"YEJB3":103225,"YEJB14":103388,"YEJB35":103958,"YEJB34":103958,"YPEJB5":138843,"YPEJB3":138517,"YPEJB14":138680,"YPEJB35":139250,"YPEJB34":139250},
+  'YE3-250M-6': {"YE3B5":100464,"YE3B3":100139,"YE3B14":100302,"YE3B35":100872,"YE3B34":100872,"YVPB5":119846,"YVPB3":119521,"YVPB14":119683,"YVPB35":120254,"YVPB34":120254,"YEJB5":134670,"YEJB3":134344,"YEJB14":134507,"YEJB35":135077,"YEJB34":135077,"YPEJB5":171982,"YPEJB3":171656,"YPEJB14":171819,"YPEJB35":172390,"YPEJB34":172390},
+  'YE3-280S-6': {"YE3B5":134843,"YE3B3":134517,"YE3B14":134680,"YE3B35":135250,"YE3B34":135250,"YVPB5":150488,"YVPB3":150162,"YVPB14":150325,"YVPB35":150895,"YVPB34":150895,"YEJB5":169667,"YEJB3":169341,"YEJB14":169504,"YEJB35":170074,"YEJB34":170074,"YPEJB5":215965,"YPEJB3":215639,"YPEJB14":215802,"YPEJB35":216372,"YPEJB34":216372},
+  'YE3-280M-6': {"YE3B5":154559,"YE3B3":154234,"YE3B14":154396,"YE3B35":154967,"YE3B34":154967,"YVPB5":169454,"YVPB3":169128,"YVPB14":169291,"YVPB35":169861,"YVPB34":169861,"YEJB5":192329,"YEJB3":192003,"YEJB14":192166,"YEJB35":192736,"YEJB34":192736,"YPEJB5":244890,"YPEJB3":244565,"YPEJB14":244728,"YPEJB35":245298,"YPEJB34":245298},
+  'YE3-80M1-2': {"YE3B5":5129,"YE3B3":4803,"YE3B14":4966,"YE3B35":5536,"YE3B34":5536,"YVPB5":7251,"YVPB3":6925,"YVPB14":7088,"YVPB35":7658,"YVPB34":7658,"YEJB5":8317,"YEJB3":7991,"YEJB14":8154,"YEJB35":8724,"YEJB34":8724,"YPEJB5":10601,"YPEJB3":10275,"YPEJB14":10438,"YPEJB35":11008,"YPEJB34":11008},
+  'YE3-80M2-2': {"YE3B5":5738,"YE3B3":5412,"YE3B14":5575,"YE3B35":6145,"YE3B34":6145,"YVPB5":7910,"YVPB3":7584,"YVPB14":7747,"YVPB35":8318,"YVPB34":8318,"YEJB5":8611,"YEJB3":8285,"YEJB14":8448,"YEJB35":9018,"YEJB34":9018,"YPEJB5":11210,"YPEJB3":10884,"YPEJB14":11047,"YPEJB35":11617,"YPEJB34":11617},
+  'YE3-90S-2': {"YE3B5":6682,"YE3B3":6356,"YE3B14":6519,"YE3B35":7089,"YE3B34":7089,"YVPB5":8977,"YVPB3":8651,"YVPB14":8814,"YVPB35":9384,"YVPB34":9384,"YEJB5":10012,"YEJB3":9686,"YEJB14":9849,"YEJB35":10419,"YEJB34":10419,"YPEJB5":12784,"YPEJB3":12458,"YPEJB14":12621,"YPEJB35":13191,"YPEJB34":13191},
+  'YE3-90L-2': {"YE3B5":7667,"YE3B3":7341,"YE3B14":7504,"YE3B35":8074,"YE3B34":8074,"YVPB5":9789,"YVPB3":9463,"YVPB14":9626,"YVPB35":10196,"YVPB34":10196,"YEJB5":10905,"YEJB3":10580,"YEJB14":10743,"YEJB35":11313,"YEJB34":11313,"YPEJB5":13698,"YPEJB3":13372,"YPEJB14":13535,"YPEJB35":14105,"YPEJB34":14105},
+  'YE3-100L-2': {"YE3B5":11444,"YE3B3":11118,"YE3B14":11281,"YE3B35":11851,"YE3B34":11851,"YVPB5":13708,"YVPB3":13382,"YVPB14":13545,"YVPB35":14115,"YVPB34":14115,"YEJB5":15779,"YEJB3":15453,"YEJB14":15616,"YEJB35":16186,"YEJB34":16186,"YPEJB5":19170,"YPEJB3":18844,"YPEJB14":19007,"YPEJB35":19577,"YPEJB34":19577},
+  'YE3-112M-2': {"YE3B5":13423,"YE3B3":13098,"YE3B14":13260,"YE3B35":13831,"YE3B34":13831,"YVPB5":16601,"YVPB3":16275,"YVPB14":16438,"YVPB35":17008,"YVPB34":17008,"YEJB5":18338,"YEJB3":18012,"YEJB14":18175,"YEJB35":18745,"YEJB34":18745,"YPEJB5":22693,"YPEJB3":22367,"YPEJB14":22530,"YPEJB35":23100,"YPEJB34":23100},
+  'YE3-132S1-2': {"YE3B5":18693,"YE3B3":18367,"YE3B14":18530,"YE3B35":19100,"YE3B34":19100,"YVPB5":22764,"YVPB3":22438,"YVPB14":22601,"YVPB35":23171,"YVPB34":23171,"YEJB5":24592,"YEJB3":24266,"YEJB14":24429,"YEJB35":24999,"YEJB34":24999,"YPEJB5":31029,"YPEJB3":30703,"YPEJB14":30866,"YPEJB35":31436,"YPEJB34":31436},
+  'YE3-132S2-2': {"YE3B5":21261,"YE3B3":20935,"YE3B14":21098,"YE3B35":21668,"YE3B34":21668,"YVPB5":27810,"YVPB3":27484,"YVPB14":27647,"YVPB35":28218,"YVPB34":28218,"YEJB5":27394,"YEJB3":27068,"YEJB14":27231,"YEJB35":27801,"YEJB34":27801,"YPEJB5":31150,"YPEJB3":30824,"YPEJB14":30987,"YPEJB35":31557,"YPEJB34":31557},
+  'YE3-160M1-2': {"YE3B5":29769,"YE3B3":29444,"YE3B14":29606,"YE3B35":30177,"YE3B34":30177,"YVPB5":36349,"YVPB3":36023,"YVPB14":36186,"YVPB35":36756,"YVPB34":36756,"YEJB5":39192,"YEJB3":38866,"YEJB14":39029,"YEJB35":39599,"YEJB34":39599,"YPEJB5":49862,"YPEJB3":49537,"YPEJB14":49699,"YPEJB35":50270,"YPEJB34":50270},
+  'YE3-160M2-2': {"YE3B5":30369,"YE3B3":30043,"YE3B14":30206,"YE3B35":30776,"YE3B34":30776,"YVPB5":36501,"YVPB3":36175,"YVPB14":36338,"YVPB35":36908,"YVPB34":36908,"YEJB5":39344,"YEJB3":39018,"YEJB14":39181,"YEJB35":39751,"YEJB34":39751,"YPEJB5":51111,"YPEJB3":50785,"YPEJB14":50948,"YPEJB35":51518,"YPEJB34":51518},
+  'YE3-160L2-2': {"YE3B5":35070,"YE3B3":34744,"YE3B14":34907,"YE3B35":35477,"YE3B34":35477,"YVPB5":41222,"YVPB3":40896,"YVPB14":41059,"YVPB35":41630,"YVPB34":41630,"YEJB5":45436,"YEJB3":45110,"YEJB14":45273,"YEJB35":45843,"YEJB34":45843,"YPEJB5":59021,"YPEJB3":58695,"YPEJB14":58858,"YPEJB35":59428,"YPEJB34":59428},
+  'YE3-180M-2': {"YE3B5":43751,"YE3B3":43425,"YE3B14":43588,"YE3B35":44158,"YE3B34":44158,"YVPB5":51111,"YVPB3":50785,"YVPB14":50948,"YVPB35":51518,"YVPB34":51518,"YEJB5":59071,"YEJB3":58745,"YEJB14":58908,"YEJB35":59478,"YEJB34":59478,"YPEJB5":74849,"YPEJB3":74523,"YPEJB14":74686,"YPEJB35":75256,"YPEJB34":75256},
+  'YE3-200L1-2': {"YE3B5":63843,"YE3B3":63517,"YE3B14":63680,"YE3B35":64250,"YE3B34":64250,"YVPB5":71357,"YVPB3":71031,"YVPB14":71194,"YVPB35":71764,"YVPB34":71764,"YEJB5":83550,"YEJB3":83224,"YEJB14":83387,"YEJB35":83957,"YEJB34":83957,"YPEJB5":102729,"YPEJB3":102403,"YPEJB14":102566,"YPEJB35":103136,"YPEJB34":103136},
+  'YE3-200L2-2': {"YE3B5":65123,"YE3B3":64797,"YE3B14":64960,"YE3B35":65530,"YE3B34":65530,"YVPB5":71620,"YVPB3":71295,"YVPB14":71458,"YVPB35":72028,"YVPB34":72028,"YEJB5":83763,"YEJB3":83437,"YEJB14":83600,"YEJB35":84171,"YEJB34":84171,"YPEJB5":102891,"YPEJB3":102565,"YPEJB14":102728,"YPEJB35":103298,"YPEJB34":103298},
+};
+
+// ── ฟังก์ชันดึงราคา: motorType (YE3/YVP/YEJ/YPEJ) + fullKey (YE3-xxx-P) + mount (B5/B3/B14/B35/B34)
+function lookupIECPrice(motorType, fullKey, mount) {
+  if (!motorType || !fullKey || !mount) return null;
+  const row = IEC_PRICE_DB[fullKey];
+  if (!row) return null;
+  // map motorType → prefix in price col
+  const prefixMap = { YE3:'YE3', YE4:'YE3', YVP:'YVP', YEJ:'YEJ', YPEJ:'YPEJ' };
+  const prefix = prefixMap[motorType];
+  if (!prefix) return null;
+  return row[`${prefix}${mount}`] ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MountingColorViewer — แสดงรูป Mounting พร้อม Color Tint Picker
 // ─────────────────────────────────────────────────────────────────────────────
 function MountingColorViewer({ mountInfo, onColorChange }) {
@@ -1185,7 +1299,7 @@ function MountingColorViewer({ mountInfo, onColorChange }) {
   const next = () => setColorIdx(i => { const n=(i+1)%MOTOR_COLORS.length; onColorChange?.(MOTOR_COLORS[n]); return n; });
 
   return (
-    <div className="flex flex-col items-center" style={{ minWidth:190, maxWidth:240 }}>
+    <div className="flex flex-col items-center" style={{ minWidth:290, maxWidth:340 }}>
       {/* Mounting label บนสุด */}
       <div className="mb-1 text-white/70 text-xs font-semibold uppercase tracking-wider self-start">
         Mounting
@@ -1201,17 +1315,19 @@ function MountingColorViewer({ mountInfo, onColorChange }) {
       <p className="mt-2 text-white font-bold text-base">{mountInfo.label}</p>
       <p className="text-white/50 text-xs mb-2">{mountInfo.desc}</p>
 
-      {/* Color picker row: ‹ [swatch + name] › */}
+      {/* Color picker row: ‹ [swatch + name + RAL inline] › */}
       <div className="flex items-center gap-2 w-full bg-white/5 rounded-xl px-2 py-2">
         <button type="button" onClick={prev}
           className="flex-shrink-0 w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 text-white font-bold text-xl flex items-center justify-center transition shadow active:scale-95">
           ‹
         </button>
         <div className="flex-1 flex flex-col items-center gap-0.5">
-          <div className="w-8 h-8 rounded-full border-2 border-white/80 shadow-lg transition-all duration-300"
-               style={{ backgroundColor: color.hex }} />
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full border-2 border-white/80 shadow-lg transition-all duration-300 flex-shrink-0"
+                 style={{ backgroundColor: color.hex }} />
+            <span className="text-white/50 text-[10px] font-mono">RAL {color.code}</span>
+          </div>
           <span className="text-white font-semibold text-xs text-center leading-tight">{color.name}</span>
-          <span className="text-white/40 text-[9px]">RAL {color.code}</span>
         </div>
         <button type="button" onClick={next}
           className="flex-shrink-0 w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 text-white font-bold text-xl flex items-center justify-center transition shadow active:scale-95">
@@ -1293,15 +1409,85 @@ function ConnectionDiagram({ isStar }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleNum, isStarConnection }) {
   const { iecMotorType, iecPower, iecPole, iecMount, iecTerminal, iecCable } = state;
-  const [selectedColor, setSelectedColor] = React.useState(MOTOR_COLORS[7]); // default Gentian Blue
+  const [selectedColor,          setSelectedColor]          = React.useState(MOTOR_COLORS[7]);
+  const [showQuote,               setShowQuote]              = React.useState(false);
+  const [qName,                   setQName]                  = React.useState('');
+  const [qCompany,                setQCompany]               = React.useState('');
+  const [qPhone,                  setQPhone]                 = React.useState('');
+  const [qEmail,                  setQEmail]                 = React.useState('');
+  const [qtyMotor,                setQtyMotor]               = React.useState(1);
+  const [sending,                 setSending]                = React.useState(false);
+  const [salePerson,              setSalePerson]             = React.useState('');
+  const [showSalePersonPicker,    setShowSalePersonPicker]   = React.useState(false);
 
-  const mountInfo = IEC_MOUNT_LIST.find(m => m.code === iecMount);
-  const poleInfo  = IEC_POLE_LIST.find(pl => pl.code === iecPole);
-  const motorInfo = IEC_MOTOR_TYPES.find(m => m.code === iecMotorType);
+  const mountInfo = IEC_MOUNT_LIST.find(m  => m.code  === iecMount);
+  const poleInfo  = IEC_POLE_LIST.find(pl  => pl.code === iecPole);
+  const motorInfo = IEC_MOTOR_TYPES.find(m => m.code  === iecMotorType);
+
+  // ── Price lookup ─────────────────────────────────────────────────────────
+  const unitPrice = lookupIECPrice(iecMotorType, fullKey, iecMount);
+
+  // ── Submit quote → POST /api/iec-quote ───────────────────────────────────
+  const submitQuote = async () => {
+    if (!qName || !qCompany || !qPhone || !qEmail) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+    try {
+      setSending(true);
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+      const res = await fetch(`${API_BASE}/api/iec-quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelCode,
+          motorCode:  modelCode,
+          gearCode:   '-',
+          qtyMotor,
+          qtyGear:    1,
+          customer:   { name: qName, company: qCompany, phone: qPhone, email: qEmail },
+          controllerModel: '',
+          qtyCtrl:    0,
+          salePerson: salePerson || 'CA',
+          iecMotorType, iecPower, iecPole, iecMount, iecTerminal, iecCable,
+          unitPrice:  unitPrice ?? 0,
+        }),
+      });
+      if (!res.ok) { const msg = await res.text().catch(() => ''); throw new Error(msg || 'สร้างใบเสนอราคาไม่สำเร็จ'); }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const cd   = res.headers.get('content-disposition') || '';
+      const match = cd.match(/filename\*?=(?:UTF-8''|")?([^";]+)"?/i);
+      const filenameFromServer = match ? decodeURIComponent(match[1]) : `${modelCode}.pdf`;
+      try {
+        const pdfBase64 = await iecBlobToBase64(blob);
+        const emailParams = {
+          to_email: qEmail, requester_name: qName, company: qCompany, phone: qPhone, email: qEmail,
+          model_code: modelCode, motor_code: modelCode, gear_code: '-',
+          qty_motor: String(qtyMotor), qty_gear: '1', qty_ctrl: '0', controller: '-',
+          sale_person: salePerson || 'CA',
+          time: new Date().toLocaleString('th-TH'),
+          pdf_content: pdfBase64, pdf_name: filenameFromServer,
+        };
+        const ejs = window.emailjs;
+        if (ejs) {
+          await ejs.send(IEC_EMAILJS_SERVICE_ID, IEC_EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: qEmail },                   IEC_EMAILJS_PUBLIC_KEY);
+          await ejs.send(IEC_EMAILJS_SERVICE_ID, IEC_EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: 'Chottanin@synergy-as.com' }, IEC_EMAILJS_PUBLIC_KEY);
+          await ejs.send(IEC_EMAILJS_SERVICE_ID, IEC_EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: 'sas04@synergy-as.com' },     IEC_EMAILJS_PUBLIC_KEY);
+        }
+      } catch (e) { console.error('EmailJS send failed:', e); }
+      const a = document.createElement('a');
+      a.href = url; a.download = filenameFromServer;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      setShowQuote(false);
+    } catch (err) {
+      alert(String(err?.message || err));
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="mt-4 pb-28">
-      {/* ── Summary Card ──────────────────────────────────────────────────── */}
+      {/* ── Summary Card ────────────────────────────────────────────────── */}
       <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-xl">
         <p className="text-blue-300 text-xs font-semibold mb-1 uppercase tracking-wider">IEC Standard Motor</p>
 
@@ -1319,10 +1505,9 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
             }}>Copy</button>
         </div>
 
-        {/* Top row: Basic info ซ้าย + Mounting viewer ขวา */}
+        {/* Top row */}
         <div className="flex flex-row gap-3 items-start">
-          {/* ── info list ── */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col">
             {[
               ['Motor Type', motorInfo?.sub || iecMotorType],
               ['Power',      iecPower + ' kW (' + (parseFloat(iecPower)*1.341).toFixed(2) + ' HP)'],
@@ -1331,68 +1516,62 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
               ['Frame',      frameLabel(fullKey)],
               ['Pole',       (poleInfo?.label||'-') + ' (' + (poleInfo?.rpm||'-') + ')'],
               ['Terminal',   iecTerminal + '°'],
+              ['Direction',  'CW / CCW'],
+              ['Casing',     'Iron'],
             ].map(([lbl, val]) => (
               <div key={lbl} className="flex text-xs mb-0.5">
                 <span className="text-white/60 w-20 flex-shrink-0 font-medium">{lbl}:</span>
                 <span className="text-blue-300 font-semibold">{val}</span>
               </div>
             ))}
+            {unitPrice != null && (
+              <div className="flex text-xs mb-0.5 mt-1">
+                <span className="text-white/60 w-20 flex-shrink-0 font-medium">ราคา:</span>
+                <span className="text-emerald-400 font-bold">{unitPrice.toLocaleString('th-TH')} ฿/ตัว</span>
+              </div>
+            )}
+
+            <div className="mt-3 flex-1 flex flex-col justify-center">
+              <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-2">Connection Diagrams</p>
+              <div className={`rounded-xl p-2 border-2 ${isStarConnection ? 'border-yellow-400 bg-yellow-400/10' : 'border-blue-400 bg-blue-400/10'}`}>
+                <ConnectionDiagram isStar={isStarConnection} />
+                <p className={`text-center text-xs font-bold mt-1 ${isStarConnection ? 'text-yellow-400' : 'text-blue-400'}`}>
+                  {isStarConnection ? '★ Star (Y) — ใช้กับมอเตอร์นี้' : '▲ Delta (Δ) — ใช้กับมอเตอร์นี้'}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* ── Mounting Color Viewer ── */}
-          <div className="flex-shrink-0" style={{ width: 'min(42vw, 180px)' }}>
+          <div className="flex-1 flex justify-center">
             <MountingColorViewer mountInfo={mountInfo} onColorChange={setSelectedColor} />
           </div>
         </div>
 
-        {/* ── Connection Diagrams ──────────────────────────────────────────── */}
-        <div className="border-t border-white/20 mt-3 pt-3">
-          <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-2">
-            Connection Diagrams
-          </p>
-          <div className={`flex gap-3 items-start ${isStarConnection ? '' : ''}`}>
-            {/* Active connection — highlighted */}
-            <div className={`flex-1 rounded-xl p-2 border-2 ${isStarConnection ? 'border-yellow-400 bg-yellow-400/10' : 'border-blue-400 bg-blue-400/10'}`}>
-              <ConnectionDiagram isStar={isStarConnection} />
-              <p className={`text-center text-xs font-bold mt-1 ${isStarConnection ? 'text-yellow-400' : 'text-blue-400'}`}>
-                {isStarConnection ? '★ Star (Y) — ใช้กับมอเตอร์นี้' : '▲ Delta (Δ) — ใช้กับมอเตอร์นี้'}
-              </p>
-            </div>
-            {/* Reference other — dimmed */}
-            <div className="flex-1 rounded-xl p-2 border border-white/10 bg-white/5 opacity-40">
-              <ConnectionDiagram isStar={!isStarConnection} />
-              <p className="text-center text-xs text-white/50 mt-1">
-                {!isStarConnection ? 'Star (Y) — ≤ 3 kW' : 'Delta (Δ) — ≥ 4 kW'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Technical Specifications ──────────────────────────────────────── */}
+        {/* Technical Specifications */}
         <div className="border-t border-white/20 pt-3 mt-3">
           <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-2">Technical Specifications</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5 text-xs text-white/90">
             {[
-              ['Standard',       'IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55, Class F, S1'],
-              ['Insulation',     'Class F (105K), by Class B'],
-              ['Cooling',        'TEFC (IC411, IEC60034-6)'],
-              ['Winding',        '100% Copper Wire'],
-              ['Duty',           'Continuous (S1)'],
-              ['Vibration',      'Class A (Class B on request)'],
-              ['Site',           '-15°C to +40°C, Alt ≤ 1000 m'],
-              ['Voltage',        '200–660V, 50/60Hz (±5%)'],
+              ['Standard',   'IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55, Class F, S1'],
+              ['Insulation', 'Class F (105K), by Class B'],
+              ['Cooling',    'TEFC (IC411, IEC60034-6)'],
+              ['Winding',    '100% Copper Wire'],
+              ['Duty',       'Continuous (S1)'],
+              ['Vibration',  'Class A (Class B on request)'],
+              ['Site',       '-15°C to +40°C, Alt ≤ 1000 m'],
+              ['Voltage',    '200–660V, 50/60Hz (±5%)'],
               ...(spec ? [
-                ['Rated Speed',  spec.speed + ' rpm'],
-                ['Efficiency',   spec.eff + ' %'],
-                ...(spec.pf  ? [['Power Factor', String(spec.pf)]] : []),
-                ...(spec.i380? [['Current 380V', spec.i380 + ' A']] : []),
-                ...(spec.i400? [['Current 400V', spec.i400 + ' A']] : []),
-                ...(spec.i415? [['Current 415V', spec.i415 + ' A']] : []),
+                ['Rated Speed',  spec.speed  + ' rpm'],
+                ['Efficiency',   spec.eff    + ' %'],
+                ...(spec.pf   ? [['Power Factor', String(spec.pf)]]      : []),
+                ...(spec.i380 ? [['Current 380V', spec.i380 + ' A']]     : []),
+                ...(spec.i400 ? [['Current 400V', spec.i400 + ' A']]     : []),
+                ...(spec.i415 ? [['Current 415V', spec.i415 + ' A']]     : []),
                 ['Rated Torque', spec.torque + ' N·m'],
-                ...(spec.weight? [['Weight',      spec.weight + ' kg']] : []),
+                ...(spec.weight ? [['Weight',     spec.weight + ' kg']]  : []),
               ] : []),
-              ['Protection',     'IP54 / IP55'],
-              ['Quality',        'ISO 9001'],
+              ['Protection', 'IP54 / IP55'],
+              ['Quality',    'ISO 9001'],
             ].map(([lbl, val]) => (
               <div key={lbl} className="flex gap-1">
                 <span className="font-semibold text-white/60 w-24 flex-shrink-0">{lbl}:</span>
@@ -1401,13 +1580,13 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
             ))}
             <div className="flex gap-1 col-span-full">
               <span className="font-semibold text-yellow-400 w-24 flex-shrink-0">Warranty:</span>
-              <span className="text-yellow-400 font-extrabold text-base">18 เดือน</span>
+              <span className="text-yellow-400 font-extrabold text-base">24 เดือน</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── ปุ่ม 4 ปุ่ม ──────────────────────────────────────────────────────── */}
+      {/* ── ปุ่ม 4 ปุ่ม ─────────────────────────────────────────────────────── */}
       <div className="mt-4 grid grid-cols-2 gap-3">
         <DataSheetButton state={state} selectedColor={selectedColor} isStarConnection={isStarConnection} />
         <button type="button"
@@ -1416,12 +1595,14 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
           <span className="text-2xl">📐</span>
           <span className="font-semibold text-sm">Drawing 2D</span>
         </button>
-        <button type="button" onClick={() => { if (typeof onConfirm==='function') onConfirm(modelCode,'quote'); }}
+        <button type="button"
+          onClick={() => setShowQuote(true)}
           className="flex flex-col items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-4 rounded-xl shadow transition active:scale-95">
           <span className="text-2xl">🧾</span>
           <span className="font-semibold text-sm">ขอใบเสนอราคา</span>
         </button>
-        <button type="button" onClick={() => { if (typeof onConfirm==='function') onConfirm(modelCode,'3d'); }}
+        <button type="button"
+          onClick={() => { if (typeof onConfirm==='function') onConfirm(modelCode,'3d'); }}
           className="flex flex-col items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white px-3 py-4 rounded-xl shadow transition active:scale-95">
           <span className="text-2xl">📦</span>
           <span className="font-semibold text-sm">3D Step file</span>
@@ -1429,6 +1610,102 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
       </div>
 
       <FloatingBack onClick={() => update('iecCable', null)} />
+
+      {/* ── Quote Modal ──────────────────────────────────────────────────────── */}
+      {showQuote && (
+        <div className="fixed inset-0 z-[9990] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setShowQuote(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 z-[9991] overflow-y-auto max-h-[90vh]">
+
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <h3 className="text-xl font-bold flex-1">ขอใบเสนอราคา</h3>
+              <div className="relative">
+                <button type="button"
+                  onClick={() => setShowSalePersonPicker(v => !v)}
+                  className="text-2xl leading-none hover:scale-110 active:scale-95 transition-transform"
+                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}>
+                  🧑‍💼
+                </button>
+                {showSalePersonPicker && (
+                  <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] overflow-hidden">
+                    {IEC_SALE_PERSONS.map(sp => (
+                      <button key={sp.abbr} type="button"
+                        onClick={() => { setSalePerson(sp.abbr); setShowSalePersonPicker(false); }}
+                        className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition text-sm border-b last:border-b-0 ${salePerson===sp.abbr ? 'bg-green-100 font-semibold' : ''}`}>
+                        <div className="font-semibold text-slate-800">{sp.name}</div>
+                        <div className="text-slate-500 text-xs">{sp.position} · {sp.phone}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {salePerson && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
+                  {IEC_SALE_PERSONS.find(s => s.abbr === salePerson)?.name || salePerson}
+                </span>
+              )}
+            </div>
+
+            {/* Form */}
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-sm mb-1">ชื่อผู้ขอราคา :</label>
+                <input value={qName} onChange={e => setQName(e.target.value)}
+                       className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">ชื่อบริษัท :</label>
+                <input value={qCompany} onChange={e => setQCompany(e.target.value)}
+                       className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">เบอร์ติดต่อ :</label>
+                <input value={qPhone} onChange={e => setQPhone(e.target.value)}
+                       className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Email :</label>
+                <input type="email" value={qEmail} onChange={e => setQEmail(e.target.value)}
+                       className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">จำนวน (ตัว) :</label>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setQtyMotor(q => Math.max(1, q - 1))}
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-lg flex items-center justify-center active:scale-95">−</button>
+                  <input type="number" min={1} max={999} value={qtyMotor}
+                    onChange={e => { const v = parseInt(e.target.value, 10); setQtyMotor(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1); }}
+                    className="w-16 text-center px-2 py-2 rounded-lg border border-slate-200 outline-none focus:ring font-bold" />
+                  <button type="button" onClick={() => setQtyMotor(q => Math.min(999, q + 1))}
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-lg flex items-center justify-center active:scale-95">+</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="mt-5 flex gap-3 justify-end">
+              <button type="button" onClick={() => setShowQuote(false)} disabled={sending}
+                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 disabled:opacity-50">ปิด</button>
+              <button type="button" onClick={submitQuote}
+                disabled={sending || !qName || !qCompany || !qPhone || !qEmail}
+                className="px-5 py-2 rounded-2xl bg-green-300 hover:bg-green-400 font-semibold shadow active:scale-95 transition transform disabled:opacity-50">
+                {sending ? 'กำลังส่ง…' : 'รับใบเสนอราคา'}
+              </button>
+            </div>
+
+            {/* Summary */}
+            <div className="mt-4 text-sm text-slate-600">
+              <div>Model: <b>{modelCode}</b></div>
+              <div className="flex gap-4 mt-1 flex-wrap">
+                <span>IEC Motor: <b>{qtyMotor}</b></span>
+                {unitPrice != null && <span>ราคา/ตัว: <b>{unitPrice.toLocaleString('th-TH')} ฿</b></span>}
+                {unitPrice != null && <span>รวม: <b>{(unitPrice * qtyMotor).toLocaleString('th-TH')} ฿</b></span>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
