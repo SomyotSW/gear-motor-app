@@ -41,6 +41,27 @@ import B34Img from '../assets/iec/B34.png';
 // key: `${type}-${frame}-${pole}`  →  { speed, eff, pf, i380, i400, i415, torque, weight, ... }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── ฟังก์ชันซ่อนราคา: แสดงเฉพาะ 2 หลักแรก แล้ว mask ด้วย x ──
+// เช่น 53,660 → "5x,xxx"  |  123,456 → "12x,xxx"  |  9,800 → "9,xxx"
+function maskPrice(price) {
+  if (price == null) return '';
+  const str = Math.round(price).toString(); // ตัวเลขล้วน เช่น "94560"
+
+  let masked;
+  if (str.length <= 4) {
+    // ≤ 4 หลัก (< 10,000): แสดงหลักแรก แล้วซ่อนที่เหลือด้วย x
+    // เช่น "9000" → "9xxx"
+    masked = str[0] + 'x'.repeat(str.length - 1);
+  } else {
+    // ≥ 5 หลัก: ซ่อนเฉพาะหลักที่ 2 (index 1) แล้วแสดงส่วนที่เหลือปกติ
+    // เช่น "94560" → "9x560"  |  "992000" → "9x2000"
+    masked = str[0] + 'x' + str.slice(2);
+  }
+
+  // ใส่ comma ทุก 3 หลักจากขวา (รองรับทั้ง digit และ 'x')
+  return masked.replace(/\B(?=([0-9x]{3})+(?![0-9x]))/g, ',');
+}
+
 // ── ฟังก์ชันแปลง kW+Pole → Frame ──
 function getIECFrame(kw, pole) {
   const p   = parseFloat(kw);
@@ -1419,6 +1440,81 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
   const [sending,                 setSending]                = React.useState(false);
   const [salePerson,              setSalePerson]             = React.useState('');
   const [showSalePersonPicker,    setShowSalePersonPicker]   = React.useState(false);
+  const [stockQty,                setStockQty]               = React.useState(null);   // null=loading, -1=not found, ≥0=found
+  const [stockLoading,            setStockLoading]           = React.useState(true);
+
+  // ── Fetch SAS Stock ──────────────────────────────────────────────────────────────────────────────────
+  React.useEffect(() => {
+    if (!modelCode) return;
+    setStockLoading(true);
+    setStockQty(null);
+
+    // API: GET /api/stock (same backend as the app)
+    // Response: { ok: true, rows: [{ code, description, total }, ...] }
+    // Stock code format : YE3-80M2-4-0.75KW-B5
+    // Model code format : YE3-80M2-4-B5-0-X
+
+    // หา frame จาก fullKey: 'YE3-80M2-4' -> '80M2'
+    const fkParts   = (fullKey || '').split('-');
+    const framePart = fkParts.length >= 2
+      ? fkParts.slice(1, fkParts.length - 1).join('-').toUpperCase()
+      : '';
+    const polePart  = iecPole  ? iecPole.replace(/P$/i, '').toUpperCase() : '';
+    const mountPart = iecMount ? iecMount.toUpperCase() : '';
+
+    // normalize: uppercase, remove dashes & spaces
+    const norm = s => (s || '').toUpperCase().replace(/[-\s]/g, '');
+
+    // ใช้ API_BASE เดียวกับที่ app ใช้อยู่ เพื่อหลีกปัญหา CORS
+    const API_BASE = process.env.REACT_APP_API_BASE || '';
+
+    fetch(`${API_BASE}/api/stock`, { cache: 'no-store' })
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(data => {
+        if (!data.ok) throw new Error(data.error || 'API error');
+        const rows = data.rows || [];
+
+        // 1) Exact match
+        let found = rows.find(r => norm(r.code) === norm(modelCode));
+
+        // 2) Frame + Pole + Mount match  (e.g. YE3-80M2-4-0.75KW-B5)
+        if (!found && framePart && polePart && mountPart) {
+          found = rows.find(r => {
+            const c = norm(r.code);
+            return c.includes(norm(framePart))
+                && c.includes(norm(polePart))
+                && c.includes(norm(mountPart));
+          });
+        }
+
+        // 3) Fallback: Frame + Pole only
+        if (!found && framePart && polePart) {
+          found = rows.find(r => {
+            const c = norm(r.code);
+            return c.includes(norm(framePart)) && c.includes(norm(polePart));
+          });
+        }
+
+        console.log('[SAS Stock] rows count:', rows.length);
+        console.log('[SAS Stock] framePart:', framePart, 'polePart:', polePart, 'mountPart:', mountPart);
+        console.log('[SAS Stock] found:', found ? found.code : 'NONE');
+        if (found) {
+          const q = parseInt(found.total ?? found.qty ?? found.quantity ?? 0, 10);
+          console.log('[SAS Stock] qty raw:', found.total, '-> parsed:', q);
+          setStockQty(isNaN(q) ? 0 : q);
+        } else {
+          setStockQty(-1);
+        }
+      })
+      .catch(err => {
+        console.warn('[SAS Stock] fetch error:', err);
+        setStockQty(-1);
+      })
+      .finally(() => setStockLoading(false));
+  }, [modelCode, fullKey, iecPole, iecMount]);
 
   const mountInfo = IEC_MOUNT_LIST.find(m  => m.code  === iecMount);
   const poleInfo  = IEC_POLE_LIST.find(pl  => pl.code === iecPole);
@@ -1527,9 +1623,28 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
             {unitPrice != null && (
               <div className="flex text-xs mb-0.5 mt-1">
                 <span className="text-white/60 w-20 flex-shrink-0 font-medium">ราคา:</span>
-                <span className="text-emerald-400 font-bold">{unitPrice.toLocaleString('th-TH')} ฿/ตัว</span>
+                <span className="text-emerald-400 font-bold">{maskPrice(unitPrice)} ฿/ตัว</span>
               </div>
             )}
+            {/* ── SAS Stock ──────────────────────────────────────────────── */}
+            <div className="flex text-xs mb-0.5">
+              <span className="text-white/60 w-20 flex-shrink-0 font-medium">SAS Stock:</span>
+              {stockLoading
+                ? <span className="text-white/50 italic">กำลังตรวจสอบ…</span>
+                : stockQty === -1
+                  ? <span className="text-orange-400 font-bold">รอสินค้า</span>
+                  : <span className="text-emerald-400 font-bold">{stockQty} ตัว (พร้อมส่ง)</span>
+              }
+            </div>
+            <div className="flex text-xs mb-0.5">
+              <span className="text-white/60 w-20 flex-shrink-0 font-medium">จัดส่ง:</span>
+              {stockLoading
+                ? <span className="text-white/50 italic">—</span>
+                : stockQty === -1
+                  ? <span className="text-orange-300 font-semibold">ภายใน 30–45 วัน</span>
+                  : <span className="text-emerald-300 font-semibold">ภายใน 1–3 วัน</span>
+              }
+            </div>
 
             <div className="mt-3 flex-1 flex flex-col justify-center">
               <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-2">Connection Diagrams</p>
@@ -1699,8 +1814,8 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
               <div>Model: <b>{modelCode}</b></div>
               <div className="flex gap-4 mt-1 flex-wrap">
                 <span>IEC Motor: <b>{qtyMotor}</b></span>
-                {unitPrice != null && <span>ราคา/ตัว: <b>{unitPrice.toLocaleString('th-TH')} ฿</b></span>}
-                {unitPrice != null && <span>รวม: <b>{(unitPrice * qtyMotor).toLocaleString('th-TH')} ฿</b></span>}
+                {unitPrice != null && <span>ราคา/ตัว: <b>{maskPrice(unitPrice)} ฿</b></span>}
+                {unitPrice != null && <span>รวม: <b>{maskPrice(unitPrice * qtyMotor)} ฿</b></span>}
               </div>
             </div>
           </div>
