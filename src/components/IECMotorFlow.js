@@ -1466,9 +1466,9 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
     const norm = s => (s || '').toUpperCase().replace(/[-\s]/g, '');
 
     // ใช้ API_BASE เดียวกับที่ app ใช้อยู่ เพื่อหลีกปัญหา CORS
-    const API_BASE = process.env.REACT_APP_API_BASE || '';
+    // fetch stock directly from sas-qc server
 
-    fetch(`${API_BASE}/api/stock`, { cache: 'no-store' })
+    fetch('https://sas-qc-gearmotor.onrender.com/api/stock', { cache: 'no-store' })
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
