@@ -203,73 +203,48 @@ const getGearGif = () => {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// normalizeGlbCode — แปลง Model Code → ชื่อไฟล์ GLB ที่ใช้ร่วมกัน
-// ทุก ratio → 3 (ทุก frame size ใช้ ratio 3 เหมือนกันหมด)
-// เช่น 2IK10GN-ST-2GN15K  → 2IK10GN-ST-2GN3K
-//      5IK90RGU-CF-5GU18KB → 5IK90RGU-CF-5GU3KB
-//      6IK200GU-CF-6GU180RT → 6IK200GU-CF-6GU3RT
+// normalizeGlbCode — ทุก ratio → 3 เพื่อใช้ไฟล์ GLB ร่วมกัน
+// เช่น 5IK90RGU-CF-5GU18KB → 5IK90RGU-CF-5GU3KB
+//      2IK10GN-ST-2GN15K    → 2IK10GN-ST-2GN3K
 // ─────────────────────────────────────────────────────────────────────────────
 function normalizeGlbCode(modelCode) {
   if (!modelCode) return modelCode;
   return modelCode.replace(
     /(\d+)(GN|GU)(\d+(?:\.\d+)?)(K|KB|RC|RT|L|LC)?(?=$|-)/gi,
-    (match, frame, gearType, ratio, suffix) => {
-      return `${frame}${gearType.toUpperCase()}3${suffix || ''}`;
-    }
+    (_, frame, gearType, _ratio, suffix) =>
+      `${frame}${gearType.toUpperCase()}3${suffix || ''}`
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ModelViewer3D — แสดงไฟล์ .glb ด้วย <model-viewer> (Google)
-// GLB อยู่ที่ /public/model/glb/<modelCode>.glb
+// StepViewer3D — แสดงไฟล์ .glb ด้วย <model-viewer> (Google)
+// - ไม่รอ customElements (render <model-viewer> ทันที หลัง script โหลด)
+// - ไม่ HEAD check (ให้ model-viewer จัดการ error เอง → เร็วขึ้นมาก)
+// - compute normals ใน GLB ด้วย model-viewer เอง
 // ─────────────────────────────────────────────────────────────────────────────
 
-// โหลด model-viewer script ครั้งเดียว
-function ensureModelViewer() {
+// โหลด model-viewer script ครั้งเดียวตอน module load (ไม่รอ mount)
+(() => {
+  if (typeof document === 'undefined') return;
   const id = 'mv-script';
   if (document.getElementById(id)) return;
   const s = document.createElement('script');
-  s.id   = id;
-  s.type = 'module';
-  s.src  = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js';
+  s.id = id; s.type = 'module';
+  s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js';
   document.head.appendChild(s);
-}
+})();
 
 function StepViewer3D({ modelCode, width = '100%', aspect = '4/3' }) {
-  const [loaded, setLoaded] = React.useState(false);
-  const [hasFile, setHasFile] = React.useState(null); // null=checking, true, false
-  const containerRef = React.useRef(null);
+  const glbCode = normalizeGlbCode(modelCode || '');
+  const PUBLIC  = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  const glbUrl  = glbCode
+    ? `${PUBLIC}/model/glb/${encodeURIComponent(glbCode)}.glb`
+    : null;
 
-  // โหลด model-viewer เมื่อ mount
-  React.useEffect(() => {
-    ensureModelViewer();
-    // รอ custom element ลงทะเบียน
-    const t = setInterval(() => {
-      if (window.customElements?.get('model-viewer')) {
-        setLoaded(true);
-        clearInterval(t);
-      }
-    }, 200);
-    return () => clearInterval(t);
-  }, []);
+  const [err, setErr] = React.useState(false);
 
-  // เช็กว่าไฟล์ GLB มีจริงไหม
-  React.useEffect(() => {
-    if (!modelCode) { setHasFile(false); return; }
-    setHasFile(null);
-    const PUBLIC = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
-    const glbCode = normalizeGlbCode(modelCode);
-    const url = `${PUBLIC}/model/glb/${encodeURIComponent(glbCode)}.glb`;
-    fetch(url, { method: 'HEAD', cache: 'no-store' })
-      .then(r => {
-        const ct = (r.headers.get('content-type') || '').toLowerCase();
-        setHasFile(r.ok && !ct.includes('text/html'));
-      })
-      .catch(() => setHasFile(false));
-  }, [modelCode]);
-
-  const PUBLIC = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
-  const glbUrl = `${PUBLIC}/model/glb/${encodeURIComponent(normalizeGlbCode(modelCode || ''))}.glb`;
+  // reset error เมื่อ model เปลี่ยน
+  React.useEffect(() => { setErr(false); }, [glbCode]);
 
   const containerStyle = {
     width,
@@ -280,58 +255,45 @@ function StepViewer3D({ modelCode, width = '100%', aspect = '4/3' }) {
     background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 60%, #16213e 100%)',
   };
 
-  // กำลังโหลด model-viewer หรือเช็กไฟล์
-  if (!loaded || hasFile === null) {
-    return (
-      <div style={containerStyle}>
-        <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, color:'#aaa' }}>
-          <div style={{ width:36, height:36, border:'3px solid #333', borderTop:'3px solid #4a90d9', borderRadius:'50%', animation:'spin3d 0.8s linear infinite' }} />
-          <span style={{ fontSize:12 }}>กำลังโหลด 3D...</span>
-          <style>{`@keyframes spin3d{to{transform:rotate(360deg)}}`}</style>
-        </div>
-      </div>
-    );
-  }
-
-  // ไม่มีไฟล์
-  if (!hasFile) {
+  if (!glbUrl || err) {
     return (
       <div style={containerStyle}>
         <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, color:'#555' }}>
-          <span style={{ fontSize:40 }}>📦</span>
-          <span style={{ fontSize:13, color:'#666' }}>ยังไม่มีไฟล์ 3D</span>
-          <span style={{ fontSize:10, color:'#444', fontFamily:'monospace' }}>{modelCode}</span>
+          <span style={{ fontSize:36 }}>📦</span>
+          <span style={{ fontSize:12, color:'#666' }}>ยังไม่มีไฟล์ 3D</span>
+          <span style={{ fontSize:9, color:'#444', fontFamily:'monospace' }}>{glbCode}</span>
         </div>
       </div>
     );
   }
 
-  // แสดง model-viewer
   return (
-    <div ref={containerRef} style={containerStyle}>
+    <div style={containerStyle}>
       <model-viewer
         src={glbUrl}
-        alt={modelCode}
+        alt={glbCode}
         auto-rotate
-        auto-rotate-delay="0"
-        rotation-per-second="30deg"
+        auto-rotate-delay="500"
+        rotation-per-second="25deg"
         camera-controls
         touch-action="pan-y"
-        shadow-intensity="1"
-        shadow-softness="0.8"
+        shadow-intensity="0.8"
         environment-image="neutral"
-        exposure="1"
+        exposure="1.2"
+        onError={() => setErr(true)}
         style={{
           width: '100%',
           height: '100%',
           background: 'transparent',
           '--poster-color': 'transparent',
+          '--progress-bar-color': '#4a90d9',
+          '--progress-mask': 'transparent',
         }}
       />
       <div style={{
-        position:'absolute', bottom:6, left:0, right:0,
-        textAlign:'center', color:'rgba(255,255,255,0.3)',
-        fontSize:10, pointerEvents:'none', userSelect:'none',
+        position:'absolute', bottom:4, left:0, right:0,
+        textAlign:'center', color:'rgba(255,255,255,0.25)',
+        fontSize:9, pointerEvents:'none', userSelect:'none',
       }}>
         🖱 ลาก = หมุน · Scroll = ซูม
       </div>
