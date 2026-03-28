@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import ACMotorFlow, { renderRKFSFlow, productList, generateModelCode, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode, renderSRVFlow } from './components/MotorFlows.js';
+import { renderRKFSFlow, productList, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode, renderSRVFlow } from './components/MotorFlows.js';
 import { renderIECMotorFlow } from './components/IECMotorFlow.js';
+import ACGearMotorFlow, { generateACModelCode } from './components/ACGearMotorFlow.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 // ✅ ADD: EmailJS IDs (ใช้ค่าเดิมจาก ENV ถ้ามี / ไม่ทำให้แอปล้ม)
@@ -362,6 +363,25 @@ function App() {
 
   const EMAILJS_PUBLIC_KEY = 'BvIT5-X7LnkaS3LKq';
   const [selectedProduct, setSelectedProduct] = useState(null);
+  // ── [ADD] Deep-link via URL hash: /#ac-gear-motor ──────────────────────────
+useEffect(() => {
+  const hash = window.location.hash.toLowerCase().replace('#', '');
+  if (hash === 'ac-gear-motor') {
+    // reset state เหมือนกดการ์ดปกติ
+    setAcMotorType(null);
+    setAcPower(null);
+    setAcSpeedAdjust(null);
+    setAcVoltage(null);
+    setAcOption(null);
+    setAcGearHead(null);
+    setAcRatio(null);
+    setAcConfirm(false);
+    setModelCodeList([]);
+    setSelectedModel(null);
+    setShowForm(false);
+    setSelectedProduct('AC Gear Motor');
+  }
+}, []);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
   useEffect(() => {
   // 1) โยน instance ไว้ให้ทั้งแอปใช้ร่วมกัน
@@ -412,18 +432,6 @@ const [acRfqForm, setAcRfqForm] = useState({ name:'', phone:'', company:'', emai
 const [acRfqSending, setAcRfqSending] = useState(false);
 const [selectedSalePerson, setSelectedSalePerson] = useState(null);
 const [showSalePersonPicker, setShowSalePersonPicker] = useState(false);
-
-const SALE_PERSONS = [
-  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER',  phone: '081-921-6225' },
-  { abbr: 'AP', name: 'Ms.Apichaya P. (AP)',   position: 'Sale Supervisor',                 phone: '098-3697494' },
-  { abbr: 'MY', name: 'Ms.Matavee Y. (MY)',   position: 'Sale Supervisor',                 phone: '092-2715371' },
-  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Exclusive',                phone: '080-4632394' },
-  { abbr: 'WS',  name: 'Ms.Warissara S.(WS)',    position: 'Sale Exclusive',                phone: '065-5051798' },
-  { abbr: 'SI',  name: 'Ms.Suphak I.(SI)',       position: 'Sale Exclusive',                phone: '096-0787776' },
-  { abbr: 'NM',  name: 'Mr.Naphaphat M.(NM)',    position: 'Sale Exclusive',                phone: '065-7176332' }, 
-  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',        position: 'Sale Supervisor',               phone: '086-9819616' },
-  { abbr: 'PL',  name: 'Mr.Pongsakorn L.(PL)',   position: 'Sale Engineer',                 phone: '063-2159056' },
-];
 
 const handleAcRfqChange = (e) => {
   const { name, value } = e.target;
@@ -1500,7 +1508,7 @@ const getFileUrl = () => {
               <h2 className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">AC Gear Motor Selection</h2>
               <button className="text-green-600 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]" onClick={handleBack}>Home</button>
             </div>
-            <ACMotorFlow
+            <ACGearMotorFlow
               acState={acState}
               acSetters={acSetters}
               onConfirm={(modelCode) => {
