@@ -220,7 +220,8 @@ function normalizeGlbCode(modelCode) {
 // GLB base URL — GitHub Releases (Vercel ไม่รองรับ LFS ให้ใช้ตรงนี้แทน)
 // หลัง upload ไฟล์ GLB ขึ้น GitHub Releases tag "glb-v1" แล้ว
 // ─────────────────────────────────────────────────────────────────────────────
-const GLB_BASE = 'https://github.com/SomyotSW/gear-motor-app/releases/download/glb-v1';
+// jsDelivr CDN — proxy GitHub Releases พร้อม CORS header ถูกต้อง
+const GLB_BASE = 'https://cdn.jsdelivr.net/gh/SomyotSW/gear-motor-app@main/public/model/glb';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // StepViewer3D — แสดงไฟล์ .glb ด้วย <model-viewer> (Google)
