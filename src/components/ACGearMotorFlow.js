@@ -203,9 +203,142 @@ const getGearGif = () => {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ACGearMotorFlow Component
-// (เดิมชื่อ ACMotorFlow ใน MotorFlows.js บรรทัด 688–2217)
+// normalizeGlbCode — แปลง Model Code → ชื่อไฟล์ GLB ที่ใช้ร่วมกัน
+// ทุก ratio → 3 (ทุก frame size ใช้ ratio 3 เหมือนกันหมด)
+// เช่น 2IK10GN-ST-2GN15K  → 2IK10GN-ST-2GN3K
+//      5IK90RGU-CF-5GU18KB → 5IK90RGU-CF-5GU3KB
+//      6IK200GU-CF-6GU180RT → 6IK200GU-CF-6GU3RT
 // ─────────────────────────────────────────────────────────────────────────────
+function normalizeGlbCode(modelCode) {
+  if (!modelCode) return modelCode;
+  return modelCode.replace(
+    /(\d+)(GN|GU)(\d+(?:\.\d+)?)(K|KB|RC|RT|L|LC)?(?=$|-)/gi,
+    (match, frame, gearType, ratio, suffix) => {
+      return `${frame}${gearType.toUpperCase()}3${suffix || ''}`;
+    }
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ModelViewer3D — แสดงไฟล์ .glb ด้วย <model-viewer> (Google)
+// GLB อยู่ที่ /public/model/glb/<modelCode>.glb
+// ─────────────────────────────────────────────────────────────────────────────
+
+// โหลด model-viewer script ครั้งเดียว
+function ensureModelViewer() {
+  const id = 'mv-script';
+  if (document.getElementById(id)) return;
+  const s = document.createElement('script');
+  s.id   = id;
+  s.type = 'module';
+  s.src  = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js';
+  document.head.appendChild(s);
+}
+
+function StepViewer3D({ modelCode, width = '100%', aspect = '4/3' }) {
+  const [loaded, setLoaded] = React.useState(false);
+  const [hasFile, setHasFile] = React.useState(null); // null=checking, true, false
+  const containerRef = React.useRef(null);
+
+  // โหลด model-viewer เมื่อ mount
+  React.useEffect(() => {
+    ensureModelViewer();
+    // รอ custom element ลงทะเบียน
+    const t = setInterval(() => {
+      if (window.customElements?.get('model-viewer')) {
+        setLoaded(true);
+        clearInterval(t);
+      }
+    }, 200);
+    return () => clearInterval(t);
+  }, []);
+
+  // เช็กว่าไฟล์ GLB มีจริงไหม
+  React.useEffect(() => {
+    if (!modelCode) { setHasFile(false); return; }
+    setHasFile(null);
+    const PUBLIC = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+    const glbCode = normalizeGlbCode(modelCode);
+    const url = `${PUBLIC}/model/glb/${encodeURIComponent(glbCode)}.glb`;
+    fetch(url, { method: 'HEAD', cache: 'no-store' })
+      .then(r => {
+        const ct = (r.headers.get('content-type') || '').toLowerCase();
+        setHasFile(r.ok && !ct.includes('text/html'));
+      })
+      .catch(() => setHasFile(false));
+  }, [modelCode]);
+
+  const PUBLIC = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  const glbUrl = `${PUBLIC}/model/glb/${encodeURIComponent(normalizeGlbCode(modelCode || ''))}.glb`;
+
+  const containerStyle = {
+    width,
+    aspectRatio: aspect,
+    position: 'relative',
+    borderRadius: '1rem',
+    overflow: 'hidden',
+    background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 60%, #16213e 100%)',
+  };
+
+  // กำลังโหลด model-viewer หรือเช็กไฟล์
+  if (!loaded || hasFile === null) {
+    return (
+      <div style={containerStyle}>
+        <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, color:'#aaa' }}>
+          <div style={{ width:36, height:36, border:'3px solid #333', borderTop:'3px solid #4a90d9', borderRadius:'50%', animation:'spin3d 0.8s linear infinite' }} />
+          <span style={{ fontSize:12 }}>กำลังโหลด 3D...</span>
+          <style>{`@keyframes spin3d{to{transform:rotate(360deg)}}`}</style>
+        </div>
+      </div>
+    );
+  }
+
+  // ไม่มีไฟล์
+  if (!hasFile) {
+    return (
+      <div style={containerStyle}>
+        <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, color:'#555' }}>
+          <span style={{ fontSize:40 }}>📦</span>
+          <span style={{ fontSize:13, color:'#666' }}>ยังไม่มีไฟล์ 3D</span>
+          <span style={{ fontSize:10, color:'#444', fontFamily:'monospace' }}>{modelCode}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // แสดง model-viewer
+  return (
+    <div ref={containerRef} style={containerStyle}>
+      <model-viewer
+        src={glbUrl}
+        alt={modelCode}
+        auto-rotate
+        auto-rotate-delay="0"
+        rotation-per-second="30deg"
+        camera-controls
+        touch-action="pan-y"
+        shadow-intensity="1"
+        shadow-softness="0.8"
+        environment-image="neutral"
+        exposure="1"
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'transparent',
+          '--poster-color': 'transparent',
+        }}
+      />
+      <div style={{
+        position:'absolute', bottom:6, left:0, right:0,
+        textAlign:'center', color:'rgba(255,255,255,0.3)',
+        fontSize:10, pointerEvents:'none', userSelect:'none',
+      }}>
+        🖱 ลาก = หมุน · Scroll = ซูม
+      </div>
+    </div>
+  );
+}
+
 export default function ACGearMotorFlow({ acState, acSetters, onConfirm }) {
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio , acConfirm } = acState;
     const [qtyGear, setQtyGear] = useState(1);
@@ -1063,18 +1196,15 @@ const gifForHead = (() => {
 </button>
 </h3>
     <div className="flex flex-col md:flex-row gap-4 items-start">
-    {/* === Mobile: รูปภาพอยู่บน summaryRef === */}
+    {/* === Mobile: 3D Viewer อยู่บน summaryRef === */}
     {acGearHead && (() => {
-      const src = getGearPreviewUrl(acGearHead);
-      if (!src) return null;
+      const raw2 = generateACModelCode({ ...acState, acConfirm: true });
+      const list2 = Array.isArray(raw2) ? (Array.isArray(raw2[0]) ? raw2.flat() : raw2) : (raw2 ? [raw2] : []);
+      const chosenCode = (typeof selectedModel === 'string' && selectedModel) || (list2[0] || '');
+      if (!chosenCode) return null;
       return (
-        <div className="md:hidden flex justify-center mb-2">
-          <img
-            src={src}
-            alt={acGearHead}
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            className="w-48 max-w-full h-auto object-contain opacity-95 drop-shadow"
-          />
+        <div className="md:hidden w-full mb-3">
+          <StepViewer3D modelCode={chosenCode} width="100%" aspect="4/3" />
         </div>
       );
     })()}
@@ -1138,7 +1268,98 @@ const gifForHead = (() => {
     return getShaftDia ? (getShaftDia(acPower, acGearHead) || '—') : '—';
   })()
 }</b></div>
-      <div>Weight : <b>— kg</b></div>
+      <div>Weight : <b>{(() => {
+  // ── ตาราง base motor weight ──────────────────────────────────────────
+  const MOTOR_WEIGHT = {
+    'Induction Motor': {
+      '10W AC Motor':  { base: 0.75, tb: 0.75,  emb: 1.10 },
+      '15W AC Motor':  { base: 1.10, tb: 1.10,  emb: 1.47 },
+      '25W AC Motor':  { base: 1.60, tb: 1.75,  emb: 2.15 },
+      '40W AC Motor':  { base: 2.40, tb: 2.55,  emb: 3.10 },
+      '60W AC Motor':  { base: 2.70, tb: 2.85,  emb: 3.55 },
+      '90W AC Motor':  { base: 3.20, tb: 3.35,  emb: 4.30 },
+      '120W AC Motor': { base: 3.40, tb: 3.55,  emb: 4.30 },
+      '140W AC Motor': { base: 5.00, tb: 5.15,  emb: 5.87 },
+      '200W AC Motor': { base: 5.00, tb: 5.15,  emb: 5.90 },
+    },
+    'Reversible Motor': {
+      '10W AC Motor':  { base: 0.80, tb: 0.80,  emb: 1.10 },
+      '15W AC Motor':  { base: 1.15, tb: 1.15,  emb: 1.47 },
+      '25W AC Motor':  { base: 1.65, tb: 1.75,  emb: 2.15 },
+      '40W AC Motor':  { base: 2.45, tb: 2.60,  emb: 3.10 },
+      '60W AC Motor':  { base: 2.75, tb: 2.90,  emb: 3.55 },
+      '90W AC Motor':  { base: 3.25, tb: 3.40,  emb: 4.30 },
+      '120W AC Motor': { base: 3.45, tb: 3.60,  emb: 4.30 },
+      '140W AC Motor': { base: 5.50, tb: 5.20,  emb: 5.87 },
+      '200W AC Motor': { base: 5.50, tb: 5.20,  emb: 5.90 },
+    },
+    'Variable Speed Motor': {
+      '10W AC Motor':  { base: 1.10, tb: 1.10,  emb: 1.10 },
+      '15W AC Motor':  { base: 1.20, tb: 1.20,  emb: 1.47 },
+      '25W AC Motor':  { base: 1.70, tb: 1.75,  emb: 2.15 },
+      '40W AC Motor':  { base: 2.50, tb: 2.60,  emb: 3.10 },
+      '60W AC Motor':  { base: 2.80, tb: 2.90,  emb: 3.55 },
+      '90W AC Motor':  { base: 3.30, tb: 3.40,  emb: 4.30 },
+      '120W AC Motor': { base: 3.50, tb: 3.60,  emb: 4.30 },
+      '140W AC Motor': { base: 5.60, tb: 5.20,  emb: 5.87 },
+      '200W AC Motor': { base: 5.60, tb: 5.20,  emb: 5.90 },
+    },
+  };
+
+  // ── ตาราง gearhead weight ─────────────────────────────────────────────
+  // 60W/90W/120W: GN→1.35, GU+KB→1.5, GU+K→1.55
+  // 10W→0.40, 15W→0.50, 25W/40W→0.80, 140W/200W→2.1
+  const getGearWeight = (power, chosen) => {
+    const is60_90_120 = /\b(60|90|120)W\b/i.test(String(power));
+    if (is60_90_120) {
+      if (/GN/.test(chosen))  return 1.35;
+      if (/GU/.test(chosen)) {
+        if (/KB$/i.test(chosen)) return 1.50;
+        if (/K$/i.test(chosen))  return 1.55;
+        return 1.50;
+      }
+      return 1.35;
+    }
+    const map = {
+      '10W AC Motor': 0.40,
+      '15W AC Motor': 0.50,
+      '25W AC Motor': 0.80,
+      '40W AC Motor': 1.35,
+      '140W AC Motor': 2.10,
+      '200W AC Motor': 2.10,
+    };
+    return map[power] ?? null;
+  };
+
+  if (!acMotorType || !acPower) return '—';
+
+  const wRow = MOTOR_WEIGHT[acMotorType]?.[acPower];
+  if (!wRow) return '—';
+
+  // ตรวจ option ที่เลือก
+  const opts = Array.isArray(acOption) ? acOption : (acOption ? [acOption] : []);
+  const hasEMB = opts.some(o => /electromagnetic brake/i.test(o));
+  const hasTB  = opts.some(o => /terminal box/i.test(o));
+
+  let motorW;
+  if (hasEMB)      motorW = wRow.emb;
+  else if (hasTB)  motorW = wRow.tb;
+  else             motorW = wRow.base;
+
+  // หา chosen model code (radio ที่เลือก หรือตัวแรก)
+  const raw2 = generateACModelCode({ ...acState, acConfirm: true });
+  const list2 = Array.isArray(raw2) ? (Array.isArray(raw2[0]) ? raw2.flat() : raw2) : (raw2 ? [raw2] : []);
+  const chosenW = (typeof selectedModel === 'string' && selectedModel) || (list2[0] || '');
+
+  const gearW = getGearWeight(acPower, chosenW);
+
+  const motorStr = `Motor ${motorW.toFixed(2)} kg`;
+  const gearStr  = gearW != null ? ` + Gearhead ${gearW.toFixed(2)} kg` : '';
+  const totalW   = gearW != null ? motorW + gearW : motorW;
+  const totalStr = gearW != null ? ` = Total ${totalW.toFixed(2)} kg` : '';
+
+  return `${motorStr}${gearStr}${totalStr}`;
+})()}</b></div>
     </div>
 	{/* NEW: Gear preview image on the right side */}
 {/* ===== ADD: Mobile Gear qty controls (show on phone, below spec) ===== */}
@@ -1288,26 +1509,20 @@ const gifForHead = (() => {
 
 })()}
 
-{/* NEW: Desktop — image on top, qty controls below */}
+{/* NEW: Desktop — 3D viewer on top, qty controls below */}
 {acGearHead && (() => {
-  const src = getGearPreviewUrl(acGearHead);
+  const raw3d = generateACModelCode({ ...acState, acConfirm: true });
+  const list3d = Array.isArray(raw3d) ? (Array.isArray(raw3d[0]) ? raw3d.flat() : raw3d) : (raw3d ? [raw3d] : []);
+  const code3d = (typeof selectedModel === 'string' && selectedModel) || (list3d[0] || '');
   return (
     <div
       className="hidden md:flex flex-col items-center gap-3"
-      style={{ width: '34%', flexShrink: 0 }}
+      style={{ width: '38%', flexShrink: 0 }}
     >
-      {src && (
-        <div className="w-full flex justify-center">
-          <img
-            src={src}
-            alt={acGearHead}
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            className="w-full max-h-48 object-contain opacity-95 drop-shadow
-                 transition-transform duration-500 ease-out
-                 group-hover:scale-105 will-change-transform"
-          />
-        </div>
-      )}
+      {/* 3D Viewer 4:3 */}
+      <div className="w-full rounded-xl overflow-hidden shadow-2xl" style={{ aspectRatio: '4/3' }}>
+        <StepViewer3D modelCode={code3d} width="100%" aspect="4/3" />
+      </div>
       <div className="w-full flex flex-col gap-2">
     {/* Row 1 — Gear Head */}
     <div className="flex items-center justify-between gap-2">
