@@ -217,13 +217,16 @@ function normalizeGlbCode(modelCode) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GLB base URL — GitHub Releases (Vercel ไม่รองรับ LFS ให้ใช้ตรงนี้แทน)
+// หลัง upload ไฟล์ GLB ขึ้น GitHub Releases tag "glb-v1" แล้ว
+// ─────────────────────────────────────────────────────────────────────────────
+const GLB_BASE = 'https://github.com/SomyotSW/gear-motor-app/releases/download/glb-v1';
+
+// ─────────────────────────────────────────────────────────────────────────────
 // StepViewer3D — แสดงไฟล์ .glb ด้วย <model-viewer> (Google)
-// - ไม่รอ customElements (render <model-viewer> ทันที หลัง script โหลด)
-// - ไม่ HEAD check (ให้ model-viewer จัดการ error เอง → เร็วขึ้นมาก)
-// - compute normals ใน GLB ด้วย model-viewer เอง
 // ─────────────────────────────────────────────────────────────────────────────
 
-// โหลด model-viewer script ครั้งเดียวตอน module load (ไม่รอ mount)
+// โหลด model-viewer script ครั้งเดียวตอน module load
 (() => {
   if (typeof document === 'undefined') return;
   const id = 'mv-script';
@@ -234,30 +237,82 @@ function normalizeGlbCode(modelCode) {
   document.head.appendChild(s);
 })();
 
+// ── Environment presets ───────────────────────────────────────────────────────
+const ENV_PRESETS = [
+  { label: 'Neutral',   value: 'neutral',     bg: '#4a4a4a' },
+  { label: 'Studio',    value: 'legacy',       bg: '#6a7a8a' },
+  { label: 'Warehouse', value: 'warehouse',    bg: '#8a7a6a' },
+  { label: 'Forest',    value: 'forest',       bg: '#4a6a4a' },
+  { label: 'Apartment', value: 'apartment',    bg: '#7a6a8a' },
+  { label: 'City',      value: 'city',         bg: '#5a6a7a' },
+  { label: 'Dawn',      value: 'dawn',         bg: '#8a6a5a' },
+  { label: 'Night',     value: 'night',        bg: '#2a2a4a' },
+];
+
 function StepViewer3D({ modelCode, width = '100%', aspect = '4/3' }) {
   const glbCode = normalizeGlbCode(modelCode || '');
-  const PUBLIC  = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
   const glbUrl  = glbCode
-    ? `${PUBLIC}/model/glb/${encodeURIComponent(glbCode)}.glb`
+    ? `${GLB_BASE}/${encodeURIComponent(glbCode)}.glb`
     : null;
 
-  const [err, setErr] = React.useState(false);
+  const mvRef                     = React.useRef(null);
+  const [err, setErr]             = React.useState(false);
+  const [ready, setReady]         = React.useState(false);
+  const [envIdx, setEnvIdx]       = React.useState(0);
+  const [autoLight, setAutoLight] = React.useState(false);
+  const [lightRot, setLightRot]   = React.useState(0);
+  const lightTimer                = React.useRef(null);
 
-  // reset error เมื่อ model เปลี่ยน
-  React.useEffect(() => { setErr(false); }, [glbCode]);
+  // reset เมื่อ model เปลี่ยน
+  React.useEffect(() => { setErr(false); setReady(false); }, [glbCode]);
+
+  // ref+addEventListener (custom element ไม่รองรับ React synthetic events)
+  React.useEffect(() => {
+    const el = mvRef.current;
+    if (!el) return;
+    const onErr  = () => setErr(true);
+    const onLoad = () => setReady(true);
+    el.addEventListener('error', onErr);
+    el.addEventListener('load',  onLoad);
+    return () => {
+      el.removeEventListener('error', onErr);
+      el.removeEventListener('load',  onLoad);
+    };
+  }, [glbUrl]);
+
+  // auto-rotate lighting
+  React.useEffect(() => {
+    if (autoLight) {
+      lightTimer.current = setInterval(() => {
+        setLightRot(r => {
+          const next = (r + 2) % 360;
+          if (mvRef.current) {
+            mvRef.current.style.setProperty('--env-rotation', `${next}deg`);
+          }
+          return next;
+        });
+      }, 30);
+    } else {
+      clearInterval(lightTimer.current);
+    }
+    return () => clearInterval(lightTimer.current);
+  }, [autoLight]);
+
+  // apply environment preset
+  React.useEffect(() => {
+    const el = mvRef.current;
+    if (!el) return;
+    el.setAttribute('environment-image', ENV_PRESETS[envIdx].value);
+  }, [envIdx]);
 
   const containerStyle = {
-    width,
-    aspectRatio: aspect,
-    position: 'relative',
-    borderRadius: '1rem',
-    overflow: 'hidden',
-    background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 60%, #16213e 100%)',
+    width, aspectRatio: aspect, position: 'relative',
+    borderRadius: '1rem', overflow: 'visible',
   };
 
-  if (!glbUrl || err) {
+  if (!glbUrl) {
     return (
-      <div style={containerStyle}>
+      <div style={{ ...containerStyle, overflow:'hidden', background:'linear-gradient(135deg,#0f0f1a,#1a1a2e)' }}>
         <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, color:'#555' }}>
           <span style={{ fontSize:36 }}>📦</span>
           <span style={{ fontSize:12, color:'#666' }}>ยังไม่มีไฟล์ 3D</span>
@@ -269,34 +324,114 @@ function StepViewer3D({ modelCode, width = '100%', aspect = '4/3' }) {
 
   return (
     <div style={containerStyle}>
-      <model-viewer
-        src={glbUrl}
-        alt={glbCode}
-        auto-rotate
-        auto-rotate-delay="500"
-        rotation-per-second="25deg"
-        camera-controls
-        touch-action="pan-y"
-        shadow-intensity="0.8"
-        environment-image="neutral"
-        exposure="1.2"
-        onError={() => setErr(true)}
-        style={{
-          width: '100%',
-          height: '100%',
-          background: 'transparent',
-          '--poster-color': 'transparent',
-          '--progress-bar-color': '#4a90d9',
-          '--progress-mask': 'transparent',
-        }}
-      />
-      <div style={{
-        position:'absolute', bottom:4, left:0, right:0,
-        textAlign:'center', color:'rgba(255,255,255,0.25)',
-        fontSize:9, pointerEvents:'none', userSelect:'none',
-      }}>
-        🖱 ลาก = หมุน · Scroll = ซูม
+      {/* ── 3D Viewer ── */}
+      <div style={{ width:'100%', aspectRatio: aspect, borderRadius:'1rem', overflow:'hidden', position:'relative', background:'linear-gradient(135deg,#0f0f1a,#1a1a2e)' }}>
+        <model-viewer
+          ref={mvRef}
+          src={glbUrl}
+          alt={glbCode}
+          auto-rotate
+          auto-rotate-delay="300"
+          rotation-per-second="20deg"
+          camera-controls
+          touch-action="pan-y"
+          shadow-intensity="1"
+          shadow-softness="0.5"
+          environment-image={ENV_PRESETS[envIdx].value}
+          exposure="1.2"
+          style={{
+            width: '100%', height: '100%',
+            background: 'transparent',
+            '--poster-color': 'transparent',
+            '--progress-bar-color': '#4a90d9',
+            '--progress-mask': 'transparent',
+          }}
+        />
+        {/* hint */}
+        {ready && !err && (
+          <div style={{
+            position:'absolute', bottom:4, left:0, right:0,
+            textAlign:'center', color:'rgba(255,255,255,0.25)',
+            fontSize:9, pointerEvents:'none', userSelect:'none',
+          }}>
+            🖱 ลาก = หมุน · Scroll = ซูม
+          </div>
+        )}
+        {/* error overlay */}
+        {err && (
+          <div style={{
+            position:'absolute', inset:0, display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'center', gap:6,
+            background:'rgba(10,10,20,0.92)', borderRadius:'1rem',
+          }}>
+            <span style={{ fontSize:32 }}>📦</span>
+            <span style={{ fontSize:11, color:'#777' }}>ยังไม่มีไฟล์ 3D</span>
+            <span style={{ fontSize:9, color:'#555', fontFamily:'monospace' }}>{glbCode}</span>
+          </div>
+        )}
       </div>
+
+      {/* ── Controls bar ── */}
+      {!err && (
+        <div style={{ display:'flex', gap:6, marginTop:8, flexWrap:'wrap', alignItems:'center' }}>
+          {/* Environment color dots */}
+          {ENV_PRESETS.map((env, idx) => (
+            <button
+              key={env.value}
+              title={env.label}
+              onClick={() => setEnvIdx(idx)}
+              style={{
+                width:22, height:22, borderRadius:'50%',
+                background: env.bg, padding:0, flexShrink:0,
+                border: idx === envIdx ? '2px solid #4a90d9' : '2px solid rgba(255,255,255,0.15)',
+                cursor:'pointer',
+                boxShadow: idx === envIdx ? '0 0 8px #4a90d9' : 'none',
+                transition:'all 0.15s',
+              }}
+            />
+          ))}
+
+          {/* divider */}
+          <div style={{ width:1, height:18, background:'rgba(255,255,255,0.15)', margin:'0 2px' }} />
+
+          {/* Auto-rotate Light */}
+          <button
+            title={autoLight ? 'หยุดหมุนแสง' : 'หมุนแสงรอบๆ'}
+            onClick={() => setAutoLight(v => !v)}
+            style={{
+              padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:600,
+              cursor:'pointer', border:'none',
+              background: autoLight
+                ? 'linear-gradient(90deg,#f6d365,#fda085)'
+                : 'rgba(255,255,255,0.12)',
+              color: autoLight ? '#1a1a1a' : 'rgba(255,255,255,0.7)',
+              boxShadow: autoLight ? '0 0 10px rgba(253,160,133,0.5)' : 'none',
+              transition:'all 0.2s',
+              display:'flex', alignItems:'center', gap:4,
+            }}
+          >
+            <span style={{ display:'inline-block', animation: autoLight ? 'spinLight 1s linear infinite' : 'none' }}>☀️</span>
+            {autoLight ? 'หยุด' : 'หมุนแสง'}
+            <style>{`@keyframes spinLight{to{transform:rotate(360deg)}}`}</style>
+          </button>
+
+          {/* Manual light slider */}
+          {!autoLight && (
+            <input
+              type="range" min={0} max={360} value={lightRot}
+              title="ปรับทิศแสง"
+              onChange={e => {
+                const val = Number(e.target.value);
+                setLightRot(val);
+                if (mvRef.current) {
+                  mvRef.current.style.setProperty('--env-rotation', `${val}deg`);
+                }
+              }}
+              style={{ flex:1, minWidth:60, maxWidth:100, accentColor:'#4a90d9', cursor:'pointer' }}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
