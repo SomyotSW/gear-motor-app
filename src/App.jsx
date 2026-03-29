@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { renderRKFSFlow, productList, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode, renderSRVFlow } from './components/MotorFlows.js';
+import { productList, renderHypoidGearFlow, renderBLDCGearFlow, generateBLDCModelCode, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode, renderSRVFlow } from './components/MotorFlows.js';
+import { renderRKFSFlow } from './components/RKFSMotorFlow.js';
 import { renderIECMotorFlow } from './components/IECMotorFlow.js';
 import ACGearMotorFlow, { generateACModelCode } from './components/ACGearMotorFlow.js';
 import bgImage from './assets/GearBG2.png';

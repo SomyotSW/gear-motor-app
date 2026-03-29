@@ -204,15 +204,25 @@ const getGearGif = () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // normalizeGlbCode — ทุก ratio → 3 เพื่อใช้ไฟล์ GLB ร่วมกัน
-// เช่น 5IK90RGU-CF-5GU18KB → 5IK90RGU-CF-5GU3KB
-//      2IK10GN-ST-2GN15K    → 2IK10GN-ST-2GN3K
+// เช่น 5IK90RGU-CF-5GU18KB  → 5IK90RGU-CF-5GU3KB
+//      5IK120GU-CF-5GU200KB  → 5IK120GU-CF-5GU3KB
+//      5IK60GN-CF-5GN200K    → 5IK60GN-CF-5GN3K
+//      5IK40GU-CF-5GU7.5KB   → 5IK40GU-CF-5GU3KB
+//
+// Bug เดิม: regex  (K|KB|RC|RT)?(?=$|-)  มีปัญหา 2 จุด
+//   1. ลำดับ K อยู่ก่อน KB ทำให้ regex กิน K แล้วเหลือ B
+//      → lookahead (?=$|-) fail → ไม่ replace เลย
+//   2. suffix เป็น optional (?) ทำให้บางครั้ง replace แค่ตัวเลข
+//      แล้วทิ้ง suffix ไว้ → ชื่อไฟล์ผิด
+// Fix: ใช้ alternation ที่เรียง KB/RC/RT ก่อน K และจับด้วย word-boundary/end
 // ─────────────────────────────────────────────────────────────────────────────
 function normalizeGlbCode(modelCode) {
   if (!modelCode) return modelCode;
+  // จับ (frameNum)(GN|GU)(ratio)(KB|RC|RT|K) — KB/RC/RT ต้องอยู่ก่อน K เสมอ
   return modelCode.replace(
-    /(\d+)(GN|GU)(\d+(?:\.\d+)?)(K|KB|RC|RT|L|LC)?(?=$|-)/gi,
+    /(\d+)(GN|GU)(\d+(?:\.\d+)?)(KB|RC|RT|K)(\b|$)/gi,
     (_, frame, gearType, _ratio, suffix) =>
-      `${frame}${gearType.toUpperCase()}3${suffix || ''}`
+      `${frame}${gearType.toUpperCase()}3${suffix.toUpperCase()}`
   );
 }
 
@@ -221,7 +231,13 @@ function normalizeGlbCode(modelCode) {
 // หลัง upload ไฟล์ GLB ขึ้น GitHub Releases tag "glb-v1" แล้ว
 // ─────────────────────────────────────────────────────────────────────────────
 // jsDelivr CDN — proxy GitHub Releases พร้อม CORS header ถูกต้อง
-const GLB_BASE = 'https://cdn.jsdelivr.net/gh/SomyotSW/gear-motor-app@main/public/model/glb';
+// ใช้ local path เมื่อรันใน localhost, ใช้ CDN เมื่อ deploy บน production
+const GLB_BASE = (() => {
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return '/model/glb';  // local dev — ไฟล์อยู่ใน public/model/glb/
+  }
+  return 'https://cdn.jsdelivr.net/gh/SomyotSW/gear-motor-app@main/public/model/glb'; // production CDN
+})();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // StepViewer3D — แสดงไฟล์ .glb ด้วย <model-viewer> (Google)
@@ -240,199 +256,287 @@ const GLB_BASE = 'https://cdn.jsdelivr.net/gh/SomyotSW/gear-motor-app@main/publi
 
 // ── Environment presets ───────────────────────────────────────────────────────
 const ENV_PRESETS = [
-  { label: 'Neutral',   value: 'neutral',     bg: '#4a4a4a' },
-  { label: 'Studio',    value: 'legacy',       bg: '#6a7a8a' },
-  { label: 'Warehouse', value: 'warehouse',    bg: '#8a7a6a' },
-  { label: 'Forest',    value: 'forest',       bg: '#4a6a4a' },
-  { label: 'Apartment', value: 'apartment',    bg: '#7a6a8a' },
-  { label: 'City',      value: 'city',         bg: '#5a6a7a' },
-  { label: 'Dawn',      value: 'dawn',         bg: '#8a6a5a' },
-  { label: 'Night',     value: 'night',        bg: '#2a2a4a' },
+  { label: 'Neutral',   value: 'neutral',  bg: 'linear-gradient(135deg,#5a5a5a,#3a3a3a)' },
+  { label: 'Legacy',    value: 'legacy',   bg: 'linear-gradient(135deg,#7a8a9a,#5a6a7a)' },
+  { label: 'Commerce',  value: 'commerce', bg: 'linear-gradient(135deg,#9a8a6a,#7a6a5a)' },
+  { label: 'Sunset',    value: 'sunset',   bg: 'linear-gradient(135deg,#c87a4a,#8a4a2a)' },
+  { label: 'Studio',    value: 'studio',   bg: 'linear-gradient(135deg,#8a7a9a,#6a5a7a)' },
+  { label: 'Park',      value: 'park',     bg: 'linear-gradient(135deg,#5a8a5a,#3a6a3a)' },
+  { label: 'Dawn',      value: 'dawn',     bg: 'linear-gradient(135deg,#9a7a5a,#7a5a3a)' },
+  { label: 'Night',     value: 'night',    bg: 'linear-gradient(135deg,#2a2a5a,#1a1a3a)' },
 ];
 
-function StepViewer3D({ modelCode, width = '100%', aspect = '4/3' }) {
-  const glbCode = normalizeGlbCode(modelCode || '');
-  const glbUrl  = glbCode
-    ? `${GLB_BASE}/${encodeURIComponent(glbCode)}.glb`
-    : null;
+const TINT_COLORS = [
+  { label: 'Default', value: null,      bg: 'linear-gradient(135deg,#aaa,#666)' },
+  { label: 'Silver',  value: '#d0d8e0', bg: 'linear-gradient(135deg,#d0d8e0,#9aa8b8)' },
+  { label: 'Gold',    value: '#ffd060', bg: 'linear-gradient(135deg,#ffd060,#c08020)' },
+  { label: 'Navy',    value: '#2050a0', bg: 'linear-gradient(135deg,#4070c0,#103060)' },
+  { label: 'Red',     value: '#c02030', bg: 'linear-gradient(135deg,#e04050,#901020)' },
+  { label: 'Green',   value: '#00a060', bg: 'linear-gradient(135deg,#00c070,#006040)' },
+  { label: 'Black',   value: '#1a1a1a', bg: 'linear-gradient(135deg,#3a3a3a,#0a0a0a)' },
+  { label: 'White',   value: '#f0f0f0', bg: 'linear-gradient(135deg,#ffffff,#cccccc)' },
+];
 
-  const mvRef                     = React.useRef(null);
-  const [err, setErr]             = React.useState(false);
-  const [ready, setReady]         = React.useState(false);
-  const [envIdx, setEnvIdx]       = React.useState(0);
+// ─── normalizeGlbCode แล้วโหลดตรงเลย ไม่มี fallback ───────────────────────────
+// ─── StepViewer3D — Full demo-style viewer ────────────────────────────────────
+function StepViewer3D({ modelCode }) {
+  const glbCode = normalizeGlbCode(modelCode || '');
+  const fbCodes = glbCode ? [glbCode] : [];
+
+  const mvRef   = React.useRef(null);
+  const fbIdx   = React.useRef(0);
+
+  const [err,     setErr]     = React.useState(false);
+  const [ready,   setReady]   = React.useState(false);
+  const [curCode, setCurCode] = React.useState(fbCodes[0] || glbCode);
+  const [envIdx,  setEnvIdx]  = React.useState(0);
+  const [tintIdx, setTintIdx] = React.useState(0);
   const [autoLight, setAutoLight] = React.useState(false);
-  const [lightRot, setLightRot]   = React.useState(0);
-  const lightTimer                = React.useRef(null);
+  const [lightRot,  setLightRot]  = React.useState(0);
+  const [exposure,  setExposure]  = React.useState(1.3);
+  const [shadow,    setShadow]    = React.useState(0.6);
+  const lightTimer = React.useRef(null);
 
   // reset เมื่อ model เปลี่ยน
-  React.useEffect(() => { setErr(false); setReady(false); }, [glbCode]);
-
-  // ref+addEventListener (custom element ไม่รองรับ React synthetic events)
   React.useEffect(() => {
-    const el = mvRef.current;
-    if (!el) return;
-    const onErr  = () => setErr(true);
-    const onLoad = () => setReady(true);
-    el.addEventListener('error', onErr);
-    el.addEventListener('load',  onLoad);
-    return () => {
-      el.removeEventListener('error', onErr);
-      el.removeEventListener('load',  onLoad);
-    };
-  }, [glbUrl]);
+    fbIdx.current = 0;
+    setErr(false);
+    setReady(false);
+    setCurCode(glbCode);
+  }, [glbCode]);
 
-  // auto-rotate lighting
+  // attach load/error listeners ทุกครั้งที่ curCode เปลี่ยน
+  React.useEffect(() => {
+    if (!curCode) return;
+    const url = `${GLB_BASE}/${encodeURIComponent(curCode)}.glb`;
+
+    // poll รอจนกว่า mvRef จะ ready (custom element อาจ mount ช้า)
+    let cancelled = false;
+    let attempts = 0;
+
+    function attach() {
+      const el = mvRef.current;
+      if (cancelled) return;
+
+      if (!el || !el.nodeName) {
+        // ยังไม่ mount — รอ 50ms แล้วลองใหม่ (max 40 ครั้ง = 2s)
+        if (attempts < 40) { attempts++; setTimeout(attach, 50); }
+        return;
+      }
+
+      el.setAttribute('src', url);
+
+      const onLoad = () => { if (!cancelled) { setReady(true); setErr(false); } };
+      const onErr  = () => {
+        if (cancelled) return;
+        const codes = glbCode ? [glbCode] : [];
+        fbIdx.current += 1;
+        if (fbIdx.current < codes.length) {
+          setCurCode(codes[fbIdx.current]);
+        } else {
+          setErr(true);
+        }
+      };
+
+      el.addEventListener('load',  onLoad);
+      el.addEventListener('error', onErr);
+
+      // store cleanup
+      el.__cleanup = () => {
+        el.removeEventListener('load',  onLoad);
+        el.removeEventListener('error', onErr);
+      };
+    }
+
+    attach();
+
+    return () => {
+      cancelled = true;
+      mvRef.current?.__cleanup?.();
+    };
+  }, [curCode]);
+
+  // autoLight
   React.useEffect(() => {
     if (autoLight) {
       lightTimer.current = setInterval(() => {
         setLightRot(r => {
           const next = (r + 2) % 360;
-          if (mvRef.current) {
-            mvRef.current.style.setProperty('--env-rotation', `${next}deg`);
-          }
+          if (mvRef.current) mvRef.current.style.setProperty('--env-rotation', `${next}deg`);
           return next;
         });
       }, 30);
-    } else {
-      clearInterval(lightTimer.current);
-    }
+    } else { clearInterval(lightTimer.current); }
     return () => clearInterval(lightTimer.current);
   }, [autoLight]);
 
-  // apply environment preset
+  // environment
   React.useEffect(() => {
-    const el = mvRef.current;
-    if (!el) return;
-    el.setAttribute('environment-image', ENV_PRESETS[envIdx].value);
+    if (mvRef.current) mvRef.current.setAttribute('environment-image', ENV_PRESETS[envIdx].value);
   }, [envIdx]);
 
-  const containerStyle = {
-    width, aspectRatio: aspect, position: 'relative',
-    borderRadius: '1rem', overflow: 'visible',
+  // cleanup
+  React.useEffect(() => {
+    return () => clearInterval(lightTimer.current);
+  }, []);
+  const applyTint = (idx) => {
+    setTintIdx(idx);
+    const color = TINT_COLORS[idx].value;
+    const applyColor = () => {
+      try {
+        const mats = mvRef.current?.model?.materials;
+        if (!mats) return;
+        if (!color) {
+          [...mats].forEach(m => m.pbrMetallicRoughness.setBaseColorFactor([1,1,1,1]));
+        } else {
+          const r = parseInt(color.slice(1,3),16)/255;
+          const g = parseInt(color.slice(3,5),16)/255;
+          const b = parseInt(color.slice(5,7),16)/255;
+          [...mats].forEach(m => m.pbrMetallicRoughness.setBaseColorFactor([r,g,b,1]));
+        }
+      } catch(e) {}
+    };
+    if (ready) applyColor();
+    else mvRef.current?.addEventListener('load', applyColor, { once: true });
   };
 
-  if (!glbUrl) {
-    return (
-      <div style={{ ...containerStyle, overflow:'hidden', background:'linear-gradient(135deg,#0f0f1a,#1a1a2e)' }}>
-        <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, color:'#555' }}>
-          <span style={{ fontSize:36 }}>📦</span>
-          <span style={{ fontSize:12, color:'#666' }}>ยังไม่มีไฟล์ 3D</span>
-          <span style={{ fontSize:9, color:'#444', fontFamily:'monospace' }}>{glbCode}</span>
-        </div>
-      </div>
-    );
-  }
+  // shared inline styles (CSS-in-JS เพื่อไม่กระทบ Tailwind ของ host)
+  const S = {
+    wrap: { display:'flex', width:'100%', height:'100%', minHeight:0, background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" },
+    viewer: { flex:1, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
+    grid: { position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(0,229,160,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.025) 1px,transparent 1px)', backgroundSize:'40px 40px', pointerEvents:'none' },
+    mv: { width:'100%', height:'100%', '--poster-color':'transparent', '--progress-bar-color':'#00e5a0', '--progress-mask':'transparent', background:'transparent' },
+    hint: { position:'absolute', bottom:10, left:0, right:0, textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:10, pointerEvents:'none', letterSpacing:'0.5px' },
+    errorBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:'#0a0c10' },
+    loaderBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, background:'linear-gradient(135deg,#0a0c10,#0d111c)', transition:'opacity 0.4s' },
+    ring: { width:44, height:44, border:'2px solid rgba(0,229,160,0.15)', borderTopColor:'#00e5a0', borderRadius:'50%', animation:'mv3d-spin 0.9s linear infinite' },
+    panel: { width:200, flexShrink:0, background:'#0f1118', borderLeft:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'column' },
+    sec: { padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' },
+    secTitle: { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 },
+    envGrid: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5 },
+    envBtn: (active) => ({ aspectRatio:1, borderRadius:6, border: active ? '2px solid #00e5a0' : '2px solid transparent', cursor:'pointer', position:'relative', overflow:'hidden', transition:'all 0.15s', boxShadow: active ? '0 0 8px rgba(0,229,160,0.35)' : 'none' }),
+    envLabel: { position:'absolute', bottom:0, left:0, right:0, fontSize:7, textAlign:'center', background:'rgba(0,0,0,0.65)', padding:'1px 0', color:'rgba(255,255,255,0.7)', fontWeight:600 },
+    colorGrid: { display:'flex', gap:6, flexWrap:'wrap' },
+    swatch: (active) => ({ width:24, height:24, borderRadius:'50%', border: active ? '2px solid white' : '2px solid transparent', cursor:'pointer', transition:'all 0.15s', position:'relative', flexShrink:0, transform: active ? 'scale(1.1)' : 'scale(1)' }),
+    lightRow: { display:'flex', alignItems:'center', gap:8, marginBottom:8 },
+    lightLbl: { fontSize:10, color:'#4a5060', width:44, flexShrink:0 },
+    slider: { flex:1, accentColor:'#00e5a0', cursor:'pointer', height:3 },
+    sliderVal: { fontSize:10, color:'#e8eaf0', width:30, textAlign:'right', flexShrink:0, fontFamily:'monospace' },
+    toggle: (on) => ({ width:34, height:18, background: on ? '#00e5a0' : 'rgba(255,255,255,0.1)', borderRadius:9, position:'relative', cursor:'pointer', border:'none', transition:'background 0.2s', flexShrink:0 }),
+    toggleDot: (on) => ({ position:'absolute', top:2, left: on ? 16 : 2, width:14, height:14, borderRadius:'50%', background:'white', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.4)' }),
+  };
 
   return (
-    <div style={containerStyle}>
-      {/* ── 3D Viewer ── */}
-      <div style={{ width:'100%', aspectRatio: aspect, borderRadius:'1rem', overflow:'hidden', position:'relative', background:'linear-gradient(135deg,#0f0f1a,#1a1a2e)' }}>
-        <model-viewer
-          ref={mvRef}
-          src={glbUrl}
-          alt={glbCode}
-          auto-rotate
-          auto-rotate-delay="300"
-          rotation-per-second="20deg"
-          camera-controls
-          touch-action="pan-y"
-          shadow-intensity="1"
-          shadow-softness="0.5"
-          environment-image={ENV_PRESETS[envIdx].value}
-          exposure="1.2"
-          style={{
-            width: '100%', height: '100%',
-            background: 'transparent',
-            '--poster-color': 'transparent',
-            '--progress-bar-color': '#4a90d9',
-            '--progress-mask': 'transparent',
-          }}
-        />
-        {/* hint */}
-        {ready && !err && (
-          <div style={{
-            position:'absolute', bottom:4, left:0, right:0,
-            textAlign:'center', color:'rgba(255,255,255,0.25)',
-            fontSize:9, pointerEvents:'none', userSelect:'none',
-          }}>
-            🖱 ลาก = หมุน · Scroll = ซูม
+    <div style={S.wrap}>
+      <style>{`@keyframes mv3d-spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* ── LEFT: 3D Viewer ── */}
+      <div style={S.viewer}>
+        <div style={S.grid} />
+
+        {/* Loader */}
+        {!ready && !err && (
+          <div style={S.loaderBox}>
+            <div style={S.ring} />
+            <span style={{ fontSize:11, color:'#4a5060', letterSpacing:'1px' }}>กำลังโหลดโมเดล…</span>
           </div>
         )}
-        {/* error overlay */}
+
+        {/* Error */}
         {err && (
-          <div style={{
-            position:'absolute', inset:0, display:'flex', flexDirection:'column',
-            alignItems:'center', justifyContent:'center', gap:6,
-            background:'rgba(10,10,20,0.92)', borderRadius:'1rem',
-          }}>
-            <span style={{ fontSize:32 }}>📦</span>
-            <span style={{ fontSize:11, color:'#777' }}>ยังไม่มีไฟล์ 3D</span>
-            <span style={{ fontSize:9, color:'#555', fontFamily:'monospace' }}>{glbCode}</span>
+          <div style={S.errorBox}>
+            <span style={{ fontSize:48 }}>📦</span>
+            <span style={{ fontSize:12, color:'#556' }}>ยังไม่มีไฟล์ 3D</span>
+            <span style={{ fontSize:9, color:'#3a4050', fontFamily:'monospace' }}>{curCode}</span>
           </div>
+        )}
+
+        <model-viewer
+          ref={mvRef}
+          src=""
+          alt={curCode}
+          auto-rotate
+          auto-rotate-delay="400"
+          rotation-per-second="18deg"
+          camera-controls
+          touch-action="pan-y"
+          shadow-intensity="1.2"
+          shadow-softness={shadow}
+          environment-image="neutral"
+          exposure={exposure}
+          style={S.mv}
+        />
+
+        {ready && !err && (
+          <div style={S.hint}>🖱 ลาก = หมุน &nbsp;·&nbsp; Scroll = ซูม</div>
         )}
       </div>
 
-      {/* ── Controls bar ── */}
-      {!err && (
-        <div style={{ display:'flex', gap:6, marginTop:8, flexWrap:'wrap', alignItems:'center' }}>
-          {/* Environment color dots */}
-          {ENV_PRESETS.map((env, idx) => (
-            <button
-              key={env.value}
-              title={env.label}
-              onClick={() => setEnvIdx(idx)}
-              style={{
-                width:22, height:22, borderRadius:'50%',
-                background: env.bg, padding:0, flexShrink:0,
-                border: idx === envIdx ? '2px solid #4a90d9' : '2px solid rgba(255,255,255,0.15)',
-                cursor:'pointer',
-                boxShadow: idx === envIdx ? '0 0 8px #4a90d9' : 'none',
-                transition:'all 0.15s',
-              }}
-            />
-          ))}
+      {/* ── RIGHT: Controls Panel ── */}
+      <div style={S.panel}>
 
-          {/* divider */}
-          <div style={{ width:1, height:18, background:'rgba(255,255,255,0.15)', margin:'0 2px' }} />
-
-          {/* Auto-rotate Light */}
-          <button
-            title={autoLight ? 'หยุดหมุนแสง' : 'หมุนแสงรอบๆ'}
-            onClick={() => setAutoLight(v => !v)}
-            style={{
-              padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:600,
-              cursor:'pointer', border:'none',
-              background: autoLight
-                ? 'linear-gradient(90deg,#f6d365,#fda085)'
-                : 'rgba(255,255,255,0.12)',
-              color: autoLight ? '#1a1a1a' : 'rgba(255,255,255,0.7)',
-              boxShadow: autoLight ? '0 0 10px rgba(253,160,133,0.5)' : 'none',
-              transition:'all 0.2s',
-              display:'flex', alignItems:'center', gap:4,
-            }}
-          >
-            <span style={{ display:'inline-block', animation: autoLight ? 'spinLight 1s linear infinite' : 'none' }}>☀️</span>
-            {autoLight ? 'หยุด' : 'หมุนแสง'}
-            <style>{`@keyframes spinLight{to{transform:rotate(360deg)}}`}</style>
-          </button>
-
-          {/* Manual light slider */}
-          {!autoLight && (
-            <input
-              type="range" min={0} max={360} value={lightRot}
-              title="ปรับทิศแสง"
-              onChange={e => {
-                const val = Number(e.target.value);
-                setLightRot(val);
-                if (mvRef.current) {
-                  mvRef.current.style.setProperty('--env-rotation', `${val}deg`);
-                }
-              }}
-              style={{ flex:1, minWidth:60, maxWidth:100, accentColor:'#4a90d9', cursor:'pointer' }}
-            />
-          )}
+        {/* Environment */}
+        <div style={S.sec}>
+          <div style={S.secTitle}>สภาพแวดล้อมแสง</div>
+          <div style={S.envGrid}>
+            {ENV_PRESETS.map((env, i) => (
+              <button key={env.value} title={env.label} onClick={() => setEnvIdx(i)}
+                style={{ ...S.envBtn(i === envIdx), background: env.bg }}>
+                <span style={S.envLabel}>{env.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+
+        {/* Lighting Controls */}
+        <div style={S.sec}>
+          <div style={S.secTitle}>ควบคุมแสง</div>
+          <div style={S.lightRow}>
+            <span style={S.lightLbl}>ความสว่าง</span>
+            <input type="range" min={0.5} max={3} step={0.05} value={exposure} style={S.slider}
+              onChange={e => { const v = parseFloat(e.target.value); setExposure(v); if(mvRef.current) mvRef.current.setAttribute('exposure', v); }} />
+            <span style={S.sliderVal}>{exposure.toFixed(1)}</span>
+          </div>
+          <div style={S.lightRow}>
+            <span style={S.lightLbl}>เงา</span>
+            <input type="range" min={0} max={1} step={0.05} value={shadow} style={S.slider}
+              onChange={e => { const v = parseFloat(e.target.value); setShadow(v); if(mvRef.current) mvRef.current.setAttribute('shadow-softness', v); }} />
+            <span style={S.sliderVal}>{shadow.toFixed(1)}</span>
+          </div>
+          <div style={{ ...S.lightRow, marginBottom: autoLight ? 0 : 0 }}>
+            <span style={S.lightLbl}>ทิศแสง</span>
+            {autoLight ? (
+              <span style={{ flex:1, fontSize:10, color:'#00e5a0' }}>⟳ หมุนอัตโนมัติ</span>
+            ) : (
+              <input type="range" min={0} max={360} step={1} value={lightRot} style={S.slider}
+                onChange={e => { const v = parseInt(e.target.value); setLightRot(v); if(mvRef.current) mvRef.current.style.setProperty('--env-rotation', v+'deg'); }} />
+            )}
+            <span style={S.sliderVal}>{lightRot}°</span>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10 }}>
+            <span style={{ fontSize:10, color:'#4a5060' }}>☀️ หมุนแสงอัตโนมัติ</span>
+            <button style={S.toggle(autoLight)} onClick={() => setAutoLight(v => !v)}>
+              <div style={S.toggleDot(autoLight)} />
+            </button>
+          </div>
+        </div>
+
+        {/* Color Tint */}
+        <div style={S.sec}>
+          <div style={S.secTitle}>สีโมเดล</div>
+          <div style={S.colorGrid}>
+            {TINT_COLORS.map((c, i) => (
+              <button key={c.label} title={c.label} onClick={() => applyTint(i)}
+                style={{ ...S.swatch(i === tintIdx), background: c.bg }}>
+                {i === tintIdx && (
+                  <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white', textShadow:'0 1px 3px rgba(0,0,0,0.8)' }}>✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -1217,553 +1321,199 @@ const gifForHead = (() => {
   </div>
 )}
 
-{/* Step (AC): Summary */}
+{/* Step (AC): Summary — Full demo-style layout */}
 {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && !showAcFinal && (
-  <div id="ac-summary" className="relative max-w-4xl mx-auto mt-6 px-3 sm:px-0">
-    <h3 className="text-white font-bold mb-3 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)] flex items-center gap-3 flex-wrap">
-  Model Code :{' '}
-  <span className="font-mono text-white/90 px-2 py-0.5 rounded max-w-full">
-    {(() => {
-  const raw = generateACModelCode({ ...acState, acConfirm: true });
-  const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
-  if (!list.length) return null;
-  return (
-    <div className="flex flex-col items-start space-y-2 max-w-full">
-      {list.map((code, idx) => (
-        <label key={idx} className="flex items-center space-x-2">
-          <input
-            type="radio"
-            name="modelSelect"
-            value={code}
-            checked={selectedModel === code}
-            onChange={() => setSelectedModel(code)}
-          />
-          <span className="font-mono break-all text-[12px] sm:text-sm">{code}</span>
-        </label>
-      ))}
+  <div id="ac-summary" style={{ position:'fixed', inset:0, zIndex:500, display:'flex', flexDirection:'column', background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" }}>
+
+    {/* Top bar */}
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 18px', borderBottom:'1px solid rgba(255,255,255,0.07)', background:'rgba(10,12,16,0.95)', backdropFilter:'blur(12px)', flexShrink:0, flexWrap:'wrap', gap:8 }}>
+      <span style={{ fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:15, letterSpacing:'1.5px', color:'#00e5a0', textTransform:'uppercase' }}>
+        ⚙ AC Gear Motor
+      </span>
+      <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+        {(() => {
+          const raw = generateACModelCode({ ...acState, acConfirm: true });
+          const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
+          return list.map((code, idx) => (
+            <label key={idx} style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>
+              {list.length > 1 && (
+                <input type="radio" name="modelSelect" value={code}
+                  checked={selectedModel === code}
+                  onChange={() => setSelectedModel(code)}
+                  style={{ accentColor:'#00e5a0' }} />
+              )}
+              <span style={{ fontFamily:'monospace', fontSize:12, fontWeight:600, color:'#e8eaf0', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', padding:'3px 10px', borderRadius:5 }}>
+                {code}
+              </span>
+            </label>
+          ));
+        })()}
+        <button type="button"
+          style={{ background:'none', border:'none', cursor:'pointer', color:'#00e5a0', fontSize:11, padding:'3px 8px', borderRadius:4 }}
+          onClick={async (e) => {
+            const btn = e.currentTarget;
+            const raw = generateACModelCode({ ...acState, acConfirm: true });
+            const list = Array.isArray(raw) ? (Array.isArray(raw[0]) ? raw.flat() : raw) : (raw ? [raw] : []);
+            const chosen = (typeof selectedModel === 'string' && selectedModel) || (list[0] || '');
+            try {
+              if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(chosen); }
+              else { const ta=document.createElement('textarea'); ta.value=chosen; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+            } catch {}
+            const old = btn.textContent; btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = old; }, 1200);
+          }}
+        >Copy</button>
+      </div>
+      <button type="button" onClick={() => update('acRatio', null)}
+        style={{ background:'rgba(0,229,160,0.08)', border:'1px solid rgba(0,229,160,0.25)', color:'#00e5a0', padding:'4px 12px', borderRadius:6, cursor:'pointer', fontSize:11, fontWeight:600 }}>
+        ← ย้อนกลับ
+      </button>
     </div>
-  );
-})()}
-  </span>
-<button
-  type="button"
-  title="Copy Model"
-  className="ml-2 align-middle text-[10px] px-2 py-0.5 rounded border border-white/20 bg-white/10 hover:bg-white/20 transition"
-  onClick={async (e) => {
-  const btn = e.currentTarget;
 
-  const raw  = generateACModelCode({ ...acState, acConfirm: true });
-  const list = Array.isArray(raw)
-    ? (Array.isArray(raw[0]) ? raw.flat() : raw)
-    : (raw ? [raw] : []);
+    {/* Body: Viewer + Right Panel */}
+    <div style={{ flex:1, display:'flex', minHeight:0, overflow:'hidden' }}>
 
-  const chosen = (typeof selectedModel === 'string' && selectedModel) || (list[0] || '');
-  const txt = String(chosen);
-
-  const setBadge = (el, msg = 'Copied!', ms = 1200) => {
-    const old = el.textContent;
-    el.textContent = msg;
-    setTimeout(() => { el.textContent = old; }, ms);
-  };
-
-  const fallbackCopy = () => {
-    const ta = document.createElement('textarea');
-    ta.value = txt;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); } catch {}
-    document.body.removeChild(ta);
-  };
-
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(txt);
-    } else {
-      fallbackCopy();
-    }
-    setBadge(btn);
-  } catch {
-    fallbackCopy();
-    setBadge(btn);
-  }
-}}
->
-  Copy
-</button>
-</h3>
-    <div className="flex flex-col md:flex-row gap-4 items-start">
-    {/* === Mobile: 3D Viewer อยู่บน summaryRef === */}
-    {acGearHead && (() => {
-      const raw2 = generateACModelCode({ ...acState, acConfirm: true });
-      const list2 = Array.isArray(raw2) ? (Array.isArray(raw2[0]) ? raw2.flat() : raw2) : (raw2 ? [raw2] : []);
-      const chosenCode = (typeof selectedModel === 'string' && selectedModel) || (list2[0] || '');
-      if (!chosenCode) return null;
-      return (
-        <div className="md:hidden w-full mb-3">
-          <StepViewer3D modelCode={chosenCode} width="100%" aspect="4/3" />
-        </div>
-      );
-    })()}
-    <div
-      ref={summaryRef}
-      className="w-full md:flex-1 bg-black/25 rounded-xl px-3 sm:px-5 py-4 sm:py-5 text-white/90 backdrop-blur-sm
-                text-[13px] sm:text-base leading-6 sm:leading-7 relative group
-                overflow-y-auto md:max-h-[58vh]"
-    >
-      <div>Motor Type : <b>{acMotorType||'-'}</b></div>
-      <div>Frame size : <b>{frameSizeMap[acPower] || '—'}</b></div>
-      <div>Motor Power : <b>{acPower||'-'}</b></div>
-      <div>Voltage : <b>{acVoltage||'-'}</b></div>
-      <div>Frequency : <b>50Hz , 60Hz</b></div>
+      {/* 3D Viewer full height */}
       {(() => {
-  const cr = getCurrentRated(acMotorType, acPower, acVoltage);
-  return (
-    <>
-      <div>Current (A) : <b>{cr?.current || '—'}</b></div>
-      <div>Rated speed motor(rpm) : <b>{cr?.rated || '—'}</b></div>
-    </>
-  );
-})()}
-      <div>Optional : <b>{acOption||'-'}</b></div>
-      <div>Gear Type : <b>{acGearHead||'-'}</b></div>
-      <div>Ratio : <b>{acRatio}</b></div>
-      <div>
-        Output speed :
-        <b>
-          {(() => {
-            const r = Number(acRatio);
-            return Number.isFinite(r) && r > 0 ? (1500 / r).toFixed(2) : '-';
-          })()}
-        </b> rpm
-      </div>
-      <div>Output shaft diameter : <b>{
-  (() => {
-    const raw = generateACModelCode({ ...acState, acConfirm: true });
-    const list = Array.isArray(raw)
-      ? (Array.isArray(raw[0]) ? raw.flat() : raw)
-      : (raw ? [raw] : []);
+        const raw3d = generateACModelCode({ ...acState, acConfirm: true });
+        const list3d = Array.isArray(raw3d) ? (Array.isArray(raw3d[0]) ? raw3d.flat() : raw3d) : (raw3d ? [raw3d] : []);
+        const code3d = (typeof selectedModel === 'string' && selectedModel) || (list3d[0] || '');
+        return (
+          <div style={{ flex:1, minWidth:0, minHeight:0 }}>
+            <StepViewer3D modelCode={code3d} />
+          </div>
+        );
+      })()}
 
-    const chosen = (typeof selectedModel === 'string' && selectedModel) || (list[0] || '');
+      {/* Right Panel */}
+      <div style={{ width:280, flexShrink:0, background:'#0f1118', borderLeft:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'column' }}>
 
-    const suffixMatch = chosen.match(/(KB|RC|RT|K)\s*$/i);
-    const head = (suffixMatch ? suffixMatch[1].toUpperCase() : null);
-
-    const is60W = /\b60W\b/i.test(String(acPower));
-    const isGN  = /GN/.test(chosen);
-    const isGU  = /GU/.test(chosen);
-
-    if (is60W) {
-      if (isGN) return 'Ø12 mm';
-      if (isGU) {
-        if (head === 'RC') return 'Ø17 mm';
-        if (head === 'RT') return 'Ø15 mm';
-        return 'Ø15 mm';
-      }
-    }
-
-    return getShaftDia ? (getShaftDia(acPower, acGearHead) || '—') : '—';
-  })()
-}</b></div>
-      <div>Weight : <b>{(() => {
-  // ── ตาราง base motor weight ──────────────────────────────────────────
-  const MOTOR_WEIGHT = {
-    'Induction Motor': {
-      '10W AC Motor':  { base: 0.75, tb: 0.75,  emb: 1.10 },
-      '15W AC Motor':  { base: 1.10, tb: 1.10,  emb: 1.47 },
-      '25W AC Motor':  { base: 1.60, tb: 1.75,  emb: 2.15 },
-      '40W AC Motor':  { base: 2.40, tb: 2.55,  emb: 3.10 },
-      '60W AC Motor':  { base: 2.70, tb: 2.85,  emb: 3.55 },
-      '90W AC Motor':  { base: 3.20, tb: 3.35,  emb: 4.30 },
-      '120W AC Motor': { base: 3.40, tb: 3.55,  emb: 4.30 },
-      '140W AC Motor': { base: 5.00, tb: 5.15,  emb: 5.87 },
-      '200W AC Motor': { base: 5.00, tb: 5.15,  emb: 5.90 },
-    },
-    'Reversible Motor': {
-      '10W AC Motor':  { base: 0.80, tb: 0.80,  emb: 1.10 },
-      '15W AC Motor':  { base: 1.15, tb: 1.15,  emb: 1.47 },
-      '25W AC Motor':  { base: 1.65, tb: 1.75,  emb: 2.15 },
-      '40W AC Motor':  { base: 2.45, tb: 2.60,  emb: 3.10 },
-      '60W AC Motor':  { base: 2.75, tb: 2.90,  emb: 3.55 },
-      '90W AC Motor':  { base: 3.25, tb: 3.40,  emb: 4.30 },
-      '120W AC Motor': { base: 3.45, tb: 3.60,  emb: 4.30 },
-      '140W AC Motor': { base: 5.50, tb: 5.20,  emb: 5.87 },
-      '200W AC Motor': { base: 5.50, tb: 5.20,  emb: 5.90 },
-    },
-    'Variable Speed Motor': {
-      '10W AC Motor':  { base: 1.10, tb: 1.10,  emb: 1.10 },
-      '15W AC Motor':  { base: 1.20, tb: 1.20,  emb: 1.47 },
-      '25W AC Motor':  { base: 1.70, tb: 1.75,  emb: 2.15 },
-      '40W AC Motor':  { base: 2.50, tb: 2.60,  emb: 3.10 },
-      '60W AC Motor':  { base: 2.80, tb: 2.90,  emb: 3.55 },
-      '90W AC Motor':  { base: 3.30, tb: 3.40,  emb: 4.30 },
-      '120W AC Motor': { base: 3.50, tb: 3.60,  emb: 4.30 },
-      '140W AC Motor': { base: 5.60, tb: 5.20,  emb: 5.87 },
-      '200W AC Motor': { base: 5.60, tb: 5.20,  emb: 5.90 },
-    },
-  };
-
-  // ── ตาราง gearhead weight ─────────────────────────────────────────────
-  // 60W/90W/120W: GN→1.35, GU+KB→1.5, GU+K→1.55
-  // 10W→0.40, 15W→0.50, 25W/40W→0.80, 140W/200W→2.1
-  const getGearWeight = (power, chosen) => {
-    const is60_90_120 = /\b(60|90|120)W\b/i.test(String(power));
-    if (is60_90_120) {
-      if (/GN/.test(chosen))  return 1.35;
-      if (/GU/.test(chosen)) {
-        if (/KB$/i.test(chosen)) return 1.50;
-        if (/K$/i.test(chosen))  return 1.55;
-        return 1.50;
-      }
-      return 1.35;
-    }
-    const map = {
-      '10W AC Motor': 0.40,
-      '15W AC Motor': 0.50,
-      '25W AC Motor': 0.80,
-      '40W AC Motor': 1.35,
-      '140W AC Motor': 2.10,
-      '200W AC Motor': 2.10,
-    };
-    return map[power] ?? null;
-  };
-
-  if (!acMotorType || !acPower) return '—';
-
-  const wRow = MOTOR_WEIGHT[acMotorType]?.[acPower];
-  if (!wRow) return '—';
-
-  // ตรวจ option ที่เลือก
-  const opts = Array.isArray(acOption) ? acOption : (acOption ? [acOption] : []);
-  const hasEMB = opts.some(o => /electromagnetic brake/i.test(o));
-  const hasTB  = opts.some(o => /terminal box/i.test(o));
-
-  let motorW;
-  if (hasEMB)      motorW = wRow.emb;
-  else if (hasTB)  motorW = wRow.tb;
-  else             motorW = wRow.base;
-
-  // หา chosen model code (radio ที่เลือก หรือตัวแรก)
-  const raw2 = generateACModelCode({ ...acState, acConfirm: true });
-  const list2 = Array.isArray(raw2) ? (Array.isArray(raw2[0]) ? raw2.flat() : raw2) : (raw2 ? [raw2] : []);
-  const chosenW = (typeof selectedModel === 'string' && selectedModel) || (list2[0] || '');
-
-  const gearW = getGearWeight(acPower, chosenW);
-
-  const motorStr = `Motor ${motorW.toFixed(2)} kg`;
-  const gearStr  = gearW != null ? ` + Gearhead ${gearW.toFixed(2)} kg` : '';
-  const totalW   = gearW != null ? motorW + gearW : motorW;
-  const totalStr = gearW != null ? ` = Total ${totalW.toFixed(2)} kg` : '';
-
-  return `${motorStr}${gearStr}${totalStr}`;
-})()}</b></div>
-    </div>
-	{/* NEW: Gear preview image on the right side */}
-{/* ===== ADD: Mobile Gear qty controls (show on phone, below spec) ===== */}
-{acGearHead && (() => {
-  return (
-    <div className="md:hidden w-full mt-3 flex flex-col gap-2 bg-black/20 rounded-xl px-3 py-3">
-        {/* Row 1 — Gear Head */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-white/90 select-none">Gear Head :</span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="ลดจำนวน Gear Head"
-              onClick={() => setQtyGear(q => Math.max(1, q - 1))}
-              className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-            >–</button>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              value={qtyGear}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                setQtyGear(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
-              }}
-              onWheel={(e) => e.currentTarget.blur()}
-              className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
-            />
-            <button
-              type="button"
-              aria-label="เพิ่มจำนวน Gear Head"
-              onClick={() => setQtyGear(q => Math.min(999, q + 1))}
-              className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-            >+</button>
+        {/* Specs */}
+        <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 }}>ข้อมูลจำเพาะ</div>
+          <div ref={summaryRef}>
+            {[
+              ['Motor Type',    acMotorType],
+              ['Frame Size',    frameSizeMap[acPower] || '—'],
+              ['Motor Power',   acPower],
+              ['Voltage',       acVoltage],
+              ['Frequency',     '50Hz , 60Hz'],
+              ...((() => {
+                const cr = getCurrentRated(acMotorType, acPower, acVoltage);
+                return cr ? [['Current (A)', cr.current], ['Speed (rpm)', cr.rated]] : [];
+              })()),
+              ['Optional',      Array.isArray(acOption) ? acOption.join(', ') : acOption],
+              ['Gear Type',     acGearHead],
+              ['Ratio',         acRatio],
+              ['Output Speed',  (() => { const r=Number(acRatio); return Number.isFinite(r)&&r>0 ? (1500/r).toFixed(2)+' rpm' : '—'; })()],
+              ['Shaft Ø',       (() => {
+                const rawS = generateACModelCode({ ...acState, acConfirm: true });
+                const lstS = Array.isArray(rawS) ? (Array.isArray(rawS[0]) ? rawS.flat() : rawS) : (rawS ? [rawS] : []);
+                const ch = (typeof selectedModel==='string'&&selectedModel)||(lstS[0]||'');
+                const sm = ch.match(/(KB|RC|RT|K)\s*$/i);
+                const hd = sm ? sm[1].toUpperCase() : null;
+                if (/\b60W\b/i.test(String(acPower))) {
+                  if (/GN/.test(ch)) return 'Ø12 mm';
+                  if (/GU/.test(ch)) return hd==='RC' ? 'Ø17 mm' : 'Ø15 mm';
+                }
+                return getShaftDia ? (getShaftDia(acPower, acGearHead)||'—') : '—';
+              })()],
+              ['Weight', (() => {
+                const MW = { 'Induction Motor':{'10W AC Motor':{base:0.75,tb:0.75,emb:1.10},'15W AC Motor':{base:1.10,tb:1.10,emb:1.47},'25W AC Motor':{base:1.60,tb:1.75,emb:2.15},'40W AC Motor':{base:2.40,tb:2.55,emb:3.10},'60W AC Motor':{base:2.70,tb:2.85,emb:3.55},'90W AC Motor':{base:3.20,tb:3.35,emb:4.30},'120W AC Motor':{base:3.40,tb:3.55,emb:4.30},'140W AC Motor':{base:5.00,tb:5.15,emb:5.87},'200W AC Motor':{base:5.00,tb:5.15,emb:5.90}},'Reversible Motor':{'10W AC Motor':{base:0.80,tb:0.80,emb:1.10},'15W AC Motor':{base:1.15,tb:1.15,emb:1.47},'25W AC Motor':{base:1.65,tb:1.75,emb:2.15},'40W AC Motor':{base:2.45,tb:2.60,emb:3.10},'60W AC Motor':{base:2.75,tb:2.90,emb:3.55},'90W AC Motor':{base:3.25,tb:3.40,emb:4.30},'120W AC Motor':{base:3.45,tb:3.60,emb:4.30},'140W AC Motor':{base:5.50,tb:5.20,emb:5.87},'200W AC Motor':{base:5.50,tb:5.20,emb:5.90}},'Variable Speed Motor':{'10W AC Motor':{base:1.10,tb:1.10,emb:1.10},'15W AC Motor':{base:1.20,tb:1.20,emb:1.47},'25W AC Motor':{base:1.70,tb:1.75,emb:2.15},'40W AC Motor':{base:2.50,tb:2.60,emb:3.10},'60W AC Motor':{base:2.80,tb:2.90,emb:3.55},'90W AC Motor':{base:3.30,tb:3.40,emb:4.30},'120W AC Motor':{base:3.50,tb:3.60,emb:4.30},'140W AC Motor':{base:5.60,tb:5.20,emb:5.87},'200W AC Motor':{base:5.60,tb:5.20,emb:5.90}} };
+                const getGW = (pw,ch) => { if(/\b(60|90|120)W\b/i.test(String(pw))){ if(/GN/.test(ch)) return 1.35; if(/GU/.test(ch)){ return /KB$/i.test(ch)?1.50:/K$/i.test(ch)?1.55:1.50; } return 1.35; } return {'10W AC Motor':0.40,'15W AC Motor':0.50,'25W AC Motor':0.80,'40W AC Motor':1.35,'140W AC Motor':2.10,'200W AC Motor':2.10}[pw]??null; };
+                if(!acMotorType||!acPower) return '—';
+                const wr = MW[acMotorType]?.[acPower]; if(!wr) return '—';
+                const opts2=Array.isArray(acOption)?acOption:(acOption?[acOption]:[]);
+                const mw = opts2.some(o=>/electromagnetic brake/i.test(o))?wr.emb:opts2.some(o=>/terminal box/i.test(o))?wr.tb:wr.base;
+                const rawW=generateACModelCode({...acState,acConfirm:true});
+                const lstW=Array.isArray(rawW)?(Array.isArray(rawW[0])?rawW.flat():rawW):(rawW?[rawW]:[]);
+                const chW=(typeof selectedModel==='string'&&selectedModel)||(lstW[0]||'');
+                const gw=getGW(acPower,chW);
+                return gw!=null ? `Motor ${mw.toFixed(2)} + Gear ${gw.toFixed(2)} = ${(mw+gw).toFixed(2)} kg` : `Motor ${mw.toFixed(2)} kg`;
+              })()],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'5px 0', borderBottom:'1px solid rgba(255,255,255,0.04)', gap:6 }}>
+                <span style={{ fontSize:11, color:'#4a5060', flexShrink:0 }}>{k}</span>
+                <span style={{ fontSize:11, fontWeight:600, color: ['Motor Power','Output Speed','Ratio'].includes(k)?'#00e5a0':'#e8eaf0', textAlign:'right', wordBreak:'break-all' }}>{v||'—'}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Row 2 — AC Motor */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-white/90 select-none">AC Motor :</span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="ลดจำนวน AC Motor"
-              onClick={() => setQtyMotor(q => Math.max(1, q - 1))}
-              className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-            >–</button>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              value={qtyMotor}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                setQtyMotor(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
-              }}
-              onWheel={(e) => e.currentTarget.blur()}
-              className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
-            />
-            <button
-              type="button"
-              aria-label="เพิ่มจำนวน AC Motor"
-              onClick={() => setQtyMotor(q => Math.min(999, q + 1))}
-              className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-            >+</button>
-          </div>
+        {/* Qty Controls */}
+        <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 }}>จำนวน</div>
+          {[{ label:'Gear Head', val:qtyGear, set:setQtyGear },{ label:'AC Motor', val:qtyMotor, set:setQtyMotor }].map(({ label, val, set }) => (
+            <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <span style={{ fontSize:12, color:'rgba(255,255,255,0.65)' }}>{label}</span>
+              <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                <button type="button" onClick={() => set(q => Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>–</button>
+                <input type="number" min={1} max={999} value={val}
+                  onChange={e => { const v=Number(e.target.value); set(Number.isFinite(v)?Math.max(1,Math.floor(v)):1); }}
+                  onWheel={e => e.currentTarget.blur()}
+                  style={{ width:38, textAlign:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:5, color:'#e8eaf0', fontSize:13, fontWeight:700, padding:'2px 0' }} />
+                <button type="button" onClick={() => set(q => Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>+</button>
+              </div>
+            </div>
+          ))}
+          {acMotorType === 'Variable Speed Motor' && (
+            <div style={{ marginTop:4 }}>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.65)', marginBottom:5 }}>Speed controller</div>
+              <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:6 }}>
+                <button type="button" onClick={() => setCtrlModel("")}
+                  style={{ padding:'2px 7px', borderRadius:5, border:'1px solid', borderColor:ctrlModel===""?'#00e5a0':'rgba(255,255,255,0.12)', background:ctrlModel===""?'rgba(0,229,160,0.12)':'rgba(255,255,255,0.05)', color:ctrlModel===""?'#00e5a0':'#999', fontSize:11, cursor:'pointer' }}>No Ctrl</button>
+                {controllerOptions.map(m => (
+                  <button key={m} type="button" onClick={() => setCtrlModel(m)}
+                    onMouseEnter={() => setHoveredCtrl(m.startsWith('US')?'US':m.startsWith('UX')?'UX':null)}
+                    onMouseLeave={() => setHoveredCtrl(null)}
+                    style={{ position:'relative', padding:'2px 7px', borderRadius:5, border:'1px solid', borderColor:ctrlModel===m?'#00e5a0':'rgba(255,255,255,0.12)', background:ctrlModel===m?'rgba(0,229,160,0.12)':'rgba(255,255,255,0.05)', color:ctrlModel===m?'#00e5a0':'#999', fontSize:11, cursor:'pointer' }}>
+                    {m}
+                    {hoveredCtrl&&((m.startsWith('US')&&hoveredCtrl==='US')||(m.startsWith('UX')&&hoveredCtrl==='UX'))&&(
+                      <div style={{ position:'absolute', bottom:'100%', left:'50%', transform:'translateX(-50%)', marginBottom:4, zIndex:9999, pointerEvents:'none' }}>
+                        <img src={hoveredCtrl==='US'?USImg:UXImg} alt={hoveredCtrl} style={{ width:260, borderRadius:8, boxShadow:'0 4px 20px rgba(0,0,0,0.6)', border:'2px solid white' }} />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:4 }}>
+                <button type="button" onClick={() => setQtyCtrl(q=>Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>–</button>
+                <input type="number" min={1} max={999} value={qtyCtrl}
+                  onChange={e => { const v=Number(e.target.value); setQtyCtrl(Number.isFinite(v)?Math.max(1,Math.floor(v)):1); }}
+                  onWheel={e => e.currentTarget.blur()}
+                  style={{ width:38, textAlign:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:5, color:'#e8eaf0', fontSize:13, fontWeight:700, padding:'2px 0' }} />
+                <button type="button" onClick={() => setQtyCtrl(q=>Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>+</button>
+              </div>
+            </div>
+          )}
         </div>
-                {/* Row 3 — Speed controller (Variable Speed Motor only) */}
-{isVariable && (
-  <div className="flex flex-col gap-2">
-    <div className="flex items-center justify-between gap-2 flex-wrap">
-      <span className="text-white/90 select-none">Speed controller :</span>
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => setCtrlModel("")}
-          className={`px-3 py-2 rounded-xl shadow outline-none border transition
-            ${ctrlModel === ""
-              ? "bg-green-300 text-slate-900 border-green-400"
-              : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
-            }`}
-          title="No Controller"
-        >
-          No Ctrl
-        </button>
-        {controllerOptions.map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setCtrlModel(m)}
-            onMouseEnter={() => setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null)}
-            onMouseLeave={() => setHoveredCtrl(null)}
-            onTouchStart={() => setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null)}
-            onTouchEnd={() => setTimeout(() => setHoveredCtrl(null), 2000)}
-            className={`relative px-3 py-2 rounded-xl shadow outline-none border transition
-              ${ctrlModel === m
-                ? "bg-green-300 text-slate-900 border-green-400"
-                : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
-              }`}
-            title={`เลือก ${m}`}
-          >
-            {m}
-            {hoveredCtrl && ((m.startsWith('US') && hoveredCtrl === 'US') || (m.startsWith('UX') && hoveredCtrl === 'UX')) && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[9999] pointer-events-none">
-                <img
-                  src={hoveredCtrl === 'US' ? USImg : UXImg}
-                  alt={hoveredCtrl}
-                  className="w-[700px] h-auto rounded-xl shadow-2xl border-2 border-white object-contain bg-black/30"
-                />
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
 
-    <div className="flex items-center justify-end gap-2">
-      <button
-        type="button"
-        aria-label="ลดจำนวน Speed controller"
-        onClick={() => setQtyCtrl(q => Math.max(1, q - 1))}
-        className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-      >–</button>
-      <input
-        type="number"
-        min={1}
-        step={1}
-        value={qtyCtrl}
-        onChange={(e) => {
-          const v = Number(e.target.value);
-          setQtyCtrl(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
-        }}
-        onWheel={(e) => e.currentTarget.blur()}
-        className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
-      />
-      <button
-        type="button"
-        aria-label="เพิ่มจำนวน Speed controller"
-        onClick={() => setQtyCtrl(q => Math.min(999, q + 1))}
-        className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-      >+</button>
+        {/* Action Buttons */}
+        <div style={{ padding:'14px 16px', display:'flex', flexDirection:'column', gap:8 }}>
+          <button type="button"
+            className="btn-3d-rkfs"
+            style={{ width:'100%', padding:'11px 0', borderRadius:10, fontWeight:700, fontSize:14, cursor:'pointer' }}
+            onClick={() => {
+              const base=Array.isArray(codes)?(Array.isArray(codes[0])?codes.flat():codes):(codes?[codes]:[]);
+              const list=(selectedModel&&base.length)?[selectedModel,...base.filter(c=>c!==selectedModel)]:base;
+              if(list.length) onConfirm(list);
+            }}>
+            📦 รับไฟล์ 3D
+          </button>
+          <button type="button" onClick={handleRequestQuote}
+            style={{ width:'100%', padding:'11px 0', borderRadius:10, background:'linear-gradient(90deg,#00e5a0,#00c87a)', color:'#0a1a10', fontWeight:700, fontSize:14, border:'none', cursor:'pointer' }}>
+            🛒 ขอใบเสนอราคา
+          </button>
+          <button type="button" onClick={handleDownloadPDF}
+            style={{ width:'100%', padding:'10px 0', borderRadius:10, background:'rgba(255,255,255,0.07)', color:'#e8eaf0', fontWeight:600, fontSize:13, border:'1px solid rgba(255,255,255,0.12)', cursor:'pointer' }}>
+            📄 Drawing PDF
+          </button>
+        </div>
+
+      </div>
     </div>
   </div>
 )}
-    </div>
-  );
-
-})()}
-
-{/* NEW: Desktop — 3D viewer on top, qty controls below */}
-{acGearHead && (() => {
-  const raw3d = generateACModelCode({ ...acState, acConfirm: true });
-  const list3d = Array.isArray(raw3d) ? (Array.isArray(raw3d[0]) ? raw3d.flat() : raw3d) : (raw3d ? [raw3d] : []);
-  const code3d = (typeof selectedModel === 'string' && selectedModel) || (list3d[0] || '');
-  return (
-    <div
-      className="hidden md:flex flex-col items-center gap-3"
-      style={{ width: '38%', flexShrink: 0 }}
-    >
-      {/* 3D Viewer 4:3 */}
-      <div className="w-full rounded-xl overflow-hidden shadow-2xl" style={{ aspectRatio: '4/3' }}>
-        <StepViewer3D modelCode={code3d} width="100%" aspect="4/3" />
-      </div>
-      <div className="w-full flex flex-col gap-2">
-    {/* Row 1 — Gear Head */}
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-white/90 select-none">Gear Head :</span>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="ลดจำนวน Gear Head"
-          onClick={() => setQtyGear(q => Math.max(1, q - 1))}
-          className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-        >–</button>
-        <input
-          type="number"
-          min={1}
-          step={1}
-          value={qtyGear}
-          onChange={(e) => {
-            const v = Number(e.target.value);
-            setQtyGear(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
-          }}
-          onWheel={(e) => e.currentTarget.blur()}
-          className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
-        />
-        <button
-          type="button"
-          aria-label="เพิ่มจำนวน Gear Head"
-          onClick={() => setQtyGear(q => Math.min(999, q + 1))}
-          className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-        >+</button>
-      </div>
-    </div>
-
-    {/* Row 2 — AC Motor */}
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-white/90 select-none">AC Motor :</span>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="ลดจำนวน AC Motor"
-          onClick={() => setQtyMotor(q => Math.max(1, q - 1))}
-          className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-        >–</button>
-        <input
-          type="number"
-          min={1}
-          step={1}
-          value={qtyMotor}
-          onChange={(e) => {
-            const v = Number(e.target.value);
-            setQtyMotor(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
-          }}
-          onWheel={(e) => e.currentTarget.blur()}
-          className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
-        />
-        <button
-          type="button"
-          aria-label="เพิ่มจำนวน AC Motor"
-          onClick={() => setQtyMotor(q => Math.min(999, q + 1))}
-          className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-        >+</button>
-      </div>
-    </div>
-    {/* Row 3 — Speed controller (เฉพาะ Variable Speed Motor) */}
-    {acMotorType === 'Variable Speed Motor' && (
-  <div className="flex flex-col gap-2">
-    <div className="flex items-center justify-between gap-2 flex-wrap">
-      <span className="text-white/90 select-none">Speed controller :</span>
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => setCtrlModel("")}
-          className={`px-3 py-2 rounded-xl shadow outline-none border transition
-            ${ctrlModel === ""
-              ? "bg-green-300 text-slate-900 border-green-400"
-              : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
-            }`}
-          title="No Controller"
-        >
-          No Ctrl
-        </button>
-        {controllerOptions.map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setCtrlModel(m)}
-            onMouseEnter={() => setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null)}
-            onMouseLeave={() => setHoveredCtrl(null)}
-            onTouchStart={() => setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null)}
-            onTouchEnd={() => setTimeout(() => setHoveredCtrl(null), 2000)}
-            className={`relative px-3 py-2 rounded-xl shadow outline-none border transition
-              ${ctrlModel === m
-                ? "bg-green-300 text-slate-900 border-green-400"
-                : "bg-white/90 text-slate-900 border-white/40 hover:bg-white"
-              }`}
-            title={`เลือก ${m}`}
-          >
-            {m}
-            {hoveredCtrl && ((m.startsWith('US') && hoveredCtrl === 'US') || (m.startsWith('UX') && hoveredCtrl === 'UX')) && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[9999] pointer-events-none">
-                <img
-                  src={hoveredCtrl === 'US' ? USImg : UXImg}
-                  alt={hoveredCtrl}
-                  className="w-[700px] h-auto rounded-xl shadow-2xl border-2 border-white object-contain bg-white"
-                />
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-    <div className="flex items-center justify-end gap-2">
-      <button
-        type="button"
-        aria-label="ลดจำนวน Speed controller"
-        onClick={() => setQtyCtrl(q => Math.max(1, q - 1))}
-        className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-      >–</button>
-      <input
-        type="number"
-        min={1}
-        step={1}
-        value={qtyCtrl}
-        onChange={(e) => {
-          const v = Number(e.target.value);
-          setQtyCtrl(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1);
-        }}
-        onWheel={(e) => e.currentTarget.blur()}
-        className="w-20 text-center px-3 py-2 rounded-xl bg-white/90 text-slate-900 shadow outline-none"
-      />
-      <button
-        type="button"
-        aria-label="เพิ่มจำนวน Speed controller"
-        onClick={() => setQtyCtrl(q => Math.min(999, q + 1))}
-        className="px-3 py-2 rounded-xl bg-white/85 text-slate-900 shadow hover:bg-white"
-      >+</button>
-    </div>
-  </div>
-)}
-      </div>
-    </div>
-  );
-})()}
-    </div>
 {showQuote && (
   <div className="fixed inset-0 z-[1200] flex items-center justify-center">
     <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setShowQuote(false)} />
@@ -1863,77 +1613,6 @@ const gifForHead = (() => {
   </div>
 )}
 
-{/* Bottom action bar */}
-<div
-  className="sticky bottom-0 md:fixed md:bottom-3 md:left-0 md:right-0 z-[1000] px-3"
-  style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
->
-  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-between bg-black/20 backdrop-blur-sm rounded-2xl p-2">
-    {/* Left: Drawing PDF */}
-    <button
-      type="button"
-      onClick={handleDownloadPDF}
-      className="bg-white/90 text-slate-900 px-4 py-2.5 rounded-xl font-semibold shadow hover:bg-white
-                 w-full sm:w-auto"
-    >
-      Drawing PDF
-    </button>
-
-    {/* Center: ขอใบเสนอราคา */}
-    <button
-      type="button"
-      onClick={handleRequestQuote}
-      className="bg-green-300 hover:bg-green-400 text-slate-900 px-4 py-2.5 rounded-2xl font-semibold shadow-lg
-                 flex items-center justify-center gap-2 w-full sm:w-auto"
-      title="ขอใบเสนอราคา"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-        <path d="M7 4a1 1 0 1 1 0-2h1a1 1 0 0 1 .95.684L9.76 4H19a1 1 0 0 1 .98 1.197l-1.5 9A1 1 0 0 1 17.5 15H9a1 1 0 0 1-.98-.804L6.24 5H4a1 1 0 1 1 0-2h3Zm3.28 11h7.96l1.17-7H10.45l.83 7ZM9 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 .001 4.001A2 2 0 0 0 17 18Z"/>
-      </svg>
-      ขอใบเสนอราคา
-    </button>
-
-    {/* Right: รับไฟล์ 3D */}
-    <button
-      type="button"
-      className="btn-3d-rkfs px-6 py-2.5 font-bold w-full sm:w-auto"
-      onClick={() => {
-        const base = Array.isArray(codes)
-          ? (Array.isArray(codes[0]) ? codes.flat() : codes)
-          : (codes ? [codes] : []);
-        const list = (selectedModel && base.length)
-          ? [selectedModel, ...base.filter(c => c !== selectedModel)]
-          : base;
-        if (list.length) onConfirm(list);
-      }}
-    >
-      รับไฟล์ 3D
-    </button>
-    <button
-      type="button"
-      onClick={() => update('acRatio', null)}
-      className="md:hidden w-full text-center text-xs text-white/80 underline underline-offset-4 mt-1"
-    >
-      ย้อนกลับ
-    </button>
-  </div>
-</div>
-<button
-  onClick={() => update('acRatio', null)}
-  className="hidden md:block fixed z-30 px-1 py-0.5 rounded text-white/70 
-             bg-green-400/20 backdrop-blur-sm border border-white/20 shadow-sm
-             hover:text-white hover:bg-green-500 hover:shadow-lg
-             focus:outline-none focus:ring-2 focus:ring-green-400/60
-             active:scale-95 transition-all duration-200"
-  style={{
-    left: 'max(1rem, env(safe-area-inset-left))',
-    bottom: 'max(31.8rem, env(safe-area-inset-bottom))',
-  }}
->
-  ย้อนกลับ
-</button>
-  </div>
-)}
       {/* Final */}
       {acMotorType && acPower && acVoltage && acOption && acGearHead && acRatio && showAcFinal &&  (
         <div className="text-center space-y-4 mt-6">

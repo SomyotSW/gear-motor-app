@@ -34,9 +34,9 @@ for i, (fname, filepath) in enumerate(files, 1):
     name = os.path.splitext(fname)[0]
     out  = os.path.join(OUT_DIR, name + ".glb")
 
-    if os.path.exists(out) and os.path.getsize(out) > 0:
-        skip += 1
-        continue
+    # ลบไฟล์เดิมแล้ว convert ใหม่ทุกไฟล์ (เพื่อแก้ JSON padding bug)
+    if os.path.exists(out):
+        os.remove(out)
 
     try:
         # โหลด STEP โดยตรง (headless safe)
@@ -67,12 +67,17 @@ for i, (fname, filepath) in enumerate(files, 1):
             idx_data += struct.pack('<III', f3[0], f3[1], f3[2])
 
         # pad to 4-byte boundary
-        def pad4(b):
+        # GLB spec: JSON chunk pad ด้วย space (0x20), BIN chunk pad ด้วย null (0x00)
+        def pad4_bin(b):
             r = len(b) % 4
             return b + bytearray(4 - r) if r else b
 
-        vert_data = pad4(vert_data)
-        idx_data  = pad4(idx_data)
+        def pad4_json(b):
+            r = len(b) % 4
+            return b + bytearray(b' ' * (4 - r)) if r else b
+
+        vert_data = pad4_bin(vert_data)
+        idx_data  = pad4_bin(idx_data)
 
         # bounding box
         xs = [v.x for v in verts]
@@ -118,7 +123,7 @@ for i, (fname, filepath) in enumerate(files, 1):
         }
 
         json_bytes = json.dumps(gltf, separators=(',', ':')).encode('utf-8')
-        json_bytes = pad4(bytearray(json_bytes))
+        json_bytes = pad4_json(bytearray(json_bytes))
 
         # GLB header + chunks
         json_chunk_len = len(json_bytes)
