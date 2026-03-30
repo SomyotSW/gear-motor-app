@@ -74,6 +74,109 @@ function useIsMobile() {
   return mobile;
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MobileLightingControls — shown in confirm page right panel on mobile
+// ─────────────────────────────────────────────────────────────────────────────
+function MobileLightingControlsRKFS() {
+  const getMV = () => document.querySelector('model-viewer');
+  const [envIdx,    setEnvIdx]    = React.useState(0);
+  const [exposure,  setExposure]  = React.useState(1.3);
+  const [shadow,    setShadow]    = React.useState(0.6);
+  const [lightRot,  setLightRot]  = React.useState(0);
+  const [autoLight, setAutoLight] = React.useState(false);
+  const [tintIdx,   setTintIdx]   = React.useState(0);
+  const lightTimer = React.useRef(null);
+
+  React.useEffect(() => {
+    if (autoLight) {
+      lightTimer.current = setInterval(() => {
+        setLightRot(r => {
+          const n = (r + 2) % 360;
+          const mv = getMV(); if (mv) mv.style.setProperty('--env-rotation', n + 'deg');
+          return n;
+        });
+      }, 30);
+    } else clearInterval(lightTimer.current);
+    return () => clearInterval(lightTimer.current);
+  }, [autoLight]);
+  React.useEffect(() => () => clearInterval(lightTimer.current), []);
+
+  const applyTint = (idx) => {
+    setTintIdx(idx);
+    const color = TINT_COLORS[idx].value;
+    const mv = getMV(); if (!mv) return;
+    const apply = () => {
+      try {
+        const mats = mv.model?.materials; if (!mats) return;
+        if (!color) { [...mats].forEach(m => m.pbrMetallicRoughness.setBaseColorFactor([1,1,1,1])); }
+        else { const r=parseInt(color.slice(1,3),16)/255,g=parseInt(color.slice(3,5),16)/255,b=parseInt(color.slice(5,7),16)/255; [...mats].forEach(m=>m.pbrMetallicRoughness.setBaseColorFactor([r,g,b,1])); }
+      } catch(e) {}
+    };
+    if (mv.model) apply(); else mv.addEventListener('load', apply, { once: true });
+  };
+
+  const sec  = { padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' };
+  const secT = { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 };
+  const row  = { display:'flex', alignItems:'center', gap:8, marginBottom:8 };
+  const lbl  = { fontSize:10, color:'#4a5060', width:54, flexShrink:0 };
+  const sld  = { flex:1, accentColor:'#00e5a0', cursor:'pointer', height:3 };
+  const val  = { fontSize:10, color:'#e8eaf0', width:30, textAlign:'right', flexShrink:0, fontFamily:'monospace' };
+
+  return (
+    <>
+      <div style={sec}>
+        <div style={secT}>สภาพแวดล้อมแสง</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5 }}>
+          {ENV_PRESETS.map((env, i) => (
+            <button key={env.value} onClick={() => { setEnvIdx(i); const mv=getMV(); if(mv) mv.setAttribute('environment-image', env.value); }}
+              style={{ aspectRatio:1, borderRadius:6, border: i===envIdx?'2px solid #00e5a0':'2px solid transparent', cursor:'pointer', position:'relative', overflow:'hidden', background:env.bg }}>
+              <span style={{ position:'absolute', bottom:0, left:0, right:0, fontSize:7, textAlign:'center', background:'rgba(0,0,0,0.65)', color:'rgba(255,255,255,0.7)', fontWeight:600, padding:'1px 0' }}>{env.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={sec}>
+        <div style={secT}>ควบคุมแสง</div>
+        <div style={row}><span style={lbl}>ความสว่าง</span>
+          <input type="range" min={0.5} max={3} step={0.05} value={exposure} style={sld}
+            onChange={e=>{ const v=parseFloat(e.target.value); setExposure(v); const mv=getMV(); if(mv) mv.setAttribute('exposure',v); }} />
+          <span style={val}>{exposure.toFixed(1)}</span>
+        </div>
+        <div style={row}><span style={lbl}>เงา</span>
+          <input type="range" min={0} max={1} step={0.05} value={shadow} style={sld}
+            onChange={e=>{ const v=parseFloat(e.target.value); setShadow(v); const mv=getMV(); if(mv) mv.setAttribute('shadow-softness',v); }} />
+          <span style={val}>{shadow.toFixed(1)}</span>
+        </div>
+        <div style={row}><span style={lbl}>ทิศแสง</span>
+          {autoLight ? <span style={{flex:1,fontSize:10,color:'#00e5a0'}}>⟳ หมุนอัตโนมัติ</span>
+                     : <input type="range" min={0} max={360} step={1} value={lightRot} style={sld}
+                         onChange={e=>{ const v=parseInt(e.target.value); setLightRot(v); const mv=getMV(); if(mv) mv.style.setProperty('--env-rotation',v+'deg'); }} />}
+          <span style={val}>{lightRot}°</span>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:8 }}>
+          <span style={{ fontSize:10, color:'#4a5060' }}>☀️ หมุนแสงอัตโนมัติ</span>
+          <button onClick={()=>setAutoLight(v=>!v)}
+            style={{ width:34, height:18, background:autoLight?'#00e5a0':'rgba(255,255,255,0.1)', borderRadius:9, position:'relative', cursor:'pointer', border:'none', transition:'background 0.2s' }}>
+            <div style={{ position:'absolute', top:2, left:autoLight?16:2, width:14, height:14, borderRadius:'50%', background:'white', transition:'left 0.2s' }} />
+          </button>
+        </div>
+      </div>
+      <div style={sec}>
+        <div style={secT}>สีโมเดล</div>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+          {TINT_COLORS.map((c, i) => (
+            <button key={c.label} title={c.label} onClick={() => applyTint(i)}
+              style={{ width:28, height:28, borderRadius:'50%', border:i===tintIdx?'2px solid white':'2px solid transparent', cursor:'pointer', position:'relative', flexShrink:0, background:c.bg, transform:i===tintIdx?'scale(1.1)':'scale(1)', transition:'all 0.15s' }}>
+              {i===tintIdx && <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white' }}>✓</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function RkfsViewer3D({ modelCode }) {
   const isMobile = useIsMobile();
   const glbCode = normalizeRkfsGlbCode(modelCode || '');
@@ -206,7 +309,7 @@ function RkfsViewer3D({ modelCode }) {
           style={S.mv} />
         {ready && !err && <div style={S.hint}>🖱 ลาก = หมุน · Scroll = ซูม</div>}
       </div>
-      <div style={S.panel}>
+      {!isMobile && <div style={S.panel}>
         <div style={S.sec}>
           <div style={S.secTitle}>สภาพแวดล้อมแสง</div>
           <div style={S.envGrid}>
@@ -261,7 +364,7 @@ function RkfsViewer3D({ modelCode }) {
             ))}
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -407,7 +510,7 @@ const RKFS_INPUT_GIF = {
 
   const shaftCode = rkfsINPUTshaft ?? rkfsInputShaft ?? null;
   const shaftDia  = rkfsINPUTshaftDia ?? rkfsInputShaftDia ?? null;
-  const isMobile = useIsMobile();
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const update = (key, value) => {
   const setterMap = {
     rkfsSeries:       setState.setRkfsSeries,
@@ -2832,6 +2935,9 @@ if (rkfsInputSel === 'INPUT Shaft') {
 
       {/* ── Right Panel ── */}
       <div style={{ width: isMobile?'100%':280, flexShrink:0, background:'#0f1118', borderLeft: isMobile?'none':'1px solid rgba(255,255,255,0.07)', borderTop: isMobile?'1px solid rgba(255,255,255,0.07)':'none', overflowY:'auto', display:'flex', flexDirection:'column' }}>
+
+        {/* Mobile: Lighting Controls */}
+        {isMobile && <MobileLightingControlsRKFS />}
 
         {/* Specs */}
         <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
