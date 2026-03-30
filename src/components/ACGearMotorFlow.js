@@ -227,6 +227,21 @@ function normalizeGlbCode(modelCode) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// useIsMobile — detect mobile screen (< 768px), responsive layout
+// ─────────────────────────────────────────────────────────────────────────────
+function useIsMobile() {
+  const [mobile, setMobile] = React.useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768
+  );
+  React.useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < 768);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return mobile;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GLB base URL — GitHub Releases (Vercel ไม่รองรับ LFS ให้ใช้ตรงนี้แทน)
 // หลัง upload ไฟล์ GLB ขึ้น GitHub Releases tag "glb-v1" แล้ว
 // ─────────────────────────────────────────────────────────────────────────────
@@ -280,6 +295,7 @@ const TINT_COLORS = [
 // ─── normalizeGlbCode แล้วโหลดตรงเลย ไม่มี fallback ───────────────────────────
 // ─── StepViewer3D — Full demo-style viewer ────────────────────────────────────
 function StepViewer3D({ modelCode }) {
+  const isMobile = useIsMobile();
   const glbCode = normalizeGlbCode(modelCode || '');
   const fbCodes = glbCode ? [glbCode] : [];
 
@@ -402,15 +418,15 @@ function StepViewer3D({ modelCode }) {
 
   // shared inline styles (CSS-in-JS เพื่อไม่กระทบ Tailwind ของ host)
   const S = {
-    wrap: { display:'flex', flexDirection:'column', width:'100%', height:'100%', minHeight:0, background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" },
-    viewer: { flex:1, minHeight:200, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
+    wrap: { display:'flex', flexDirection: isMobile?'column':'row', width:'100%', height:'100%', minHeight:0, background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" },
+    viewer: { flex: isMobile?'none':1, height: isMobile?'55vw':undefined, minHeight: isMobile?220:0, maxHeight: isMobile?380:undefined, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
     grid: { position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(0,229,160,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.025) 1px,transparent 1px)', backgroundSize:'40px 40px', pointerEvents:'none' },
     mv: { width:'100%', height:'100%', '--poster-color':'transparent', '--progress-bar-color':'#00e5a0', '--progress-mask':'transparent', background:'transparent' },
     hint: { position:'absolute', bottom:10, left:0, right:0, textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:10, pointerEvents:'none', letterSpacing:'0.5px' },
     errorBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:'#0a0c10' },
     loaderBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, background:'linear-gradient(135deg,#0a0c10,#0d111c)', transition:'opacity 0.4s' },
     ring: { width:44, height:44, border:'2px solid rgba(0,229,160,0.15)', borderTopColor:'#00e5a0', borderRadius:'50%', animation:'mv3d-spin 0.9s linear infinite' },
-    panel: { flex:'none', height:220, background:'#0f1118', borderTop:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'row', flexWrap:'wrap' },
+    panel: { width: isMobile?'100%':200, flexShrink:0, background:'#0f1118', borderLeft: isMobile?'none':'1px solid rgba(255,255,255,0.07)', borderTop: isMobile?'1px solid rgba(255,255,255,0.07)':'none', overflowY:'auto', display:'flex', flexDirection:'column' },
     sec: { padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' },
     secTitle: { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 },
     envGrid: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5 },
@@ -542,6 +558,7 @@ function StepViewer3D({ modelCode }) {
 }
 
 export default function ACGearMotorFlow({ acState, acSetters, onConfirm }) {
+  const isMobile = useIsMobile();
   const { acMotorType, acPower, acVoltage, acOption, acGearHead, acRatio , acConfirm } = acState;
     const [qtyGear, setQtyGear] = useState(1);
   const [qtyMotor, setQtyMotor] = useState(1);
@@ -1371,7 +1388,7 @@ const gifForHead = (() => {
     </div>
 
     {/* Body: Viewer + Right Panel */}
-    <div style={{ flex:1, display:'flex', minHeight:0, overflow:'hidden' }}>
+    <div style={{ flex:1, display:'flex', flexDirection: isMobile?'column':'row', minHeight:0, overflow: isMobile?'auto':'hidden' }}>
 
       {/* 3D Viewer full height */}
       {(() => {
@@ -1379,14 +1396,14 @@ const gifForHead = (() => {
         const list3d = Array.isArray(raw3d) ? (Array.isArray(raw3d[0]) ? raw3d.flat() : raw3d) : (raw3d ? [raw3d] : []);
         const code3d = (typeof selectedModel === 'string' && selectedModel) || (list3d[0] || '');
         return (
-          <div style={{ flex:1, minWidth:0, minHeight:0 }}>
+          <div style={{ flex: isMobile?'none':1, height: isMobile?'55vw':undefined, minHeight: isMobile?220:0, maxHeight: isMobile?360:undefined, minWidth:0 }}>
             <StepViewer3D modelCode={code3d} />
           </div>
         );
       })()}
 
       {/* Right Panel */}
-      <div style={{ width:280, flexShrink:0, background:'#0f1118', borderLeft:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'column' }}>
+      <div style={{ width: isMobile?'100%':280, flexShrink:0, background:'#0f1118', borderLeft: isMobile?'none':'1px solid rgba(255,255,255,0.07)', borderTop: isMobile?'1px solid rgba(255,255,255,0.07)':'none', overflowY:'auto', display:'flex', flexDirection:'column' }}>
 
         {/* Specs */}
         <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>

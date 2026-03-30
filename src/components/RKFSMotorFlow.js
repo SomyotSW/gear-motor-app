@@ -61,7 +61,21 @@ function normalizeRkfsGlbCode(modelCode) {
   return parts.join('-');
 }
 
+// ── Mobile detection ──────────────────────────────────────────────────────────
+function useIsMobile() {
+  const [mobile, setMobile] = React.useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768
+  );
+  React.useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < 768);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return mobile;
+}
+
 function RkfsViewer3D({ modelCode }) {
+  const isMobile = useIsMobile();
   const glbCode = normalizeRkfsGlbCode(modelCode || '');
   const mvRef   = React.useRef(null);
   const [err,     setErr]     = React.useState(false);
@@ -142,15 +156,15 @@ function RkfsViewer3D({ modelCode }) {
   };
 
   const S = {
-    wrap:      { display:'flex', width:'100%', height:'100%', minHeight:0, background:'#0a0c10' },
-    viewer:    { flex:1, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
+    wrap:      { display:'flex', flexDirection: isMobile?'column':'row', width:'100%', height:'100%', minHeight:0, background:'#0a0c10' },
+    viewer:    { flex: isMobile?'none':1, height: isMobile?'55vw':undefined, minHeight: isMobile?220:0, maxHeight: isMobile?380:undefined, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
     grid:      { position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(0,229,160,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.025) 1px,transparent 1px)', backgroundSize:'40px 40px', pointerEvents:'none' },
     mv:        { width:'100%', height:'100%', '--poster-color':'transparent', '--progress-bar-color':'#00e5a0', background:'transparent' },
     hint:      { position:'absolute', bottom:10, left:0, right:0, textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:10, pointerEvents:'none' },
     errorBox:  { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:'#0a0c10' },
     loaderBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, background:'linear-gradient(135deg,#0a0c10,#0d111c)' },
     ring:      { width:44, height:44, border:'2px solid rgba(0,229,160,0.15)', borderTopColor:'#00e5a0', borderRadius:'50%', animation:'mv3d-spin 0.9s linear infinite' },
-    panel:     { width:200, flexShrink:0, background:'#0f1118', borderLeft:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'column' },
+    panel:     { width: isMobile?'100%':200, flexShrink:0, background:'#0f1118', borderLeft: isMobile?'none':'1px solid rgba(255,255,255,0.07)', borderTop: isMobile?'1px solid rgba(255,255,255,0.07)':'none', overflowY:'auto', display:'flex', flexDirection:'column' },
     sec:       { padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' },
     secTitle:  { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 },
     envGrid:   { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5 },
@@ -393,6 +407,7 @@ const RKFS_INPUT_GIF = {
 
   const shaftCode = rkfsINPUTshaft ?? rkfsInputShaft ?? null;
   const shaftDia  = rkfsINPUTshaftDia ?? rkfsInputShaftDia ?? null;
+  const isMobile = useIsMobile();
   const update = (key, value) => {
   const setterMap = {
     rkfsSeries:       setState.setRkfsSeries,
@@ -2791,7 +2806,7 @@ if (rkfsInputSel === 'INPUT Shaft') {
     </div>
 
     {/* ── Body: Viewer (left) + Right Panel ── */}
-    <div style={{ flex:1, display:'flex', flexDirection:'column', minHeight:0, overflow:'hidden' }}>
+    <div style={{ flex:1, display:'flex', flexDirection: isMobile?'column':'row', minHeight:0, overflow: isMobile?'auto':'hidden' }}>
 
       {/* 3D Viewer */}
       {(() => {
@@ -2809,14 +2824,14 @@ if (rkfsInputSel === 'INPUT Shaft') {
         }
         if (needTrim) code = code.replace(/^(RXXRXX|RFXXRXX)/,'');
         return (
-          <div style={{ flex:'none', height:'45vw', minHeight:220, maxHeight:360 }}>
+          <div style={{ flex: isMobile?'none':1, height: isMobile?'55vw':undefined, minHeight: isMobile?220:0, maxHeight: isMobile?380:undefined, minWidth:0 }}>
             <RkfsViewer3D modelCode={code} />
           </div>
         );
       })()}
 
       {/* ── Right Panel ── */}
-      <div style={{ flex:1, background:'#0f1118', borderTop:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'column' }}>
+      <div style={{ width: isMobile?'100%':280, flexShrink:0, background:'#0f1118', borderLeft: isMobile?'none':'1px solid rgba(255,255,255,0.07)', borderTop: isMobile?'1px solid rgba(255,255,255,0.07)':'none', overflowY:'auto', display:'flex', flexDirection:'column' }}>
 
         {/* Specs */}
         <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
