@@ -2791,7 +2791,7 @@ if (rkfsInputSel === 'INPUT Shaft') {
     </div>
 
     {/* ── Body: Viewer (left) + Right Panel ── */}
-    <div style={{ flex:1, display:'flex', minHeight:0, overflow:'hidden' }}>
+    <div style={{ flex:1, display:'flex', flexDirection:'column', minHeight:0, overflow:'hidden' }}>
 
       {/* 3D Viewer */}
       {(() => {
@@ -2809,14 +2809,14 @@ if (rkfsInputSel === 'INPUT Shaft') {
         }
         if (needTrim) code = code.replace(/^(RXXRXX|RFXXRXX)/,'');
         return (
-          <div style={{ flex:1, minWidth:0, minHeight:0 }}>
+          <div style={{ flex:'none', height:'45vw', minHeight:220, maxHeight:360 }}>
             <RkfsViewer3D modelCode={code} />
           </div>
         );
       })()}
 
       {/* ── Right Panel ── */}
-      <div style={{ width:280, flexShrink:0, background:'#0f1118', borderLeft:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'column' }}>
+      <div style={{ flex:1, background:'#0f1118', borderTop:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'column' }}>
 
         {/* Specs */}
         <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>

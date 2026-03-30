@@ -402,15 +402,15 @@ function StepViewer3D({ modelCode }) {
 
   // shared inline styles (CSS-in-JS เพื่อไม่กระทบ Tailwind ของ host)
   const S = {
-    wrap: { display:'flex', width:'100%', height:'100%', minHeight:0, background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" },
-    viewer: { flex:1, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
+    wrap: { display:'flex', flexDirection:'column', width:'100%', height:'100%', minHeight:0, background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" },
+    viewer: { flex:1, minHeight:200, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
     grid: { position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(0,229,160,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.025) 1px,transparent 1px)', backgroundSize:'40px 40px', pointerEvents:'none' },
     mv: { width:'100%', height:'100%', '--poster-color':'transparent', '--progress-bar-color':'#00e5a0', '--progress-mask':'transparent', background:'transparent' },
     hint: { position:'absolute', bottom:10, left:0, right:0, textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:10, pointerEvents:'none', letterSpacing:'0.5px' },
     errorBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:'#0a0c10' },
     loaderBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, background:'linear-gradient(135deg,#0a0c10,#0d111c)', transition:'opacity 0.4s' },
     ring: { width:44, height:44, border:'2px solid rgba(0,229,160,0.15)', borderTopColor:'#00e5a0', borderRadius:'50%', animation:'mv3d-spin 0.9s linear infinite' },
-    panel: { width:200, flexShrink:0, background:'#0f1118', borderLeft:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'column' },
+    panel: { flex:'none', height:220, background:'#0f1118', borderTop:'1px solid rgba(255,255,255,0.07)', overflowY:'auto', display:'flex', flexDirection:'row', flexWrap:'wrap' },
     sec: { padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' },
     secTitle: { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 },
     envGrid: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5 },
