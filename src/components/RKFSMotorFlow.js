@@ -21,14 +21,14 @@ import { motion } from 'framer-motion';
 })();
 
 const ENV_PRESETS = [
-  { label: 'Neutral',   value: 'neutral',  bg: 'linear-gradient(135deg,#5a5a5a,#3a3a3a)' },
-  { label: 'Legacy',    value: 'legacy',   bg: 'linear-gradient(135deg,#7a8a9a,#5a6a7a)' },
-  { label: 'Commerce',  value: 'commerce', bg: 'linear-gradient(135deg,#9a8a6a,#7a6a5a)' },
-  { label: 'Sunset',    value: 'sunset',   bg: 'linear-gradient(135deg,#c87a4a,#8a4a2a)' },
-  { label: 'Studio',    value: 'studio',   bg: 'linear-gradient(135deg,#8a7a9a,#6a5a7a)' },
-  { label: 'Park',      value: 'park',     bg: 'linear-gradient(135deg,#5a8a5a,#3a6a3a)' },
-  { label: 'Dawn',      value: 'dawn',     bg: 'linear-gradient(135deg,#9a7a5a,#7a5a3a)' },
-  { label: 'Night',     value: 'night',    bg: 'linear-gradient(135deg,#2a2a5a,#1a1a3a)' },
+  { label: 'Neutral',  value: 'neutral',  bg: 'linear-gradient(135deg,#5a5a5a,#3a3a3a)' },
+  { label: 'Legacy',   value: 'legacy',   bg: 'linear-gradient(135deg,#7a8a9a,#5a6a7a)' },
+  { label: 'Warm',     value: 'https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr', bg: 'linear-gradient(135deg,#c87a4a,#8a4a2a)' },
+  { label: 'Studio',   value: 'https://modelviewer.dev/shared-assets/environments/aircraft_workshop_01_1k.hdr', bg: 'linear-gradient(135deg,#8a7a9a,#6a5a7a)' },
+  { label: 'Outdoor',  value: 'https://modelviewer.dev/shared-assets/environments/pillars_1k.hdr', bg: 'linear-gradient(135deg,#5a8a5a,#3a6a3a)' },
+  { label: 'Moon',     value: 'https://modelviewer.dev/shared-assets/environments/moon_1k.hdr', bg: 'linear-gradient(135deg,#2a2a5a,#1a1a3a)' },
+  { label: 'Whipple',  value: 'https://modelviewer.dev/shared-assets/environments/whipple_creek_regional_park_04_1k_HDR.hdr', bg: 'linear-gradient(135deg,#5a8a5a,#3a5a3a)' },
+  { label: 'Canary',   value: 'https://modelviewer.dev/shared-assets/environments/canary_wharf_1k_HDR.hdr', bg: 'linear-gradient(135deg,#9a9a6a,#6a6a3a)' },
 ];
 
 const TINT_COLORS = [
@@ -129,7 +129,7 @@ function MobileLightingControlsRKFS() {
         <div style={secT}>สภาพแวดล้อมแสง</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5 }}>
           {ENV_PRESETS.map((env, i) => (
-            <button key={env.value} onClick={() => { setEnvIdx(i); const mv=getMV(); if(mv) mv.setAttribute('environment-image', env.value); }}
+            <button key={env.value} onClick={() => { setEnvIdx(i); const mv=getMV(); if(mv) { try { mv.setAttribute('environment-image', env.value); } catch(e) {} } }}
               style={{ aspectRatio:1, borderRadius:6, border: i===envIdx?'2px solid #00e5a0':'2px solid transparent', cursor:'pointer', position:'relative', overflow:'hidden', background:env.bg }}>
               <span style={{ position:'absolute', bottom:0, left:0, right:0, fontSize:7, textAlign:'center', background:'rgba(0,0,0,0.65)', color:'rgba(255,255,255,0.7)', fontWeight:600, padding:'1px 0' }}>{env.label}</span>
             </button>
@@ -232,7 +232,7 @@ function RkfsViewer3D({ modelCode }) {
   }, [autoLight]);
 
   React.useEffect(() => {
-    if (mvRef.current) mvRef.current.setAttribute('environment-image', ENV_PRESETS[envIdx].value);
+    if (mvRef.current) { try { mvRef.current.setAttribute('environment-image', ENV_PRESETS[envIdx].value); } catch(e) {} }
   }, [envIdx]);
 
   React.useEffect(() => { return () => clearInterval(lightTimer.current); }, []);
