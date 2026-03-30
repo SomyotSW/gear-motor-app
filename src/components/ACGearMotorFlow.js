@@ -236,7 +236,7 @@ const GLB_BASE = (() => {
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return '/model/glb';  // local dev — ไฟล์อยู่ใน public/model/glb/
   }
-  return 'https://cdn.jsdelivr.net/gh/SomyotSW/gear-motor-app@main/public/model/glb'; // production CDN
+  return 'https://pub-8cdc08b3fc55463c8c8f399a10351d7e.r2.dev'; // production CDN
 })();
 
 // ─────────────────────────────────────────────────────────────────────────────
