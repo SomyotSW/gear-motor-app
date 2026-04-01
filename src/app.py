@@ -726,6 +726,11 @@ def iec_quote():
         shaft_str = get_shaft_diameter(model_code, iec_pole)
 
         # สร้าง description จาก IEC fields
+        pole_label = {
+            "2P": "2 Pole (~3000 rpm)", "4P": "4 Pole (~1500 rpm)",
+            "6P": "6 Pole (~1000 rpm)", "8P": "8 Pole (~750 rpm)"
+        }.get(iec_pole, iec_pole)
+
         motor_desc = (
             f"Standard: IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55, Class F, S1\n"
             f"Insulation: Class F (105K), by Class B\n"
@@ -735,6 +740,7 @@ def iec_quote():
             f"Vibration: Class A (Class B on request)\n"
             f"Site Conditions: -15\u00b0C to +40\u00b0C, Altitude \u2264 1000 m\n"
             f"Voltage Range: 200\u2013660V, 50/60Hz (\u00b15% nominal)\n"
+            f"Motor Type: {iec_motor_type} | Power: {iec_power} kW | {pole_label}\n"
             f"Mounting: {iec_mount} | Terminal Box: {iec_terminal}\u00b0 | Cable: {iec_cable}\n"
             f"IP Protection: IP55 | Insulation Class: F\n"
             + (f"Output Shaft Diameter: {shaft_str}\n" if shaft_str else "")
@@ -749,6 +755,10 @@ def iec_quote():
 
         # ── Delivery date (F17) ───────────────────────────────────────────────
         ws["F17"] = "Within 30-45 days"
+
+        # ── Warranty (B17) และ JOB (D17) ─────────────────────────────────────
+        ws["B17"] = "24 Months"
+        ws["D17"] = "IEC Standard Motor"
 
         # ── Clear rows ที่เคยใส่ gear/ctrl ถ้ายังค้างอยู่ในเทมเพลต ───────────
         for row in [22, 24]:

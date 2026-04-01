@@ -1601,14 +1601,41 @@ const gifForHead = (() => {
                 <button type="button" onClick={() => setCtrlModel("")}
                   style={{ padding:'2px 7px', borderRadius:5, border:'1px solid', borderColor:ctrlModel===""?'#00e5a0':'rgba(255,255,255,0.12)', background:ctrlModel===""?'rgba(0,229,160,0.12)':'rgba(255,255,255,0.05)', color:ctrlModel===""?'#00e5a0':'#999', fontSize:11, cursor:'pointer' }}>No Ctrl</button>
                 {controllerOptions.map(m => (
-                  <button key={m} type="button" onClick={() => setCtrlModel(m)}
-                    onMouseEnter={() => setHoveredCtrl(m.startsWith('US')?'US':m.startsWith('UX')?'UX':null)}
-                    onMouseLeave={() => setHoveredCtrl(null)}
+                  <button key={m} type="button" onClick={() => {
+                    // mobile: tap ครั้งแรก = แสดงรูป, tap ครั้งสอง = เลือก
+                    if (isMobile) {
+                      const isShowing = hoveredCtrl && ((m.startsWith('US') && hoveredCtrl === 'US') || (m.startsWith('UX') && hoveredCtrl === 'UX'));
+                      if (isShowing) { setCtrlModel(m); setHoveredCtrl(null); }
+                      else { setHoveredCtrl(m.startsWith('US') ? 'US' : m.startsWith('UX') ? 'UX' : null); }
+                    } else {
+                      setCtrlModel(m);
+                    }
+                  }}
+                    onMouseEnter={() => !isMobile && setHoveredCtrl(m.startsWith('US')?'US':m.startsWith('UX')?'UX':null)}
+                    onMouseLeave={() => !isMobile && setHoveredCtrl(null)}
                     style={{ position:'relative', padding:'2px 7px', borderRadius:5, border:'1px solid', borderColor:ctrlModel===m?'#00e5a0':'rgba(255,255,255,0.12)', background:ctrlModel===m?'rgba(0,229,160,0.12)':'rgba(255,255,255,0.05)', color:ctrlModel===m?'#00e5a0':'#999', fontSize:11, cursor:'pointer' }}>
                     {m}
                     {hoveredCtrl&&((m.startsWith('US')&&hoveredCtrl==='US')||(m.startsWith('UX')&&hoveredCtrl==='UX'))&&(
-                      <div style={{ position:'absolute', bottom:'100%', left:'50%', transform:'translateX(-50%)', marginBottom:4, zIndex:9999, pointerEvents:'none' }}>
-                        <img src={hoveredCtrl==='US'?USImg:UXImg} alt={hoveredCtrl} style={{ width:260, borderRadius:8, boxShadow:'0 4px 20px rgba(0,0,0,0.6)', border:'2px solid white' }} />
+                      <div style={{ position:'fixed', bottom: isMobile?'auto':'auto', left:'50%', top:'50%', transform:'translate(-50%,-50%)', zIndex:9999, pointerEvents:'none' }}>
+                        {/* 110mm × 120mm @ 96dpi = 415px × 453px */}
+                        <img
+                          src={hoveredCtrl==='US'?USImg:UXImg}
+                          alt={hoveredCtrl}
+                          style={{
+                            width:  Math.round(110 / 25.4 * 96),  // 110mm → ~415px
+                            height: Math.round(120 / 25.4 * 96),  // 120mm → ~453px
+                            objectFit: 'contain',
+                            borderRadius: 8,
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
+                            border: '2px solid rgba(255,255,255,0.8)',
+                            background: '#fff',
+                          }}
+                        />
+                        {isMobile && (
+                          <div style={{ textAlign:'center', marginTop:6, fontSize:10, color:'rgba(255,255,255,0.7)' }}>
+                            แตะอีกครั้งเพื่อเลือก
+                          </div>
+                        )}
                       </div>
                     )}
                   </button>
