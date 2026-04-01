@@ -725,31 +725,126 @@ def iec_quote():
 
         shaft_str = get_shaft_diameter(model_code, iec_pole)
 
-        # สร้าง description จาก IEC fields
         pole_label = {
             "2P": "2 Pole (~3000 rpm)", "4P": "4 Pole (~1500 rpm)",
             "6P": "6 Pole (~1000 rpm)", "8P": "8 Pole (~750 rpm)"
         }.get(iec_pole, iec_pole)
 
-        motor_desc = (
-            f"Standard: IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55, Class F, S1\n"
-            f"Insulation: Class F (105K), by Class B\n"
-            f"Cooling: TEFC (IC411, IEC60034-6), Plastic Fan\n"
-            f"Winding: 100% Copper Wire\n"
-            f"Duty: Continuous (S1)\n"
-            f"Vibration: Class A (Class B on request)\n"
-            f"Site Conditions: -15\u00b0C to +40\u00b0C, Altitude \u2264 1000 m\n"
-            f"Voltage Range: 200\u2013660V, 50/60Hz (\u00b15% nominal)\n"
-            f"Motor Type: {iec_motor_type} | Power: {iec_power} kW | {pole_label}\n"
-            f"Mounting: {iec_mount} | Terminal Box: {iec_terminal}\u00b0 | Cable: {iec_cable}\n"
-            f"IP Protection: IP55 | Insulation Class: F\n"
-            + (f"Output Shaft Diameter: {shaft_str}\n" if shaft_str else "")
-            + f"Weight: (see datasheet)"
-        )
+        # ── ดึง spec จริงจาก YE3_DB (Python version) ─────────────────────────
+        # key format เดียวกับ JS: YE3-{frame}-{pole_num}
+        _pole_num = iec_pole.replace("P", "").replace("p", "")
+        _parts    = model_code.split("-")
+        _frame    = _parts[1] if len(_parts) > 1 else ""
+        _ye3_key  = f"YE3-{_frame}-{_pole_num}"
+
+        YE3_SPEC = {
+            "YE3-80M1-2":  dict(speed=2880, eff=80.7, i380=1.7,  i400=1.6,  i415=1.6,  torque=2.49,  weight=18.1),
+            "YE3-80M2-2":  dict(speed=2880, eff=82.7, i380=2.4,  i400=2.3,  i415=2.2,  torque=3.65,  weight=19.5),
+            "YE3-90S-2":   dict(speed=2895, eff=84.2, i380=3.2,  i400=3.1,  i415=3.0,  torque=4.95,  weight=23.3),
+            "YE3-90L-2":   dict(speed=2895, eff=85.9, i380=4.6,  i400=4.3,  i415=4.2,  torque=7.26,  weight=27.1),
+            "YE3-100L-2":  dict(speed=2895, eff=87.1, i380=6.0,  i400=5.7,  i415=5.5,  torque=9.9,   weight=38.8),
+            "YE3-112M-2":  dict(speed=2905, eff=88.1, i380=7.8,  i400=7.4,  i415=7.2,  torque=13.1,  weight=48.3),
+            "YE3-132S1-2": dict(speed=2930, eff=89.2, i380=10.6, i400=10.1, i415=9.7,  torque=17.9,  weight=55.1),
+            "YE3-132S2-2": dict(speed=2930, eff=90.1, i380=14.4, i400=13.7, i415=13.2, torque=24.4,  weight=69.2),
+            "YE3-160M1-2": dict(speed=2945, eff=91.2, i380=20.6, i400=19.6, i415=18.9, torque=35.7,  weight=113),
+            "YE3-160M2-2": dict(speed=2945, eff=91.9, i380=27.9, i400=26.5, i415=25.5, torque=48.6,  weight=123),
+            "YE3-160L-2":  dict(speed=2940, eff=92.4, i380=34.2, i400=32.5, i415=31.3, torque=60.1,  weight=142),
+            "YE3-180M-2":  dict(speed=2955, eff=92.7, i380=40.5, i400=38.5, i415=37.1, torque=71.1,  weight=182),
+            "YE3-200L1-2": dict(speed=2960, eff=93.3, i380=54.9, i400=52.1, i415=50.3, torque=96.8,  weight=246),
+            "YE3-200L2-2": dict(speed=2960, eff=93.7, i380=67.4, i400=64.0, i415=61.7, torque=119.4, weight=265),
+            "YE3-225M-2":  dict(speed=2965, eff=94.0, i380=80.8, i400=76.8, i415=74.0, torque=144.9, weight=323),
+            "YE3-250M-2":  dict(speed=2970, eff=94.3, i380=98.5, i400=93.5, i415=90.2, torque=176.9, weight=413),
+            "YE3-280S-2":  dict(speed=2975, eff=94.7, i380=133.7,i400=127.0,i415=122.4,torque=240.8, weight=546),
+            "YE3-280M-2":  dict(speed=2975, eff=95.0, i380=159.9,i400=151.9,i415=146.4,torque=288.9, weight=569),
+            "YE3-315S-2":  dict(speed=2975, eff=95.2, i380=195.1,i400=185.3,i415=178.6,torque=352.8, weight=897),
+            "YE3-315M-2":  dict(speed=2978, eff=95.4, i380=233.6,i400=221.9,i415=213.9,torque=423.3, weight=1029),
+            "YE3-315L1-2": dict(speed=2978, eff=95.6, i380=279.4,i400=265.5,i415=255.9,torque=512.8, weight=1067),
+            "YE3-315L2-2": dict(speed=2980, eff=95.8, i380=348.6,i400=331.1,i415=319.2,torque=640.9, weight=1194),
+            "YE3-71M10-4": dict(speed=1330, eff=69.9, i380=0.5,  i400=0.51, i415=0.49, torque=1.29,  weight=4.5),
+            "YE3-71M11-4": dict(speed=1350, eff=73.5, i380=0.7,  i400=0.66, i415=0.64, torque=1.77,  weight=6.5),
+            "YE3-71M22-4": dict(speed=1350, eff=77.3, i380=1.0,  i400=0.92, i415=0.89, torque=2.62,  weight=7.5),
+            "YE3-80M1-4":  dict(speed=1400, eff=80.8, i380=1.4,  i400=1.3,  i415=1.3,  torque=3.75,  weight=17.6),
+            "YE3-80M2-4":  dict(speed=1420, eff=82.5, i380=1.8,  i400=1.7,  i415=1.7,  torque=5.04,  weight=18.4),
+            "YE3-90S-4":   dict(speed=1445, eff=84.1, i380=2.6,  i400=2.5,  i415=2.4,  torque=7.27,  weight=24.2),
+            "YE3-90L-4":   dict(speed=1445, eff=85.3, i380=3.5,  i400=3.3,  i415=3.2,  torque=9.91,  weight=29.7),
+            "YE3-100L1-4": dict(speed=1435, eff=86.7, i380=4.8,  i400=4.5,  i415=4.4,  torque=14.6,  weight=41.5),
+            "YE3-100L2-4": dict(speed=1435, eff=87.7, i380=6.3,  i400=6.0,  i415=5.8,  torque=20.0,  weight=46),
+            "YE3-112M-4":  dict(speed=1440, eff=88.6, i380=8.4,  i400=7.9,  i415=7.7,  torque=26.5,  weight=63.2),
+            "YE3-132S-4":  dict(speed=1460, eff=89.6, i380=11.2, i400=10.7, i415=10.3, torque=36.0,  weight=71.2),
+            "YE3-132M-4":  dict(speed=1460, eff=90.4, i380=15.0, i400=14.3, i415=13.7, torque=49.1,  weight=85.1),
+            "YE3-160M-4":  dict(speed=1465, eff=91.4, i380=21.5, i400=20.4, i415=19.7, torque=71.7,  weight=121),
+            "YE3-160L-4":  dict(speed=1465, eff=92.1, i380=28.8, i400=27.3, i415=26.3, torque=97.8,  weight=142),
+            "YE3-180M-4":  dict(speed=1470, eff=92.6, i380=35.3, i400=33.5, i415=32.3, torque=120.2, weight=181),
+            "YE3-180L-4":  dict(speed=1470, eff=93.0, i380=41.8, i400=39.7, i415=38.3, torque=142.9, weight=209),
+            "YE3-200L-4":  dict(speed=1475, eff=93.6, i380=56.6, i400=53.8, i415=51.9, torque=194.2, weight=284),
+            "YE3-225S-4":  dict(speed=1485, eff=93.9, i380=69.6, i400=66.1, i415=63.7, torque=237.9, weight=328),
+            "YE3-225M-4":  dict(speed=1485, eff=94.2, i380=84.4, i400=80.2, i415=77.3, torque=289.4, weight=363),
+            "YE3-250M-4":  dict(speed=1485, eff=94.6, i380=102.7,i400=97.6, i415=94.1, torque=353.7, weight=442),
+            "YE3-280S-4":  dict(speed=1486, eff=95.0, i380=136.3,i400=129.5,i415=124.8,torque=482.0, weight=569),
+            "YE3-280M-4":  dict(speed=1486, eff=95.2, i380=163.2,i400=155.1,i415=149.5,torque=578.4, weight=639),
+            "YE3-315S-4":  dict(speed=1488, eff=95.4, i380=196.8,i400=187.0,i415=180.2,torque=706.0, weight=939),
+            "YE3-315M-4":  dict(speed=1488, eff=95.6, i380=235.7,i400=223.9,i415=215.8,torque=847.2, weight=1033),
+            "YE3-315L1-4": dict(speed=1488, eff=95.8, i380=285.1,i400=270.9,i415=261.1,torque=1027,  weight=1126),
+            "YE3-315L2-4": dict(speed=1490, eff=96.0, i380=351.7,i400=334.1,i415=322.0,torque=1282,  weight=1238),
+            "YE3-355M-4":  dict(speed=1490, eff=96.0, i380=439.6,i400=417.6,i415=402.6,torque=1602,  weight=1830),
+            "YE3-355L-4":  dict(speed=1490, eff=96.0, i380=553.9,i400=526.2,i415=507.2,torque=2019,  weight=1950),
+            "YE3-80M2-6":  dict(speed=890,  eff=73.6, i380=1.6,  i400=1.5,  i415=1.4,  torque=5.9,   weight=16.6),
+            "YE3-90S-6":   dict(speed=935,  eff=78.9, i380=2.0,  i400=1.9,  i415=1.8,  torque=7.66,  weight=24.1),
+            "YE3-90L-6":   dict(speed=945,  eff=81.0, i380=2.8,  i400=2.7,  i415=2.6,  torque=11.1,  weight=25.7),
+            "YE3-100L-6":  dict(speed=949,  eff=82.5, i380=3.7,  i400=3.5,  i415=3.4,  torque=15.1,  weight=34.9),
+            "YE3-112M-6":  dict(speed=955,  eff=84.3, i380=5.4,  i400=5.1,  i415=4.9,  torque=22.0,  weight=54.2),
+            "YE3-132S-6":  dict(speed=968,  eff=85.6, i380=7.2,  i400=6.8,  i415=6.6,  torque=29.6,  weight=62.3),
+            "YE3-132M1-6": dict(speed=968,  eff=86.8, i380=9.5,  i400=9.0,  i415=8.7,  torque=39.5,  weight=75.2),
+            "YE3-132M2-6": dict(speed=968,  eff=88.0, i380=12.7, i400=12.0, i415=11.6, torque=54.3,  weight=82.3),
+            "YE3-160M-6":  dict(speed=970,  eff=89.1, i380=16.2, i400=15.4, i415=14.8, torque=73.8,  weight=112),
+            "YE3-160L-6":  dict(speed=970,  eff=90.3, i380=23.1, i400=22.0, i415=21.2, torque=108.3, weight=134),
+            "YE3-180L-6":  dict(speed=978,  eff=91.2, i380=30.9, i400=29.3, i415=28.2, torque=146.5, weight=197),
+            "YE3-200L1-6": dict(speed=980,  eff=91.7, i380=37.8, i400=36.0, i415=34.7, torque=180.3, weight=234),
+            "YE3-200L2-6": dict(speed=980,  eff=92.2, i380=44.8, i400=42.5, i415=41.0, torque=214.4, weight=251),
+            "YE3-225M-6":  dict(speed=980,  eff=92.9, i380=59.1, i400=56.2, i415=54.1, torque=292.3, weight=308),
+            "YE3-250M-6":  dict(speed=985,  eff=93.3, i380=71.7, i400=68.1, i415=65.7, torque=358.7, weight=383),
+            "YE3-280S-6":  dict(speed=985,  eff=93.7, i380=85.8, i400=81.6, i415=78.6, torque=436.3, weight=501),
+            "YE3-280M-6":  dict(speed=985,  eff=94.1, i380=103.3,i400=98.1, i415=94.6, torque=533.2, weight=573),
+            "YE3-315S-6":  dict(speed=985,  eff=94.6, i380=143.4,i400=136.2,i415=131.3,torque=727.2, weight=843),
+            "YE3-315M-6":  dict(speed=988,  eff=94.9, i380=169.5,i400=161.0,i415=155.2,torque=869.9, weight=941),
+            "YE3-315L1-6": dict(speed=988,  eff=95.1, i380=206.8,i400=196.4,i415=189.3,torque=1063,  weight=1017),
+            "YE3-315L2-6": dict(speed=988,  eff=95.4, i380=244.5,i400=232.2,i415=223.8,torque=1276,  weight=1121),
+            "YE3-80M1-8":  dict(speed=650,  eff=51.0, i380=0.9,  i400=0.8,  i415=0.8,  torque=2.64,  weight=14.5),
+            "YE3-90S-8":   dict(speed=675,  eff=62.0, i380=1.5,  i400=1.4,  i415=1.4,  torque=5.23,  weight=28.2),
+            "YE3-90L-8":   dict(speed=675,  eff=63.0, i380=2.2,  i400=2.1,  i415=2.0,  torque=7.78,  weight=29.7),
+            "YE3-100L1-8": dict(speed=685,  eff=68.7, i380=2.5,  i400=2.4,  i415=2.3,  torque=10.5,  weight=40),
+            "YE3-100L2-8": dict(speed=685,  eff=70.7, i380=3.5,  i400=3.4,  i415=3.2,  torque=15.3,  weight=41.4),
+            "YE3-112M-8":  dict(speed=695,  eff=72.8, i380=4.4,  i400=4.2,  i415=4.0,  torque=20.6,  weight=57.5),
+            "YE3-132S-8":  dict(speed=710,  eff=77.9, i380=6.0,  i400=5.7,  i415=5.5,  torque=29.6,  weight=74.8),
+            "YE3-132M-8":  dict(speed=710,  eff=78.9, i380=7.9,  i400=7.5,  i415=7.2,  torque=40.4,  weight=89.1),
+            "YE3-160M1-8": dict(speed=725,  eff=79.9, i380=10.4, i400=9.9,  i415=9.5,  torque=52.7,  weight=101),
+            "YE3-160M2-8": dict(speed=725,  eff=82.0, i380=13.8, i400=13.1, i415=12.6, torque=72.4,  weight=126.5),
+            "YE3-160L-8":  dict(speed=725,  eff=84.0, i380=18.1, i400=17.2, i415=16.6, torque=98.8,  weight=136),
+            "YE3-180L-8":  dict(speed=735,  eff=86.4, i380=25.8, i400=24.5, i415=23.6, torque=142.9, weight=198),
+            "YE3-200L-8":  dict(speed=730,  eff=86.9, i380=34.5, i400=32.8, i415=31.6, torque=196.2, weight=234),
+            "YE3-225S-8":  dict(speed=730,  eff=89.1, i380=41.5, i400=39.4, i415=38.0, torque=242.0, weight=284),
+            "YE3-225M-8":  dict(speed=730,  eff=89.6, i380=47.8, i400=45.4, i415=43.8, torque=287.8, weight=325),
+            "YE3-250M-8":  dict(speed=735,  eff=90.4, i380=63.8, i400=60.6, i415=58.4, torque=389.8, weight=425),
+            "YE3-280S-8":  dict(speed=735,  eff=90.9, i380=78.3, i400=74.4, i415=71.7, torque=480.7, weight=518),
+            "YE3-280M-8":  dict(speed=735,  eff=91.4, i380=94.7, i400=90.0, i415=86.7, torque=584.7, weight=582),
+            "YE3-315S-8":  dict(speed=735,  eff=92.3, i380=113.2,i400=107.5,i415=103.6,torque=714.6, weight=852),
+            "YE3-315M-8":  dict(speed=735,  eff=93.2, i380=152.8,i400=145.2,i415=139.9,torque=974.5, weight=952),
+            "YE3-315L1-8": dict(speed=735,  eff=93.5, i380=182.8,i400=173.7,i415=167.4,torque=1169,  weight=1040),
+            "YE3-315L2-8": dict(speed=735,  eff=93.5, i380=218.0,i400=207.1,i415=199.6,torque=1429,  weight=1056),
+        }
+        spec = YE3_SPEC.get(_ye3_key, {})
 
         ws["A20"] = 1
         ws["B20"] = model_code
-        ws["C20"] = motor_desc
+        ws["C20"] = f"Standard: IEC 60034 / GB18613, 3Ph 380V 50Hz | Type: {iec_motor_type} | {iec_power} kW | {pole_label} | Mounting: {iec_mount} | Terminal: {iec_terminal}\u00b0 | Cable: {iec_cable} | IP55 | Class F"
+        ws["C21"] = f"Insulation: Class F (105K), by Class B | Cooling: TEFC (IC411, IEC60034-6) | Winding: 100% Copper Wire | Duty: Continuous (S1)"
+        ws["C22"] = f"Voltage: 200\u2013660V, 50/60Hz (\u00b15%) | Site: -15\u00b0C to +40\u00b0C, Alt \u2264 1000 m | Vibration: Class A (Class B on request)"
+        ws["C23"] = f"Rated Speed: {spec['speed']} rpm" if spec.get('speed') else "Rated Speed: (see datasheet)"
+        ws["C24"] = f"Efficiency: {spec['eff']} %" if spec.get('eff') else "Efficiency: (see datasheet)"
+        ws["C25"] = (f"Current: {spec['i380']} A @ 380V  /  {spec['i400']} A @ 400V  /  {spec['i415']} A @ 415V"
+                     if spec.get('i380') else "Current 380V/400V/415V: (see datasheet)")
+        ws["C26"] = f"Output Shaft: {shaft_str}" if shaft_str else "Output Shaft: (see datasheet)"
+        ws["C27"] = f"Weight: {spec['weight']} kg" if spec.get('weight') else "Weight: (see datasheet)"
         ws["F20"] = qty_motor
         ws["G20"] = unit_price if unit_price > 0 else ""
 
