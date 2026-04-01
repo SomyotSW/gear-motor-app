@@ -836,13 +836,13 @@ def iec_quote():
 
         ws["A20"] = 1
         ws["B20"] = model_code
-        ws["C20"] = f"Standard: IEC 60034 / GB18613, 3Ph 380V 50Hz | Type: {iec_motor_type} | {iec_power} kW | {pole_label} | Mounting: {iec_mount} | Terminal: {iec_terminal}\u00b0 | Cable: {iec_cable} | IP55 | Class F"
-        ws["C21"] = f"Insulation: Class F (105K), by Class B | Cooling: TEFC (IC411, IEC60034-6) | Winding: 100% Copper Wire | Duty: Continuous (S1)"
-        ws["C22"] = f"Voltage: 200\u2013660V, 50/60Hz (\u00b15%) | Site: -15\u00b0C to +40\u00b0C, Alt \u2264 1000 m | Vibration: Class A (Class B on request)"
-        ws["C23"] = f"Rated Speed: {spec['speed']} rpm" if spec.get('speed') else "Rated Speed: (see datasheet)"
-        ws["C24"] = f"Efficiency: {spec['eff']} %" if spec.get('eff') else "Efficiency: (see datasheet)"
-        ws["C25"] = (f"Current: {spec['i380']} A @ 380V  /  {spec['i400']} A @ 400V  /  {spec['i415']} A @ 415V"
-                     if spec.get('i380') else "Current 380V/400V/415V: (see datasheet)")
+        ws["C20"] = f"Power: {iec_power} kW | {iec_pole.replace('P',' Pole')} | Mounting: {iec_mount} | Terminal Box: {iec_terminal}\u00b0 | Cable: {iec_cable}"
+        ws["C21"] = f"Standard: IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55 | Motor Type: {iec_motor_type}"
+        ws["C22"] = f"Insulation: Class F (155\u00b0C) | Cooling: IC411 | Duty: S1"
+        ws["C23"] = f"Voltage: 200\u2013660V, 50/60Hz (\u00b15%) | Site: -15\u00b0C to +40\u00b0C, Alt \u2264 1000 m | Vibration: Class A (Class B on request)"
+        ws["C24"] = f"Rated Speed: {spec['speed']} rpm" if spec.get('speed') else "Rated Speed: (see datasheet)"
+        ws["C25"] = (f"Efficiency: {spec['eff']} %   |   Current: {spec['i380']} A @ 380V  /  {spec['i400']} A @ 400V  /  {spec['i415']} A @ 415V"
+                     if spec.get('eff') and spec.get('i380') else "Efficiency / Current: (see datasheet)")
         ws["C26"] = f"Output Shaft: {shaft_str}" if shaft_str else "Output Shaft: (see datasheet)"
         ws["C27"] = f"Weight: {spec['weight']} kg" if spec.get('weight') else "Weight: (see datasheet)"
         ws["F20"] = qty_motor
