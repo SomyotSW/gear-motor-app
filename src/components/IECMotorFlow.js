@@ -519,6 +519,78 @@ const IEC_CABLE_LIST = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SHAFT DIAMETER DATABASE  key: YE3 frame fullKey → shaft Ø (mm)
+// ใช้ร่วมกันทุก type: YE3, YE4, YEJ, YVP, YPEJ, YB
+// 6P และ 8P ใช้ค่าเดียวกับ 4P ในขนาด frame เดียวกัน
+// ─────────────────────────────────────────────────────────────────────────────
+const SHAFT_DIAMETER_MAP = {
+  // ── 2 Pole ──
+  'YE3-80M1-2':  19, 'YE3-80M2-2':  19,
+  'YE3-90S-2':   24, 'YE3-90L-2':   24,
+  'YE3-100L-2':  28,
+  'YE3-112M-2':  28,
+  'YE3-132S1-2': 38, 'YE3-132S2-2': 38,
+  'YE3-160M1-2': 42, 'YE3-160M2-2': 42, 'YE3-160L-2':  42,
+  'YE3-180M-2':  48,
+  'YE3-200L1-2': 55, 'YE3-200L2-2': 55,
+  'YE3-225M-2':  55,
+  'YE3-250M-2':  60,
+  'YE3-280S-2':  65, 'YE3-280M-2':  65,
+  'YE3-315S-2':  65, 'YE3-315M-2':  65, 'YE3-315L1-2': 65, 'YE3-315L2-2': 65,
+  // ── 4 Pole ──
+  'YE3-71M10-4': 14, 'YE3-71M11-4': 14, 'YE3-71M22-4': 14,
+  'YE3-80M1-4':  19, 'YE3-80M1-4-4':19, 'YE3-80M2-4':  19,
+  'YE3-90S-4':   24, 'YE3-90L-4':   24,
+  'YE3-100L1-4': 28, 'YE3-100L2-4': 28,
+  'YE3-112M-4':  28,
+  'YE3-132S-4':  38, 'YE3-132M-4':  38,
+  'YE3-160M-4':  42, 'YE3-160L-4':  42,
+  'YE3-180M-4':  48, 'YE3-180L-4':  48,
+  'YE3-200L-4':  55,
+  'YE3-225S-4':  60, 'YE3-225M-4':  60,
+  'YE3-250M-4':  65,
+  'YE3-280S-4':  75, 'YE3-280M-4':  75,
+  'YE3-315S-4':  80, 'YE3-315M-4':  80, 'YE3-315L1-4': 80, 'YE3-315L2-4': 80,
+  'YE3-355M-4':  95, 'YE3-355L-4':  95,
+  // ── 6 Pole (frame เดียวกับ 4P ใช้ค่าเดียวกัน) ──
+  'YE3-80M2-6':  19,
+  'YE3-90S-6':   24, 'YE3-90L-6':   24,
+  'YE3-100L-6':  28,
+  'YE3-112M-6':  28,
+  'YE3-132S-6':  38, 'YE3-132M1-6': 38, 'YE3-132M2-6': 38,
+  'YE3-160M-6':  42, 'YE3-160L-6':  42,
+  'YE3-180L-6':  48,
+  'YE3-200L1-6': 55, 'YE3-200L2-6': 55,
+  'YE3-225M-6':  60,
+  'YE3-250M-6':  65,
+  'YE3-280S-6':  75, 'YE3-280M-6':  75,
+  'YE3-315S-6':  80, 'YE3-315M-6':  80, 'YE3-315L1-6': 80, 'YE3-315L2-6': 80,
+  'YE3-355M1-6': 95, 'YE3-355M2-6': 95, 'YE3-355L-6':  95,
+  // ── 8 Pole (frame เดียวกับ 4P ใช้ค่าเดียวกัน) ──
+  'YE3-801-8':   14, 'YE3-802-8':   14,
+  'YE3-90S-8':   19, 'YE3-90L-8':   19,
+  'YE3-100L1-8': 24, 'YE3-100L2-8': 24,
+  'YE3-112M-8':  28,
+  'YE3-132S-8':  38, 'YE3-132M-8':  38,
+  'YE3-160M1-8': 42, 'YE3-160M2-8': 42, 'YE3-160L-8':  42,
+  'YE3-180L-8':  48,
+  'YE3-200L-8':  55,
+  'YE3-225S-8':  60, 'YE3-225M-8':  60,
+  'YE3-250M-8':  65,
+  'YE3-280S-8':  75, 'YE3-280M-8':  75,
+  'YE3-315S-8':  80, 'YE3-315M-8':  80, 'YE3-315L1-8': 80, 'YE3-315L2-8': 80,
+  'YE3-355M1-8': 95, 'YE3-355M2-8': 95, 'YE3-355L-8':  95,
+};
+
+// helper: ดึง shaft diameter จาก fullKey (รองรับทุก type โดย map key ให้ตรง YE3 prefix)
+function getShaftDiameter(fullKey) {
+  if (!fullKey) return null;
+  // fullKey อาจเป็น 'YE3-...' หรือ 'YE4-...' ฯลฯ → normalize เป็น YE3 key
+  const normalized = fullKey.replace(/^(YE4|YEJ|YVP|YPEJ|YB)-/, 'YE3-');
+  return SHAFT_DIAMETER_MAP[normalized] || null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Model Code builder
 // ─────────────────────────────────────────────────────────────────────────────
 function buildIECModelCode(state) {
@@ -607,7 +679,7 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
   const JsPDF = await loadJsPDF();
   if (!JsPDF) throw new Error('Cannot load jsPDF');
 
-  const doc    = new JsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const doc    = new JsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
   const W      = doc.internal.pageSize.getWidth();
   const pageH  = doc.internal.pageSize.getHeight();
   const margin = 14;
@@ -625,30 +697,51 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
   };
   const MOTOR_COLOR_RGB = hexToRgb(color.hex);
 
-  // ── helper: tinted image via canvas ───────────────────────────────────────
+  // ── helper: tinted image via canvas — กรองพื้นหลังดำออก + JPEG compressed ──
   const getTintedImageB64 = async (src) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width  = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        // ลด resolution ลง 50% เพื่อลดขนาดไฟล์
+        const scale = 0.5;
+        canvas.width  = Math.round(img.naturalWidth  * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+
+        // วาดพื้นหลังขาวก่อน (JPEG ไม่รองรับ transparency)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const [r,g,b] = MOTOR_COLOR_RGB;
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const d = imageData.data;
-        for (let i = 0; i < d.length; i+=4) {
-          const bright = (d[i]+d[i+1]+d[i+2])/3;
-          if (bright > 238 || d[i+3] < 30) continue;
-          const t = 0.68;
-          d[i]   = Math.round(d[i]  *(1-t)+(d[i]  *r/255)*t);
-          d[i+1] = Math.round(d[i+1]*(1-t)+(d[i+1]*g/255)*t);
-          d[i+2] = Math.round(d[i+2]*(1-t)+(d[i+2]*b/255)*t);
+
+        for (let i = 0; i < d.length; i += 4) {
+          const pr = d[i], pg = d[i+1], pb = d[i+2], pa = d[i+3];
+          const bright = (pr + pg + pb) / 3;
+
+          // กรองพื้นหลังสีดำ/มืดมาก → เปลี่ยนเป็นขาว
+          if (bright < 30 && pa > 30) {
+            d[i] = 255; d[i+1] = 255; d[i+2] = 255;
+            continue;
+          }
+
+          // ข้าม pixel ที่สว่างมาก (ขาว/เกือบขาว) หรือโปร่งใส
+          if (bright > 230 || pa < 30) continue;
+
+          // tint สีมอเตอร์ที่ผู้ใช้เลือก
+          const t = 0.65;
+          d[i]   = Math.round(pr * (1 - t) + (pr * r / 255) * t);
+          d[i+1] = Math.round(pg * (1 - t) + (pg * g / 255) * t);
+          d[i+2] = Math.round(pb * (1 - t) + (pb * b / 255) * t);
         }
+
         ctx.putImageData(imageData, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
+        // JPEG quality 0.72 — balance ระหว่างขนาดและคุณภาพ
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
       };
       img.onerror = () => resolve(null);
       img.src = src;
@@ -659,9 +752,40 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
   doc.setFillColor(...NAVY);
   doc.rect(0, 0, W, 30, 'F');
 
-  // Logo มุมขวาบน (กรองพื้นหลังดำออกไม่ได้ใน jsPDF → ใช้ PNG ตรงๆ)
+  // Logo มุมขวาบน — กรองพื้นหลังสีดำออก + ความละเอียดสูงเพื่อความคมชัด
   try {
-    doc.addImage(sasLogoUrl, 'PNG', W - 44, 2, 30, 22);
+    const logoB64 = await new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        // ใช้ความละเอียดสูง 4x เพื่อให้โลโก้คมชัดใน PDF
+        c.width = img.naturalWidth  || 480;
+        c.height = img.naturalHeight || 360;
+        const ctx = c.getContext('2d');
+
+        // วาดพื้นหลังสี NAVY เดียวกับ header banner เพื่อให้โลโก้กลมกลืน
+        ctx.fillStyle = `rgb(${NAVY[0]},${NAVY[1]},${NAVY[2]})`;
+        ctx.fillRect(0, 0, c.width, c.height);
+
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        const imageData = ctx.getImageData(0, 0, c.width, c.height);
+        const d = imageData.data;
+
+        for (let i = 0; i < d.length; i += 4) {
+          const bright = (d[i] + d[i+1] + d[i+2]) / 3;
+          // pixel ที่มืดมาก (พื้นหลังดำ) → เปลี่ยนเป็นสี NAVY
+          if (bright < 40) {
+            d[i] = NAVY[0]; d[i+1] = NAVY[1]; d[i+2] = NAVY[2];
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        resolve(c.toDataURL('image/jpeg', 0.92));
+      };
+      img.onerror = () => resolve(null);
+      img.src = sasLogoUrl;
+    });
+    if (logoB64) doc.addImage(logoB64, 'JPEG', W - 44, 2, 30, 22);
   } catch(e) { /* fallback: text logo */ }
 
   doc.setTextColor(255, 255, 255);
@@ -708,6 +832,7 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
   sectionTitle('MOTOR SELECTION SUMMARY');
 
   const tableStartY = y;
+  const shaftDia = getShaftDiameter(fullKey);
 
   // Table (left side, narrower to leave room for image)
   doc.autoTable({
@@ -716,13 +841,14 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
     body: [
       ['Motor Type',           iecMotorType + ' - ' + (motorInfo?.sub || '-')],
       ['Frame Size',           fl],
-      ['Power',                iecPower + ' kW  (' + (parseFloat(iecPower) * 1.341).toFixed(2) + ' HP)'],
-      ['Pole',                 (poleInfo?.label||'-') + '  (' + (poleInfo?.rpm||'-') + ')'],
+      ['Power',                iecPower + ' kW  (' + (spec?.hp ? spec.hp + ' HP' : (parseFloat(iecPower) * 1.341).toFixed(2) + ' HP') + ')'],
+      ['Pole',                 (poleInfo?.label||'-') + '  (' + (spec?.speed ? spec.speed + ' rpm' : poleInfo?.rpm||'-') + ')'],
       ['Mounting',             (mountInfo?.label||'-') + ' - ' + (mountInfo?.desc||'-')],
       ['Terminal Box',         iecTerminal + ' deg'],
       ['Cable Position',       iecCable],
       ['Direction of Rotation','CW / CCW'],
       ['Casing Material',      'Iron'],
+      ...(shaftDia ? [['Output Shaft Dia.', 'Ø' + shaftDia + ' mm']] : []),
     ],
     margin: { left: margin, right: margin + 58 },
     styles: { fontSize: 9, cellPadding: 2.5 },
@@ -743,7 +869,7 @@ async function generateDatasheetPDF(state, selectedColor, isStarConnection) {
   if (mountImgSrc) {
     const b64url = await getTintedImageB64(mountImgSrc);
     if (b64url) {
-      doc.addImage(b64url, 'PNG', imgX, imgY, imgW, imgH);
+      doc.addImage(b64url, 'JPEG', imgX, imgY, imgW, imgH);
     }
     // กรอบ + color swatch
     doc.setDrawColor(...BLUE);
@@ -1528,7 +1654,11 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
     if (!qName || !qCompany || !qPhone || !qEmail) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
     try {
       setSending(true);
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+      // Auto-detect: ถ้ามี env ใช้ env, ถ้าไม่มีให้ดู hostname
+      // localhost → backend port 5000, production → same origin (Render)
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const API_BASE = process.env.REACT_APP_API_BASE
+        || (isLocalhost ? 'http://localhost:5000' : 'https://sas-qc-gearmotor.onrender.com');
       const res = await fetch(`${API_BASE}/api/iec-quote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1606,14 +1736,15 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
           <div className="flex-1 min-w-0 flex flex-col">
             {[
               ['Motor Type', motorInfo?.sub || iecMotorType],
-              ['Power',      iecPower + ' kW (' + (parseFloat(iecPower)*1.341).toFixed(2) + ' HP)'],
+              ['Power',      iecPower + ' kW (' + (spec?.hp ? spec.hp + ' HP' : (parseFloat(iecPower)*1.341).toFixed(2) + ' HP') + ')'],
               ['Mounting',   (mountInfo?.label||'-') + ' – ' + (mountInfo?.desc||'-')],
               ['Cable Pos.', iecCable],
               ['Frame',      frameLabel(fullKey)],
-              ['Pole',       (poleInfo?.label||'-') + ' (' + (poleInfo?.rpm||'-') + ')'],
+              ['Pole',       (poleInfo?.label||'-') + ' (' + (spec?.speed ? spec.speed + ' rpm' : poleInfo?.rpm||'-') + ')'],
               ['Terminal',   iecTerminal + '°'],
               ['Direction',  'CW / CCW'],
               ['Casing',     'Iron'],
+              ...(getShaftDiameter(fullKey) != null ? [['Output Shaft', 'Ø' + getShaftDiameter(fullKey) + ' mm']] : []),
             ].map(([lbl, val]) => (
               <div key={lbl} className="flex text-xs mb-0.5">
                 <span className="text-white/60 w-20 flex-shrink-0 font-medium">{lbl}:</span>
@@ -1704,12 +1835,7 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
       {/* ── ปุ่ม 4 ปุ่ม ─────────────────────────────────────────────────────── */}
       <div className="mt-4 grid grid-cols-2 gap-3">
         <DataSheetButton state={state} selectedColor={selectedColor} isStarConnection={isStarConnection} />
-        <button type="button"
-          onClick={() => alert(`Drawing 2D for ${modelCode}\n(Coming soon)`)}
-          className="flex flex-col items-center justify-center gap-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-4 rounded-xl shadow transition active:scale-95">
-          <span className="text-2xl">📐</span>
-          <span className="font-semibold text-sm">Drawing 2D</span>
-        </button>
+        <Drawing2DButton state={state} modelCode={modelCode} />
         <button type="button"
           onClick={() => setShowQuote(true)}
           className="flex flex-col items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-4 rounded-xl shadow transition active:scale-95">
@@ -1728,9 +1854,9 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
 
       {/* ── Quote Modal ──────────────────────────────────────────────────────── */}
       {showQuote && (
-        <div className="fixed inset-0 z-[9990] flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-[9990] flex items-center justify-center px-4 py-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setShowQuote(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 z-[9991] overflow-y-auto max-h-[90vh]">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 z-[9991] overflow-y-auto" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
 
             {/* Header */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -1743,16 +1869,24 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
                   🧑‍💼
                 </button>
                 {showSalePersonPicker && (
-                  <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] overflow-hidden">
-                    {IEC_SALE_PERSONS.map(sp => (
-                      <button key={sp.abbr} type="button"
-                        onClick={() => { setSalePerson(sp.abbr); setShowSalePersonPicker(false); }}
-                        className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition text-sm border-b last:border-b-0 ${salePerson===sp.abbr ? 'bg-green-100 font-semibold' : ''}`}>
-                        <div className="font-semibold text-slate-800">{sp.name}</div>
-                        <div className="text-slate-500 text-xs">{sp.position} · {sp.phone}</div>
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    {/* backdrop ปิด dropdown เมื่อคลิกนอก */}
+                    <div className="fixed inset-0 z-[9998]" onClick={() => setShowSalePersonPicker(false)} />
+                    {/* dropdown — right-aligned, fixed position ไม่ถูก overflow clip */}
+                    <div
+                      className="fixed z-[9999] bg-white border border-slate-200 rounded-xl shadow-2xl w-[280px] overflow-y-auto"
+                      style={{ maxHeight: 340, right: 24, top: 80 }}
+                    >
+                      {IEC_SALE_PERSONS.map(sp => (
+                        <button key={sp.abbr} type="button"
+                          onClick={() => { setSalePerson(sp.abbr); setShowSalePersonPicker(false); }}
+                          className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition text-sm border-b last:border-b-0 ${salePerson===sp.abbr ? 'bg-green-100 font-semibold' : ''}`}>
+                          <div className="font-semibold text-slate-800">{sp.name}</div>
+                          <div className="text-slate-500 text-xs">{sp.position} · {sp.phone}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
               {salePerson && (
@@ -1763,7 +1897,7 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
             </div>
 
             {/* Form */}
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm mb-1">ชื่อผู้ขอราคา :</label>
                 <input value={qName} onChange={e => setQName(e.target.value)}
@@ -1784,7 +1918,7 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
                 <input type="email" value={qEmail} onChange={e => setQEmail(e.target.value)}
                        className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-sm mb-1">จำนวน (ตัว) :</label>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => setQtyMotor(q => Math.max(1, q - 1))}
@@ -1822,6 +1956,91 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
         </div>
       )}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Drawing2DButton — download PDF ตาม Mounting ตรงๆ
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function generateDrawing2D(state, modelCode) {
+  const { iecMount } = state;
+  const mount = (iecMount || 'B5').toUpperCase();
+
+  // ── หา base URL ที่ถูกต้องทั้ง localhost และ production ──────────────────
+  const basePath = (typeof process !== 'undefined' && process.env?.PUBLIC_URL) || '';
+  const candidates = [
+    `${basePath}/data/${mount}.pdf`,
+    `/data/${mount}.pdf`,
+    `./data/${mount}.pdf`,
+    `${window.location.origin}${basePath}/data/${mount}.pdf`,
+  ];
+
+  let pdfBlob = null;
+  let lastError = '';
+  for (const path of candidates) {
+    try {
+      const res = await fetch(path, { cache: 'no-store' });
+      if (!res.ok) { lastError = `HTTP ${res.status} (${path})`; continue; }
+      const buf = await res.arrayBuffer();
+      // ตรวจ PDF magic bytes: %PDF
+      const magic = new Uint8Array(buf.slice(0, 4));
+      if (magic[0] !== 0x25 || magic[1] !== 0x50 || magic[2] !== 0x44 || magic[3] !== 0x46) {
+        lastError = `Not a valid PDF file (${path})`; continue;
+      }
+      pdfBlob = new Blob([buf], { type: 'application/pdf' });
+      break;
+    } catch(e) { lastError = e.message; }
+  }
+
+  if (!pdfBlob) {
+    throw new Error(
+      `ไม่พบไฟล์ ${mount}.pdf\nกรุณาวางไฟล์ไว้ที่ public/data/${mount}.pdf\n(${lastError})`
+    );
+  }
+
+  // download ตรงๆ ชื่อไฟล์ตาม Model
+  const url = URL.createObjectURL(pdfBlob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = `${modelCode}_Drawing2D.pdf`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function Drawing2DButton({ state, modelCode }) {
+  const [status, setStatus] = React.useState('idle');
+
+  const handleClick = async () => {
+    if (status === 'loading') return;
+    setStatus('loading');
+    try {
+      await generateDrawing2D(state, modelCode);
+      setStatus('done');
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch (err) {
+      console.error('Drawing2D error:', err);
+      setStatus('error');
+      alert('ไม่สามารถสร้าง Drawing 2D ได้:\n' + err.message);
+      setTimeout(() => setStatus('idle'), 3000);
+    }
+  };
+
+  const icon  = { idle:'📐', loading:'⏳', done:'✅', error:'⚠️' }[status];
+  const label = { idle:'Drawing 2D', loading:'กำลังสร้าง...', done:'ดาวน์โหลดแล้ว ✓', error:'ลองใหม่' }[status];
+  const cls   = {
+    idle:    'bg-white/10 hover:bg-white/20 border border-white/20',
+    loading: 'bg-white/5 cursor-not-allowed border border-white/10',
+    done:    'bg-white/10 border border-white/20',
+    error:   'bg-red-600/80 hover:bg-red-700/80 border border-red-400',
+  }[status];
+
+  return (
+    <button type="button" onClick={handleClick} disabled={status === 'loading'}
+      className={`flex flex-col items-center justify-center gap-1 ${cls} text-white px-3 py-4 rounded-xl shadow transition active:scale-95`}>
+      <span className="text-2xl">{icon}</span>
+      <span className="font-semibold text-sm">{label}</span>
+    </button>
   );
 }
 

@@ -348,7 +348,10 @@ def send_email_with_pdf(to_email: str, subject: str, body: str, pdf_path: str) -
 
 @app.get("/api/download/<filename>")
 def download_pdf(filename: str):
-    p = OUTPUT_DIR / filename
+    # [BUG FIX #6] ป้องกัน path traversal attack
+    p = (OUTPUT_DIR / filename).resolve()
+    if not str(p).startswith(str(OUTPUT_DIR.resolve())):
+        abort(400)
     if not p.exists():
         abort(404)
     return send_file(str(p), mimetype="application/pdf", as_attachment=True, download_name=filename)
@@ -418,33 +421,35 @@ def ac_quote():
         ws = wb[TEMPLATE_SHEET_NAME]
         if ws is None:
             return jsonify({"ok": False, "error": "Worksheet is None (failed to load template sheet)"}), 500
-    # ===== ADD: customer fields -> template cells =====
+
+        # ===== ADD: customer fields -> template cells =====
         cust = payload.get("customer", {}) or {}
         cust_name = str(cust.get("name", "")).strip()
         cust_company = str(cust.get("company", "")).strip()
         cust_phone = str(cust.get("phone", "")).strip()
         cust_email = str(cust.get("email", "")).strip()
 
-    # ===== salePerson fields =====
+        # ===== salePerson fields =====
         sale_person_abbr = str(payload.get("salePerson", "CA")).strip() or "CA"
         sp = SALE_PERSONS.get(sale_person_abbr, SALE_PERSONS["CA"])
 
-    # B8: "คุณ : ..."
+        # B8: "คุณ : ..."
         ws["B8"] = f"คุณ : {cust_name}" if cust_name else "คุณ :"
-    # B9: company
+        # B9: company
         ws["B9"] = cust_company
-    # B13: email
+        # B13: email
         ws["B13"] = cust_email
-    # B14: phone
+        # B14: phone
         ws["B14"] = cust_phone
 
-    # ===== ADD: keep only 1 sheet (print only this sheet) =====
+        # ===== ADD: keep only 1 sheet (print only this sheet) =====
         for name in list(wb.sheetnames):
             if name != TEMPLATE_SHEET_NAME:
                 del wb[name]
         ws.page_setup.paperSize = ws.PAPERSIZE_A4
         ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
         ws.print_area = "A1:I80"
+
         # Motor row (A20..G20)
         ws["A20"] = 1
         ws["B20"] = motor_code
@@ -459,26 +464,16 @@ def ac_quote():
         ws["F22"] = qty_gear
         ws["G22"] = gear.get("price", 0.0)
 
+        # Controller row (A24..G24) — optional
         if ctrl_model and qty_ctrl > 0:
             ws["A24"] = 3
             ws["B24"] = ctrl_model
             ws["C24"] = ctrl.get("desc", "")
             ws["F24"] = qty_ctrl
             ws["G24"] = ctrl.get("price", 0.0)
-            # H3: QMO26-SAS-XXX (จะอัปเดตหลังได้ run_no จริง)
-            run_no = next_qmo_no()
-            run_no_str = f"{run_no:03d}"
-            ws["H3"] = f"QMO26-SAS-{run_no_str}"
 
-            # A17: ชื่อย่อ Sale Person
-            ws["A17"] = sp["abbr"] if hasattr(sp, "__getitem__") and "abbr" in sp else sale_person_abbr
-
-            # D60: ชื่อเต็ม Sale Person
-            ws["D60"] = sp["name"]
-
-            # D61: ตำแหน่ง + เบอร์
-            ws["D61"] = sp["position"]
-
+        # [BUG FIX #1, #3] เรียก next_qmo_no() และ cleanup_old_pdfs() เพียงครั้งเดียว
+        # และ set เซลล์ H3, A17, D60, D61 เพียงครั้งเดียวที่นี่ (ไม่ซ้ำใน if block ข้างบน)
         cleanup_old_pdfs()
 
         run_no = next_qmo_no()
@@ -497,8 +492,6 @@ def ac_quote():
 
         # D61: ตำแหน่ง + เบอร์ Sale Person
         ws["D61"] = sp["position"]
-
-        cleanup_old_pdfs()
 
         # Create filled xlsx and convert to pdf
         with tempfile.TemporaryDirectory() as td:
@@ -532,7 +525,7 @@ def ac_quote():
                     body_customer = (
                         f"เรียนคุณ {customer.get('name','')}\n\n"
                         f"ใบเสนอราคาของท่านถูกสร้างเรียบร้อยแล้ว\n"
-                        f"Model: {payload.get('modelCode','')}\n"
+                        f"Model: {payload.get('motorCode','')}\n"
                         f"Qty Motor: {qty_motor}\n"
                         f"Qty Gear: {qty_gear}\n\n"
                         f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
@@ -550,11 +543,11 @@ def ac_quote():
                     f"บริษัท  : {customer.get('company', '-')}\n"
                     f"เบอร์   : {customer.get('phone', '-')}\n"
                     f"อีเมล   : {customer.get('email', '-')}\n\n"
-                    f"Model   : {payload.get('modelCode', '')}\n"
+                    f"Model   : {payload.get('motorCode', '')}\n"
                     f"Motor   : {motor_code}  x{qty_motor}\n"
                     f"Gear    : {gear_code}   x{qty_gear}\n"
                     f"Sale    : {sp.get('name', sale_person_abbr)}\n"
-                    f"เลขที่  : QMO26-SAS-{run_no_str}\n\n"
+                    f"เลขที่  : QMO26-{brand_tag}-{run_no_str}\n\n"
                     f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
                 )
                 for internal_email in INTERNAL_NOTIFY_EMAILS:
@@ -563,13 +556,15 @@ def ac_quote():
                     except Exception as e:
                         print(f"[WARN] send_email_with_pdf (internal {internal_email}) failed:", e)
 
-        # Keep compatibility with existing frontend (expects PDF as response)
+            # [BUG FIX #4] แก้ indentation ของ return send_file ให้อยู่นอก for-loop
+            # Keep compatibility with existing frontend (expects PDF as response)
             return send_file(
                 str(saved_path),
                 mimetype="application/pdf",
                 as_attachment=True,
                 download_name=saved_name,
-            ) 
+            )
+
     except Exception as e:
         # ✅ จุดนี้ทำให้ "ไม่เห็น HTML 500 อีก" และจะรู้สาเหตุจริง 100%
         app.logger.exception("ac_quote crashed")
@@ -677,12 +672,73 @@ def iec_quote():
         ws["D61"] = sp["position"]
 
         # ── IEC Motor line item (row 20) ──────────────────────────────────────
+        # ── Shaft Diameter lookup (ใช้ frame key เดียวกับ JS) ────────────────
+        def get_shaft_diameter(model_code: str, iec_pole: str) -> str:
+            """คืนค่า Ø mm จาก model_code + pole โดย normalize เป็น YE3 frame key"""
+            # แยก frame จาก model เช่น YE3-100L1-4-B5-0-X → 100L1, pole → 4
+            parts = model_code.split("-")
+            # parts[0]=YE3/YE4/..., parts[1]=frame, parts[2]=pole
+            if len(parts) < 3:
+                return ""
+            frame = parts[1]
+            pole_num = iec_pole.replace("P", "").replace("p", "")  # '4P' → '4'
+            ye3_key = f"YE3-{frame}-{pole_num}"
+
+            # SHAFT_DIAMETER_MAP — 2P
+            shaft_2p = {
+                "YE3-80M1-2": 19, "YE3-80M2-2": 19,
+                "YE3-90S-2":  24, "YE3-90L-2":  24,
+                "YE3-100L-2": 28,
+                "YE3-112M-2": 28,
+                "YE3-132S1-2": 38, "YE3-132S2-2": 38,
+                "YE3-160M1-2": 42, "YE3-160M2-2": 42, "YE3-160L-2": 42,
+                "YE3-180M-2": 48,
+                "YE3-200L1-2": 55, "YE3-200L2-2": 55, "YE3-225M-2": 55,
+                "YE3-250M-2": 60,
+                "YE3-280S-2": 65, "YE3-280M-2": 65,
+                "YE3-315S-2": 65, "YE3-315M-2": 65, "YE3-315L1-2": 65, "YE3-315L2-2": 65,
+            }
+            # SHAFT_DIAMETER_MAP — 4P (6P/8P ใช้ค่าเดียวกัน)
+            shaft_4p = {
+                "YE3-71M10-4": 14, "YE3-71M11-4": 14, "YE3-71M22-4": 14,
+                "YE3-80M1-4":  19, "YE3-80M2-4":  19,
+                "YE3-90S-4":   24, "YE3-90L-4":   24,
+                "YE3-100L1-4": 28, "YE3-100L2-4": 28,
+                "YE3-112M-4":  28,
+                "YE3-132S-4":  38, "YE3-132M-4":  38,
+                "YE3-160M-4":  42, "YE3-160L-4":  42,
+                "YE3-180M-4":  48, "YE3-180L-4":  48,
+                "YE3-200L-4":  55,
+                "YE3-225S-4":  60, "YE3-225M-4":  60,
+                "YE3-250M-4":  65,
+                "YE3-280S-4":  75, "YE3-280M-4":  75,
+                "YE3-315S-4":  80, "YE3-315M-4":  80, "YE3-315L1-4": 80, "YE3-315L2-4": 80,
+                "YE3-355M-4":  95, "YE3-355L-4":  95,
+            }
+            if pole_num == "2":
+                val = shaft_2p.get(ye3_key)
+            else:
+                # 4P, 6P, 8P → normalize เป็น 4P
+                key4 = f"YE3-{frame}-4"
+                val = shaft_4p.get(key4)
+            return f"\u00d8{val} mm" if val else ""
+
+        shaft_str = get_shaft_diameter(model_code, iec_pole)
+
         # สร้าง description จาก IEC fields
-        pole_label = {"2P": "2 Pole (~3000 rpm)", "4P": "4 Pole (~1500 rpm)",
-                      "6P": "6 Pole (~1000 rpm)", "8P": "8 Pole (~750 rpm)"}.get(iec_pole, iec_pole)
         motor_desc = (
-            f"IEC Standard Motor {iec_motor_type} | {iec_power} kW | {pole_label} | "
-            f"Mounting {iec_mount} | Terminal Box {iec_terminal}° | Cable {iec_cable} | IP55 | Class F"
+            f"Standard: IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55, Class F, S1\n"
+            f"Insulation: Class F (105K), by Class B\n"
+            f"Cooling: TEFC (IC411, IEC60034-6), Plastic Fan\n"
+            f"Winding: 100% Copper Wire\n"
+            f"Duty: Continuous (S1)\n"
+            f"Vibration: Class A (Class B on request)\n"
+            f"Site Conditions: -15\u00b0C to +40\u00b0C, Altitude \u2264 1000 m\n"
+            f"Voltage Range: 200\u2013660V, 50/60Hz (\u00b15% nominal)\n"
+            f"Mounting: {iec_mount} | Terminal Box: {iec_terminal}\u00b0 | Cable: {iec_cable}\n"
+            f"IP Protection: IP55 | Insulation Class: F\n"
+            + (f"Output Shaft Diameter: {shaft_str}\n" if shaft_str else "")
+            + f"Weight: (see datasheet)"
         )
 
         ws["A20"] = 1
@@ -690,6 +746,9 @@ def iec_quote():
         ws["C20"] = motor_desc
         ws["F20"] = qty_motor
         ws["G20"] = unit_price if unit_price > 0 else ""
+
+        # ── Delivery date (F17) ───────────────────────────────────────────────
+        ws["F17"] = "Within 30-45 days"
 
         # ── Clear rows ที่เคยใส่ gear/ctrl ถ้ายังค้างอยู่ในเทมเพลต ───────────
         for row in [22, 24]:
