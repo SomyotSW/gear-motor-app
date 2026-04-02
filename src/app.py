@@ -838,8 +838,10 @@ def iec_quote():
         ws["B20"] = model_code
         ws["C20"] = f"Power: {iec_power} kW | {iec_pole.replace('P',' Pole')} | Mounting: {iec_mount} | Terminal Box: {iec_terminal}\u00b0 | Cable: {iec_cable}"
         ws["C21"] = f"Standard: IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55 | Motor Type: {iec_motor_type}"
+        # ── Row 22 = แถว Gear ใน template (มี border) → ใส่ C22 ต่อ ─────────
         ws["C22"] = f"Insulation: Class F (155\u00b0C) | Cooling: IC411 | Duty: S1"
         ws["C23"] = f"Voltage: 200\u2013660V, 50/60Hz (\u00b15%) | Site: -15\u00b0C to +40\u00b0C, Alt \u2264 1000 m | Vibration: Class A (Class B on request)"
+        # ── Row 24 = แถว Controller ใน template (มี border) → ใส่ C24 ต่อ ──
         ws["C24"] = f"Rated Speed: {spec['speed']} rpm" if spec.get('speed') else "Rated Speed: (see datasheet)"
         ws["C25"] = (f"Efficiency: {spec['eff']} %   |   Current: {spec['i380']} A @ 380V  /  {spec['i400']} A @ 400V  /  {spec['i415']} A @ 415V"
                      if spec.get('eff') and spec.get('i380') else "Efficiency / Current: (see datasheet)")
@@ -854,11 +856,6 @@ def iec_quote():
         # ── Warranty (B17) และ JOB (D17) ─────────────────────────────────────
         ws["B17"] = "24 Months"
         ws["D17"] = "IEC Standard Motor"
-
-        # ── Clear rows ที่เคยใส่ gear/ctrl ถ้ายังค้างอยู่ในเทมเพลต ───────────
-        for row in [22, 24]:
-            for col in ["A", "B", "C", "F", "G"]:
-                ws[f"{col}{row}"] = None
 
         # ── Convert to PDF ────────────────────────────────────────────────────
         with tempfile.TemporaryDirectory() as td:
