@@ -489,8 +489,6 @@ export const productList = [
 ];
 
 
-// [ADD-BLDC] Model code generator (updated for High-efficiency)
-// ── BLDC ย้ายไป BLDCGearMotorFlow.js แล้ว — re-export เพื่อ backward compat ──
 export { generateBLDCModelCode, renderBLDCGearFlow } from './BLDCGearMotorFlow.js';
 
 

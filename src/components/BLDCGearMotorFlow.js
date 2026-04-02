@@ -332,9 +332,11 @@ function BLDCViewer3D({ modelCode }) {
 
   const S = {
     wrap:    { display:'flex', flexDirection:isMobile?'column':'row', width:'100%', height:'100%', minHeight:0, background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" },
-    viewer:  { flex:isMobile?'none':1, height:isMobile?'55vw':undefined, minHeight:isMobile?220:0, maxHeight:isMobile?380:undefined, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
+    // mobile: ให้ viewer มี height ชัดเจน (300px) ไม่ใช่ vw ที่อาจเป็น 0
+    viewer:  { flex:isMobile?'none':1, height:isMobile?'300px':undefined, minHeight:isMobile?300:0, maxHeight:isMobile?400:undefined, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
     grid:    { position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(0,229,160,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.025) 1px,transparent 1px)', backgroundSize:'40px 40px', pointerEvents:'none' },
-    mv:      { width:'100%', height:'100%', '--poster-color':'transparent', '--progress-bar-color':'#00e5a0', background:'transparent' },
+    // model-viewer ต้องได้ width+height ชัดเจน บน mobile
+    mv:      { width:'100%', height:isMobile?'300px':'100%', '--poster-color':'transparent', '--progress-bar-color':'#00e5a0', background:'transparent', display:'block' },
     ring:    { width:44, height:44, border:'2px solid rgba(0,229,160,0.15)', borderTopColor:'#00e5a0', borderRadius:'50%', animation:'bldc3d-spin 0.9s linear infinite' },
     loaderBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, background:'linear-gradient(135deg,#0a0c10,#0d111c)' },
     errorBox:  { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:'#0a0c10' },
@@ -971,8 +973,67 @@ export function renderBLDCGearFlow(state, setState, onConfirm, onHome, onBack) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BLDCSummaryPage — Full-screen summary แบบเดียวกับ AC Gear Motor
+// BLDCMobileLightingControls — แสดงบน mobile ใน right panel
 // ─────────────────────────────────────────────────────────────────────────────
+function BLDCMobileLightingControls() {
+  const getMV = () => document.querySelector('model-viewer');
+  const [envIdx,   setEnvIdx]   = React.useState(0);
+  const [exposure, setExposure] = React.useState(1.3);
+  const [shadow,   setShadow]   = React.useState(0.6);
+  const [autoLight,setAutoLight]= React.useState(false);
+  const lightTimer = React.useRef(null);
+
+  React.useEffect(() => {
+    if (autoLight) {
+      lightTimer.current = setInterval(() => {
+        const mv = getMV();
+        if (mv) {
+          const cur = parseInt(mv.style.getPropertyValue('--env-rotation') || '0', 10);
+          mv.style.setProperty('--env-rotation', ((cur + 2) % 360) + 'deg');
+        }
+      }, 30);
+    } else clearInterval(lightTimer.current);
+    return () => clearInterval(lightTimer.current);
+  }, [autoLight]);
+  React.useEffect(() => () => clearInterval(lightTimer.current), []);
+
+  const sec = { padding:'12px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' };
+  const secT = { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:8 };
+  const row = { display:'flex', alignItems:'center', gap:8, marginBottom:6 };
+  const lbl = { fontSize:10, color:'#4a5060', width:54, flexShrink:0 };
+  const sld = { flex:1, accentColor:'#00e5a0', cursor:'pointer', height:3 };
+  const val = { fontSize:10, color:'#e8eaf0', width:28, textAlign:'right', flexShrink:0, fontFamily:'monospace' };
+
+  return (
+    <>
+      <div style={sec}>
+        <div style={secT}>สภาพแวดล้อมแสง</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:4 }}>
+          {ENV_PRESETS_BLDC.map((env,i) => (
+            <button key={env.value} title={env.label} onClick={() => { setEnvIdx(i); const mv=getMV(); if(mv) { try{mv.setAttribute('environment-image',env.value);}catch(e){} } }}
+              style={{ aspectRatio:1, borderRadius:5, border:i===envIdx?'2px solid #00e5a0':'2px solid transparent', cursor:'pointer', position:'relative', overflow:'hidden', background:env.bg }}>
+              <span style={{ position:'absolute', bottom:0, left:0, right:0, fontSize:6, textAlign:'center', background:'rgba(0,0,0,0.6)', color:'rgba(255,255,255,0.8)' }}>{env.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={sec}>
+        <div style={secT}>ควบคุมแสง</div>
+        <div style={row}><span style={lbl}>ความสว่าง</span><input type="range" min={0.5} max={3} step={0.05} value={exposure} style={sld} onChange={e=>{const v=parseFloat(e.target.value);setExposure(v);const mv=getMV();if(mv)mv.setAttribute('exposure',v);}}/><span style={val}>{exposure.toFixed(1)}</span></div>
+        <div style={row}><span style={lbl}>เงา</span><input type="range" min={0} max={1} step={0.05} value={shadow} style={sld} onChange={e=>{const v=parseFloat(e.target.value);setShadow(v);const mv=getMV();if(mv)mv.setAttribute('shadow-softness',v);}}/><span style={val}>{shadow.toFixed(1)}</span></div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:4 }}>
+          <span style={{ fontSize:10, color:'#4a5060' }}>☀️ หมุนแสงอัตโนมัติ</span>
+          <button onClick={() => setAutoLight(v=>!v)} style={{ width:34, height:18, background:autoLight?'#00e5a0':'rgba(255,255,255,0.1)', borderRadius:9, position:'relative', cursor:'pointer', border:'none', transition:'background 0.2s' }}>
+            <div style={{ position:'absolute', top:2, left:autoLight?16:2, width:14, height:14, borderRadius:'50%', background:'white', transition:'left 0.2s' }} />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BLDCSummaryPage
 function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }) {
   const isMobile = useIsMobileBLDC();
   const { bldcCategory, bldcFrame, bldcPower, bldcVoltage, bldcGearType, bldcSpeed, bldcOption, bldcRatio, bldcHEType, bldcSFDiameter } = state;
@@ -1053,12 +1114,15 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
         <div style={{ flex:1, display:'flex', flexDirection:isMobile?'column':'row', minHeight:0, overflow:isMobile?'auto':'hidden' }}>
 
           {/* 3D Viewer */}
-          <div style={{ flex:isMobile?'none':1, height:isMobile?'55vw':undefined, minHeight:isMobile?220:0, maxHeight:isMobile?360:undefined, minWidth:0 }}>
+          <div style={{ flex:isMobile?'none':1, height:isMobile?'300px':undefined, minHeight:isMobile?300:0, maxHeight:isMobile?400:undefined, minWidth:0 }}>
             <BLDCViewer3D modelCode={modelCode} />
           </div>
 
           {/* Right Panel */}
           <div style={{ width:isMobile?'100%':280, flexShrink:0, background:'#0f1118', borderLeft:isMobile?'none':'1px solid rgba(255,255,255,0.07)', borderTop:isMobile?'1px solid rgba(255,255,255,0.07)':'none', overflowY:'auto', display:'flex', flexDirection:'column' }}>
+
+            {/* Mobile: lighting controls inline */}
+            {isMobile && <BLDCMobileLightingControls />}
 
             {/* Specs */}
             <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
