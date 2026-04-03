@@ -283,21 +283,35 @@ function BLDCViewer3D({ modelCode }) {
   useEffect(() => {
     setReady(false); setErr(false);
     if (!glbName) return;
-    const url = `${GLB_BASE}/${encodeURIComponent(glbName)}.glb`;
-    let cancelled = false, attempts = 0;
-    function attach() {
-      const el = mvRef.current;
-      if (cancelled) return;
-      if (!el || !el.nodeName) {
-        if (attempts < 40) { attempts++; setTimeout(attach, 50); } return;
-      }
-      el.setAttribute('src', url);
-      const onLoad = () => { if (!cancelled) { setReady(true); setErr(false); } };
-      const onErr  = () => { if (!cancelled) setErr(true); };
-      el.addEventListener('load', onLoad); el.addEventListener('error', onErr);
-      el.__bldcCleanup = () => { el.removeEventListener('load', onLoad); el.removeEventListener('error', onErr); };
-    }
-    attach();
+
+    // ใช้ raw filename ไม่ encode (R2 รองรับ - ใน path ปกติ)
+    const url = `${GLB_BASE}/${glbName}.glb`;
+
+    let cancelled = false;
+
+    // ── Fetch ก่อนเพื่อตรวจว่าไฟล์มีจริง แล้วค่อย set src ──────────────────
+    fetch(url, { method: 'HEAD', cache: 'no-store' })
+      .then(res => {
+        if (cancelled) return;
+        if (!res.ok) { setErr(true); return; }
+        // ไฟล์มีอยู่ → set src แล้วรอ load event
+        let attempts = 0;
+        function attach() {
+          const el = mvRef.current;
+          if (cancelled) return;
+          if (!el || !el.nodeName) {
+            if (attempts < 40) { attempts++; setTimeout(attach, 50); } return;
+          }
+          el.setAttribute('src', url);
+          const onLoad = () => { if (!cancelled) { setReady(true); setErr(false); } };
+          const onErr  = () => { if (!cancelled) setErr(true); };
+          el.addEventListener('load', onLoad); el.addEventListener('error', onErr);
+          el.__bldcCleanup = () => { el.removeEventListener('load', onLoad); el.removeEventListener('error', onErr); };
+        }
+        attach();
+      })
+      .catch(() => { if (!cancelled) setErr(true); });
+
     return () => { cancelled = true; mvRef.current?.__bldcCleanup?.(); };
   }, [glbName]);
 
@@ -362,7 +376,15 @@ function BLDCViewer3D({ modelCode }) {
       <div style={S.viewer}>
         <div style={S.grid} />
         {!ready && !err && <div style={S.loaderBox}><div style={S.ring}/><span style={{fontSize:11,color:'#4a5060',letterSpacing:'1px'}}>กำลังโหลดโมเดล…</span></div>}
-        {err && <div style={S.errorBox}><span style={{fontSize:48}}>📦</span><span style={{fontSize:12,color:'#556'}}>ยังไม่มีไฟล์ 3D</span><span style={{fontSize:9,color:'#3a4050',fontFamily:'monospace'}}>{glbName}.glb</span></div>}
+        {err && (
+          <div style={S.errorBox}>
+            <span style={{fontSize:48}}>📦</span>
+            <span style={{fontSize:12,color:'#556'}}>ยังไม่มีไฟล์ 3D</span>
+            <span style={{fontSize:9,color:'#3a4050',fontFamily:'monospace',textAlign:'center',padding:'0 8px',wordBreak:'break-all'}}>
+              {`${GLB_BASE}/${glbName}.glb`}
+            </span>
+          </div>
+        )}
         <model-viewer ref={mvRef} src="" alt={glbName} auto-rotate auto-rotate-delay="400" rotation-per-second="18deg" camera-controls touch-action="pan-y" shadow-intensity="1.2" shadow-softness={shadow} environment-image="neutral" exposure={exposure} style={S.mv} />
         {ready && !err && <div style={{position:'absolute',bottom:10,left:0,right:0,textAlign:'center',color:'rgba(255,255,255,0.2)',fontSize:10,pointerEvents:'none'}}>🖱 ลาก = หมุน &nbsp;·&nbsp; Scroll = ซูม</div>}
       </div>
