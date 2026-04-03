@@ -265,7 +265,23 @@ function mapBLDCGlbFilename(modelCode) {
   return `${motorPart}W${series}${baseGear}${suffix}`;
 }
 
-function BLDCViewer3D({ modelCode }) {
+function BLDCViewer3D({ modelCode, lightMode = false, T = null }) {
+  // Fallback T for standalone usage (e.g. mobile path)
+  const theme = T || {
+    viewerBg:        'linear-gradient(135deg,#0a0c10,#0d111c)',
+    gridLine:        'rgba(0,229,160,0.025)',
+    loaderRingColor: '#00e5a0',
+    loaderText:      '#4a5060',
+    labelColor:      '#4a5060',
+    valueColor:      '#e8eaf0',
+    panelBg:         '#0f1118',
+    panelBorder:     '1px solid rgba(255,255,255,0.07)',
+    sectionDivider:  '1px solid rgba(255,255,255,0.06)',
+    sectionHeadColor:'#4a5060',
+    accent:          '#00e5a0',
+    accentFaint:     'rgba(0,229,160,0.08)',
+    accentBorder:    'rgba(0,229,160,0.25)',
+  };
   const mvRef = useRef(null);
   const isMobile = useIsMobileBLDC();
   const [ready, setReady] = useState(false);
@@ -289,28 +305,28 @@ function BLDCViewer3D({ modelCode }) {
 
     let cancelled = false;
 
-    // ── Fetch ก่อนเพื่อตรวจว่าไฟล์มีจริง แล้วค่อย set src ──────────────────
-    fetch(url, { method: 'HEAD', cache: 'no-store' })
-      .then(res => {
-        if (cancelled) return;
-        if (!res.ok) { setErr(true); return; }
-        // ไฟล์มีอยู่ → set src แล้วรอ load event
-        let attempts = 0;
-        function attach() {
-          const el = mvRef.current;
-          if (cancelled) return;
-          if (!el || !el.nodeName) {
-            if (attempts < 40) { attempts++; setTimeout(attach, 50); } return;
-          }
-          el.setAttribute('src', url);
-          const onLoad = () => { if (!cancelled) { setReady(true); setErr(false); } };
-          const onErr  = () => { if (!cancelled) setErr(true); };
-          el.addEventListener('load', onLoad); el.addEventListener('error', onErr);
-          el.__bldcCleanup = () => { el.removeEventListener('load', onLoad); el.removeEventListener('error', onErr); };
-        }
-        attach();
-      })
-      .catch(() => { if (!cancelled) setErr(true); });
+    // ── Set src ตรงให้ model-viewer จัดการ load/error เอง ──────────────────
+    // ไม่ใช้ fetch HEAD เพราะ Cloudflare R2 public bucket ไม่ส่ง CORS headers
+    // สำหรับ HEAD request → browser block → setErr(true) ผิดพลาดใน production
+    let attempts = 0;
+    function attach() {
+      const el = mvRef.current;
+      if (cancelled) return;
+      if (!el || !el.nodeName) {
+        if (attempts < 40) { attempts++; setTimeout(attach, 50); }
+        return;
+      }
+      el.setAttribute('src', url);
+      const onLoad = () => { if (!cancelled) { setReady(true); setErr(false); } };
+      const onErr  = () => { if (!cancelled) setErr(true); };
+      el.addEventListener('load', onLoad);
+      el.addEventListener('error', onErr);
+      el.__bldcCleanup = () => {
+        el.removeEventListener('load', onLoad);
+        el.removeEventListener('error', onErr);
+      };
+    }
+    attach();
 
     return () => { cancelled = true; mvRef.current?.__bldcCleanup?.(); };
   }, [glbName]);
@@ -344,30 +360,29 @@ function BLDCViewer3D({ modelCode }) {
     if (ready) applyColor(); else mvRef.current?.addEventListener('load', applyColor, { once:true });
   };
 
+  const isLight = lightMode;
   const S = {
-    wrap:    { display:'flex', flexDirection:isMobile?'column':'row', width:'100%', height:'100%', minHeight:0, background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" },
-    // mobile: ให้ viewer มี height ชัดเจน (300px) ไม่ใช่ vw ที่อาจเป็น 0
-    viewer:  { flex:isMobile?'none':1, height:isMobile?'300px':undefined, minHeight:isMobile?300:0, maxHeight:isMobile?400:undefined, position:'relative', background:'linear-gradient(135deg,#0a0c10,#0d111c)', overflow:'hidden' },
-    grid:    { position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(0,229,160,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.025) 1px,transparent 1px)', backgroundSize:'40px 40px', pointerEvents:'none' },
-    // model-viewer ต้องได้ width+height ชัดเจน บน mobile
-    mv:      { width:'100%', height:isMobile?'300px':'100%', '--poster-color':'transparent', '--progress-bar-color':'#00e5a0', background:'transparent', display:'block' },
-    ring:    { width:44, height:44, border:'2px solid rgba(0,229,160,0.15)', borderTopColor:'#00e5a0', borderRadius:'50%', animation:'bldc3d-spin 0.9s linear infinite' },
-    loaderBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, background:'linear-gradient(135deg,#0a0c10,#0d111c)' },
-    errorBox:  { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:'#0a0c10' },
-    panel:   { width:isMobile?'100%':200, flexShrink:0, background:'#0f1118', borderLeft:isMobile?'none':'1px solid rgba(255,255,255,0.07)', borderTop:isMobile?'1px solid rgba(255,255,255,0.07)':'none', overflowY:'auto', display:'flex', flexDirection:'column' },
-    sec:     { padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' },
-    secT:    { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 },
-    envGrid: { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:5 },
-    envBtn:  (a) => ({ aspectRatio:1, borderRadius:6, border:a?'2px solid #00e5a0':'2px solid transparent', cursor:'pointer', position:'relative', overflow:'hidden', transition:'all 0.15s' }),
-    envLabel:{ position:'absolute', bottom:0, left:0, right:0, fontSize:7, textAlign:'center', background:'rgba(0,0,0,0.65)', padding:'1px 0', color:'rgba(255,255,255,0.7)', fontWeight:600 },
+    wrap:     { display:'flex', flexDirection:isMobile?'column':'row', width:'100%', height:'100%', minHeight:0, background:theme.viewerBg, fontFamily:"'Sarabun',sans-serif", transition:'background 0.25s' },
+    viewer:   { flex:isMobile?'none':1, height:isMobile?'300px':undefined, minHeight:isMobile?300:0, maxHeight:isMobile?400:undefined, position:'relative', background:theme.viewerBg, overflow:'hidden', transition:'background 0.25s' },
+    grid:     { position:'absolute', inset:0, backgroundImage:`linear-gradient(${theme.gridLine} 1px,transparent 1px),linear-gradient(90deg,${theme.gridLine} 1px,transparent 1px)`, backgroundSize:'40px 40px', pointerEvents:'none' },
+    mv:       { width:'100%', height:isMobile?'300px':'100%', '--poster-color':'transparent', '--progress-bar-color':theme.accent, background:'transparent', display:'block' },
+    ring:     { width:44, height:44, border:`2px solid ${theme.accentFaint}`, borderTopColor:theme.loaderRingColor, borderRadius:'50%', animation:'bldc3d-spin 0.9s linear infinite' },
+    loaderBox:{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, background:theme.viewerBg, transition:'background 0.25s' },
+    errorBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:theme.viewerBg, transition:'background 0.25s' },
+    panel:    { width:isMobile?'100%':200, flexShrink:0, background:theme.panelBg, borderLeft:isMobile?'none':theme.panelBorder, borderTop:isMobile?theme.panelBorder:'none', overflowY:'auto', display:'flex', flexDirection:'column', transition:'background 0.25s, border 0.25s' },
+    sec:      { padding:'14px 16px', borderBottom:theme.sectionDivider },
+    secT:     { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:theme.sectionHeadColor, marginBottom:10, transition:'color 0.25s' },
+    envGrid:  { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:5 },
+    envBtn:   (a) => ({ aspectRatio:1, borderRadius:6, border:a?`2px solid ${theme.accent}`:'2px solid transparent', cursor:'pointer', position:'relative', overflow:'hidden', transition:'all 0.15s' }),
+    envLabel: { position:'absolute', bottom:0, left:0, right:0, fontSize:7, textAlign:'center', background:'rgba(0,0,0,0.65)', padding:'1px 0', color:'rgba(255,255,255,0.7)', fontWeight:600 },
     colorGrid:{ display:'flex', gap:6, flexWrap:'wrap' },
-    swatch:  (a) => ({ width:24, height:24, borderRadius:'50%', border:a?'2px solid white':'2px solid transparent', cursor:'pointer', transition:'all 0.15s', position:'relative', flexShrink:0, transform:a?'scale(1.1)':'scale(1)' }),
-    slider:  { flex:1, accentColor:'#00e5a0', cursor:'pointer', height:3 },
-    sliderVal:{ fontSize:10, color:'#e8eaf0', width:30, textAlign:'right', flexShrink:0, fontFamily:'monospace' },
-    lrow:    { display:'flex', alignItems:'center', gap:8, marginBottom:8 },
-    llbl:    { fontSize:10, color:'#4a5060', width:44, flexShrink:0 },
-    toggle:  (on) => ({ width:34, height:18, background:on?'#00e5a0':'rgba(255,255,255,0.1)', borderRadius:9, position:'relative', cursor:'pointer', border:'none', transition:'background 0.2s', flexShrink:0 }),
-    toggleDot:(on)=>({ position:'absolute', top:2, left:on?16:2, width:14, height:14, borderRadius:'50%', background:'white', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.4)' }),
+    swatch:   (a) => ({ width:24, height:24, borderRadius:'50%', border:a?`2px solid ${theme.accent}`:'2px solid transparent', cursor:'pointer', transition:'all 0.15s', position:'relative', flexShrink:0, transform:a?'scale(1.1)':'scale(1)' }),
+    slider:   { flex:1, accentColor:theme.accent, cursor:'pointer', height:3 },
+    sliderVal:{ fontSize:10, color:theme.valueColor, width:30, textAlign:'right', flexShrink:0, fontFamily:'monospace', transition:'color 0.25s' },
+    lrow:     { display:'flex', alignItems:'center', gap:8, marginBottom:8 },
+    llbl:     { fontSize:10, color:theme.labelColor, width:44, flexShrink:0, transition:'color 0.25s' },
+    toggle:   (on) => ({ width:34, height:18, background:on?theme.accent:isLight?'rgba(0,0,0,0.12)':'rgba(255,255,255,0.1)', borderRadius:9, position:'relative', cursor:'pointer', border:'none', transition:'background 0.2s', flexShrink:0 }),
+    toggleDot:(on) => ({ position:'absolute', top:2, left:on?16:2, width:14, height:14, borderRadius:'50%', background:'white', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.4)' }),
   };
 
   return (
@@ -375,18 +390,27 @@ function BLDCViewer3D({ modelCode }) {
       <style>{`@keyframes bldc3d-spin{to{transform:rotate(360deg)}}`}</style>
       <div style={S.viewer}>
         <div style={S.grid} />
-        {!ready && !err && <div style={S.loaderBox}><div style={S.ring}/><span style={{fontSize:11,color:'#4a5060',letterSpacing:'1px'}}>กำลังโหลดโมเดล…</span></div>}
+        {!ready && !err && (
+          <div style={S.loaderBox}>
+            <div style={S.ring}/>
+            <span style={{fontSize:11, color:theme.loaderText, letterSpacing:'1px', transition:'color 0.25s'}}>กำลังโหลดโมเดล…</span>
+          </div>
+        )}
         {err && (
           <div style={S.errorBox}>
             <span style={{fontSize:48}}>📦</span>
-            <span style={{fontSize:12,color:'#556'}}>ยังไม่มีไฟล์ 3D</span>
-            <span style={{fontSize:9,color:'#3a4050',fontFamily:'monospace',textAlign:'center',padding:'0 8px',wordBreak:'break-all'}}>
+            <span style={{fontSize:12, color:theme.labelColor, transition:'color 0.25s'}}>ยังไม่มีไฟล์ 3D</span>
+            <span style={{fontSize:9, color:isLight?'#8090a8':'#3a4050', fontFamily:'monospace', textAlign:'center', padding:'0 8px', wordBreak:'break-all', transition:'color 0.25s'}}>
               {`${GLB_BASE}/${glbName}.glb`}
             </span>
           </div>
         )}
         <model-viewer ref={mvRef} src="" alt={glbName} auto-rotate auto-rotate-delay="400" rotation-per-second="18deg" camera-controls touch-action="pan-y" shadow-intensity="1.2" shadow-softness={shadow} environment-image="neutral" exposure={exposure} style={S.mv} />
-        {ready && !err && <div style={{position:'absolute',bottom:10,left:0,right:0,textAlign:'center',color:'rgba(255,255,255,0.2)',fontSize:10,pointerEvents:'none'}}>🖱 ลาก = หมุน &nbsp;·&nbsp; Scroll = ซูม</div>}
+        {ready && !err && (
+          <div style={{position:'absolute',bottom:10,left:0,right:0,textAlign:'center',color:isLight?'rgba(0,0,0,0.2)':'rgba(255,255,255,0.2)',fontSize:10,pointerEvents:'none',transition:'color 0.25s'}}>
+            🖱 ลาก = หมุน &nbsp;·&nbsp; Scroll = ซูม
+          </div>
+        )}
       </div>
 
       {!isMobile && <div style={S.panel}>
@@ -406,11 +430,11 @@ function BLDCViewer3D({ modelCode }) {
           <div style={S.lrow}><span style={S.llbl}>เงา</span><input type="range" min={0} max={1} step={0.05} value={shadow} style={S.slider} onChange={e=>{const v=parseFloat(e.target.value);setShadow(v);if(mvRef.current)mvRef.current.setAttribute('shadow-softness',v);}}/><span style={S.sliderVal}>{shadow.toFixed(1)}</span></div>
           <div style={{...S.lrow,marginBottom:0}}>
             <span style={S.llbl}>ทิศแสง</span>
-            {autoLight ? <span style={{flex:1,fontSize:10,color:'#00e5a0'}}>⟳ หมุนอัตโนมัติ</span> : <input type="range" min={0} max={360} step={1} value={lightRot} style={S.slider} onChange={e=>{const v=parseInt(e.target.value);setLightRot(v);if(mvRef.current)mvRef.current.style.setProperty('--env-rotation',v+'deg');}}/>}
+            {autoLight ? <span style={{flex:1,fontSize:10,color:theme.accent,transition:'color 0.25s'}}>⟳ หมุนอัตโนมัติ</span> : <input type="range" min={0} max={360} step={1} value={lightRot} style={S.slider} onChange={e=>{const v=parseInt(e.target.value);setLightRot(v);if(mvRef.current)mvRef.current.style.setProperty('--env-rotation',v+'deg');}}/>}
             <span style={S.sliderVal}>{lightRot}°</span>
           </div>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:10}}>
-            <span style={{fontSize:10,color:'#4a5060'}}>☀️ หมุนแสงอัตโนมัติ</span>
+            <span style={{fontSize:10, color:theme.labelColor, transition:'color 0.25s'}}>☀️ หมุนแสงอัตโนมัติ</span>
             <button style={S.toggle(autoLight)} onClick={()=>setAutoLight(v=>!v)}><div style={S.toggleDot(autoLight)}/></button>
           </div>
         </div>
@@ -1068,6 +1092,76 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
   const [qPhone, setQPhone]       = useState('');
   const [qEmail, setQEmail]       = useState('');
   const [sending, setSending]     = useState(false);
+  const [lightMode, setLightMode] = useState(false);
+
+  // ── Theme tokens — dark (default) vs light ──────────────────────────────
+  const T = lightMode ? {
+    pageBg:          '#f0f4f8',
+    topBarBg:        'rgba(240,244,248,0.97)',
+    topBarBorder:    '1px solid rgba(0,0,0,0.08)',
+    panelBg:         '#ffffff',
+    panelBorder:     '1px solid rgba(0,0,0,0.08)',
+    accent:          '#1a4fd6',
+    accentFaint:     'rgba(26,79,214,0.08)',
+    accentBorder:    'rgba(26,79,214,0.25)',
+    titleColor:      '#1a4fd6',
+    labelColor:      '#8090a8',
+    valueColor:      '#0d1526',
+    qtyLabelColor:   'rgba(13,21,38,0.70)',
+    inputBg:         'rgba(0,0,0,0.04)',
+    inputBorder:     '1px solid rgba(0,0,0,0.10)',
+    inputColor:      '#0d1526',
+    btnBg:           'rgba(0,0,0,0.04)',
+    btnBorder:       '1px solid rgba(0,0,0,0.10)',
+    btnColor:        '#0d1526',
+    sectionDivider:  '1px solid rgba(0,0,0,0.06)',
+    sectionHeadColor:'#8090a8',
+    codeBg:          'rgba(0,0,0,0.05)',
+    codeBorder:      '1px solid rgba(0,0,0,0.10)',
+    codeColor:       '#0d1526',
+    backBtnBg:       'rgba(26,79,214,0.08)',
+    backBtnBorder:   '1px solid rgba(26,79,214,0.25)',
+    backBtnColor:    '#1a4fd6',
+    specHighlight:   '#1a4fd6',
+    gridLine:        'rgba(26,79,214,0.04)',
+    viewerBg:        'linear-gradient(135deg,#e8edf5,#dde4f0)',
+    loaderRingColor: '#1a4fd6',
+    loaderText:      '#8090a8',
+    toggleIcon:      '☀️',
+  } : {
+    pageBg:          '#0a0c10',
+    topBarBg:        'rgba(10,12,16,0.95)',
+    topBarBorder:    '1px solid rgba(255,255,255,0.07)',
+    panelBg:         '#0f1118',
+    panelBorder:     '1px solid rgba(255,255,255,0.07)',
+    accent:          '#00e5a0',
+    accentFaint:     'rgba(0,229,160,0.08)',
+    accentBorder:    'rgba(0,229,160,0.25)',
+    titleColor:      '#00e5a0',
+    labelColor:      '#4a5060',
+    valueColor:      '#e8eaf0',
+    qtyLabelColor:   'rgba(255,255,255,0.65)',
+    inputBg:         'rgba(255,255,255,0.06)',
+    inputBorder:     '1px solid rgba(255,255,255,0.1)',
+    inputColor:      '#e8eaf0',
+    btnBg:           'rgba(255,255,255,0.06)',
+    btnBorder:       '1px solid rgba(255,255,255,0.1)',
+    btnColor:        '#e8eaf0',
+    sectionDivider:  '1px solid rgba(255,255,255,0.06)',
+    sectionHeadColor:'#4a5060',
+    codeBg:          'rgba(255,255,255,0.06)',
+    codeBorder:      '1px solid rgba(255,255,255,0.1)',
+    codeColor:       '#e8eaf0',
+    backBtnBg:       'rgba(0,229,160,0.08)',
+    backBtnBorder:   '1px solid rgba(0,229,160,0.25)',
+    backBtnColor:    '#00e5a0',
+    specHighlight:   '#00e5a0',
+    gridLine:        'rgba(0,229,160,0.025)',
+    viewerBg:        'linear-gradient(135deg,#0a0c10,#0d111c)',
+    loaderRingColor: '#00e5a0',
+    loaderText:      '#4a5060',
+    toggleIcon:      '🌙',
+  };
 
   const isHE = bldcCategory === 'HighefficiencyBLDCGearmotor';
   const voltageLabel = isHE ? 'AC 220V 50/60Hz' : `DC ${bldcVoltage}V`;
@@ -1110,24 +1204,48 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
 
   return (
     <>
-      <div id="bldc-summary" style={{ position:'fixed', inset:0, zIndex:500, display:'flex', flexDirection:'column', background:'#0a0c10', fontFamily:"'Sarabun',sans-serif" }}>
+      <div id="bldc-summary" style={{ position:'fixed', inset:0, zIndex:500, display:'flex', flexDirection:'column', background:T.pageBg, fontFamily:"'Sarabun',sans-serif", transition:'background 0.25s' }}>
 
         {/* Top bar */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 18px', borderBottom:'1px solid rgba(255,255,255,0.07)', background:'rgba(10,12,16,0.95)', backdropFilter:'blur(12px)', flexShrink:0, flexWrap:'wrap', gap:8 }}>
-          <span style={{ fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:15, letterSpacing:'1.5px', color:'#00e5a0', textTransform:'uppercase' }}>
-            ⚡ BLDC Gear Motor
-          </span>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 18px', borderBottom:T.topBarBorder, background:T.topBarBg, backdropFilter:'blur(12px)', flexShrink:0, flexWrap:'wrap', gap:8, transition:'background 0.25s, border 0.25s' }}>
+          {/* Left: title + theme toggle */}
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:15, letterSpacing:'1.5px', color:T.titleColor, textTransform:'uppercase', transition:'color 0.25s' }}>
+              ⚡ BLDC Gear Motor
+            </span>
+            {/* Light / Dark toggle button */}
+            <button
+              type="button"
+              title={lightMode ? 'Switch to Dark mode' : 'Switch to Light mode'}
+              onClick={() => setLightMode(m => !m)}
+              style={{
+                display:'flex', alignItems:'center', justifyContent:'center',
+                width:28, height:28, borderRadius:8,
+                background: T.accentFaint,
+                border: `1px solid ${T.accentBorder}`,
+                cursor:'pointer', fontSize:15, lineHeight:1,
+                transition:'background 0.2s, border 0.2s',
+                flexShrink:0,
+              }}
+            >
+              {T.toggleIcon}
+            </button>
+          </div>
+
+          {/* Center: model code + copy */}
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <span style={{ fontFamily:'monospace', fontSize:12, fontWeight:600, color:'#e8eaf0', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', padding:'3px 10px', borderRadius:5 }}>
+            <span style={{ fontFamily:'monospace', fontSize:12, fontWeight:600, color:T.codeColor, background:T.codeBg, border:T.codeBorder, padding:'3px 10px', borderRadius:5, transition:'all 0.25s' }}>
               {modelCode || '—'}
             </span>
             <button type="button"
-              style={{ background:'none', border:'none', cursor:'pointer', color:'#00e5a0', fontSize:11, padding:'3px 8px', borderRadius:4 }}
+              style={{ background:'none', border:'none', cursor:'pointer', color:T.accent, fontSize:11, padding:'3px 8px', borderRadius:4, transition:'color 0.25s' }}
               onClick={async () => { try { if(navigator.clipboard?.writeText) await navigator.clipboard.writeText(modelCode||''); } catch{} }}
             >Copy</button>
           </div>
+
+          {/* Right: back button */}
           <button type="button" onClick={onBack}
-            style={{ background:'rgba(0,229,160,0.08)', border:'1px solid rgba(0,229,160,0.25)', color:'#00e5a0', padding:'4px 12px', borderRadius:6, cursor:'pointer', fontSize:11, fontWeight:600 }}>
+            style={{ background:T.backBtnBg, border:T.backBtnBorder, color:T.backBtnColor, padding:'4px 12px', borderRadius:6, cursor:'pointer', fontSize:11, fontWeight:600, transition:'all 0.25s' }}>
             ← ย้อนกลับ
           </button>
         </div>
@@ -1137,39 +1255,39 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
 
           {/* 3D Viewer */}
           <div style={{ flex:isMobile?'none':1, height:isMobile?'300px':undefined, minHeight:isMobile?300:0, maxHeight:isMobile?400:undefined, minWidth:0 }}>
-            <BLDCViewer3D modelCode={modelCode} />
+            <BLDCViewer3D modelCode={modelCode} lightMode={lightMode} T={T} />
           </div>
 
           {/* Right Panel */}
-          <div style={{ width:isMobile?'100%':280, flexShrink:0, background:'#0f1118', borderLeft:isMobile?'none':'1px solid rgba(255,255,255,0.07)', borderTop:isMobile?'1px solid rgba(255,255,255,0.07)':'none', overflowY:'auto', display:'flex', flexDirection:'column' }}>
+          <div style={{ width:isMobile?'100%':280, flexShrink:0, background:T.panelBg, borderLeft:isMobile?'none':T.panelBorder, borderTop:isMobile?T.panelBorder:'none', overflowY:'auto', display:'flex', flexDirection:'column', transition:'background 0.25s, border 0.25s' }}>
 
             {/* Mobile: lighting controls inline */}
             {isMobile && <BLDCMobileLightingControls />}
 
             {/* Specs */}
-            <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 }}>ข้อมูลจำเพาะ</div>
+            <div style={{ padding:'14px 16px', borderBottom:T.sectionDivider }}>
+              <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:T.sectionHeadColor, marginBottom:10, transition:'color 0.25s' }}>ข้อมูลจำเพาะ</div>
               {specRows.map(([k,v]) => (
-                <div key={k} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'5px 0', borderBottom:'1px solid rgba(255,255,255,0.04)', gap:6 }}>
-                  <span style={{ fontSize:11, color:'#4a5060', flexShrink:0 }}>{k}</span>
-                  <span style={{ fontSize:11, fontWeight:600, color:['Power','Output Speed','Ratio'].includes(k)?'#00e5a0':'#e8eaf0', textAlign:'right', wordBreak:'break-all' }}>{v||'—'}</span>
+                <div key={k} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'5px 0', borderBottom:`1px solid ${lightMode ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'}`, gap:6 }}>
+                  <span style={{ fontSize:11, color:T.labelColor, flexShrink:0, transition:'color 0.25s' }}>{k}</span>
+                  <span style={{ fontSize:11, fontWeight:600, color:['Power','Output Speed','Ratio'].includes(k) ? T.specHighlight : T.valueColor, textAlign:'right', wordBreak:'break-all', transition:'color 0.25s' }}>{v||'—'}</span>
                 </div>
               ))}
             </div>
 
             {/* Qty */}
-            <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 }}>จำนวน</div>
+            <div style={{ padding:'14px 16px', borderBottom:T.sectionDivider }}>
+              <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:T.sectionHeadColor, marginBottom:10, transition:'color 0.25s' }}>จำนวน</div>
               {[{label:'BLDC Motor', val:qtyMotor, set:setQtyMotor}, {label:'Driver', val:qtyDriver, set:setQtyDriver}].map(({label,val,set}) => (
                 <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                  <span style={{ fontSize:12, color:'rgba(255,255,255,0.65)' }}>{label}</span>
+                  <span style={{ fontSize:12, color:T.qtyLabelColor, transition:'color 0.25s' }}>{label}</span>
                   <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                    <button type="button" onClick={()=>set(q=>Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>–</button>
+                    <button type="button" onClick={()=>set(q=>Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:T.btnBorder, background:T.btnBg, color:T.btnColor, cursor:'pointer', fontSize:15, transition:'all 0.25s' }}>–</button>
                     <input type="number" min={1} max={999} value={val}
                       onChange={e=>{const v=Number(e.target.value);set(Number.isFinite(v)?Math.max(1,Math.floor(v)):1);}}
                       onWheel={e=>e.currentTarget.blur()}
-                      style={{ width:38, textAlign:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:5, color:'#e8eaf0', fontSize:13, fontWeight:700, padding:'2px 0' }} />
-                    <button type="button" onClick={()=>set(q=>Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>+</button>
+                      style={{ width:38, textAlign:'center', background:T.inputBg, border:T.inputBorder, borderRadius:5, color:T.inputColor, fontSize:13, fontWeight:700, padding:'2px 0', transition:'all 0.25s' }} />
+                    <button type="button" onClick={()=>set(q=>Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:T.btnBorder, background:T.btnBg, color:T.btnColor, cursor:'pointer', fontSize:15, transition:'all 0.25s' }}>+</button>
                   </div>
                 </div>
               ))}
@@ -1178,7 +1296,7 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
             {/* Action Buttons */}
             <div style={{ padding:'14px 16px', display:'flex', flexDirection:'column', gap:8 }}>
               <button type="button"
-                style={{ width:'100%', padding:'11px 0', borderRadius:10, background:'linear-gradient(90deg,#00e5a0,#00c87a)', color:'#0a1a10', fontWeight:700, fontSize:14, border:'none', cursor:'pointer' }}
+                style={{ width:'100%', padding:'11px 0', borderRadius:10, background: lightMode ? 'linear-gradient(90deg,#1a4fd6,#1040b8)' : 'linear-gradient(90deg,#00e5a0,#00c87a)', color: lightMode ? '#ffffff' : '#0a1a10', fontWeight:700, fontSize:14, border:'none', cursor:'pointer', transition:'background 0.25s, color 0.25s' }}
                 onClick={()=>setShowQuote(true)}>
                 🛒 ขอใบเสนอราคา
               </button>
