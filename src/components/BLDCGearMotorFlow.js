@@ -209,22 +209,20 @@ function mapBLDCGlbFilename(modelCode) {
   const m = modelCode.trim();
 
   // ── High-Efficiency (ประกอบด้วย -220-) ──────────────────────────────────
+  // ชื่อไฟล์ GLB ไม่มี dash เช่น Z5BLD200220GV, Z5BLD400220GVSL, Z5BLD400220GVSF
   if (m.includes('-220-')) {
+    const base = m.split('-220-')[0]; // e.g. Z5BLD200, Z6BLD400
     // HE SL: contains GSL
     if (m.includes('-GSL-')) {
-      // ZxBLDyyy-220-GSL-... → ZxBLDyyy-220-GV-SL
-      const base = m.split('-220-')[0]; // e.g. Z6BLD400
-      return `${base}-220-GV-SL`;
+      return `${base}220GVSL`;
     }
     // HE SF: contains GS (but not GSL)
     if (m.includes('-GS-')) {
-      const base = m.split('-220-')[0];
-      return `${base}-220-GV-SF`;
+      return `${base}220GVSF`;
     }
     // HE S: contains GV
     if (m.includes('-GV-')) {
-      const base = m.split('-220-')[0];
-      return `${base}-220-GV`;
+      return `${base}220GV`;
     }
     return m;
   }
