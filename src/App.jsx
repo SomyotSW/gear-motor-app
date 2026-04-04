@@ -383,6 +383,27 @@ useEffect(() => {
     setShowForm(false);
     setSelectedProduct('AC Gear Motor');
   }
+  // ── Deep-link: /#bldc-gear-motor ──────────────────────────────────────────
+  if (hash === 'bldc-gear-motor') {
+    setModelCodeList([]);
+    setSelectedModel(null);
+    setShowForm(false);
+    setSelectedProduct('BLDC Gear Motor');
+  }
+  // ── Deep-link: /#iec-motor ────────────────────────────────────────────────
+  if (hash === 'iec-motor') {
+    setModelCodeList([]);
+    setSelectedModel(null);
+    setShowForm(false);
+    setSelectedProduct('IEC STANDARD MOTOR');
+  }
+  // ── Deep-link: /#rkfs-series ──────────────────────────────────────────────
+  if (hash === 'rkfs-series') {
+    setModelCodeList([]);
+    setSelectedModel(null);
+    setShowForm(false);
+    setSelectedProduct('RKFS Series');
+  }
 }, []);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
   useEffect(() => {
