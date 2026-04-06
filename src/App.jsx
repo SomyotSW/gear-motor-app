@@ -3,6 +3,7 @@ import { productList, renderHypoidGearFlow, renderPlanetaryGearFlow, generatePla
 import { renderBLDCGearFlow, generateBLDCModelCode } from './components/BLDCGearMotorFlow.js';
 import { renderRKFSFlow } from './components/RKFSMotorFlow.js';
 import { renderIECMotorFlow } from './components/IECMotorFlow.js';
+import { renderSmallACFlow, generateSmallACModelCode } from './components/SmallACMotorFlow.js';
 import ACGearMotorFlow, { generateACModelCode } from './components/ACGearMotorFlow.js';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
@@ -365,6 +366,32 @@ function App() {
 
   const EMAILJS_PUBLIC_KEY = 'BvIT5-X7LnkaS3LKq';
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // ── [ADD] Visitor Counter ──────────────────────────────────────────────────
+  const [visitorCount, setVisitorCount] = useState(0);
+  const [visitHistory, setVisitHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('th-TH', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    // ดึงข้อมูลเดิม
+    const storedCount = parseInt(localStorage.getItem('sas_visitor_count') || '0', 10);
+    const storedHistory = JSON.parse(localStorage.getItem('sas_visit_history') || '[]');
+
+    const newCount = storedCount + 1;
+    const newHistory = [dateStr, ...storedHistory].slice(0, 50); // เก็บล่าสุด 50 รายการ
+
+    localStorage.setItem('sas_visitor_count', String(newCount));
+    localStorage.setItem('sas_visit_history', JSON.stringify(newHistory));
+
+    setVisitorCount(newCount);
+    setVisitHistory(newHistory);
+  }, []);
   // ── [ADD] Deep-link via URL hash: /#ac-gear-motor ──────────────────────────
 useEffect(() => {
   const hash = window.location.hash.toLowerCase().replace('#', '');
@@ -695,6 +722,24 @@ const resetIEC = () => {
   setIecMount(null);
   setIecTerminal(null);
   setIecCable(null);
+};
+
+// ── Small AC Series states ─────────────────────────────────────────────────
+const [sacGearType, setSacGearType] = useState(null);
+const [sacSize,     setSacSize]     = useState(null);
+const [sacPower,    setSacPower]    = useState(null);
+const [sacRatio,    setSacRatio]    = useState(null);
+const [sacCurrent,  setSacCurrent]  = useState(null);
+const [sacBrake,    setSacBrake]    = useState(null);
+const [sacTerminal, setSacTerminal] = useState(null);
+const [sacLead,     setSacLead]     = useState(null);
+
+const sacState = { sacGearType, sacSize, sacPower, sacRatio, sacCurrent, sacBrake, sacTerminal, sacLead };
+const sacSetters = { sacGearType: setSacGearType, sacSize: setSacSize, sacPower: setSacPower, sacRatio: setSacRatio, sacCurrent: setSacCurrent, sacBrake: setSacBrake, sacTerminal: setSacTerminal, sacLead: setSacLead };
+
+const resetSmallAC = () => {
+  setSacGearType(null); setSacSize(null); setSacPower(null); setSacRatio(null);
+  setSacCurrent(null);  setSacBrake(null); setSacTerminal(null); setSacLead(null);
 };
 
 const COMING_SOON = new Set([
@@ -1425,8 +1470,58 @@ const getFileUrl = () => {
         aria-hidden="true"
       />
     </div>
+</div>
+</div>
+
+{/* ── [ADD] Visitor Counter Box (มุมขวาบน ใต้แบนเนอร์) ── */}
+<div className="flex justify-end mb-3 -mt-2 pr-1">
+  <div className="relative">
+    <button
+      onClick={() => setShowHistory(v => !v)}
+      className="flex items-center gap-2 px-3 py-1.5 rounded-xl
+                 bg-white/15 backdrop-blur-sm border border-white/30
+                 text-white text-xs font-semibold shadow-md
+                 hover:bg-white/25 active:scale-95 transition-all"
+      title="ประวัติการเข้าใช้งาน"
+    >
+      <span>👥</span>
+      <span>ผู้เข้าใช้</span>
+      <span className="bg-blue-500/80 text-white rounded-full px-2 py-0.5 text-xs font-bold">
+        {visitorCount.toLocaleString()}
+      </span>
+      <span className="text-white/60 text-[10px]">ครั้ง</span>
+    </button>
+
+    {/* Dropdown ประวัติ */}
+    {showHistory && (
+      <div className="absolute right-0 top-9 z-50 w-60 max-h-64 overflow-y-auto
+                      bg-white/95 backdrop-blur-md rounded-xl shadow-2xl
+                      border border-white/40 p-3">
+        <div className="flex justify-between items-center mb-2">
+          <span className="font-bold text-gray-700 text-sm">ประวัติการเข้าใช้งาน</span>
+          <button
+            onClick={() => setShowHistory(false)}
+            className="w-5 h-5 rounded-full bg-red-400 text-white text-xs flex items-center justify-center"
+          >✕</button>
+        </div>
+        {visitHistory.length === 0 ? (
+          <p className="text-gray-400 text-xs text-center py-2">ยังไม่มีข้อมูล</p>
+        ) : (
+          <ul className="space-y-1">
+            {visitHistory.map((d, i) => (
+              <li key={i} className="flex items-center gap-2 text-xs text-gray-600 border-b border-gray-100 pb-1">
+                <span className="text-blue-400 font-bold w-5 text-right shrink-0">{i + 1}.</span>
+                <span>{d}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="text-center text-[10px] text-gray-400 mt-2">แสดงล่าสุด 50 รายการ</p>
+      </div>
+    )}
   </div>
 </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
               {productList.map((p) => (
                 <button
@@ -1871,6 +1966,22 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
         }
       },
       () => { resetIEC(); setSelectedProduct(null); }
+    )}
+  </>
+)}
+
+{/* ── Small AC Series Flow ─────────────────────────────────────────── */}
+{selectedProduct === 'Small AC Series' && (
+  <>
+    {renderSmallACFlow(
+      sacState,
+      sacSetters,
+      (modelCode) => {
+        setSelectedModel(modelCode);
+        setModelCodeList([modelCode]);
+        setShowForm(true);
+      },
+      () => { resetSmallAC(); setSelectedProduct(null); }
     )}
   </>
 )}
