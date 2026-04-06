@@ -4,6 +4,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import emailjs from 'emailjs-com';
 
 import BLDCGearmotorImg              from '../assets/bldc/BLDCGearmotor.png';
 import HighefficiencyBLDCGearmotorImg from '../assets/bldc/HighefficiencyBLDCGearmotor.png';
@@ -125,6 +126,35 @@ const BLDC_HE_SPEC = {
   'SL-Z6BLD-750W':  { ratedSpeed:'80~3000', ratedTorque:2.387, maxTorque:3.580, voltage:'AC 220V 50/60Hz', ipClass:'IP54', driver:'C30', frameSize:'104mm' },
   'SL-Z7BLD-1100W': { ratedSpeed:'80~3000', ratedTorque:3.500, maxTorque:7.000, voltage:'AC 220V 50/60Hz', ipClass:'IP54', driver:'C30', frameSize:'120mm' },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SALE PERSONS (เหมือน ACGearMotorFlow)
+// ─────────────────────────────────────────────────────────────────────────────
+const SALE_PERSONS = [
+  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER',  phone: '081-921-6225' },
+  { abbr: 'AP',  name: 'Ms.Apichaya P. (AP)',    position: 'Sale Supervisor',                phone: '098-3697494' },
+  { abbr: 'MY',  name: 'Ms.Matavee Y. (MY)',     position: 'Sale Supervisor',                phone: '092-2715371' },
+  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Exclusive',                 phone: '080-4632394' },
+  { abbr: 'WS',  name: 'Ms.Warissara S.(WS)',    position: 'Sale Exclusive',                 phone: '065-5051798' },
+  { abbr: 'SI',  name: 'Ms.Suphak I.(SI)',        position: 'Sale Exclusive',                phone: '096-0787776' },
+  { abbr: 'NM',  name: 'Mr.Naphaphat M.(NM)',    position: 'Sale Exclusive',                 phone: '065-7176332' },
+  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',         position: 'Sale Supervisor',               phone: '086-9819616' },
+  { abbr: 'PL',  name: 'Mr.Pongsakorn L.(PL)',    position: 'Sale Engineer',                 phone: '063-2159056' },
+];
+
+// EmailJS config (เหมือน ACGearMotorFlow)
+const EMAILJS_SERVICE_ID  = 'service_fwgn6cw';
+const EMAILJS_TEMPLATE_ID = 'template_7eppr2x';
+const EMAILJS_PUBLIC_KEY  = 'BvIT5-X7LnkaS3LKq';
+
+// แปลง Blob → base64
+function blobToBase64(blob) {
+  return new Promise((resolve) => {
+    const r = new FileReader();
+    r.onloadend = () => resolve(String(r.result).split(',')[1]);
+    r.readAsDataURL(blob);
+  });
+}
 
 function getBLDCSpec(state) {
   const { bldcCategory, bldcFrame, bldcPower, bldcHEType } = state;
@@ -1091,6 +1121,8 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
   const [qEmail, setQEmail]       = useState('');
   const [sending, setSending]     = useState(false);
   const [lightMode, setLightMode] = useState(false);
+  const [salePerson, setSalePerson]                       = useState('CA');
+  const [showSalePersonPicker, setShowSalePersonPicker]   = useState(false);
 
   // ── Theme tokens — dark (default) vs light ──────────────────────────────
   const T = lightMode ? {
@@ -1166,18 +1198,76 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
   const speedRpmLabel = bldcSpeed ? ({ '15S':'1500 rpm','20S':'2000 rpm','30S':'3000 rpm','40S':'4000 rpm' }[bldcSpeed] || bldcSpeed) : '—';
 
   const submitQuote = async () => {
-    if (!qName || !qCompany || !qPhone || !qEmail) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+    if (!qName || !qCompany || !qPhone || !qEmail) { alert('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return; }
     try {
       setSending(true);
-      const API_BASE = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-        ? 'http://localhost:5000'
-        : 'https://sas-qc-gearmotor.onrender.com';
-      await fetch(`${API_BASE}/api/bldc-quote`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ modelCode, qtyMotor, qtyDriver, customer:{name:qName,company:qCompany,phone:qPhone,email:qEmail}, category: bldcCategory, heType: bldcHEType || '' })
+
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+      const res = await fetch(`${API_BASE}/api/bldc-quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelCode,
+          qtyMotor,
+          qtyDriver,
+          customer: { name: qName, company: qCompany, phone: qPhone, email: qEmail },
+          category:   bldcCategory,
+          heType:     bldcHEType || '',
+          salePerson,
+        })
       });
+
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '');
+        throw new Error(msg || 'สร้างใบเสนอราคาไม่สำเร็จ');
+      }
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+
+      const cd    = res.headers.get('content-disposition') || '';
+      const match = cd.match(/filename\*?=(?:UTF-8''|")?([^\";]+)"?/i);
+      const filename = match ? decodeURIComponent(match[1]) : 'bldc-quotation.pdf';
+
+      // ── EmailJS ──────────────────────────────────────────────────────────────
+      try {
+        const pdfBase64 = await blobToBase64(blob);
+        const emailParams = {
+          to_email:       qEmail,
+          requester_name: qName,
+          company:        qCompany,
+          phone:          qPhone,
+          email:          qEmail,
+          model_code:     modelCode,
+          qty_motor:      String(qtyMotor),
+          qty_driver:     String(qtyDriver),
+          sale_person:    salePerson || 'CA',
+          time:           new Date().toLocaleString('th-TH'),
+          pdf_content:    pdfBase64,
+          pdf_name:       filename,
+        };
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: qEmail },                    EMAILJS_PUBLIC_KEY);
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: 'Chottanin@synergy-as.com' }, EMAILJS_PUBLIC_KEY);
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { ...emailParams, to_email: 'sas04@synergy-as.com' },     EMAILJS_PUBLIC_KEY);
+      } catch (e) {
+        console.error('EmailJS send failed:', e);
+      }
+
+      // ── Download PDF ─────────────────────────────────────────────────────────
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
       setShowQuote(false);
-    } catch(e) { console.error(e); } finally { setSending(false); }
+    } catch (err) {
+      alert(String(err?.message || err));
+    } finally {
+      setSending(false);
+    }
   };
 
   const specRows = [
@@ -1309,27 +1399,95 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
         </div>
       </div>
 
-      {/* Quote Modal */}
+      {/* Quote Modal — เหมือน ACGearMotorFlow */}
       {showQuote && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={()=>!sending&&setShowQuote(false)} />
+          <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setShowQuote(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-[92%] max-w-xl p-6 text-slate-900">
-            <h3 className="text-xl font-bold mb-4">ขอใบเสนอราคา BLDC</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label className="block text-sm mb-1">ชื่อผู้ขอราคา :</label><input value={qName} onChange={e=>setQName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring"/></div>
-              <div><label className="block text-sm mb-1">ชื่อบริษัท :</label><input value={qCompany} onChange={e=>setQCompany(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring"/></div>
-              <div><label className="block text-sm mb-1">เบอร์ติดต่อ :</label><input value={qPhone} onChange={e=>setQPhone(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring"/></div>
-              <div><label className="block text-sm mb-1">Email :</label><input type="email" value={qEmail} onChange={e=>setQEmail(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring"/></div>
+
+            {/* Header + Sale Person picker */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <h3 className="text-xl font-bold">ขอใบเสนอราคา BLDC</h3>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowSalePersonPicker(v => !v)}
+                  title="เลือก Sale Person"
+                  className="text-2xl leading-none select-none hover:scale-110 active:scale-95 transition-transform"
+                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}
+                >
+                  🧑‍💼
+                </button>
+                {showSalePersonPicker && (
+                  <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] sm:w-[300px] overflow-hidden">
+                    {SALE_PERSONS.map(sp => (
+                      <button
+                        key={sp.abbr}
+                        type="button"
+                        onClick={() => { setSalePerson(sp.abbr); setShowSalePersonPicker(false); }}
+                        className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition text-sm border-b last:border-b-0 ${salePerson === sp.abbr ? 'bg-green-100 font-semibold' : ''}`}
+                      >
+                        <div className="font-semibold text-slate-800">{sp.name}</div>
+                        <div className="text-slate-500 text-xs">{sp.position} · {sp.phone}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {salePerson && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
+                  {SALE_PERSONS.find(s => s.abbr === salePerson)?.name || salePerson}
+                </span>
+              )}
             </div>
+
+            {/* Form — 1 column เหมือน AC */}
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-sm mb-1">ชื่อผู้ขอราคา :</label>
+                <input value={qName} onChange={e => setQName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">ชื่อบริษัท :</label>
+                <input value={qCompany} onChange={e => setQCompany(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">เบอร์ติดต่อ :</label>
+                <input value={qPhone} onChange={e => setQPhone(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Email :</label>
+                <input type="email" value={qEmail} onChange={e => setQEmail(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
+              </div>
+            </div>
+
+            {/* Model info */}
             <div className="mt-4 text-sm text-slate-600">
               <div>Model: <b>{modelCode}</b></div>
               <div className="mt-1">Motor: <b>{qtyMotor}</b> ตัว &nbsp;|&nbsp; Driver: <b>{qtyDriver}</b> ตัว</div>
             </div>
+
+            {/* Buttons */}
             <div className="mt-5 flex gap-3 justify-end">
-              <button type="button" onClick={()=>setShowQuote(false)} disabled={sending} className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 disabled:opacity-50">ปิด</button>
-              <button type="button" onClick={submitQuote} disabled={sending||!qName||!qCompany||!qPhone||!qEmail}
-                className="px-5 py-2 rounded-2xl bg-green-300 hover:bg-green-400 font-semibold shadow active:scale-95 transition transform disabled:opacity-50">
-                {sending?'กำลังส่ง…':'รับใบเสนอราคา'}
+              <button
+                type="button"
+                onClick={() => setShowQuote(false)}
+                disabled={sending}
+                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
+              >
+                ปิด
+              </button>
+              <button
+                type="button"
+                onClick={submitQuote}
+                disabled={sending || !qName || !qCompany || !qPhone || !qEmail}
+                className="px-5 py-2 rounded-2xl bg-green-300 hover:bg-green-400 font-semibold shadow active:scale-95 transition transform disabled:opacity-50"
+              >
+                {sending ? 'กำลังส่ง…' : 'รับใบเสนอราคา'}
               </button>
             </div>
           </div>

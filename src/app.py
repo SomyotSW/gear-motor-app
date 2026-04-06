@@ -96,6 +96,9 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 PRICE_FILE = os.path.join(DATA_DIR, "AC Gear Motor Price List 2026 14-02-26.xlsx")
 TEMPLATE_FILE = os.path.join(DATA_DIR, "QMO26-SAS.xlsx")
 
+# BLDC price file (ไฟล์แยกต่างหากจาก AC)
+BLDC_PRICE_FILE = os.path.join(DATA_DIR, "High BLDC Gear Motor Price List 2026 14-02-26.xlsx")
+
 PRICE_SHEET_NAME = "Sheet1"              # หากชื่อชีทจริงไม่ใช่ sheet1 ให้แก้ตรงนี้
 TEMPLATE_SHEET_NAME = "Sales Quote  (2)" # ชื่อชีทใน QMO26-SAS.xlsx
 # เพิ่มใหม่ — ข้อมูล Sale Person
@@ -568,6 +571,268 @@ def ac_quote():
     except Exception as e:
         # ✅ จุดนี้ทำให้ "ไม่เห็น HTML 500 อีก" และจะรู้สาเหตุจริง 100%
         app.logger.exception("ac_quote crashed")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# =========================
+# BLDC Price Map
+# =========================
+
+def build_bldc_price_map() -> dict[str, dict[str, object]]:
+    """อ่านราคาจาก High BLDC Gear Motor Price List xlsx — โครงสร้างเดียวกับ AC"""
+    if not os.path.exists(BLDC_PRICE_FILE):
+        raise FileNotFoundError(f"BLDC Price file not found: {BLDC_PRICE_FILE}")
+
+    wb = load_workbook(BLDC_PRICE_FILE, data_only=True)
+    ws = wb.active
+
+    out: dict[str, dict[str, object]] = {}
+    for r in range(1, (ws.max_row or 0) + 1):
+        code = ws.cell(r, 1).value  # Col A = Code
+        if not code:
+            continue
+        raw = str(code).strip()
+        key = norm_code(raw)
+
+        desc  = ws.cell(r, 2).value  # Col B = Detail
+        price = ws.cell(r, 4).value  # Col D = Price
+
+        try:
+            price_val = float(price) if price not in (None, "") else 0.0
+        except Exception:
+            price_val = 0.0
+
+        out[key] = {
+            "raw":   raw,
+            "desc":  str(desc).strip() if desc is not None else "",
+            "price": price_val,
+        }
+    return out
+
+try:
+    BLDC_PRICE_MAP = build_bldc_price_map()
+except Exception as _e:
+    BLDC_PRICE_MAP = {}
+    print(f"[WARN] Cannot load BLDC_PRICE_MAP: {_e}")
+
+@app.get("/api/bldc-price-reload")
+def bldc_price_reload():
+    global BLDC_PRICE_MAP
+    try:
+        BLDC_PRICE_MAP = build_bldc_price_map()
+        return jsonify({"ok": True, "count": len(BLDC_PRICE_MAP)})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+# =========================
+# BLDC Quote endpoint
+# =========================
+
+@app.route("/api/bldc-quote", methods=["OPTIONS"])
+def bldc_quote_preflight():
+    return ("", 204)
+
+@app.post("/api/bldc-quote")
+def bldc_quote():
+    """
+    สร้างใบเสนอราคา BLDC Gear Motor
+    payload:
+        modelCode   – รหัสรุ่นเต็ม  e.g. "Z6BLD400-220-GV-30S-6GU30V"
+        qtyMotor    – จำนวน Motor (int)
+        qtyDriver   – จำนวน Driver (int)
+        customer    – { name, company, phone, email }
+        category    – "BLDCGearmotor" | "HighefficiencyBLDCGearmotor"
+        heType      – "S" | "SF" | "SL" | "" (สำหรับ HE series)
+        salePerson  – "CA" (abbr)
+    """
+    try:
+        payload = request.get_json(silent=True) or {}
+
+        model_code = str(payload.get("modelCode", "")).strip()
+        category   = str(payload.get("category",  "")).strip()
+        he_type    = str(payload.get("heType",    "")).strip()
+
+        try:
+            qty_motor  = int(payload.get("qtyMotor",  1) or 1)
+        except Exception:
+            qty_motor = 1
+
+        try:
+            qty_driver = int(payload.get("qtyDriver", 1) or 1)
+        except Exception:
+            qty_driver = 1
+
+        if not model_code:
+            return "modelCode is required", 400
+
+        if not os.path.exists(TEMPLATE_FILE):
+            return f"Template file not found: {TEMPLATE_FILE}", 500
+
+        if not BLDC_PRICE_MAP:
+            return "BLDC_PRICE_MAP is empty. Check BLDC_PRICE_FILE or reload /api/bldc-price-reload", 500
+
+        # ── แยก motorCode และ gearCode จาก modelCode ────────────────────────────
+        # HE series: ZxBLDppp-220-G??-SS-gearPart
+        #   motorCode = ZxBLDppp-220G??-SS   (key ใน price list)
+        #   gearCode  = gearPart (segment สุดท้าย)
+        # Normal BLDC: ZxBLDppp-VV-GT-SS-gearPart
+        #   ไม่มีราคา Motor แยกในไฟล์ BLDC — ราคาอยู่ใน ZxBLD...-220GV-SS เท่านั้น
+        # ─────────────────────────────────────────────────────────────────────────
+
+        parts = model_code.split("-")
+        gear_code  = parts[-1] if parts else ""
+
+        # สร้าง motor key สำหรับค้นหาใน BLDC_PRICE_MAP
+        if "-220-" in model_code:
+            # HE series: ZxBLDppp-220-G??-SS-... → ZxBLDppp-220G??-SS
+            import re as _re
+            m = _re.match(r"^(Z\dBLD\d+)-220-(G[A-Z]+)-(\d+S)", model_code, _re.IGNORECASE)
+            motor_code = f"{m.group(1)}-220{m.group(2)}-{m.group(3)}" if m else ""
+        else:
+            # Normal BLDC (DC 24/36/48V): ราคา motor ค้นจาก ZxBLDppp-VV-GT-SS
+            # e.g. Z5BLD120-48-GU-30S-5GU18KB → Z5BLD120-48-GU-30S (4 parts)
+            motor_code = "-".join(parts[:4]) if len(parts) >= 5 else ""
+
+        mkey = norm_code(motor_code)
+        gkey = norm_code(gear_code)
+
+        motor = BLDC_PRICE_MAP.get(mkey)
+        gear  = BLDC_PRICE_MAP.get(gkey)
+
+        if not motor:
+            return f"Motor code not found in BLDC price list: \"{motor_code}\" (key={mkey})", 404
+        if not gear:
+            return f"Gear code not found in BLDC price list: \"{gear_code}\" (key={gkey})", 404
+
+        # ── Customer & Sale Person ────────────────────────────────────────────
+        cust = payload.get("customer", {}) or {}
+        cust_name    = str(cust.get("name",    "")).strip()
+        cust_company = str(cust.get("company", "")).strip()
+        cust_phone   = str(cust.get("phone",   "")).strip()
+        cust_email   = str(cust.get("email",   "")).strip()
+
+        sale_person_abbr = str(payload.get("salePerson", "CA")).strip() or "CA"
+        sp = SALE_PERSONS.get(sale_person_abbr, SALE_PERSONS["CA"])
+
+        # ── Fill template (QMO26-SAS.xlsx) เหมือน AC ────────────────────────
+        wb_t = load_workbook(TEMPLATE_FILE)
+        if TEMPLATE_SHEET_NAME not in wb_t.sheetnames:
+            return f"Template sheet not found: {TEMPLATE_SHEET_NAME}", 500
+
+        ws = wb_t[TEMPLATE_SHEET_NAME]
+
+        # เก็บแค่ชีทที่ต้องการ
+        for name in list(wb_t.sheetnames):
+            if name != TEMPLATE_SHEET_NAME:
+                del wb_t[name]
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
+        ws.print_area = "A1:I80"
+
+        # ข้อมูลลูกค้า
+        ws["B8"]  = f"คุณ : {cust_name}" if cust_name else "คุณ :"
+        ws["B9"]  = cust_company
+        ws["B13"] = cust_email
+        ws["B14"] = cust_phone
+
+        # Motor row (A20..G20)
+        ws["A20"] = 1
+        ws["B20"] = motor_code
+        ws["C20"] = motor.get("desc", "")
+        ws["F20"] = qty_motor
+        ws["G20"] = motor.get("price", 0.0)
+
+        # Gear row (A22..G22)
+        ws["A22"] = 2
+        ws["B22"] = gear_code
+        ws["C22"] = gear.get("desc", "")
+        ws["F22"] = qty_driver   # ใช้ qtyDriver (1 driver ต่อ 1 motor ใน BLDC)
+        ws["G22"] = gear.get("price", 0.0)
+
+        # Driver row (A24..G24) — สำหรับ BLDC ใส่จำนวน Driver แยก
+        # (ถ้า HE series มี driver แยก ไม่ต้องเพิ่ม row ใหม่เพราะ gear คือ gearhead ไม่ใช่ driver)
+        # ใน BLDC qty_motor = จำนวน motor, qty_driver = จำนวน driver ที่มากับ motor
+
+        # Quotation number & Sale Person
+        cleanup_old_pdfs()
+        run_no = next_qmo_no()
+        run_no_str = f"{run_no:03d}"
+
+        sp_abbr   = sp.get("abbr", "").strip() if isinstance(sp, dict) else str(sp).strip()
+        brand_tag = sp_abbr if sp_abbr else "SAS"
+
+        ws["H3"]  = f"QMO26-{brand_tag}-{run_no_str}"
+        ws["A17"] = sp["abbr"]
+        ws["D60"] = sp["name"]
+        ws["D61"] = sp["position"]
+        ws["B17"] = "24 Months"
+        ws["D17"] = "BLDC Gear Motor"
+        ws["F17"] = "Within 7-14 days"
+
+        # ── Convert to PDF ────────────────────────────────────────────────────
+        with tempfile.TemporaryDirectory() as td:
+            filled_xlsx = os.path.join(td, "QMO26-BLDC-FILLED.xlsx")
+            wb_t.save(filled_xlsx)
+
+            try:
+                pdf_temp = xlsx_to_pdf(filled_xlsx, td)
+            except Exception as e:
+                return f"PDF convert failed (LibreOffice): {e}", 500
+
+            company_for_file = cust_company or "NO-COMPANY"
+            company_for_file = re.sub(r'[\\/:*?"<>|]+', "", company_for_file).strip()
+            company_for_file = re.sub(r"\s+", "_", company_for_file)[:60] or "NO-COMPANY"
+
+            date_str   = datetime.now().strftime("%Y%m%d")
+            saved_name = f"QMO26-BLDC-{brand_tag}-{run_no_str}-{company_for_file}-{date_str}.pdf"
+            saved_path = OUTPUT_DIR / saved_name
+            shutil.copy2(pdf_temp, saved_path)
+
+            # Optional SMTP email
+            if smtp_is_configured():
+                subject = f"SAS Quotation (BLDC): {model_code}"
+                if cust_email:
+                    body_customer = (
+                        f"เรียนคุณ {cust_name}\n\n"
+                        f"ใบเสนอราคา BLDC Gear Motor ของท่านถูกสร้างเรียบร้อยแล้ว\n"
+                        f"Model: {model_code}\n"
+                        f"จำนวน Motor: {qty_motor} ตัว | Driver: {qty_driver} ตัว\n\n"
+                        f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
+                    )
+                    try:
+                        send_email_with_pdf(cust_email, subject, body_customer, str(saved_path))
+                    except Exception as e:
+                        print("[WARN] bldc send_email_with_pdf (customer) failed:", e)
+
+                body_internal = (
+                    f"แจ้งเตือน: มีการดาวน์โหลดใบเสนอราคา BLDC Gear Motor\n\n"
+                    f"ลูกค้า  : {cust_name}\n"
+                    f"บริษัท  : {cust_company}\n"
+                    f"เบอร์   : {cust_phone}\n"
+                    f"อีเมล   : {cust_email}\n\n"
+                    f"Model   : {model_code}\n"
+                    f"Motor   : {motor_code}  x{qty_motor}\n"
+                    f"Gear    : {gear_code}   x{qty_driver}\n"
+                    f"Category: {category} {he_type}\n"
+                    f"Sale    : {sp.get('name', sale_person_abbr)}\n"
+                    f"เลขที่  : QMO26-BLDC-{brand_tag}-{run_no_str}\n\n"
+                    f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
+                )
+                for internal_email in INTERNAL_NOTIFY_EMAILS:
+                    try:
+                        send_email_with_pdf(internal_email, subject, body_internal, str(saved_path))
+                    except Exception as e:
+                        print(f"[WARN] bldc send_email_with_pdf (internal {internal_email}) failed:", e)
+
+            return send_file(
+                str(saved_path),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=saved_name,
+            )
+
+    except Exception as e:
+        app.logger.exception("bldc_quote crashed")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 # =========================
