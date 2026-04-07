@@ -692,8 +692,10 @@ def bldc_quote():
             motor_code = f"{m.group(1)}-220{m.group(2)}-{m.group(3)}" if m else ""
         else:
             # Normal BLDC (DC 24/36/48V): ราคา motor ค้นจาก ZxBLDppp-VV-GT-SS
-            # e.g. Z5BLD120-48-GU-30S-5GU18KB → Z5BLD120-48-GU-30S (4 parts)
-            motor_code = "-".join(parts[:4]) if len(parts) >= 5 else ""
+            # ไฟล์ราคาใช้ format: Z5BLD90-24GU-30S (ไม่มี - ระหว่าง voltage กับ gear type)
+            # model code จาก frontend: Z5BLD90-24-GU-30S-5GU3KB
+            # parts[0]=Z5BLD90, [1]=24, [2]=GU, [3]=30S, [4]=gear
+            motor_code = f"{parts[0]}-{parts[1]}{parts[2]}-{parts[3]}" if len(parts) >= 5 else ""
 
         mkey = norm_code(motor_code)
         gkey = norm_code(gear_code)
