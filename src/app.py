@@ -658,9 +658,11 @@ def bldc_quote():
             qty_motor = 1
 
         try:
-            qty_driver = int(payload.get("qtyDriver", 1) or 1)
+            qty_driver = int(payload.get("qtyDriver", 0) or 0)
         except Exception:
-            qty_driver = 1
+            qty_driver = 0
+
+        driver_model = str(payload.get("driverModel", "") or "").strip()
 
         if not model_code:
             return "modelCode is required", 400
@@ -704,6 +706,16 @@ def bldc_quote():
         if not gear:
             return f"Gear code not found in BLDC price list: \"{gear_code}\" (key={gkey})", 404
 
+        # Driver (optional) — ถ้าหาราคาไม่เจอในไฟล์ ใส่รหัสได้เลย ราคา = 0
+        driver = None
+        if driver_model and qty_driver > 0:
+            dkey = norm_code(driver_model)
+            driver = BLDC_PRICE_MAP.get(dkey) or {
+                "raw":   driver_model,
+                "desc":  f"BLDC Driver {driver_model}",
+                "price": 0.0,
+            }
+
         # ── Customer & Sale Person ────────────────────────────────────────────
         cust = payload.get("customer", {}) or {}
         cust_name    = str(cust.get("name",    "")).strip()
@@ -746,12 +758,16 @@ def bldc_quote():
         ws["A22"] = 2
         ws["B22"] = gear_code
         ws["C22"] = gear.get("desc", "")
-        ws["F22"] = qty_driver   # ใช้ qtyDriver (1 driver ต่อ 1 motor ใน BLDC)
+        ws["F22"] = qty_motor   # gearhead qty ตาม motor
         ws["G22"] = gear.get("price", 0.0)
 
-        # Driver row (A24..G24) — สำหรับ BLDC ใส่จำนวน Driver แยก
-        # (ถ้า HE series มี driver แยก ไม่ต้องเพิ่ม row ใหม่เพราะ gear คือ gearhead ไม่ใช่ driver)
-        # ใน BLDC qty_motor = จำนวน motor, qty_driver = จำนวน driver ที่มากับ motor
+        # Driver row (A24..G24) — แสดงเฉพาะเมื่อเลือก driver
+        if driver and driver_model and qty_driver > 0:
+            ws["A24"] = 3
+            ws["B24"] = driver_model
+            ws["C24"] = driver.get("desc", "")
+            ws["F24"] = qty_driver
+            ws["G24"] = driver.get("price", 0.0)
 
         # Quotation number & Sale Person
         cleanup_old_pdfs()

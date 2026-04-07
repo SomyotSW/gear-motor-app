@@ -13,6 +13,15 @@ import GNLBLDCNolImg                 from '../assets/bldc/GNLBLDCNol.png';
 import SHIBLDCImg                    from '../assets/bldc/SHIBLDC.png';
 import SFHIBLDCImg                   from '../assets/bldc/SFHIBLDC.png';
 import SLHIBLDCImg                   from '../assets/bldc/SLHIBLDC.png';
+// ── Driver images — HE series ────────────────────────────────────────────────
+import C40_200Img   from '../assets/bldc/C40-200S2.png';
+import C40_400Img   from '../assets/bldc/C40-400S2.png';
+import C40_750Img   from '../assets/bldc/C40-750S2.png';
+import C30_400Img   from '../assets/bldc/C30-400C2.png';
+// ── Driver images — Normal series ────────────────────────────────────────────
+import C20_120Img   from '../assets/bldc/C20-120L2R.png';
+import C20_200Img   from '../assets/bldc/C20-200L.png';
+import C20_400Img   from '../assets/bldc/C20-400LR.png';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ThumbCard
@@ -146,6 +155,44 @@ const SALE_PERSONS = [
 const EMAILJS_SERVICE_ID  = 'service_fwgn6cw';
 const EMAILJS_TEMPLATE_ID = 'template_7eppr2x';
 const EMAILJS_PUBLIC_KEY  = 'BvIT5-X7LnkaS3LKq';
+
+// map driver button key → รหัสในไฟล์ราคา BLDC
+const DRIVER_CODE_MAP = {
+  // HE series
+  'C40-200S2': 'ZDRV.C40-200S2-BR-001',
+  'C40-400S2': 'ZDRV.C40-400S2-BR',
+  'C40-750S2': 'ZDRV.C40-750S2-BR',
+  'C30-400C2': 'ZDRV.C30-400C2-BDR-A',
+  // Normal series
+  'C20-120L2R': 'ZBLD.C20-120L2R',
+  'C20-200L':   'ZDRV.C20-200L-DR',
+  'C20-400LR':  'ZBLD.C20-400LR',
+};
+
+// ── Driver options ตาม category และ power ─────────────────────────────────────
+// Normal BLDC: power คือตัวเลขจาก bldcPower (number)
+// HE BLDC:     power คือตัวเลขจาก bldcPower (number)
+function getDriverOptions(isHE, powerW) {
+  const w = Number(powerW) || 0;
+  if (isHE) {
+    // กำหนด C40 variant ตาม watt
+    const c40Key = w < 200 ? 'C40-200S2' : w < 400 ? 'C40-400S2' : 'C40-750S2';
+    const c40Img = w < 200 ? C40_200Img  : w < 400 ? C40_400Img  : C40_750Img;
+    const opts = [{ key: c40Key, img: c40Img }];
+    if (w <= 400) opts.push({ key: 'C30-400C2', img: C30_400Img });
+    return opts;
+  } else {
+    // Normal BLDC
+    if (w > 120) {
+      return [{ key: 'C20-400LR', img: C20_400Img }];
+    } else {
+      return [
+        { key: 'C20-120L2R', img: C20_120Img },
+        { key: 'C20-200L',   img: C20_200Img },
+      ];
+    }
+  }
+}
 
 // แปลง Blob → base64
 function blobToBase64(blob) {
@@ -1123,6 +1170,8 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
   const [lightMode, setLightMode] = useState(false);
   const [salePerson, setSalePerson]                       = useState('CA');
   const [showSalePersonPicker, setShowSalePersonPicker]   = useState(false);
+  const [driverModel, setDriverModel]                     = useState('');     // '' = No Driver, 'C40-200S2' หรือ 'C30-400C2'
+  const [hoveredDriver, setHoveredDriver]                 = useState(null);   // key สำหรับแสดงรูป hover
 
   // ── Theme tokens — dark (default) vs light ──────────────────────────────
   const T = lightMode ? {
@@ -1209,7 +1258,8 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
         body: JSON.stringify({
           modelCode,
           qtyMotor,
-          qtyDriver,
+          qtyDriver: driverModel !== '' ? qtyDriver : 0,
+          driverModel: driverModel !== '' ? (DRIVER_CODE_MAP[driverModel] || driverModel) : '',
           customer: { name: qName, company: qCompany, phone: qPhone, email: qEmail },
           category:   bldcCategory,
           heType:     bldcHEType || '',
@@ -1241,6 +1291,8 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
           model_code:     modelCode,
           qty_motor:      String(qtyMotor),
           qty_driver:     String(qtyDriver),
+          driver_model:   driverModel !== '' ? (DRIVER_CODE_MAP[driverModel] || driverModel) : 'No Driver',
+          qty_driver:     driverModel !== '' ? String(qtyDriver) : '0',
           sale_person:    salePerson || 'CA',
           time:           new Date().toLocaleString('th-TH'),
           pdf_content:    pdfBase64,
@@ -1363,22 +1415,87 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
               ))}
             </div>
 
+            {/* Driver selector — options ขึ้นอยู่กับ HE/Normal + watt */}
+            {(() => {
+              const driverOpts = getDriverOptions(isHE, bldcPower);
+              // reset driverModel ถ้าปุ่มที่เลือกไว้ไม่อยู่ใน options ใหม่
+              const validKeys = driverOpts.map(o => o.key);
+              return (
+                <div style={{ padding:'14px 16px', borderBottom:T.sectionDivider }}>
+                  <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:T.sectionHeadColor, marginBottom:8, transition:'color 0.25s' }}>Driver</div>
+                  <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                    {/* No Driver */}
+                    <button type="button"
+                      onClick={() => setDriverModel('')}
+                      style={{ padding:'3px 9px', borderRadius:5, border:'1px solid', borderColor:driverModel===''?T.accent:'rgba(128,128,128,0.2)', background:driverModel===''?T.accentFaint:'rgba(128,128,128,0.05)', color:driverModel===''?T.accent:T.labelColor, fontSize:11, cursor:'pointer', transition:'all 0.2s' }}>
+                      No Driver
+                    </button>
+                    {/* Driver options */}
+                    {driverOpts.map(({key, img}) => (
+                      <button key={key} type="button"
+                        onClick={() => {
+                          if (isMobile) {
+                            if (hoveredDriver === key) { setDriverModel(key); setHoveredDriver(null); }
+                            else { setHoveredDriver(key); }
+                          } else {
+                            setDriverModel(key);
+                          }
+                        }}
+                        onMouseEnter={() => !isMobile && setHoveredDriver(key)}
+                        onMouseLeave={() => !isMobile && setHoveredDriver(null)}
+                        style={{ position:'relative', padding:'3px 9px', borderRadius:5, border:'1px solid', borderColor:driverModel===key?T.accent:'rgba(128,128,128,0.2)', background:driverModel===key?T.accentFaint:'rgba(128,128,128,0.05)', color:driverModel===key?T.accent:T.labelColor, fontSize:11, cursor:'pointer', transition:'all 0.2s' }}>
+                        {key}
+                        {hoveredDriver === key && (
+                          <div style={{ position:'fixed', left:'50%', top:'50%', transform:'translate(-50%,-50%)', zIndex:9999, pointerEvents:'none' }}>
+                            <img src={img} alt={key}
+                              style={{ width:200, height:240, objectFit:'contain', borderRadius:8, boxShadow:'0 8px 32px rgba(0,0,0,0.8)', border:'2px solid rgba(255,255,255,0.8)', background:'#fff' }} />
+                            {isMobile && (
+                              <div style={{ textAlign:'center', marginTop:6, fontSize:10, color:'rgba(255,255,255,0.7)' }}>แตะอีกครั้งเพื่อเลือก</div>
+                            )}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {/* แจ้งเตือนถ้าตัวเลือกเปลี่ยน */}
+                  {driverModel !== '' && !validKeys.includes(driverModel) && (
+                    <div style={{ marginTop:6, fontSize:10, color:'#f59e0b' }}>
+                      ⚠ Driver ที่เลือกไว้ไม่รองรับ กรุณาเลือกใหม่
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Qty */}
             <div style={{ padding:'14px 16px', borderBottom:T.sectionDivider }}>
               <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:T.sectionHeadColor, marginBottom:10, transition:'color 0.25s' }}>จำนวน</div>
-              {[{label:'BLDC Motor', val:qtyMotor, set:setQtyMotor}, {label:'Driver', val:qtyDriver, set:setQtyDriver}].map(({label,val,set}) => (
-                <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                  <span style={{ fontSize:12, color:T.qtyLabelColor, transition:'color 0.25s' }}>{label}</span>
+              {/* Motor qty */}
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                <span style={{ fontSize:12, color:T.qtyLabelColor, transition:'color 0.25s' }}>BLDC Motor</span>
+                <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                  <button type="button" onClick={()=>setQtyMotor(q=>Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:T.btnBorder, background:T.btnBg, color:T.btnColor, cursor:'pointer', fontSize:15, transition:'all 0.25s' }}>–</button>
+                  <input type="number" min={1} max={999} value={qtyMotor}
+                    onChange={e=>{const v=Number(e.target.value);setQtyMotor(Number.isFinite(v)?Math.max(1,Math.floor(v)):1);}}
+                    onWheel={e=>e.currentTarget.blur()}
+                    style={{ width:38, textAlign:'center', background:T.inputBg, border:T.inputBorder, borderRadius:5, color:T.inputColor, fontSize:13, fontWeight:700, padding:'2px 0', transition:'all 0.25s' }} />
+                  <button type="button" onClick={()=>setQtyMotor(q=>Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:T.btnBorder, background:T.btnBg, color:T.btnColor, cursor:'pointer', fontSize:15, transition:'all 0.25s' }}>+</button>
+                </div>
+              </div>
+              {/* Driver qty — แสดงเฉพาะเมื่อเลือก Driver */}
+              {driverModel !== '' && (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                  <span style={{ fontSize:12, color:T.qtyLabelColor, transition:'color 0.25s' }}>Driver ({driverModel})</span>
                   <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                    <button type="button" onClick={()=>set(q=>Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:T.btnBorder, background:T.btnBg, color:T.btnColor, cursor:'pointer', fontSize:15, transition:'all 0.25s' }}>–</button>
-                    <input type="number" min={1} max={999} value={val}
-                      onChange={e=>{const v=Number(e.target.value);set(Number.isFinite(v)?Math.max(1,Math.floor(v)):1);}}
+                    <button type="button" onClick={()=>setQtyDriver(q=>Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:T.btnBorder, background:T.btnBg, color:T.btnColor, cursor:'pointer', fontSize:15, transition:'all 0.25s' }}>–</button>
+                    <input type="number" min={1} max={999} value={qtyDriver}
+                      onChange={e=>{const v=Number(e.target.value);setQtyDriver(Number.isFinite(v)?Math.max(1,Math.floor(v)):1);}}
                       onWheel={e=>e.currentTarget.blur()}
                       style={{ width:38, textAlign:'center', background:T.inputBg, border:T.inputBorder, borderRadius:5, color:T.inputColor, fontSize:13, fontWeight:700, padding:'2px 0', transition:'all 0.25s' }} />
-                    <button type="button" onClick={()=>set(q=>Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:T.btnBorder, background:T.btnBg, color:T.btnColor, cursor:'pointer', fontSize:15, transition:'all 0.25s' }}>+</button>
+                    <button type="button" onClick={()=>setQtyDriver(q=>Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:T.btnBorder, background:T.btnBg, color:T.btnColor, cursor:'pointer', fontSize:15, transition:'all 0.25s' }}>+</button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -1467,8 +1584,15 @@ function BLDCSummaryPage({ state, modelCode, spec, outSpeed, onConfirm, onBack }
 
             {/* Model info */}
             <div className="mt-4 text-sm text-slate-600">
-              <div>Model: <b>{modelCode}</b></div>
-              <div className="mt-1">Motor: <b>{qtyMotor}</b> ตัว &nbsp;|&nbsp; Driver: <b>{qtyDriver}</b> ตัว</div>
+              <div>Model: <b className="text-blue-700">{modelCode}</b></div>
+              <div className="flex gap-4 mt-1 flex-wrap">
+                <span>Motor: <b>{qtyMotor}</b> ตัว</span>
+                {driverModel !== '' ? (
+                  <span>Driver ({DRIVER_CODE_MAP[driverModel] || driverModel}): <b>{qtyDriver}</b> ตัว</span>
+                ) : (
+                  <span className="text-slate-400">Driver: ไม่เลือก</span>
+                )}
+              </div>
             </div>
 
             {/* Buttons */}
