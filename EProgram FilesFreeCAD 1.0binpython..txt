@@ -1,0 +1,1 @@
+"E:\Program Files\FreeCAD 1.0\bin\python.exe" "C:\Users\Haruj\gear-motor-app\convert_to_glb.py"

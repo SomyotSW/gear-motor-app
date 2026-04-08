@@ -18,6 +18,11 @@ import G2Img       from '../assets/smallac/G2.png';
 import G3Img       from '../assets/smallac/G3.png';
 import G4Img       from '../assets/smallac/G4.png';
 
+import SVG1Img     from '../assets/smallac/SVG1.png';
+import SVG2Img     from '../assets/smallac/SVG2.png';
+import SVG3Img     from '../assets/smallac/SVG3.png';
+import SVG4Img     from '../assets/smallac/SVG4.png';
+
 import TerminalImg from '../assets/smallac/Terminal.png';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,11 +130,14 @@ const BRAKE_UNITS = [
 
 // Step 7 — Terminal Box Direction (G1–G4)
 const TERMINAL_DIRS = [
-  { code: 'G1', label: 'G1 : Left',  img: G1Img },
-  { code: 'G2', label: 'G2 : Right', img: G2Img },
-  { code: 'G3', label: 'G3 : Top',   img: G3Img },
-  { code: 'G4', label: 'G4 : Down',  img: G4Img },
+  { code: 'G1', label: 'G1 : Left',  img: G1Img,  imgSV: SVG1Img },
+  { code: 'G2', label: 'G2 : Right', img: G2Img,  imgSV: SVG2Img },
+  { code: 'G3', label: 'G3 : Top',   img: G3Img,  imgSV: SVG3Img },
+  { code: 'G4', label: 'G4 : Down',  img: G4Img,  imgSV: SVG4Img },
 ];
+
+// Gear types that use SVG images in Step 7
+const SV_GEAR_TYPES = ['SVN', 'SVM', 'SVD'];
 
 // Step 8 — Lead Direction (depends on G selection from Step 7)
 const LEAD_BY_TERMINAL = {
@@ -163,9 +171,9 @@ export function generateSmallACModelCode(state) {
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 function useIsMobile() {
-  const [mob, setMob] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 480 : false);
+  const [mob, setMob] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   useEffect(() => {
-    const fn = () => setMob(window.innerWidth < 480);
+    const fn = () => setMob(window.innerWidth < 768);
     window.addEventListener('resize', fn);
     return () => window.removeEventListener('resize', fn);
   }, []);
@@ -312,20 +320,46 @@ function Section({ step, title, note, children, cols }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ENV PRESETS for 3D viewer
+// ENV PRESETS for 3D viewer — ใช้ค่าที่ model-viewer รองรับจริง
+// neutral / legacy = built-in keywords | ที่เหลือใช้ HDR จาก Poly Haven via CDN
 // ─────────────────────────────────────────────────────────────────────────────
 const ENV_PRESETS = [
-  { value: 'neutral',   label: 'Neutral',  bg: '#2a2c30' },
-  { value: 'legacy',    label: 'Legacy',   bg: '#3a3c40' },
-  { value: 'studio',    label: 'Studio',   bg: '#252830' },
-  { value: 'sunset',    label: 'Sunset',   bg: '#3a2820' },
-  { value: 'forest',    label: 'Forest',   bg: '#1a2a1a' },
-  { value: 'city',      label: 'City',     bg: '#202028' },
+  { value: 'neutral',  label: 'Neutral', bg: '#2a2c30' },
+  { value: 'legacy',   label: 'Legacy',  bg: '#3a3c40' },
+  {
+    value: 'https://modelviewer.dev/shared-assets/environments/aircraft_workshop_01_1k.hdr',
+    label: 'Studio', bg: '#252830',
+  },
+  {
+    value: 'https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr',
+    label: 'Sunset', bg: '#3a2820',
+  },
+  {
+    value: 'https://modelviewer.dev/shared-assets/environments/whipple_creek_regional_park_04_1k.hdr',
+    label: 'Forest', bg: '#1a2a1a',
+  },
+  {
+    value: 'https://modelviewer.dev/shared-assets/environments/music_hall_01_1k.hdr',
+    label: 'City',   bg: '#202028',
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SmallACSummaryPage — BLDC-style 3D viewer + right panel
+// Product tint colors — ใช้ CSS filter hue-rotate+saturate บน model-viewer
 // ─────────────────────────────────────────────────────────────────────────────
+const TINT_COLORS = [
+  { label: 'ปกติ',     hue: null,  sat: 1,   bright: 1    },  // no filter
+  { label: 'ขาว',      hue: 0,     sat: 0,   bright: 2.2  },
+  { label: 'เทา',      hue: 0,     sat: 0,   bright: 1.0  },
+  { label: 'ดำ',       hue: 0,     sat: 0,   bright: 0.25 },
+  { label: 'น้ำเงิน',  hue: 210,   sat: 3,   bright: 0.8  },
+  { label: 'เขียว',    hue: 120,   sat: 3,   bright: 0.7  },
+  { label: 'เหลือง',   hue: 50,    sat: 4,   bright: 1.1  },
+  { label: 'แดง',      hue: 0,     sat: 4,   bright: 0.8  },
+];
+
+// Swatch display colours (วงกลมแสดงใน UI)
+const TINT_SWATCHES = ['#c8cdd6','#ffffff','#8a9098','#0a0a0a','#1a4faa','#1a6e30','#c8a800','#aa1a1a'];
 function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const isMobile = useIsMobile();
   const { sacGearType, sacSize, sacPower, sacRatio, sacCurrent, sacBrake, sacTerminal, sacLead } = state;
@@ -333,6 +367,7 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const [lightMode,  setLightMode]  = useState(false);
   const [qtyMotor,   setQtyMotor]   = useState(1);
   const [showQuote,  setShowQuote]  = useState(false);
+  const [imgLightbox, setImgLightbox] = useState(false);
   const [qName,      setQName]      = useState('');
   const [qCompany,   setQCompany]   = useState('');
   const [qPhone,     setQPhone]     = useState('');
@@ -344,6 +379,7 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const [exposure,  setExposure]  = useState(1.3);
   const [shadow,    setShadow]    = useState(0.6);
   const [autoLight, setAutoLight] = useState(false);
+  const [tintIdx,   setTintIdx]   = useState(0); // 0 = ปกติ (no filter)
   const mvRef       = useRef(null);
   const lightTimer  = useRef(null);
 
@@ -409,6 +445,40 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
     ['Duty',          'S1'],
   ];
 
+  // ── GLB model URL resolver ──────────────────────────────────────────────────
+  // Pattern ชื่อไฟล์: {GearType}{Size}{Power}XXX{Brake}.glb
+  //   SHN28-400-40-S-G1-LD      → SHN28400XXX.glb
+  //   SHN40-1500-40-S-B-G1-LD   → SHN401500XXXB.glb
+  //   SVN32-750-30-S-YB-G1-LD   → SVN32750XXXYB.glb
+  function resolveGlbUrl(code) {
+    if (!code) return null;
+    const m = code.match(
+      /^(SHN|SVN|SHM|SVM|SHD|SVD)(\d+)-(\d+)-\d+-[SC](?:-(YB|B))?-G[1-4]-/
+    );
+    if (m) {
+      const [, gearType, size, power] = m;
+      const brake = m[4] || '';
+      return `${gearType}${size}${power}XXX${brake}.glb`;
+    }
+    return `${code}.glb`;
+  }
+
+  const glbFile = resolveGlbUrl(modelCode);
+  // ✅ Production-safe: ใช้ window.location.origin + pathname prefix
+  // รองรับทั้ง CRA (PUBLIC_URL), Vite (BASE_URL), และ deploy บน sub-path
+  const getPublicBase = () => {
+    if (typeof window === 'undefined') return '';
+    // CRA
+    if (typeof process !== 'undefined' && process.env?.PUBLIC_URL)
+      return process.env.PUBLIC_URL.replace(/\/$/, '');
+    // Vite
+    if (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL)
+      return import.meta.env.BASE_URL.replace(/\/$/, '');
+    // Fallback: origin only (works for both localhost & production)
+    return '';
+  };
+  const glbUrl = glbFile ? `${getPublicBase()}/model/glb/${glbFile}` : null;
+
   // Build STEP file URL  (same pattern as BLDCViewer3D)
   const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
   const stepUrl = modelCode
@@ -434,103 +504,198 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
 
   return (
     <>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', background: T.pageBg, fontFamily: "'Sarabun',sans-serif", transition: 'background 0.25s' }}>
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 500,
+        display: 'flex', flexDirection: 'column',
+        background: T.pageBg,
+        fontFamily: "'Sarabun',sans-serif",
+        transition: 'background 0.25s',
+        overflow: 'hidden',
+      }}>
 
         {/* ── Top Bar ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderBottom: T.topBarBorder, background: T.topBarBg, backdropFilter: 'blur(12px)', flexShrink: 0, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: isMobile ? '8px 12px' : '10px 18px',
+          borderBottom: T.topBarBorder, background: T.topBarBg, backdropFilter: 'blur(12px)',
+          flexShrink: 0, flexWrap: 'wrap', gap: 6,
+        }}>
           {/* Left: title + toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, fontSize: 15, letterSpacing: '1.5px', color: T.titleColor, textTransform: 'uppercase' }}>
+            <span style={{ fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, fontSize: isMobile ? 13 : 15, letterSpacing: '1.5px', color: T.titleColor, textTransform: 'uppercase' }}>
               ⚙️ Small AC Gear Motor
             </span>
             <button type="button" title={lightMode ? 'Dark mode' : 'Light mode'} onClick={() => setLightMode(m => !m)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 8, background: T.accentFaint, border: `1px solid ${T.accentBorder}`, cursor: 'pointer', fontSize: 15 }}>
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 8, background: T.accentFaint, border: `1px solid ${T.accentBorder}`, cursor: 'pointer', fontSize: 14 }}>
               {T.toggleIcon}
             </button>
           </div>
           {/* Center: model code + copy */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: T.codeColor, background: T.codeBg, border: T.codeBorder, padding: '3px 10px', borderRadius: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: isMobile ? '1 1 100%' : '0 0 auto', order: isMobile ? 3 : 0 }}>
+            <span style={{ fontFamily: 'monospace', fontSize: isMobile ? 10 : 12, fontWeight: 600, color: T.codeColor, background: T.codeBg, border: T.codeBorder, padding: '3px 8px', borderRadius: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
               {modelCode || '—'}
             </span>
             <button type="button"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.accent, fontSize: 11, padding: '3px 8px', borderRadius: 4 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.accent, fontSize: 11, padding: '3px 6px', borderRadius: 4, flexShrink: 0 }}
               onClick={async () => { try { if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(modelCode || ''); } catch { } }}>
               Copy
             </button>
           </div>
           {/* Right: back */}
           <button type="button" onClick={onBack}
-            style={{ background: T.backBtnBg, border: T.backBtnBorder, color: T.backBtnColor, padding: '4px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+            style={{ background: T.backBtnBg, border: T.backBtnBorder, color: T.backBtnColor, padding: '4px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 11, fontWeight: 600, flexShrink: 0 }}>
             ← ย้อนกลับ
           </button>
         </div>
 
         {/* ── Body ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', minHeight: 0, overflow: isMobile ? 'auto' : 'hidden' }}>
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          minHeight: 0,
+          overflowY: isMobile ? 'auto' : 'hidden',
+          overflowX: 'hidden',
+        }}>
 
-          {/* 3D Viewer */}
-          <div style={{ flex: isMobile ? 'none' : 1, height: isMobile ? '300px' : undefined, minHeight: isMobile ? 300 : 0, background: T.viewerBg, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {/* model-viewer */}
-            <model-viewer
-              ref={mvRef}
-              src={stepUrl || ''}
-              alt={modelCode}
-              auto-rotate
-              camera-controls
-              shadow-intensity={shadow}
-              exposure={exposure}
-              environment-image={ENV_PRESETS[envIdx].value}
-              style={{ width: '100%', height: '100%', background: 'transparent', minHeight: isMobile ? 280 : 400 }}
-            >
-              <div slot="progress-bar" style={{ display: 'none' }} />
-            </model-viewer>
+          {/* ── Left: 3D Viewer + Lighting Controls ── */}
+          <div style={{ flex: isMobile ? 'none' : 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
-            {/* Desktop Lighting Controls (bottom-left overlay) */}
-            {!isMobile && (
+            {/* 3D Viewer */}
+            <div style={{ flex: isMobile ? 'none' : 1, height: isMobile ? '260px' : '100%', background: T.viewerBg, position: 'relative', overflow: 'hidden' }}>
+              {(() => {
+                const t = TINT_COLORS[tintIdx];
+                const mvFilter = t.hue === null
+                  ? 'none'
+                  : `hue-rotate(${t.hue}deg) saturate(${t.sat}) brightness(${t.bright})`;
+                return (
+                  <model-viewer
+                    ref={mvRef}
+                    src={glbUrl || ''}
+                    alt={modelCode}
+                    auto-rotate
+                    camera-controls
+                    shadow-intensity={shadow}
+                    exposure={exposure}
+                    environment-image={ENV_PRESETS[envIdx].value}
+                    style={{ width: '100%', height: '100%', background: 'transparent', minHeight: isMobile ? 260 : 400, filter: mvFilter, transition: 'filter 0.3s' }}
+                  >
+                    <div slot="progress-bar" style={{ display: 'none' }} />
+                  </model-viewer>
+                );
+              })()}
+
+              {/* Desktop Lighting Controls — absolute overlay (top-left), desktop only */}
+              {!isMobile && (
+                <div style={{
+                  position: 'absolute', top: 12, left: 12,
+                  background: 'rgba(10,12,16,0.88)', backdropFilter: 'blur(10px)',
+                  borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.08)',
+                  width: 214, fontSize: 10, zIndex: 10,
+                }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#4a5060', marginBottom: 8 }}>สภาพแวดล้อมแสง</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 3, marginBottom: 10 }}>
+                    {ENV_PRESETS.map((env, i) => (
+                      <button key={env.value} title={env.label} type="button" onClick={() => {
+                        setEnvIdx(i);
+                        if (mvRef.current) { try { mvRef.current.setAttribute('environment-image', env.value); } catch (e) {} }
+                      }}
+                        style={{ aspectRatio: '1', borderRadius: 4, border: i === envIdx ? '2px solid #00e5a0' : '2px solid transparent', cursor: 'pointer', background: env.bg, position: 'relative', overflow: 'hidden' }}>
+                        <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, fontSize: 5, textAlign: 'center', background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.8)' }}>{env.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#4a5060', marginBottom: 6 }}>สีผลิตภัณฑ์</div>
+                  <div style={{ display: 'flex', gap: 5, marginBottom: 10, flexWrap: 'wrap' }}>
+                    {TINT_SWATCHES.map((swatch, i) => (
+                      <button key={i} type="button" title={TINT_COLORS[i].label} onClick={() => setTintIdx(i)}
+                        style={{ width: 20, height: 20, borderRadius: '50%', border: tintIdx === i ? '2.5px solid #00e5a0' : '2px solid rgba(255,255,255,0.15)', cursor: 'pointer', background: i === 0 ? 'linear-gradient(135deg,#555 50%,#aaa 50%)' : swatch, flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.5)', transition: 'border 0.15s' }} />
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                    <span style={{ color: '#4a5060', width: 50 }}>ความสว่าง</span>
+                    <input type="range" min={0.5} max={3} step={0.05} value={exposure} style={{ flex: 1, accentColor: '#00e5a0', cursor: 'pointer', height: 3 }}
+                      onChange={e => { const v = parseFloat(e.target.value); setExposure(v); if (mvRef.current) mvRef.current.setAttribute('exposure', v); }} />
+                    <span style={{ color: '#e8eaf0', width: 24, textAlign: 'right', fontFamily: 'monospace' }}>{exposure.toFixed(1)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                    <span style={{ color: '#4a5060', width: 50 }}>เงา</span>
+                    <input type="range" min={0} max={1} step={0.05} value={shadow} style={{ flex: 1, accentColor: '#00e5a0', cursor: 'pointer', height: 3 }}
+                      onChange={e => { const v = parseFloat(e.target.value); setShadow(v); if (mvRef.current) mvRef.current.setAttribute('shadow-softness', v); }} />
+                    <span style={{ color: '#e8eaf0', width: 24, textAlign: 'right', fontFamily: 'monospace' }}>{shadow.toFixed(1)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4a5060', fontSize: 9 }}>☀️ หมุนแสงอัตโนมัติ</span>
+                    <button type="button" onClick={() => setAutoLight(v => !v)}
+                      style={{ width: 32, height: 16, background: autoLight ? '#00e5a0' : 'rgba(255,255,255,0.1)', borderRadius: 8, position: 'relative', cursor: 'pointer', border: 'none', transition: 'background 0.2s' }}>
+                      <div style={{ position: 'absolute', top: 2, left: autoLight ? 16 : 2, width: 12, height: 12, borderRadius: '50%', background: 'white', transition: 'left 0.2s' }} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Lighting Controls — inline block BELOW viewer, NOT overlapping */}
+            {isMobile && (
               <div style={{
-                position: 'absolute', top: 12, left: 12,
-                background: 'rgba(10,12,16,0.85)', backdropFilter: 'blur(8px)',
-                borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.07)',
-                width: 200, fontSize: 10,
+                background: 'rgba(10,12,16,0.97)',
+                borderTop: '1px solid rgba(255,255,255,0.07)',
+                padding: '10px 14px',
+                flexShrink: 0,
               }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#4a5060', marginBottom: 8 }}>สภาพแวดล้อมแสง</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 3, marginBottom: 10 }}>
+                {/* Row 1: Environment presets */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 4, marginBottom: 8 }}>
                   {ENV_PRESETS.map((env, i) => (
-                    <button key={env.value} title={env.label} onClick={() => {
+                    <button key={env.value} title={env.label} type="button" onClick={() => {
                       setEnvIdx(i);
-                      const mv = document.querySelector('model-viewer');
-                      if (mv) { try { mv.setAttribute('environment-image', env.value); } catch (e) { } }
+                      if (mvRef.current) { try { mvRef.current.setAttribute('environment-image', env.value); } catch (e) {} }
                     }}
-                      style={{ aspectRatio: 1, borderRadius: 4, border: i === envIdx ? '2px solid #00e5a0' : '2px solid transparent', cursor: 'pointer', background: env.bg, position: 'relative', overflow: 'hidden' }}>
-                      <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, fontSize: 5, textAlign: 'center', background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.8)' }}>{env.label}</span>
+                      style={{ aspectRatio: '1', borderRadius: 5, border: i === envIdx ? '2px solid #00e5a0' : '2px solid transparent', cursor: 'pointer', background: env.bg, position: 'relative', overflow: 'hidden' }}>
+                      <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, fontSize: 6, textAlign: 'center', background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.8)' }}>{env.label}</span>
                     </button>
                   ))}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-                  <span style={{ color: '#4a5060', width: 50 }}>ความสว่าง</span>
-                  <input type="range" min={0.5} max={3} step={0.05} value={exposure} style={{ flex: 1, accentColor: '#00e5a0', cursor: 'pointer', height: 3 }}
-                    onChange={e => { const v = parseFloat(e.target.value); setExposure(v); const mv = document.querySelector('model-viewer'); if (mv) mv.setAttribute('exposure', v); }} />
-                  <span style={{ color: '#e8eaf0', width: 24, textAlign: 'right', fontFamily: 'monospace' }}>{exposure.toFixed(1)}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-                  <span style={{ color: '#4a5060', width: 50 }}>เงา</span>
-                  <input type="range" min={0} max={1} step={0.05} value={shadow} style={{ flex: 1, accentColor: '#00e5a0', cursor: 'pointer', height: 3 }}
-                    onChange={e => { const v = parseFloat(e.target.value); setShadow(v); const mv = document.querySelector('model-viewer'); if (mv) mv.setAttribute('shadow-softness', v); }} />
-                  <span style={{ color: '#e8eaf0', width: 24, textAlign: 'right', fontFamily: 'monospace' }}>{shadow.toFixed(1)}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#4a5060', fontSize: 9 }}>☀️ หมุนแสงอัตโนมัติ</span>
-                  <button onClick={() => setAutoLight(v => !v)} style={{ width: 32, height: 16, background: autoLight ? '#00e5a0' : 'rgba(255,255,255,0.1)', borderRadius: 8, position: 'relative', cursor: 'pointer', border: 'none', transition: 'background 0.2s' }}>
-                    <div style={{ position: 'absolute', top: 2, left: autoLight ? 16 : 2, width: 12, height: 12, borderRadius: '50%', background: 'white', transition: 'left 0.2s' }} />
-                  </button>
+
+                {/* Row 2: Tint swatches + sliders side by side */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {/* Tint swatches */}
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap', flexShrink: 0 }}>
+                    {TINT_SWATCHES.map((swatch, i) => (
+                      <button key={i} type="button" title={TINT_COLORS[i].label} onClick={() => setTintIdx(i)}
+                        style={{ width: 18, height: 18, borderRadius: '50%', border: tintIdx === i ? '2.5px solid #00e5a0' : '2px solid rgba(255,255,255,0.15)', cursor: 'pointer', background: i === 0 ? 'linear-gradient(135deg,#555 50%,#aaa 50%)' : swatch, flexShrink: 0 }} />
+                    ))}
+                  </div>
+                  {/* Sliders */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ color: '#4a5060', fontSize: 9, width: 38, flexShrink: 0 }}>แสง</span>
+                      <input type="range" min={0.5} max={3} step={0.05} value={exposure} style={{ flex: 1, accentColor: '#00e5a0', height: 3 }}
+                        onChange={e => { const v = parseFloat(e.target.value); setExposure(v); if (mvRef.current) mvRef.current.setAttribute('exposure', v); }} />
+                      <span style={{ color: '#e8eaf0', width: 22, textAlign: 'right', fontFamily: 'monospace', fontSize: 9 }}>{exposure.toFixed(1)}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ color: '#4a5060', fontSize: 9, width: 38, flexShrink: 0 }}>เงา</span>
+                      <input type="range" min={0} max={1} step={0.05} value={shadow} style={{ flex: 1, accentColor: '#00e5a0', height: 3 }}
+                        onChange={e => { const v = parseFloat(e.target.value); setShadow(v); if (mvRef.current) mvRef.current.setAttribute('shadow-softness', v); }} />
+                      <span style={{ color: '#e8eaf0', width: 22, textAlign: 'right', fontFamily: 'monospace', fontSize: 9 }}>{shadow.toFixed(1)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
           {/* ── Right Panel ── */}
-          <div style={{ width: isMobile ? '100%' : 280, flexShrink: 0, background: T.panelBg, borderLeft: isMobile ? 'none' : T.panelBorder, borderTop: isMobile ? T.panelBorder : 'none', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            width: isMobile ? '100%' : 280,
+            flexShrink: 0,
+            background: T.panelBg,
+            borderLeft: isMobile ? 'none' : T.panelBorder,
+            borderTop: isMobile ? T.panelBorder : 'none',
+            overflowY: isMobile ? 'visible' : 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
 
             {/* Specs */}
             <div style={{ padding: '14px 16px', borderBottom: T.sectionDivider }}>
@@ -612,6 +777,7 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
   const isMobileView = useIsMobile();
+  const [imgLightboxStep8, setImgLightboxStep8] = useState(false);
 
   const {
     sacGearType, sacSize, sacPower, sacRatio,
@@ -744,7 +910,7 @@ function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
           {TERMINAL_DIRS.map(d => (
             <ImgCard
               key={d.code}
-              img={d.img}
+              img={SV_GEAR_TYPES.includes(sacGearType) ? d.imgSV : d.img}
               label={d.label}
               active={sacTerminal === d.code}
               onClick={() => setTerminal(d.code)}
@@ -760,9 +926,31 @@ function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
             <img
               src={TerminalImg}
               alt="Terminal Direction Reference"
-              style={{ maxWidth: 360, width: '100%', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)' }}
+              onClick={() => setImgLightboxStep8(true)}
+              style={{ maxWidth: 360, width: '100%', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', cursor: 'zoom-in', transition: 'opacity 0.2s' }}
             />
           </div>
+          {/* Lightbox for Step 8 image */}
+          {imgLightboxStep8 && (
+            <div
+              onClick={() => setImgLightboxStep8(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+            >
+              <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+                <img
+                  src={TerminalImg}
+                  alt="Terminal Direction Reference"
+                  style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 12, boxShadow: '0 8px 40px rgba(0,0,0,0.8)', objectFit: 'contain' }}
+                />
+                <button
+                  onClick={() => setImgLightboxStep8(false)}
+                  style={{ position: 'absolute', top: -14, right: -14, width: 32, height: 32, borderRadius: '50%', background: '#00e5a0', color: '#000', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
           {leadOptions.map(l => (
             <PillBtn key={l} label={l} active={sacLead === l} onClick={() => setLead(l)} />
           ))}
