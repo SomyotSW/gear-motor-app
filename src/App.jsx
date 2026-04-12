@@ -580,7 +580,8 @@ const servoSetters = {
   const [hypoidDirection, setHypoidDirection] = useState(null);   // RL, RR,...
   const [hypoidPower, setHypoidPower] = useState(null);           // เช่น 90W
   const [hypoidSupply, setHypoidSupply] = useState(null);         // C, A, S, S3
-  const [hypoidOptional, setHypoidOptional] = useState([]); 
+  const [hypoidOptional, setHypoidOptional] = useState([]);
+  const [hypoidMounting, setHypoidMounting] = useState(null);     // C / CT / CF / CFT (ZDF2 only)
     const [hypoidQuantity, setHypoidQuantity] = useState(1);
     const [showRFQ, setShowRFQ] = React.useState(false);
     const [rfqPayload, setRfqPayload] = React.useState(null);
@@ -599,6 +600,7 @@ const hypoidState = {
   supply: hypoidSupply,
   optional: hypoidOptional,
   quantity: hypoidQuantity,
+  mounting: hypoidMounting,
     showHypoidRfq: rfqOpen,
   hypoidRfqPayload: rfqPayload,                // <<< เพิ่มบรรทัดนี้
 };
@@ -612,6 +614,7 @@ const hypoidSetters = {
   setSupply: setHypoidSupply,
   setOptional: setHypoidOptional,
   setQuantity: setHypoidQuantity,             // <<< เพิ่มบรรทัดนี้
+  setMounting: setHypoidMounting,
 };
 
   const [rkfsSeries, setRkfsSeries] = useState(null);
@@ -968,6 +971,7 @@ const handleHypoidHome = () => {
   setHypoidPower(null);
   setHypoidSupply(null);
   setHypoidOptional([]);
+  setHypoidMounting(null);
 
   // เคลียร์ผลลัพธ์กลาง
   setModelCodeList([]);
