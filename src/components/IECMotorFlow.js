@@ -7,9 +7,371 @@
 //  3. Step 8 (Summary): แสดงข้อมูล Specs จาก MOTOR_DB ที่ผูกกับ Model จริง
 //  4. เพิ่มปุ่ม "Data Sheet" ดาวน์โหลด PDF ตามชื่อ Model
 // ─────────────────────────────────────────────────────────────────────────────
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import sasLogoUrl from '../assets/iec/SAS.png';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GLB Base URL
+// ─────────────────────────────────────────────────────────────────────────────
+const IEC_GLB_BASE = (() => {
+  if (typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return '/model/glb';
+  }
+  return 'https://pub-8cdc08b3fc55463c8c8f399a10351d7e.r2.dev';
+})();
+
+// inject model-viewer script once
+(() => {
+  if (typeof document === 'undefined') return;
+  const id = 'mv-iec-script';
+  if (document.getElementById(id)) return;
+  const s = document.createElement('script');
+  s.id = id; s.type = 'module';
+  s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js';
+  document.head.appendChild(s);
+})();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapIECGlbFilename — แปลง Model Code → ชื่อไฟล์ GLB
+// YE3-100L1-4-B5-0-X  →  YE3-100L1-4-B5-XXX
+// แทน Terminal (pos 4) และ Cable (pos 5) ด้วย XXX
+// ─────────────────────────────────────────────────────────────────────────────
+export function mapIECGlbFilename(modelCode) {
+  if (!modelCode || typeof modelCode !== 'string') return null;
+  const parts = modelCode.trim().split('-');
+  // YE3-100L1-4-B5-0-X  → parts: ['YE3','100L1','4','B5','0','X']
+  if (parts.length < 4) return null;
+  // เอาแค่ 4 ส่วนแรก (series-frame-pole-mount) แล้วต่อด้วย XXX
+  return parts.slice(0, 4).join('-') + '-XXX';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// step transition variants
+// ─────────────────────────────────────────────────────────────────────────────
+const iecStepVariants = {
+  initial: { opacity: 0, y: 20, scale: 0.97 },
+  animate: { opacity: 1, y: 0,  scale: 1,    transition: { duration: 0.28, ease: [0.22,1,0.36,1] } },
+  exit:    { opacity: 0, y: -14, scale: 0.97, transition: { duration: 0.18, ease: 'easeIn' } },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENV presets for IEC viewer
+// ─────────────────────────────────────────────────────────────────────────────
+const ENV_PRESETS_IEC = [
+  { label:'Neutral', value:'neutral',  bg:'linear-gradient(135deg,#5a5a5a,#3a3a3a)' },
+  { label:'Legacy',  value:'legacy',   bg:'linear-gradient(135deg,#7a8a9a,#5a6a7a)' },
+  { label:'Warm',    value:'https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr', bg:'linear-gradient(135deg,#c87a4a,#8a4a2a)' },
+  { label:'Studio',  value:'https://modelviewer.dev/shared-assets/environments/aircraft_workshop_01_1k.hdr', bg:'linear-gradient(135deg,#8a7a9a,#6a5a7a)' },
+  { label:'Outdoor', value:'https://modelviewer.dev/shared-assets/environments/pillars_1k.hdr', bg:'linear-gradient(135deg,#5a8a5a,#3a6a3a)' },
+  { label:'Moon',    value:'https://modelviewer.dev/shared-assets/environments/moon_1k.hdr', bg:'linear-gradient(135deg,#2a2a5a,#1a1a3a)' },
+];
+
+function useIsMobileIEC() {
+  const [mobile, setMobile] = React.useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  React.useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < 768);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return mobile;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IECViewer3D — model-viewer สำหรับ IEC motor
+// ─────────────────────────────────────────────────────────────────────────────
+function IECViewer3D({ modelCode, lightMode = false, T = null, isMobileSummary = false }) {
+  const theme = T || {
+    viewerBg: 'linear-gradient(135deg,#0a0c10,#0d111c)',
+    gridLine: 'rgba(0,229,160,0.025)',
+    loaderRingColor: '#00e5a0',
+    loaderText: '#4a5060',
+    labelColor: '#4a5060',
+    valueColor: '#e8eaf0',
+    panelBg: '#0f1118',
+    panelBorder: '1px solid rgba(255,255,255,0.07)',
+    sectionDivider: '1px solid rgba(255,255,255,0.06)',
+    sectionHeadColor: '#4a5060',
+    accent: '#00e5a0',
+    accentFaint: 'rgba(0,229,160,0.08)',
+    accentBorder: 'rgba(0,229,160,0.25)',
+  };
+  const mvRef    = useRef(null);
+  const isMobile = useIsMobileIEC();
+  const [ready,    setReady]    = useState(false);
+  const [err,      setErr]      = useState(false);
+  const [envIdx,   setEnvIdx]   = useState(0);
+  const [exposure, setExposure] = useState(1.3);
+  const [shadow,   setShadow]   = useState(0.6);
+  const [autoLight,setAutoLight]= useState(false);
+  const [lightRot, setLightRot] = useState(0);
+  const [tintIdx,  setTintIdx]  = useState(0);
+  const lightTimer = useRef(null);
+
+  // Tint colors สำหรับ IEC motor (เหมือน Hypoid)
+  const TINT_COLORS_IEC = [
+    { label:'Default', value:null,      bg:'linear-gradient(135deg,#aaa,#666)' },
+    { label:'Silver',  value:'#d0d8e0', bg:'linear-gradient(135deg,#d0d8e0,#9aa8b8)' },
+    { label:'Gold',    value:'#ffd060', bg:'linear-gradient(135deg,#ffd060,#c08020)' },
+    { label:'Navy',    value:'#2050a0', bg:'linear-gradient(135deg,#4070c0,#103060)' },
+    { label:'Red',     value:'#c02030', bg:'linear-gradient(135deg,#e04050,#901020)' },
+    { label:'White',   value:'#f0f0f0', bg:'linear-gradient(135deg,#ffffff,#cccccc)' },
+  ];
+
+  const applyTint = (idx) => {
+    setTintIdx(idx);
+    const color = TINT_COLORS_IEC[idx].value;
+    const doApply = () => {
+      try {
+        const mats = mvRef.current?.model?.materials;
+        if (!mats) return;
+        if (!color) { [...mats].forEach(m => m.pbrMetallicRoughness.setBaseColorFactor([1,1,1,1])); }
+        else {
+          const r = parseInt(color.slice(1,3),16)/255;
+          const g = parseInt(color.slice(3,5),16)/255;
+          const b = parseInt(color.slice(5,7),16)/255;
+          [...mats].forEach(m => m.pbrMetallicRoughness.setBaseColorFactor([r,g,b,1]));
+        }
+      } catch(e) {}
+    };
+    if (ready) doApply();
+    else mvRef.current?.addEventListener('load', doApply, { once: true });
+  };
+
+  const glbName = mapIECGlbFilename(modelCode);
+
+  useEffect(() => {
+    setReady(false); setErr(false);
+    if (!glbName) return;
+    const url = `${IEC_GLB_BASE}/${glbName}.glb`;
+    let cancelled = false;
+    let attempts  = 0;
+    function attach() {
+      const el = mvRef.current;
+      if (cancelled) return;
+      if (!el || !el.nodeName) {
+        if (attempts < 40) { attempts++; setTimeout(attach, 50); }
+        return;
+      }
+      el.setAttribute('src', url);
+      const onLoad = () => { if (!cancelled) { setReady(true); setErr(false); } };
+      const onErr  = () => { if (!cancelled) setErr(true); };
+      el.addEventListener('load', onLoad);
+      el.addEventListener('error', onErr);
+      el.__iecCleanup = () => { el.removeEventListener('load', onLoad); el.removeEventListener('error', onErr); };
+    }
+    attach();
+    return () => { cancelled = true; mvRef.current?.__iecCleanup?.(); };
+  }, [glbName]);
+
+  useEffect(() => {
+    if (autoLight) {
+      lightTimer.current = setInterval(() => {
+        setLightRot(r => {
+          const n = (r + 2) % 360;
+          if (mvRef.current) mvRef.current.style.setProperty('--env-rotation', n + 'deg');
+          return n;
+        });
+      }, 30);
+    } else clearInterval(lightTimer.current);
+    return () => clearInterval(lightTimer.current);
+  }, [autoLight]);
+
+  useEffect(() => {
+    if (mvRef.current) mvRef.current.setAttribute('environment-image', ENV_PRESETS_IEC[envIdx].value);
+  }, [envIdx]);
+
+  useEffect(() => () => clearInterval(lightTimer.current), []);
+
+  const isLight = lightMode;
+  const S = {
+    wrap:     { display:'flex', flexDirection:'row', width:'100%', height:'100%', minHeight:0, background:theme.viewerBg, fontFamily:"'Sarabun',sans-serif", transition:'background 0.25s' },
+    viewer:   { flex:1, position:'relative', background:theme.viewerBg, overflow:'hidden', transition:'background 0.25s' },
+    grid:     { position:'absolute', inset:0, backgroundImage:`linear-gradient(${theme.gridLine} 1px,transparent 1px),linear-gradient(90deg,${theme.gridLine} 1px,transparent 1px)`, backgroundSize:'40px 40px', pointerEvents:'none' },
+    mv:       { width:'100%', height:'100%', '--poster-color':'transparent', '--progress-bar-color':theme.accent, background:'transparent', display:'block' },
+    ring:     { width:44, height:44, border:`2px solid ${theme.accentFaint}`, borderTopColor:theme.loaderRingColor, borderRadius:'50%', animation:'iec3d-spin 0.9s linear infinite' },
+    loaderBox:{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, background:theme.viewerBg },
+    errorBox: { position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:theme.viewerBg },
+    panel:    { width:200, flexShrink:0, background:theme.panelBg, borderLeft:theme.panelBorder, overflowY:'auto', display:'flex', flexDirection:'column' },
+    sec:      { padding:'14px 16px', borderBottom:theme.sectionDivider },
+    secT:     { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:theme.sectionHeadColor, marginBottom:10 },
+    envGrid:  { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:5 },
+    envBtn:   (a) => ({ aspectRatio:1, borderRadius:6, border:a?`2px solid ${theme.accent}`:'2px solid transparent', cursor:'pointer', position:'relative', overflow:'hidden', transition:'all 0.15s' }),
+    envLabel: { position:'absolute', bottom:0, left:0, right:0, fontSize:7, textAlign:'center', background:'rgba(0,0,0,0.65)', padding:'1px 0', color:'rgba(255,255,255,0.7)', fontWeight:600 },
+    slider:   { flex:1, accentColor:theme.accent, cursor:'pointer', height:3 },
+    sliderVal:{ fontSize:10, color:theme.valueColor, width:30, textAlign:'right', flexShrink:0, fontFamily:'monospace' },
+    lrow:     { display:'flex', alignItems:'center', gap:8, marginBottom:8 },
+    llbl:     { fontSize:10, color:theme.labelColor, width:44, flexShrink:0 },
+    toggle:   (on) => ({ width:34, height:18, background:on?theme.accent:isLight?'rgba(0,0,0,0.12)':'rgba(255,255,255,0.1)', borderRadius:9, position:'relative', cursor:'pointer', border:'none', transition:'background 0.2s', flexShrink:0 }),
+    toggleDot:(on) => ({ position:'absolute', top:2, left:on?16:2, width:14, height:14, borderRadius:'50%', background:'white', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.4)' }),
+    colorGrid:{ display:'flex', gap:6, flexWrap:'wrap' },
+    swatch:   (a) => ({ width:24, height:24, borderRadius:'50%', border:a?`2px solid ${theme.accent}`:'2px solid transparent', cursor:'pointer', transition:'all 0.15s', position:'relative', flexShrink:0, transform:a?'scale(1.15)':'scale(1)' }),
+  };
+
+  return (
+    <div style={S.wrap}>
+      <style>{`@keyframes iec3d-spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={S.viewer}>
+        <div style={S.grid} />
+        {!ready && !err && (
+          <div style={S.loaderBox}>
+            <div style={S.ring}/>
+            <span style={{fontSize:11, color:theme.loaderText, letterSpacing:'1px'}}>กำลังโหลดโมเดล…</span>
+          </div>
+        )}
+        {(err || !glbName) && (
+          <div style={S.errorBox}>
+            <span style={{fontSize:32}}>🔧</span>
+            <span style={{fontSize:11, color:theme.labelColor}}>{glbName ? `ยังไม่มีไฟล์ 3D (${glbName}.glb)` : 'ยังไม่มีโมเดล'}</span>
+          </div>
+        )}
+        <model-viewer
+          ref={mvRef}
+          src=""
+          alt={glbName || 'iec-motor'}
+          auto-rotate auto-rotate-delay="400"
+          rotation-per-second="18deg"
+          camera-controls touch-action="pan-y"
+          shadow-intensity="1.2"
+          shadow-softness={shadow}
+          environment-image="neutral"
+          exposure={exposure}
+          style={S.mv}
+        />
+        {ready && !err && (
+          <div style={{position:'absolute',bottom:10,left:0,right:0,textAlign:'center',color:'rgba(255,255,255,0.2)',fontSize:10,pointerEvents:'none'}}>
+            🖱 ลาก = หมุน · Scroll = ซูม
+          </div>
+        )}
+      </div>
+
+      {/* Desktop lighting panel — hidden on mobile summary */}
+      {!isMobile && !isMobileSummary && (
+        <div style={S.panel}>
+          <div style={S.sec}>
+            <div style={S.secT}>สภาพแวดล้อมแสง</div>
+            <div style={S.envGrid}>
+              {ENV_PRESETS_IEC.map((env,i) => (
+                <button key={env.value} title={env.label} onClick={()=>setEnvIdx(i)}
+                  style={{...S.envBtn(i===envIdx), background:env.bg}}>
+                  <span style={S.envLabel}>{env.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={S.sec}>
+            <div style={S.secT}>ควบคุมแสง</div>
+            <div style={S.lrow}>
+              <span style={S.llbl}>ความสว่าง</span>
+              <input type="range" min={0.5} max={3} step={0.05} value={exposure} style={S.slider}
+                onChange={e=>{const v=parseFloat(e.target.value);setExposure(v);if(mvRef.current)mvRef.current.setAttribute('exposure',v);}}/>
+              <span style={S.sliderVal}>{exposure.toFixed(1)}</span>
+            </div>
+            <div style={S.lrow}>
+              <span style={S.llbl}>เงา</span>
+              <input type="range" min={0} max={1} step={0.05} value={shadow} style={S.slider}
+                onChange={e=>{const v=parseFloat(e.target.value);setShadow(v);if(mvRef.current)mvRef.current.setAttribute('shadow-softness',v);}}/>
+              <span style={S.sliderVal}>{shadow.toFixed(1)}</span>
+            </div>
+            <div style={{...S.lrow,marginBottom:0}}>
+              <span style={S.llbl}>ทิศแสง</span>
+              {autoLight
+                ? <span style={{flex:1,fontSize:10,color:theme.accent}}>⟳ หมุนอัตโนมัติ</span>
+                : <input type="range" min={0} max={360} step={1} value={lightRot} style={S.slider}
+                    onChange={e=>{const v=parseInt(e.target.value);setLightRot(v);if(mvRef.current)mvRef.current.style.setProperty('--env-rotation',v+'deg');}}/>}
+              <span style={S.sliderVal}>{lightRot}°</span>
+            </div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:10}}>
+              <span style={{fontSize:10, color:theme.labelColor}}>☀️ หมุนแสงอัตโนมัติ</span>
+              <button style={S.toggle(autoLight)} onClick={()=>setAutoLight(v=>!v)}>
+                <div style={S.toggleDot(autoLight)}/>
+              </button>
+            </div>
+          </div>
+          {/* สีโมเดล */}
+          <div style={S.sec}>
+            <div style={S.secT}>สีโมเดล</div>
+            <div style={S.colorGrid}>
+              {TINT_COLORS_IEC.map((c,i) => (
+                <button key={c.label} title={c.label} onClick={()=>applyTint(i)}
+                  style={{...S.swatch(i===tintIdx), background:c.bg}}>
+                  {i===tintIdx && (
+                    <span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'white',textShadow:'0 1px 3px rgba(0,0,0,0.8)'}}>✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IECMobileLightingControls — inline lighting strip on mobile summary
+// ─────────────────────────────────────────────────────────────────────────────
+function IECMobileLightingControls({ T }) {
+  const getMV = () => document.querySelector('#iec-summary model-viewer') || document.querySelector('model-viewer');
+  const [envIdx,    setEnvIdx]    = useState(0);
+  const [exposure,  setExposure]  = useState(1.3);
+  const [shadow,    setShadow]    = useState(0.6);
+  const [autoLight, setAutoLight] = useState(false);
+  const lightTimer = useRef(null);
+
+  useEffect(() => {
+    if (autoLight) {
+      lightTimer.current = setInterval(() => {
+        const mv = getMV();
+        if (mv) { const cur = parseInt(mv.style.getPropertyValue('--env-rotation')||'0',10); mv.style.setProperty('--env-rotation',((cur+2)%360)+'deg'); }
+      }, 30);
+    } else clearInterval(lightTimer.current);
+    return () => clearInterval(lightTimer.current);
+  }, [autoLight]);
+  useEffect(() => () => clearInterval(lightTimer.current), []);
+
+  const accent = T?.accent || '#00e5a0';
+  const lc = T?.labelColor || '#4a5060';
+  const vc = T?.valueColor || '#e8eaf0';
+  const sd = T?.sectionDivider || '1px solid rgba(255,255,255,0.06)';
+  const shc = T?.sectionHeadColor || '#4a5060';
+
+  const sec  = { padding:'12px 16px', borderBottom: sd };
+  const secT = { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:shc, marginBottom:8 };
+  const row  = { display:'flex', alignItems:'center', gap:8, marginBottom:6 };
+  const lbl  = { fontSize:10, color:lc, width:54, flexShrink:0 };
+  const sld  = { flex:1, accentColor:accent, cursor:'pointer', height:3 };
+  const val  = { fontSize:10, color:vc, width:28, textAlign:'right', flexShrink:0, fontFamily:'monospace' };
+
+  return (
+    <>
+      <div style={sec}>
+        <div style={secT}>สภาพแวดล้อมแสง</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:4}}>
+          {ENV_PRESETS_IEC.map((env,i) => (
+            <button key={env.value} title={env.label}
+              onClick={()=>{ setEnvIdx(i); const mv=getMV(); if(mv){try{mv.setAttribute('environment-image',env.value);}catch(e){}} }}
+              style={{aspectRatio:1,borderRadius:5,border:i===envIdx?`2px solid ${accent}`:'2px solid transparent',cursor:'pointer',position:'relative',overflow:'hidden',background:env.bg}}>
+              <span style={{position:'absolute',bottom:0,left:0,right:0,fontSize:6,textAlign:'center',background:'rgba(0,0,0,0.6)',color:'rgba(255,255,255,0.8)'}}>{env.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={sec}>
+        <div style={secT}>ควบคุมแสง</div>
+        <div style={row}><span style={lbl}>ความสว่าง</span><input type="range" min={0.5} max={3} step={0.05} value={exposure} style={sld} onChange={e=>{const v=parseFloat(e.target.value);setExposure(v);const mv=getMV();if(mv)mv.setAttribute('exposure',v);}}/><span style={val}>{exposure.toFixed(1)}</span></div>
+        <div style={row}><span style={lbl}>เงา</span><input type="range" min={0} max={1} step={0.05} value={shadow} style={sld} onChange={e=>{const v=parseFloat(e.target.value);setShadow(v);const mv=getMV();if(mv)mv.setAttribute('shadow-softness',v);}}/><span style={val}>{shadow.toFixed(1)}</span></div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
+          <span style={{fontSize:10,color:lc}}>☀️ หมุนแสงอัตโนมัติ</span>
+          <button onClick={()=>setAutoLight(v=>!v)} style={{width:34,height:18,background:autoLight?accent:'rgba(255,255,255,0.1)',borderRadius:9,position:'relative',cursor:'pointer',border:'none',transition:'background 0.2s'}}>
+            <div style={{position:'absolute',top:2,left:autoLight?16:2,width:14,height:14,borderRadius:'50%',background:'white',transition:'left 0.2s'}}/>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
 
 // ── รูปประเภทมอเตอร์ (assets เดิม) ──────────────────────────────────────────
 import YE3Img   from '../assets/rkfs/YE3.png';
@@ -1194,59 +1556,184 @@ export function renderIECMotorFlow(state, setState, onConfirm, onHome) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// [2] MountStep component — hover preview + click to proceed
+// [2] MountStep — hover → preview image | click → next step
+// Mobile: first tap = preview, second tap = confirm
 // ─────────────────────────────────────────────────────────────────────────────
 function MountStep({ iecMount, update }) {
-  const [hovered, setHovered] = useState(null);
-  const preview = IEC_MOUNT_LIST.find(m => m.code === hovered);
+  const isMobile = useIsMobileIEC();
+  // hovered: ปุ่มที่เมาส์ชี้อยู่ (desktop)
+  // preview: รูปที่แสดงอยู่ใน preview box
+  // confirmed: code ที่กดยืนยันแล้ว (มือถือ tap ครั้งที่ 2)
+  const [hovered,   setHovered]   = useState(null);
+  const [preview,   setPreview]   = useState(IEC_MOUNT_LIST[0].code); // default B5
+  const [confirmed, setConfirmed] = useState(null);
+
+  // desktop: preview ตาม hover; mobile: preview ตาม tap
+  const activePreview = isMobile ? preview : (hovered || preview);
+  const previewItem   = IEC_MOUNT_LIST.find(m => m.code === activePreview);
+
+  const handleClick = (code) => {
+    if (isMobile) {
+      if (preview !== code) {
+        // tap ครั้งแรก → แสดงรูป
+        setPreview(code);
+        setConfirmed(null);
+        return;
+      }
+      // tap ซ้ำที่เดิม → confirm
+    }
+    // desktop: click → ไปเลย
+    setConfirmed(code);
+    setTimeout(() => update('iecMount', code), 360);
+  };
 
   return (
     <div className="mt-4 pb-20">
-      <h3 className="text-white font-bold mb-2 text-base drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      <h3 className="text-white font-bold mb-1 text-base drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
         Step 5 : เลือกรูปแบบการติดตั้ง
       </h3>
+      {isMobile && (
+        <p className="text-white/40 text-xs mb-3">แตะเพื่อดูรูป · แตะซ้ำเพื่อเลือก</p>
+      )}
 
-      {/* Preview image area — compact for mobile */}
-      <div className="mb-3 flex justify-center" style={{ minHeight: 330 }}>
-        {preview ? (
-          <motion.div
-            key={preview.code}
-            initial={{ opacity:1, scale:0.88 }}
-            animate={{ opacity:1, scale:1 }}
-            exit={{ opacity:0 }}
-            transition={{ duration:0.58 }}
-            className="bg-blur rounded-2xl shadow-xl px-4 py-3 flex flex-col items-center"
-            style={{ maxWidth: 400 }}
-          >
-            <img src={preview.img} alt={preview.label} className="object-contain" style={{ maxHeight:300, maxWidth:380 }} />
-            <p className="mt-1 font-bold text-yellow-400 text-sm">{preview.label}</p>
-            <p className="text-gray-500 text-xs">{preview.desc}</p>
-          </motion.div>
-        ) : (
-          <div className="flex items-center justify-center text-white/40 text-xs italic" style={{ minHeight:100 }}>
-            แตะปุ่มเพื่อดูตัวอย่าง
-          </div>
-        )}
+      {/* ── Preview box ─────────────────────────────────────────────────── */}
+      <div className="mb-4 flex justify-center" style={{ minHeight: 220 }}>
+        <AnimatePresence mode="wait">
+          {previewItem && (
+            <motion.div
+              key={previewItem.code}
+              initial={{ opacity: 0, scale: 0.92, y: 8 }}
+              animate={{ opacity: 1, scale: 1,    y: 0,
+                transition: { duration: 0.22, ease: [0.22,1,0.36,1] } }}
+              exit={{ opacity: 0, scale: 0.95, y: -6,
+                transition: { duration: 0.14 } }}
+              className="flex flex-col items-center w-full"
+              style={{ maxWidth: 360 }}
+            >
+              {/* รูป mounting */}
+              <div
+                className="rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center w-full"
+                style={{
+                  background: 'rgba(255,255,255,0.97)',
+                  padding: '16px 24px 12px',
+                  minHeight: 160,
+                  border: confirmed === previewItem.code
+                    ? '3px solid #10b981'
+                    : '2px solid rgba(255,255,255,0.15)',
+                  transition: 'border-color 0.2s',
+                }}
+              >
+                <img
+                  src={previewItem.img}
+                  alt={previewItem.label}
+                  loading="eager"
+                  fetchpriority="high"
+                  style={{ maxHeight: 190, maxWidth: '100%', objectFit: 'contain', display: 'block' }}
+                />
+              </div>
+              {/* label + desc */}
+              <div className="mt-2 text-center">
+                <span className="font-black text-emerald-400 text-xl tracking-wide">
+                  {previewItem.label}
+                </span>
+                <span className="text-white/50 text-xs ml-2">{previewItem.desc}</span>
+              </div>
+              {/* mobile confirm hint */}
+              {isMobile && confirmed !== previewItem.code && (
+                <motion.p
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0, transition: { delay: 0.15 } }}
+                  className="text-white/40 text-xs mt-1"
+                >
+                  แตะ <b className="text-emerald-400">{previewItem.label}</b> อีกครั้งเพื่อยืนยัน
+                </motion.p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Buttons — 3 columns on mobile */}
-      <div className="grid grid-cols-3 gap-2">
-        {IEC_MOUNT_LIST.map(({ code, label, desc }) => (
-          <button
-            key={code}
-            type="button"
-            onMouseEnter={() => setHovered(code)}
-            onMouseLeave={() => setHovered(null)}
-            onTouchStart={() => setHovered(code)}
-            onClick={() => update('iecMount', code)}
-            className={`flex flex-col items-center justify-center gap-0.5 px-2 py-4 rounded-2xl shadow font-bold transition active:scale-95
-              ${iecMount === code ? 'bg-blue-600 text-white' : 'bg-white/90 text-gray-800'}`}
-          >
-            <span className="text-2xl font-black tracking-tight">{label}</span>
-            <span className="text-[10px] font-normal opacity-70 text-center leading-tight">{desc}</span>
-          </button>
-        ))}
+      {/* ── Buttons ──────────────────────────────────────────────────────── */}
+      {/* Row 1: B5 B3 B14 */}
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        {IEC_MOUNT_LIST.slice(0, 3).map(({ code, label, desc }, i) => {
+          const isActive  = (isMobile ? preview : hovered) === code || confirmed === code;
+          return (
+            <motion.button
+              key={code}
+              type="button"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: { delay: i * 0.05, duration: 0.22 } }}
+              whileHover={!isMobile ? { y: -2, scale: 1.02 } : {}}
+              whileTap={{ scale: 0.97 }}
+              onMouseEnter={() => !isMobile && setHovered(code)}
+              onMouseLeave={() => !isMobile && setHovered(null)}
+              onClick={() => handleClick(code)}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', gap: 2,
+                padding: '14px 8px',
+                borderRadius: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: isActive ? '2px solid #10b981' : '2px solid transparent',
+                background: isActive
+                  ? 'linear-gradient(135deg,#d1fae5,#a7f3d0)'
+                  : 'rgba(255,255,255,0.92)',
+                color: isActive ? '#065f46' : '#1e293b',
+                boxShadow: isActive
+                  ? '0 4px 16px rgba(16,185,129,0.25)'
+                  : '0 2px 8px rgba(0,0,0,0.12)',
+                transition: 'all 0.18s ease',
+              }}
+            >
+              <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px' }}>{label}</span>
+              <span style={{ fontSize: 10, opacity: 0.65, textAlign: 'center', lineHeight: 1.3 }}>{desc}</span>
+            </motion.button>
+          );
+        })}
       </div>
+
+      {/* Row 2: B35 B34 */}
+      <div className="grid grid-cols-2 gap-3">
+        {IEC_MOUNT_LIST.slice(3).map(({ code, label, desc }, i) => {
+          const isActive = (isMobile ? preview : hovered) === code || confirmed === code;
+          return (
+            <motion.button
+              key={code}
+              type="button"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: { delay: (i + 3) * 0.05, duration: 0.22 } }}
+              whileHover={!isMobile ? { y: -2, scale: 1.02 } : {}}
+              whileTap={{ scale: 0.97 }}
+              onMouseEnter={() => !isMobile && setHovered(code)}
+              onMouseLeave={() => !isMobile && setHovered(null)}
+              onClick={() => handleClick(code)}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', gap: 2,
+                padding: '14px 8px',
+                borderRadius: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: isActive ? '2px solid #10b981' : '2px solid transparent',
+                background: isActive
+                  ? 'linear-gradient(135deg,#d1fae5,#a7f3d0)'
+                  : 'rgba(255,255,255,0.92)',
+                color: isActive ? '#065f46' : '#1e293b',
+                boxShadow: isActive
+                  ? '0 4px 16px rgba(16,185,129,0.25)'
+                  : '0 2px 8px rgba(0,0,0,0.12)',
+                transition: 'all 0.18s ease',
+              }}
+            >
+              <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px' }}>{label}</span>
+              <span style={{ fontSize: 10, opacity: 0.65, textAlign: 'center', lineHeight: 1.3 }}>{desc}</span>
+            </motion.button>
+          );
+        })}
+      </div>
+
       <FloatingBack onClick={() => update('iecPole', null)} />
     </div>
   );
@@ -1330,61 +1817,61 @@ const iecBlobToBase64 = (blob) =>
 // ราคาขาย (บาท) = (motorBase + mountAdj) × 33 × 1.1 × 1.2 × 1.1 × 1.7
 // ─────────────────────────────────────────────────────────────────────────────
 const IEC_PRICE_DB = {
-  'YE3-71M10-4': {"YE3B5":3331,"YE3B3":3005,"YE3B14":3168,"YE3B35":3738,"YE3B34":3738,"YVPB5":5047,"YVPB3":4721,"YVPB14":4884,"YVPB35":5454,"YVPB34":5454,"YEJB5":6113,"YEJB3":5788,"YEJB14":5950,"YEJB35":6521,"YEJB34":6521,"YPEJB5":9250,"YPEJB3":8924,"YPEJB14":9087,"YPEJB35":9658,"YPEJB34":9658},
-  'YE3-71M11-4': {"YE3B5":3737,"YE3B3":3411,"YE3B14":3574,"YE3B35":4145,"YE3B34":4145,"YVPB5":5504,"YVPB3":5178,"YVPB14":5341,"YVPB35":5911,"YVPB34":5911,"YEJB5":6489,"YEJB3":6163,"YEJB14":6326,"YEJB35":6896,"YEJB34":6896,"YPEJB5":9423,"YPEJB3":9097,"YPEJB14":9260,"YPEJB35":9830,"YPEJB34":9830},
-  'YE3-71M22-4': {"YE3B5":3960,"YE3B3":3635,"YE3B14":3798,"YE3B35":4368,"YE3B34":4368,"YVPB5":5748,"YVPB3":5422,"YVPB14":5585,"YVPB35":6155,"YVPB34":6155,"YEJB5":6895,"YEJB3":6570,"YEJB14":6732,"YEJB35":7303,"YEJB34":7303,"YPEJB5":9748,"YPEJB3":9422,"YPEJB14":9585,"YPEJB35":10155,"YPEJB34":10155},
-  'YE3-71M23-4': {"YE3B5":4255,"YE3B3":3929,"YE3B14":4092,"YE3B35":4663,"YE3B34":4663,"YVPB5":6459,"YVPB3":6133,"YVPB14":6296,"YVPB35":6866,"YVPB34":6866,"YEJB5":7342,"YEJB3":7016,"YEJB14":7179,"YEJB35":7749,"YEJB34":7749,"YPEJB5":9971,"YPEJB3":9645,"YPEJB14":9808,"YPEJB35":10378,"YPEJB34":10378},
-  'YE3-71M24-4': {"YE3B5":4458,"YE3B3":4132,"YE3B14":4295,"YE3B35":4865,"YE3B34":4865,"YVPB5":6682,"YVPB3":6356,"YVPB14":6519,"YVPB35":7089,"YVPB34":7089,"YEJB5":7769,"YEJB3":7443,"YEJB14":7606,"YEJB35":8176,"YEJB34":8176,"YPEJB5":10317,"YPEJB3":9991,"YPEJB14":10154,"YPEJB35":10724,"YPEJB34":10724},
-  'YE3-80M1-4': {"YE3B5":5129,"YE3B3":4803,"YE3B14":4966,"YE3B35":5536,"YE3B34":5536,"YVPB5":7251,"YVPB3":6925,"YVPB14":7088,"YVPB35":7658,"YVPB34":7658,"YEJB5":8317,"YEJB3":7991,"YEJB14":8154,"YEJB35":8724,"YEJB34":8724,"YPEJB5":10601,"YPEJB3":10275,"YPEJB14":10438,"YPEJB35":11008,"YPEJB34":11008},
-  'YE3-80M2-4': {"YE3B5":5738,"YE3B3":5412,"YE3B14":5575,"YE3B35":6145,"YE3B34":6145,"YVPB5":7910,"YVPB3":7584,"YVPB14":7747,"YVPB35":8318,"YVPB34":8318,"YEJB5":8611,"YEJB3":8285,"YEJB14":8448,"YEJB35":9018,"YEJB34":9018,"YPEJB5":11210,"YPEJB3":10884,"YPEJB14":11047,"YPEJB35":11617,"YPEJB34":11617},
-  'YE3-90S-4': {"YE3B5":6682,"YE3B3":6356,"YE3B14":6519,"YE3B35":7089,"YE3B34":7089,"YVPB5":8966,"YVPB3":8640,"YVPB14":8803,"YVPB35":9373,"YVPB34":9373,"YEJB5":10012,"YEJB3":9686,"YEJB14":9849,"YEJB35":10419,"YEJB34":10419,"YPEJB5":12784,"YPEJB3":12458,"YPEJB14":12621,"YPEJB35":13191,"YPEJB34":13191},
-  'YE3-90L-4': {"YE3B5":7667,"YE3B3":7341,"YE3B14":7504,"YE3B35":8074,"YE3B34":8074,"YVPB5":9789,"YVPB3":9463,"YVPB14":9626,"YVPB35":10196,"YVPB34":10196,"YEJB5":10905,"YEJB3":10580,"YEJB14":10743,"YEJB35":11313,"YEJB34":11313,"YPEJB5":13698,"YPEJB3":13372,"YPEJB14":13535,"YPEJB35":14105,"YPEJB34":14105},
-  'YE3-100L1-4': {"YE3B5":10449,"YE3B3":10123,"YE3B14":10286,"YE3B35":10856,"YE3B34":10856,"YVPB5":12865,"YVPB3":12540,"YVPB14":12702,"YVPB35":13273,"YVPB34":13273,"YEJB5":13769,"YEJB3":13443,"YEJB14":13606,"YEJB35":14176,"YEJB34":14176,"YPEJB5":16733,"YPEJB3":16407,"YPEJB14":16570,"YPEJB35":17140,"YPEJB34":17140},
-  'YE3-100L2-4': {"YE3B5":11444,"YE3B3":11118,"YE3B14":11281,"YE3B35":11851,"YE3B34":11851,"YVPB5":13708,"YVPB3":13382,"YVPB14":13545,"YVPB35":14115,"YVPB34":14115,"YEJB5":14713,"YEJB3":14387,"YEJB14":14550,"YEJB35":15120,"YEJB34":15120,"YPEJB5":19170,"YPEJB3":18844,"YPEJB14":19007,"YPEJB35":19577,"YPEJB34":19577},
-  'YE3-112M-4': {"YE3B5":13423,"YE3B3":13098,"YE3B14":13260,"YE3B35":13831,"YE3B34":13831,"YVPB5":16601,"YVPB3":16275,"YVPB14":16438,"YVPB35":17008,"YVPB34":17008,"YEJB5":17627,"YEJB3":17301,"YEJB14":17464,"YEJB35":18034,"YEJB34":18034,"YPEJB5":22693,"YPEJB3":22367,"YPEJB14":22530,"YPEJB35":23100,"YPEJB34":23100},
-  'YE3-132S-4': {"YE3B5":18693,"YE3B3":18367,"YE3B14":18530,"YE3B35":19100,"YE3B34":19100,"YVPB5":22946,"YVPB3":22621,"YVPB14":22784,"YVPB35":23354,"YVPB34":23354,"YEJB5":25018,"YEJB3":24692,"YEJB14":24855,"YEJB35":25425,"YEJB34":25425,"YPEJB5":31150,"YPEJB3":30824,"YPEJB14":30987,"YPEJB35":31557,"YPEJB34":31557},
-  'YE3-132M-4': {"YE3B5":21261,"YE3B3":20935,"YE3B14":21098,"YE3B35":21668,"YE3B34":21668,"YVPB5":25343,"YVPB3":25017,"YVPB14":25180,"YVPB35":25750,"YVPB34":25750,"YEJB5":27515,"YEJB3":27190,"YEJB14":27353,"YEJB35":27923,"YEJB34":27923,"YPEJB5":34765,"YPEJB3":34439,"YPEJB14":34602,"YPEJB35":35172,"YPEJB34":35172},
-  'YE3-160M-4': {"YE3B5":30369,"YE3B3":30043,"YE3B14":30206,"YE3B35":30776,"YE3B34":30776,"YVPB5":36501,"YVPB3":36175,"YVPB14":36338,"YVPB35":36908,"YVPB34":36908,"YEJB5":39344,"YEJB3":39018,"YEJB14":39181,"YEJB35":39751,"YEJB34":39751,"YPEJB5":51111,"YPEJB3":50785,"YPEJB14":50948,"YPEJB35":51518,"YPEJB34":51518},
-  'YE3-160L-4': {"YE3B5":35070,"YE3B3":34744,"YE3B14":34907,"YE3B35":35477,"YE3B34":35477,"YVPB5":41222,"YVPB3":40896,"YVPB14":41059,"YVPB35":41630,"YVPB34":41630,"YEJB5":45436,"YEJB3":45110,"YEJB14":45273,"YEJB35":45843,"YEJB34":45843,"YPEJB5":59021,"YPEJB3":58695,"YPEJB14":58858,"YPEJB35":59428,"YPEJB34":59428},
-  'YE3-180M-4': {"YE3B5":43751,"YE3B3":43425,"YE3B14":43588,"YE3B35":44158,"YE3B34":44158,"YVPB5":51111,"YVPB3":50785,"YVPB14":50948,"YVPB35":51518,"YVPB34":51518,"YEJB5":55416,"YEJB3":55090,"YEJB14":55253,"YEJB35":55823,"YEJB34":55823,"YPEJB5":74849,"YPEJB3":74523,"YPEJB14":74686,"YPEJB35":75256,"YPEJB34":75256},
-  'YE3-180L-4': {"YE3B5":48644,"YE3B3":48318,"YE3B14":48481,"YE3B35":49051,"YE3B34":49051,"YVPB5":53660,"YVPB3":53334,"YVPB14":53497,"YVPB35":54067,"YVPB34":54067,"YEJB5":61143,"YEJB3":60817,"YEJB14":60980,"YEJB35":61550,"YEJB34":61550,"YPEJB5":78169,"YPEJB3":77843,"YPEJB14":78006,"YPEJB35":78576,"YPEJB34":78576},
-  'YE3-200L-4': {"YE3B5":65123,"YE3B3":64797,"YE3B14":64960,"YE3B35":65530,"YE3B34":65530,"YVPB5":71620,"YVPB3":71295,"YVPB14":71458,"YVPB35":72028,"YVPB34":72028,"YEJB5":83763,"YEJB3":83437,"YEJB14":83600,"YEJB35":84171,"YEJB34":84171,"YPEJB5":102891,"YPEJB3":102565,"YPEJB14":102728,"YPEJB35":103298,"YPEJB34":103298},
-  'YE3-225S-4': {"YE3B5":78027,"YE3B3":77701,"YE3B14":77864,"YE3B35":78434,"YE3B34":78434,"YVPB5":87296,"YVPB3":86970,"YVPB14":87133,"YVPB35":87703,"YVPB34":87703,"YEJB5":100059,"YEJB3":99733,"YEJB14":99896,"YEJB35":100466,"YEJB34":100466,"YPEJB5":126741,"YPEJB3":126415,"YPEJB14":126578,"YPEJB35":127148,"YPEJB34":127148},
-  'YE3-225M-4': {"YE3B5":84819,"YE3B3":84493,"YE3B14":84656,"YE3B35":85226,"YE3B34":85226,"YVPB5":97653,"YVPB3":97327,"YVPB14":97490,"YVPB35":98060,"YVPB34":98060,"YEJB5":118811,"YEJB3":118485,"YEJB14":118648,"YEJB35":119218,"YEJB34":119218,"YPEJB5":141665,"YPEJB3":141340,"YPEJB14":141503,"YPEJB35":142073,"YPEJB34":142073},
-  'YE3-250M-4': {"YE3B5":107633,"YE3B3":107307,"YE3B14":107470,"YE3B35":108040,"YE3B34":108040,"YVPB5":122263,"YVPB3":121937,"YVPB14":122100,"YVPB35":122670,"YVPB34":122670,"YEJB5":137360,"YEJB3":137035,"YEJB14":137198,"YEJB35":137768,"YEJB34":137768,"YPEJB5":175475,"YPEJB3":175149,"YPEJB14":175312,"YPEJB35":175882,"YPEJB34":175882},
-  'YE3-280S-4': {"YE3B5":141645,"YE3B3":141319,"YE3B14":141482,"YE3B35":142052,"YE3B34":142052,"YVPB5":153544,"YVPB3":153219,"YVPB14":153381,"YVPB35":153952,"YVPB34":153952,"YEJB5":173119,"YEJB3":172794,"YEJB14":172956,"YEJB35":173527,"YEJB34":173527,"YPEJB5":220361,"YPEJB3":220035,"YPEJB14":220198,"YPEJB35":220769,"YPEJB34":220769},
-  'YE3-280M-4': {"YE3B5":162418,"YE3B3":162092,"YE3B14":162255,"YE3B35":162826,"YE3B34":162826,"YVPB5":172175,"YVPB3":171849,"YVPB14":172012,"YVPB35":172583,"YVPB34":172583,"YEJB5":196238,"YEJB3":195912,"YEJB14":196075,"YEJB35":196645,"YEJB34":196645,"YPEJB5":249876,"YPEJB3":249550,"YPEJB14":249713,"YPEJB35":250283,"YPEJB34":250283},
-  'YE3-80M2-6': {"YE3B5":5666,"YE3B3":5340,"YE3B14":5503,"YE3B35":6073,"YE3B34":6073,"YVPB5":9210,"YVPB3":8884,"YVPB14":9047,"YVPB35":9617,"YVPB34":9617,"YEJB5":9372,"YEJB3":9047,"YEJB14":9210,"YEJB35":9780,"YEJB34":9780,"YPEJB5":11251,"YPEJB3":10925,"YPEJB14":11088,"YPEJB35":11658,"YPEJB34":11658},
-  'YE3-90S-6': {"YE3B5":6621,"YE3B3":6295,"YE3B14":6458,"YE3B35":7028,"YE3B34":7028,"YVPB5":10510,"YVPB3":10184,"YVPB14":10347,"YVPB35":10917,"YVPB34":10917,"YEJB5":10733,"YEJB3":10407,"YEJB14":10570,"YEJB35":11140,"YEJB34":11140,"YPEJB5":13535,"YPEJB3":13209,"YPEJB14":13372,"YPEJB35":13942,"YPEJB34":13942},
-  'YE3-90L-6': {"YE3B5":7576,"YE3B3":7250,"YE3B14":7413,"YE3B35":7983,"YE3B34":7983,"YVPB5":11718,"YVPB3":11392,"YVPB14":11555,"YVPB35":12125,"YVPB34":12125,"YEJB5":11718,"YEJB3":11392,"YEJB14":11555,"YEJB35":12125,"YEJB34":12125,"YPEJB5":15779,"YPEJB3":15453,"YPEJB14":15616,"YPEJB35":16186,"YPEJB34":16186},
-  'YE3-100L-6': {"YE3B5":10439,"YE3B3":10113,"YE3B14":10276,"YE3B35":10846,"YE3B34":10846,"YVPB5":13444,"YVPB3":13118,"YVPB14":13281,"YVPB35":13851,"YVPB34":13851,"YEJB5":14094,"YEJB3":13768,"YEJB14":13931,"YEJB35":14501,"YEJB34":14501,"YPEJB5":18804,"YPEJB3":18479,"YPEJB14":18641,"YPEJB35":19212,"YPEJB34":19212},
-  'YE3-112M-6': {"YE3B5":13312,"YE3B3":12986,"YE3B14":13149,"YE3B35":13719,"YE3B34":13719,"YVPB5":16287,"YVPB3":15961,"YVPB14":16124,"YVPB35":16694,"YVPB34":16694,"YEJB5":17271,"YEJB3":16946,"YEJB14":17108,"YEJB35":17679,"YEJB34":17679,"YPEJB5":22257,"YPEJB3":21931,"YPEJB14":22094,"YPEJB35":22664,"YPEJB34":22664},
-  'YE3-132S-6': {"YE3B5":16337,"YE3B3":16011,"YE3B14":16174,"YE3B35":16744,"YE3B34":16744,"YVPB5":22500,"YVPB3":22174,"YVPB14":22337,"YVPB35":22907,"YVPB34":22907,"YEJB5":24531,"YEJB3":24205,"YEJB14":24368,"YEJB35":24938,"YEJB34":24938,"YPEJB5":30531,"YPEJB3":30205,"YPEJB14":30368,"YPEJB35":30938,"YPEJB34":30938},
-  'YE3-132M1-6': {"YE3B5":18632,"YE3B3":18306,"YE3B14":18469,"YE3B35":19039,"YE3B34":19039,"YVPB5":24825,"YVPB3":24499,"YVPB14":24662,"YVPB35":25232,"YVPB34":25232,"YEJB5":26642,"YEJB3":26316,"YEJB14":26479,"YEJB35":27049,"YEJB34":27049,"YPEJB5":34085,"YPEJB3":33759,"YPEJB14":33922,"YPEJB35":34492,"YPEJB34":34492},
-  'YE3-132M2-6': {"YE3B5":20845,"YE3B3":20519,"YE3B14":20682,"YE3B35":21252,"YE3B34":21252,"YVPB5":25221,"YVPB3":24895,"YVPB14":25058,"YVPB35":25628,"YVPB34":25628,"YEJB5":27221,"YEJB3":26896,"YEJB14":27058,"YEJB35":27629,"YEJB34":27629,"YPEJB5":42207,"YPEJB3":41881,"YPEJB14":42044,"YPEJB35":42614,"YPEJB34":42614},
-  'YE3-160M-6': {"YE3B5":29769,"YE3B3":29444,"YE3B14":29606,"YE3B35":30177,"YE3B34":30177,"YVPB5":35770,"YVPB3":35444,"YVPB14":35607,"YVPB35":36178,"YVPB34":36178,"YEJB5":38562,"YEJB3":38236,"YEJB14":38399,"YEJB35":38969,"YEJB34":38969,"YPEJB5":51741,"YPEJB3":51415,"YPEJB14":51578,"YPEJB35":52148,"YPEJB34":52148},
-  'YE3-160L-6': {"YE3B5":34369,"YE3B3":34043,"YE3B14":34206,"YE3B35":34777,"YE3B34":34777,"YVPB5":40400,"YVPB3":40074,"YVPB14":40237,"YVPB35":40807,"YVPB34":40807,"YEJB5":44552,"YEJB3":44226,"YEJB14":44389,"YEJB35":44959,"YEJB34":44959,"YPEJB5":57843,"YPEJB3":57517,"YPEJB14":57680,"YPEJB35":58250,"YPEJB34":58250},
-  'YE3-180L-6': {"YE3B5":45324,"YE3B3":44998,"YE3B14":45161,"YE3B35":45731,"YE3B34":45731,"YVPB5":52603,"YVPB3":52278,"YVPB14":52441,"YVPB35":53011,"YVPB34":53011,"YEJB5":59934,"YEJB3":59608,"YEJB14":59771,"YEJB35":60341,"YEJB34":60341,"YPEJB5":76606,"YPEJB3":76280,"YPEJB14":76443,"YPEJB35":77013,"YPEJB34":77013},
-  'YE3-200L1-6': {"YE3B5":56776,"YE3B3":56451,"YE3B14":56614,"YE3B35":57184,"YE3B34":57184,"YVPB5":70199,"YVPB3":69873,"YVPB14":70036,"YVPB35":70606,"YVPB34":70606,"YEJB5":82098,"YEJB3":81772,"YEJB14":81935,"YEJB35":82506,"YEJB34":82506,"YPEJB5":100841,"YPEJB3":100515,"YPEJB14":100678,"YPEJB35":101248,"YPEJB34":101248},
-  'YE3-200L2-6': {"YE3B5":61955,"YE3B3":61629,"YE3B14":61792,"YE3B35":62362,"YE3B34":62362,"YVPB5":71132,"YVPB3":70807,"YVPB14":70970,"YVPB35":71540,"YVPB34":71540,"YEJB5":82595,"YEJB3":82269,"YEJB14":82432,"YEJB35":83002,"YEJB34":83002,"YPEJB5":101927,"YPEJB3":101601,"YPEJB14":101764,"YPEJB35":102334,"YPEJB34":102334},
-  'YE3-225M-6': {"YE3B5":81519,"YE3B3":81193,"YE3B14":81356,"YE3B35":81926,"YE3B34":81926,"YVPB5":95713,"YVPB3":95387,"YVPB14":95550,"YVPB35":96120,"YVPB34":96120,"YEJB5":103551,"YEJB3":103225,"YEJB14":103388,"YEJB35":103958,"YEJB34":103958,"YPEJB5":138843,"YPEJB3":138517,"YPEJB14":138680,"YPEJB35":139250,"YPEJB34":139250},
-  'YE3-250M-6': {"YE3B5":100464,"YE3B3":100139,"YE3B14":100302,"YE3B35":100872,"YE3B34":100872,"YVPB5":119846,"YVPB3":119521,"YVPB14":119683,"YVPB35":120254,"YVPB34":120254,"YEJB5":134670,"YEJB3":134344,"YEJB14":134507,"YEJB35":135077,"YEJB34":135077,"YPEJB5":171982,"YPEJB3":171656,"YPEJB14":171819,"YPEJB35":172390,"YPEJB34":172390},
-  'YE3-280S-6': {"YE3B5":134843,"YE3B3":134517,"YE3B14":134680,"YE3B35":135250,"YE3B34":135250,"YVPB5":150488,"YVPB3":150162,"YVPB14":150325,"YVPB35":150895,"YVPB34":150895,"YEJB5":169667,"YEJB3":169341,"YEJB14":169504,"YEJB35":170074,"YEJB34":170074,"YPEJB5":215965,"YPEJB3":215639,"YPEJB14":215802,"YPEJB35":216372,"YPEJB34":216372},
-  'YE3-280M-6': {"YE3B5":154559,"YE3B3":154234,"YE3B14":154396,"YE3B35":154967,"YE3B34":154967,"YVPB5":169454,"YVPB3":169128,"YVPB14":169291,"YVPB35":169861,"YVPB34":169861,"YEJB5":192329,"YEJB3":192003,"YEJB14":192166,"YEJB35":192736,"YEJB34":192736,"YPEJB5":244890,"YPEJB3":244565,"YPEJB14":244728,"YPEJB35":245298,"YPEJB34":245298},
-  'YE3-80M1-2': {"YE3B5":5129,"YE3B3":4803,"YE3B14":4966,"YE3B35":5536,"YE3B34":5536,"YVPB5":7251,"YVPB3":6925,"YVPB14":7088,"YVPB35":7658,"YVPB34":7658,"YEJB5":8317,"YEJB3":7991,"YEJB14":8154,"YEJB35":8724,"YEJB34":8724,"YPEJB5":10601,"YPEJB3":10275,"YPEJB14":10438,"YPEJB35":11008,"YPEJB34":11008},
-  'YE3-80M2-2': {"YE3B5":5738,"YE3B3":5412,"YE3B14":5575,"YE3B35":6145,"YE3B34":6145,"YVPB5":7910,"YVPB3":7584,"YVPB14":7747,"YVPB35":8318,"YVPB34":8318,"YEJB5":8611,"YEJB3":8285,"YEJB14":8448,"YEJB35":9018,"YEJB34":9018,"YPEJB5":11210,"YPEJB3":10884,"YPEJB14":11047,"YPEJB35":11617,"YPEJB34":11617},
-  'YE3-90S-2': {"YE3B5":6682,"YE3B3":6356,"YE3B14":6519,"YE3B35":7089,"YE3B34":7089,"YVPB5":8977,"YVPB3":8651,"YVPB14":8814,"YVPB35":9384,"YVPB34":9384,"YEJB5":10012,"YEJB3":9686,"YEJB14":9849,"YEJB35":10419,"YEJB34":10419,"YPEJB5":12784,"YPEJB3":12458,"YPEJB14":12621,"YPEJB35":13191,"YPEJB34":13191},
-  'YE3-90L-2': {"YE3B5":7667,"YE3B3":7341,"YE3B14":7504,"YE3B35":8074,"YE3B34":8074,"YVPB5":9789,"YVPB3":9463,"YVPB14":9626,"YVPB35":10196,"YVPB34":10196,"YEJB5":10905,"YEJB3":10580,"YEJB14":10743,"YEJB35":11313,"YEJB34":11313,"YPEJB5":13698,"YPEJB3":13372,"YPEJB14":13535,"YPEJB35":14105,"YPEJB34":14105},
-  'YE3-100L-2': {"YE3B5":11444,"YE3B3":11118,"YE3B14":11281,"YE3B35":11851,"YE3B34":11851,"YVPB5":13708,"YVPB3":13382,"YVPB14":13545,"YVPB35":14115,"YVPB34":14115,"YEJB5":15779,"YEJB3":15453,"YEJB14":15616,"YEJB35":16186,"YEJB34":16186,"YPEJB5":19170,"YPEJB3":18844,"YPEJB14":19007,"YPEJB35":19577,"YPEJB34":19577},
-  'YE3-112M-2': {"YE3B5":13423,"YE3B3":13098,"YE3B14":13260,"YE3B35":13831,"YE3B34":13831,"YVPB5":16601,"YVPB3":16275,"YVPB14":16438,"YVPB35":17008,"YVPB34":17008,"YEJB5":18338,"YEJB3":18012,"YEJB14":18175,"YEJB35":18745,"YEJB34":18745,"YPEJB5":22693,"YPEJB3":22367,"YPEJB14":22530,"YPEJB35":23100,"YPEJB34":23100},
-  'YE3-132S1-2': {"YE3B5":18693,"YE3B3":18367,"YE3B14":18530,"YE3B35":19100,"YE3B34":19100,"YVPB5":22764,"YVPB3":22438,"YVPB14":22601,"YVPB35":23171,"YVPB34":23171,"YEJB5":24592,"YEJB3":24266,"YEJB14":24429,"YEJB35":24999,"YEJB34":24999,"YPEJB5":31029,"YPEJB3":30703,"YPEJB14":30866,"YPEJB35":31436,"YPEJB34":31436},
-  'YE3-132S2-2': {"YE3B5":21261,"YE3B3":20935,"YE3B14":21098,"YE3B35":21668,"YE3B34":21668,"YVPB5":27810,"YVPB3":27484,"YVPB14":27647,"YVPB35":28218,"YVPB34":28218,"YEJB5":27394,"YEJB3":27068,"YEJB14":27231,"YEJB35":27801,"YEJB34":27801,"YPEJB5":31150,"YPEJB3":30824,"YPEJB14":30987,"YPEJB35":31557,"YPEJB34":31557},
-  'YE3-160M1-2': {"YE3B5":29769,"YE3B3":29444,"YE3B14":29606,"YE3B35":30177,"YE3B34":30177,"YVPB5":36349,"YVPB3":36023,"YVPB14":36186,"YVPB35":36756,"YVPB34":36756,"YEJB5":39192,"YEJB3":38866,"YEJB14":39029,"YEJB35":39599,"YEJB34":39599,"YPEJB5":49862,"YPEJB3":49537,"YPEJB14":49699,"YPEJB35":50270,"YPEJB34":50270},
-  'YE3-160M2-2': {"YE3B5":30369,"YE3B3":30043,"YE3B14":30206,"YE3B35":30776,"YE3B34":30776,"YVPB5":36501,"YVPB3":36175,"YVPB14":36338,"YVPB35":36908,"YVPB34":36908,"YEJB5":39344,"YEJB3":39018,"YEJB14":39181,"YEJB35":39751,"YEJB34":39751,"YPEJB5":51111,"YPEJB3":50785,"YPEJB14":50948,"YPEJB35":51518,"YPEJB34":51518},
-  'YE3-160L2-2': {"YE3B5":35070,"YE3B3":34744,"YE3B14":34907,"YE3B35":35477,"YE3B34":35477,"YVPB5":41222,"YVPB3":40896,"YVPB14":41059,"YVPB35":41630,"YVPB34":41630,"YEJB5":45436,"YEJB3":45110,"YEJB14":45273,"YEJB35":45843,"YEJB34":45843,"YPEJB5":59021,"YPEJB3":58695,"YPEJB14":58858,"YPEJB35":59428,"YPEJB34":59428},
-  'YE3-180M-2': {"YE3B5":43751,"YE3B3":43425,"YE3B14":43588,"YE3B35":44158,"YE3B34":44158,"YVPB5":51111,"YVPB3":50785,"YVPB14":50948,"YVPB35":51518,"YVPB34":51518,"YEJB5":59071,"YEJB3":58745,"YEJB14":58908,"YEJB35":59478,"YEJB34":59478,"YPEJB5":74849,"YPEJB3":74523,"YPEJB14":74686,"YPEJB35":75256,"YPEJB34":75256},
-  'YE3-200L1-2': {"YE3B5":63843,"YE3B3":63517,"YE3B14":63680,"YE3B35":64250,"YE3B34":64250,"YVPB5":71357,"YVPB3":71031,"YVPB14":71194,"YVPB35":71764,"YVPB34":71764,"YEJB5":83550,"YEJB3":83224,"YEJB14":83387,"YEJB35":83957,"YEJB34":83957,"YPEJB5":102729,"YPEJB3":102403,"YPEJB14":102566,"YPEJB35":103136,"YPEJB34":103136},
-  'YE3-200L2-2': {"YE3B5":65123,"YE3B3":64797,"YE3B14":64960,"YE3B35":65530,"YE3B34":65530,"YVPB5":71620,"YVPB3":71295,"YVPB14":71458,"YVPB35":72028,"YVPB34":72028,"YEJB5":83763,"YEJB3":83437,"YEJB14":83600,"YEJB35":84171,"YEJB34":84171,"YPEJB5":102891,"YPEJB3":102565,"YPEJB14":102728,"YPEJB35":103298,"YPEJB34":103298},
+  "YE3-71M10-4": {"YE3B5":3331,"YE3B3":3005,"YE3B14":3168,"YE3B35":3738,"YE3B34":3738,"YVPB5":5047,"YVPB3":4721,"YVPB14":4884,"YVPB35":5454,"YVPB34":5454,"YEJB5":6113,"YEJB3":5788,"YEJB14":5950,"YEJB35":6521,"YEJB34":6521,"YPEJB5":9250,"YPEJB3":8924,"YPEJB14":9087,"YPEJB35":9658,"YPEJB34":9658,"YBB5":11461,"YBB3":11135,"YBB14":11298,"YBB35":11868,"YBB34":11868},
+  "YE3-71M11-4": {"YE3B5":3737,"YE3B3":3411,"YE3B14":3574,"YE3B35":4145,"YE3B34":4145,"YVPB5":5504,"YVPB3":5178,"YVPB14":5341,"YVPB35":5911,"YVPB34":5911,"YEJB5":6489,"YEJB3":6163,"YEJB14":6326,"YEJB35":6896,"YEJB34":6896,"YPEJB5":9423,"YPEJB3":9097,"YPEJB14":9260,"YPEJB35":9830,"YPEJB34":9830,"YBB5":11677,"YBB3":11351,"YBB14":11514,"YBB35":12084,"YBB34":12084},
+  "YE3-71M22-4": {"YE3B5":3960,"YE3B3":3635,"YE3B14":3798,"YE3B35":4368,"YE3B34":4368,"YVPB5":5748,"YVPB3":5422,"YVPB14":5585,"YVPB35":6155,"YVPB34":6155,"YEJB5":6895,"YEJB3":6570,"YEJB14":6732,"YEJB35":7303,"YEJB34":7303,"YPEJB5":9748,"YPEJB3":9422,"YPEJB14":9585,"YPEJB35":10155,"YPEJB34":10155,"YBB5":12083,"YBB3":11757,"YBB14":11920,"YBB35":12490,"YBB34":12490},
+  "YE3-71M23-4": {"YE3B5":4255,"YE3B3":3929,"YE3B14":4092,"YE3B35":4663,"YE3B34":4663,"YVPB5":6459,"YVPB3":6133,"YVPB14":6296,"YVPB35":6866,"YVPB34":6866,"YEJB5":7342,"YEJB3":7016,"YEJB14":7179,"YEJB35":7749,"YEJB34":7749,"YPEJB5":9971,"YPEJB3":9645,"YPEJB14":9808,"YPEJB35":10378,"YPEJB34":10378,"YBB5":12362,"YBB3":12036,"YBB14":12199,"YBB35":12769,"YBB34":12769},
+  "YE3-71M24-4": {"YE3B5":4458,"YE3B3":4132,"YE3B14":4295,"YE3B35":4865,"YE3B34":4865,"YVPB5":6682,"YVPB3":6356,"YVPB14":6519,"YVPB35":7089,"YVPB34":7089,"YEJB5":7769,"YEJB3":7443,"YEJB14":7606,"YEJB35":8176,"YEJB34":8176,"YPEJB5":10317,"YPEJB3":9991,"YPEJB14":10154,"YPEJB35":10724,"YPEJB34":10724,"YBB5":12794,"YBB3":12468,"YBB14":12631,"YBB35":13201,"YBB34":13201},
+  "YE3-80M1-4": {"YE3B5":5129,"YE3B3":4803,"YE3B14":4966,"YE3B35":5536,"YE3B34":5536,"YVPB5":7251,"YVPB3":6925,"YVPB14":7088,"YVPB35":7658,"YVPB34":7658,"YEJB5":8317,"YEJB3":7991,"YEJB14":8154,"YEJB35":8724,"YEJB34":8724,"YPEJB5":10601,"YPEJB3":10275,"YPEJB14":10438,"YPEJB35":11008,"YPEJB34":11008,"YBB5":13149,"YBB3":12823,"YBB14":12986,"YBB35":13557,"YBB34":13557},
+  "YE3-80M2-4": {"YE3B5":5738,"YE3B3":5412,"YE3B14":5575,"YE3B35":6145,"YE3B34":6145,"YVPB5":7910,"YVPB3":7584,"YVPB14":7747,"YVPB35":8318,"YVPB34":8318,"YEJB5":8611,"YEJB3":8285,"YEJB14":8448,"YEJB35":9018,"YEJB34":9018,"YPEJB5":11210,"YPEJB3":10884,"YPEJB14":11047,"YPEJB35":11617,"YPEJB34":11617,"YBB5":13911,"YBB3":13585,"YBB14":13748,"YBB35":14318,"YBB34":14318},
+  "YE3-90S-4": {"YE3B5":6682,"YE3B3":6356,"YE3B14":6519,"YE3B35":7089,"YE3B34":7089,"YVPB5":8966,"YVPB3":8640,"YVPB14":8803,"YVPB35":9373,"YVPB34":9373,"YEJB5":10012,"YEJB3":9686,"YEJB14":9849,"YEJB35":10419,"YEJB34":10419,"YPEJB5":12784,"YPEJB3":12458,"YPEJB14":12621,"YPEJB35":13191,"YPEJB34":13191,"YBB5":15878,"YBB3":15552,"YBB14":15715,"YBB35":16285,"YBB34":16285},
+  "YE3-90L-4": {"YE3B5":7667,"YE3B3":7341,"YE3B14":7504,"YE3B35":8074,"YE3B34":8074,"YVPB5":9789,"YVPB3":9463,"YVPB14":9626,"YVPB35":10196,"YVPB34":10196,"YEJB5":10905,"YEJB3":10580,"YEJB14":10743,"YEJB35":11313,"YEJB34":11313,"YPEJB5":13698,"YPEJB3":13372,"YPEJB14":13535,"YPEJB35":14105,"YPEJB34":14105,"YBB5":17020,"YBB3":16695,"YBB14":16858,"YBB35":17428,"YBB34":17428},
+  "YE3-100L1-4": {"YE3B5":10449,"YE3B3":10123,"YE3B14":10286,"YE3B35":10856,"YE3B34":10856,"YVPB5":12865,"YVPB3":12540,"YVPB14":12702,"YVPB35":13273,"YVPB34":13273,"YEJB5":13769,"YEJB3":13443,"YEJB14":13606,"YEJB35":14176,"YEJB34":14176,"YPEJB5":16733,"YPEJB3":16407,"YPEJB14":16570,"YPEJB35":17140,"YPEJB34":17140,"YBB5":20814,"YBB3":20489,"YBB14":20651,"YBB35":21222,"YBB34":21222},
+  "YE3-100L2-4": {"YE3B5":11444,"YE3B3":11118,"YE3B14":11281,"YE3B35":11851,"YE3B34":11851,"YVPB5":13708,"YVPB3":13382,"YVPB14":13545,"YVPB35":14115,"YVPB34":14115,"YEJB5":14713,"YEJB3":14387,"YEJB14":14550,"YEJB35":15120,"YEJB34":15120,"YPEJB5":19170,"YPEJB3":18844,"YPEJB14":19007,"YPEJB35":19577,"YPEJB34":19577,"YBB5":23861,"YBB3":23535,"YBB14":23698,"YBB35":24268,"YBB34":24268},
+  "YE3-112M-4": {"YE3B5":13423,"YE3B3":13098,"YE3B14":13260,"YE3B35":13831,"YE3B34":13831,"YVPB5":16601,"YVPB3":16275,"YVPB14":16438,"YVPB35":17008,"YVPB34":17008,"YEJB5":17627,"YEJB3":17301,"YEJB14":17464,"YEJB35":18034,"YEJB34":18034,"YPEJB5":22693,"YPEJB3":22367,"YPEJB14":22530,"YPEJB35":23100,"YPEJB34":23100,"YBB5":28265,"YBB3":27939,"YBB14":28102,"YBB35":28672,"YBB34":28672},
+  "YE3-132S-4": {"YE3B5":18693,"YE3B3":18367,"YE3B14":18530,"YE3B35":19100,"YE3B34":19100,"YVPB5":22946,"YVPB3":22621,"YVPB14":22784,"YVPB35":23354,"YVPB34":23354,"YEJB5":25018,"YEJB3":24692,"YEJB14":24855,"YEJB35":25425,"YEJB34":25425,"YPEJB5":31150,"YPEJB3":30824,"YPEJB14":30987,"YPEJB35":31557,"YPEJB34":31557,"YBB5":38836,"YBB3":38510,"YBB14":38673,"YBB35":39243,"YBB34":39243},
+  "YE3-132M-4": {"YE3B5":21261,"YE3B3":20935,"YE3B14":21098,"YE3B35":21668,"YE3B34":21668,"YVPB5":25343,"YVPB3":25017,"YVPB14":25180,"YVPB35":25750,"YVPB34":25750,"YEJB5":27515,"YEJB3":27190,"YEJB14":27353,"YEJB35":27923,"YEJB34":27923,"YPEJB5":34765,"YPEJB3":34439,"YPEJB14":34602,"YPEJB35":35172,"YPEJB34":35172,"YBB5":43355,"YBB3":43029,"YBB14":43192,"YBB35":43762,"YBB34":43762},
+  "YE3-160M-4": {"YE3B5":30369,"YE3B3":30043,"YE3B14":30206,"YE3B35":30776,"YE3B34":30776,"YVPB5":36501,"YVPB3":36175,"YVPB14":36338,"YVPB35":36908,"YVPB34":36908,"YEJB5":39344,"YEJB3":39018,"YEJB14":39181,"YEJB35":39751,"YEJB34":39751,"YPEJB5":51111,"YPEJB3":50785,"YPEJB14":50948,"YPEJB35":51518,"YPEJB34":51518,"YBB5":63787,"YBB3":63461,"YBB14":63624,"YBB35":64194,"YBB34":64194},
+  "YE3-160L-4": {"YE3B5":35070,"YE3B3":34744,"YE3B14":34907,"YE3B35":35477,"YE3B34":35477,"YVPB5":41222,"YVPB3":40896,"YVPB14":41059,"YVPB35":41630,"YVPB34":41630,"YEJB5":45436,"YEJB3":45110,"YEJB14":45273,"YEJB35":45843,"YEJB34":45843,"YPEJB5":59021,"YPEJB3":58695,"YPEJB14":58858,"YPEJB35":59428,"YPEJB34":59428,"YBB5":73674,"YBB3":73348,"YBB14":73511,"YBB35":74081,"YBB34":74081},
+  "YE3-180M-4": {"YE3B5":43751,"YE3B3":43425,"YE3B14":43588,"YE3B35":44158,"YE3B34":44158,"YVPB5":51111,"YVPB3":50785,"YVPB14":50948,"YVPB35":51518,"YVPB34":51518,"YEJB5":55416,"YEJB3":55090,"YEJB14":55253,"YEJB35":55823,"YEJB34":55823,"YPEJB5":74849,"YPEJB3":74523,"YPEJB14":74686,"YPEJB35":75256,"YPEJB34":75256,"YBB5":93459,"YBB3":93133,"YBB14":93296,"YBB35":93866,"YBB34":93866},
+  "YE3-180L-4": {"YE3B5":48644,"YE3B3":48318,"YE3B14":48481,"YE3B35":49051,"YE3B34":49051,"YVPB5":53660,"YVPB3":53334,"YVPB14":53497,"YVPB35":54067,"YVPB34":54067,"YEJB5":61143,"YEJB3":60817,"YEJB14":60980,"YEJB35":61550,"YEJB34":61550,"YPEJB5":78169,"YPEJB3":77843,"YPEJB14":78006,"YPEJB35":78576,"YPEJB34":78576,"YBB5":97609,"YBB3":97283,"YBB14":97446,"YBB35":98016,"YBB34":98016},
+  "YE3-200L-4": {"YE3B5":65123,"YE3B3":64797,"YE3B14":64960,"YE3B35":65530,"YE3B34":65530,"YVPB5":71620,"YVPB3":71295,"YVPB14":71458,"YVPB35":72028,"YVPB34":72028,"YEJB5":83763,"YEJB3":83437,"YEJB14":83600,"YEJB35":84171,"YEJB34":84171,"YPEJB5":102891,"YPEJB3":102565,"YPEJB14":102728,"YPEJB35":103298,"YPEJB34":103298,"YBB5":128512,"YBB3":128186,"YBB14":128349,"YBB35":128919,"YBB34":128919},
+  "YE3-225S-4": {"YE3B5":78027,"YE3B3":77701,"YE3B14":77864,"YE3B35":78434,"YE3B34":78434,"YVPB5":87296,"YVPB3":86970,"YVPB14":87133,"YVPB35":87703,"YVPB34":87703,"YEJB5":100059,"YEJB3":99733,"YEJB14":99896,"YEJB35":100466,"YEJB34":100466,"YPEJB5":126741,"YPEJB3":126415,"YPEJB14":126578,"YPEJB35":127148,"YPEJB34":127148,"YBB5":158324,"YBB3":157998,"YBB14":158161,"YBB35":158732,"YBB34":158732},
+  "YE3-225M-4": {"YE3B5":84819,"YE3B3":84493,"YE3B14":84656,"YE3B35":85226,"YE3B34":85226,"YVPB5":97653,"YVPB3":97327,"YVPB14":97490,"YVPB35":98060,"YVPB34":98060,"YEJB5":118811,"YEJB3":118485,"YEJB14":118648,"YEJB35":119218,"YEJB34":119218,"YPEJB5":141665,"YPEJB3":141340,"YPEJB14":141503,"YPEJB35":142073,"YPEJB34":142073,"YBB5":176980,"YBB3":176654,"YBB14":176817,"YBB35":177387,"YBB34":177387},
+  "YE3-250M-4": {"YE3B5":107633,"YE3B3":107307,"YE3B14":107470,"YE3B35":108040,"YE3B34":108040,"YVPB5":122263,"YVPB3":121937,"YVPB14":122100,"YVPB35":122670,"YVPB34":122670,"YEJB5":137360,"YEJB3":137035,"YEJB14":137198,"YEJB35":137768,"YEJB34":137768,"YPEJB5":175475,"YPEJB3":175149,"YPEJB14":175312,"YPEJB35":175882,"YPEJB34":175882,"YBB5":219242,"YBB3":218916,"YBB14":219079,"YBB35":219649,"YBB34":219649},
+  "YE3-280S-4": {"YE3B5":141645,"YE3B3":141319,"YE3B14":141482,"YE3B35":142052,"YE3B34":142052,"YVPB5":153544,"YVPB3":153219,"YVPB14":153381,"YVPB35":153952,"YVPB34":153952,"YEJB5":173119,"YEJB3":172794,"YEJB14":172956,"YEJB35":173527,"YEJB34":173527,"YPEJB5":220361,"YPEJB3":220035,"YPEJB14":220198,"YPEJB35":220769,"YPEJB34":220769,"YBB5":275350,"YBB3":275024,"YBB14":275187,"YBB35":275757,"YBB34":275757},
+  "YE3-280M-4": {"YE3B5":162418,"YE3B3":162092,"YE3B14":162255,"YE3B35":162826,"YE3B34":162826,"YVPB5":172175,"YVPB3":171849,"YVPB14":172012,"YVPB35":172583,"YVPB34":172583,"YEJB5":196238,"YEJB3":195912,"YEJB14":196075,"YEJB35":196645,"YEJB34":196645,"YPEJB5":249876,"YPEJB3":249550,"YPEJB14":249713,"YPEJB35":250283,"YPEJB34":250283,"YBB5":312243,"YBB3":311917,"YBB14":312080,"YBB35":312650,"YBB34":312650},
+  "YE3-80M2-6": {"YE3B5":5666,"YE3B3":5340,"YE3B14":5503,"YE3B35":6073,"YE3B34":6073,"YVPB5":9210,"YVPB3":8884,"YVPB14":9047,"YVPB35":9617,"YVPB34":9617,"YEJB5":9372,"YEJB3":9047,"YEJB14":9210,"YEJB35":9780,"YEJB34":9780,"YPEJB5":11251,"YPEJB3":10925,"YPEJB14":11088,"YPEJB35":11658,"YPEJB34":11658,"YBB5":13962,"YBB3":13636,"YBB14":13799,"YBB35":14369,"YBB34":14369},
+  "YE3-90S-6": {"YE3B5":6621,"YE3B3":6295,"YE3B14":6458,"YE3B35":7028,"YE3B34":7028,"YVPB5":10510,"YVPB3":10184,"YVPB14":10347,"YVPB35":10917,"YVPB34":10917,"YEJB5":10733,"YEJB3":10407,"YEJB14":10570,"YEJB35":11140,"YEJB34":11140,"YPEJB5":13535,"YPEJB3":13209,"YPEJB14":13372,"YPEJB35":13942,"YPEJB34":13942,"YBB5":16817,"YBB3":16491,"YBB14":16654,"YBB35":17224,"YBB34":17224},
+  "YE3-90L-6": {"YE3B5":7576,"YE3B3":7250,"YE3B14":7413,"YE3B35":7983,"YE3B34":7983,"YVPB5":11718,"YVPB3":11392,"YVPB14":11555,"YVPB35":12125,"YVPB34":12125,"YEJB5":11718,"YEJB3":11392,"YEJB14":11555,"YEJB35":12125,"YEJB34":12125,"YPEJB5":15779,"YPEJB3":15453,"YPEJB14":15616,"YPEJB35":16186,"YPEJB34":16186,"YBB5":19622,"YBB3":19296,"YBB14":19459,"YBB35":20029,"YBB34":20029},
+  "YE3-100L-6": {"YE3B5":10439,"YE3B3":10113,"YE3B14":10276,"YE3B35":10846,"YE3B34":10846,"YVPB5":13444,"YVPB3":13118,"YVPB14":13281,"YVPB35":13851,"YVPB34":13851,"YEJB5":14094,"YEJB3":13768,"YEJB14":13931,"YEJB35":14501,"YEJB34":14501,"YPEJB5":18804,"YPEJB3":18479,"YPEJB14":18641,"YPEJB35":19212,"YPEJB34":19212,"YBB5":23404,"YBB3":23078,"YBB14":23241,"YBB35":23811,"YBB34":23811},
+  "YE3-112M-6": {"YE3B5":13312,"YE3B3":12986,"YE3B14":13149,"YE3B35":13719,"YE3B34":13719,"YVPB5":16287,"YVPB3":15961,"YVPB14":16124,"YVPB35":16694,"YVPB34":16694,"YEJB5":17271,"YEJB3":16946,"YEJB14":17108,"YEJB35":17679,"YEJB34":17679,"YPEJB5":22257,"YPEJB3":21931,"YPEJB14":22094,"YPEJB35":22664,"YPEJB34":22664,"YBB5":27719,"YBB3":27393,"YBB14":27556,"YBB35":28126,"YBB34":28126},
+  "YE3-132S-6": {"YE3B5":16337,"YE3B3":16011,"YE3B14":16174,"YE3B35":16744,"YE3B34":16744,"YVPB5":22500,"YVPB3":22174,"YVPB14":22337,"YVPB35":22907,"YVPB34":22907,"YEJB5":24531,"YEJB3":24205,"YEJB14":24368,"YEJB35":24938,"YEJB34":24938,"YPEJB5":30531,"YPEJB3":30205,"YPEJB14":30368,"YPEJB35":30938,"YPEJB34":30938,"YBB5":38062,"YBB3":37736,"YBB14":37899,"YBB35":38469,"YBB34":38469},
+  "YE3-132M1-6": {"YE3B5":18632,"YE3B3":18306,"YE3B14":18469,"YE3B35":19039,"YE3B34":19039,"YVPB5":24825,"YVPB3":24499,"YVPB14":24662,"YVPB35":25232,"YVPB34":25232,"YEJB5":26642,"YEJB3":26316,"YEJB14":26479,"YEJB35":27049,"YEJB34":27049,"YPEJB5":34085,"YPEJB3":33759,"YPEJB14":33922,"YPEJB35":34492,"YPEJB34":34492,"YBB5":42504,"YBB3":42179,"YBB14":42341,"YBB35":42912,"YBB34":42912},
+  "YE3-132M2-6": {"YE3B5":20845,"YE3B3":20519,"YE3B14":20682,"YE3B35":21252,"YE3B34":21252,"YVPB5":25221,"YVPB3":24895,"YVPB14":25058,"YVPB35":25628,"YVPB34":25628,"YEJB5":27221,"YEJB3":26896,"YEJB14":27058,"YEJB35":27629,"YEJB34":27629,"YPEJB5":42207,"YPEJB3":41881,"YPEJB14":42044,"YPEJB35":42614,"YPEJB34":42614,"YBB5":52657,"YBB3":52331,"YBB14":52494,"YBB35":53064,"YBB34":53064},
+  "YE3-160M-6": {"YE3B5":29769,"YE3B3":29444,"YE3B14":29606,"YE3B35":30177,"YE3B34":30177,"YVPB5":35770,"YVPB3":35444,"YVPB14":35607,"YVPB35":36178,"YVPB34":36178,"YEJB5":38562,"YEJB3":38236,"YEJB14":38399,"YEJB35":38969,"YEJB34":38969,"YPEJB5":51741,"YPEJB3":51415,"YPEJB14":51578,"YPEJB35":52148,"YPEJB34":52148,"YBB5":64574,"YBB3":64248,"YBB14":64411,"YBB35":64981,"YBB34":64981},
+  "YE3-160L-6": {"YE3B5":34369,"YE3B3":34043,"YE3B14":34206,"YE3B35":34777,"YE3B34":34777,"YVPB5":40400,"YVPB3":40074,"YVPB14":40237,"YVPB35":40807,"YVPB34":40807,"YEJB5":44552,"YEJB3":44226,"YEJB14":44389,"YEJB35":44959,"YEJB34":44959,"YPEJB5":57843,"YPEJB3":57517,"YPEJB14":57680,"YPEJB35":58250,"YPEJB34":58250,"YBB5":72202,"YBB3":71876,"YBB14":72039,"YBB35":72609,"YBB34":72609},
+  "YE3-180L-6": {"YE3B5":45324,"YE3B3":44998,"YE3B14":45161,"YE3B35":45731,"YE3B34":45731,"YVPB5":52603,"YVPB3":52278,"YVPB14":52441,"YVPB35":53011,"YVPB34":53011,"YEJB5":59934,"YEJB3":59608,"YEJB14":59771,"YEJB35":60341,"YEJB34":60341,"YPEJB5":76606,"YPEJB3":76280,"YPEJB14":76443,"YPEJB35":77013,"YPEJB34":77013,"YBB5":95655,"YBB3":95329,"YBB14":95492,"YBB35":96062,"YBB34":96062},
+  "YE3-200L1-6": {"YE3B5":56776,"YE3B3":56451,"YE3B14":56614,"YE3B35":57184,"YE3B34":57184,"YVPB5":70199,"YVPB3":69873,"YVPB14":70036,"YVPB35":70606,"YVPB34":70606,"YEJB5":82098,"YEJB3":81772,"YEJB14":81935,"YEJB35":82506,"YEJB34":82506,"YPEJB5":100841,"YPEJB3":100515,"YPEJB14":100678,"YPEJB35":101248,"YPEJB34":101248,"YBB5":125949,"YBB3":125623,"YBB14":125786,"YBB35":126356,"YBB34":126356},
+  "YE3-200L2-6": {"YE3B5":61955,"YE3B3":61629,"YE3B14":61792,"YE3B35":62362,"YE3B34":62362,"YVPB5":71132,"YVPB3":70807,"YVPB14":70970,"YVPB35":71540,"YVPB34":71540,"YEJB5":82595,"YEJB3":82269,"YEJB14":82432,"YEJB35":83002,"YEJB34":83002,"YPEJB5":101927,"YPEJB3":101601,"YPEJB14":101764,"YPEJB35":102334,"YPEJB34":102334,"YBB5":127306,"YBB3":126981,"YBB14":127143,"YBB35":127714,"YBB34":127714},
+  "YE3-225M-6": {"YE3B5":81519,"YE3B3":81193,"YE3B14":81356,"YE3B35":81926,"YE3B34":81926,"YVPB5":95713,"YVPB3":95387,"YVPB14":95550,"YVPB35":96120,"YVPB34":96120,"YEJB5":103551,"YEJB3":103225,"YEJB14":103388,"YEJB35":103958,"YEJB34":103958,"YPEJB5":138843,"YPEJB3":138517,"YPEJB14":138680,"YPEJB35":139250,"YPEJB34":139250,"YBB5":173452,"YBB3":173126,"YBB14":173289,"YBB35":173859,"YBB34":173859},
+  "YE3-250M-6": {"YE3B5":100464,"YE3B3":100139,"YE3B14":100302,"YE3B35":100872,"YE3B34":100872,"YVPB5":119846,"YVPB3":119521,"YVPB14":119683,"YVPB35":120254,"YVPB34":120254,"YEJB5":134670,"YEJB3":134344,"YEJB14":134507,"YEJB35":135077,"YEJB34":135077,"YPEJB5":171982,"YPEJB3":171656,"YPEJB14":171819,"YPEJB35":172390,"YPEJB34":172390,"YBB5":214876,"YBB3":214550,"YBB14":214713,"YBB35":215283,"YBB34":215283},
+  "YE3-280S-6": {"YE3B5":134843,"YE3B3":134517,"YE3B14":134680,"YE3B35":135250,"YE3B34":135250,"YVPB5":150488,"YVPB3":150162,"YVPB14":150325,"YVPB35":150895,"YVPB34":150895,"YEJB5":169667,"YEJB3":169341,"YEJB14":169504,"YEJB35":170074,"YEJB34":170074,"YPEJB5":215965,"YPEJB3":215639,"YPEJB14":215802,"YPEJB35":216372,"YPEJB34":216372,"YBB5":269854,"YBB3":269529,"YBB14":269692,"YBB35":270262,"YBB34":270262},
+  "YE3-280M-6": {"YE3B5":154559,"YE3B3":154234,"YE3B14":154396,"YE3B35":154967,"YE3B34":154967,"YVPB5":169454,"YVPB3":169128,"YVPB14":169291,"YVPB35":169861,"YVPB34":169861,"YEJB5":192329,"YEJB3":192003,"YEJB14":192166,"YEJB35":192736,"YEJB34":192736,"YPEJB5":244890,"YPEJB3":244565,"YPEJB14":244728,"YPEJB35":245298,"YPEJB34":245298,"YBB5":306011,"YBB3":305685,"YBB14":305848,"YBB35":306419,"YBB34":306419},
+  "YE3-80M1-2": {"YE3B5":5129,"YE3B3":4803,"YE3B14":4966,"YE3B35":5536,"YE3B34":5536,"YVPB5":7251,"YVPB3":6925,"YVPB14":7088,"YVPB35":7658,"YVPB34":7658,"YEJB5":8317,"YEJB3":7991,"YEJB14":8154,"YEJB35":8724,"YEJB34":8724,"YPEJB5":10601,"YPEJB3":10275,"YPEJB14":10438,"YPEJB35":11008,"YPEJB34":11008,"YBB5":13149,"YBB3":12823,"YBB14":12986,"YBB35":13557,"YBB34":13557},
+  "YE3-80M2-2": {"YE3B5":5738,"YE3B3":5412,"YE3B14":5575,"YE3B35":6145,"YE3B34":6145,"YVPB5":7910,"YVPB3":7584,"YVPB14":7747,"YVPB35":8318,"YVPB34":8318,"YEJB5":8611,"YEJB3":8285,"YEJB14":8448,"YEJB35":9018,"YEJB34":9018,"YPEJB5":11210,"YPEJB3":10884,"YPEJB14":11047,"YPEJB35":11617,"YPEJB34":11617,"YBB5":13911,"YBB3":13585,"YBB14":13748,"YBB35":14318,"YBB34":14318},
+  "YE3-90S-2": {"YE3B5":6682,"YE3B3":6356,"YE3B14":6519,"YE3B35":7089,"YE3B34":7089,"YVPB5":8977,"YVPB3":8651,"YVPB14":8814,"YVPB35":9384,"YVPB34":9384,"YEJB5":10012,"YEJB3":9686,"YEJB14":9849,"YEJB35":10419,"YEJB34":10419,"YPEJB5":12784,"YPEJB3":12458,"YPEJB14":12621,"YPEJB35":13191,"YPEJB34":13191,"YBB5":15878,"YBB3":15552,"YBB14":15715,"YBB35":16285,"YBB34":16285},
+  "YE3-90L-2": {"YE3B5":7667,"YE3B3":7341,"YE3B14":7504,"YE3B35":8074,"YE3B34":8074,"YVPB5":9789,"YVPB3":9463,"YVPB14":9626,"YVPB35":10196,"YVPB34":10196,"YEJB5":10905,"YEJB3":10580,"YEJB14":10743,"YEJB35":11313,"YEJB34":11313,"YPEJB5":13698,"YPEJB3":13372,"YPEJB14":13535,"YPEJB35":14105,"YPEJB34":14105,"YBB5":17020,"YBB3":16695,"YBB14":16858,"YBB35":17428,"YBB34":17428},
+  "YE3-100L-2": {"YE3B5":11444,"YE3B3":11118,"YE3B14":11281,"YE3B35":11851,"YE3B34":11851,"YVPB5":13708,"YVPB3":13382,"YVPB14":13545,"YVPB35":14115,"YVPB34":14115,"YEJB5":15779,"YEJB3":15453,"YEJB14":15616,"YEJB35":16186,"YEJB34":16186,"YPEJB5":19170,"YPEJB3":18844,"YPEJB14":19007,"YPEJB35":19577,"YPEJB34":19577,"YBB5":23861,"YBB3":23535,"YBB14":23698,"YBB35":24268,"YBB34":24268},
+  "YE3-112M-2": {"YE3B5":13423,"YE3B3":13098,"YE3B14":13260,"YE3B35":13831,"YE3B34":13831,"YVPB5":16601,"YVPB3":16275,"YVPB14":16438,"YVPB35":17008,"YVPB34":17008,"YEJB5":18338,"YEJB3":18012,"YEJB14":18175,"YEJB35":18745,"YEJB34":18745,"YPEJB5":22693,"YPEJB3":22367,"YPEJB14":22530,"YPEJB35":23100,"YPEJB34":23100,"YBB5":28265,"YBB3":27939,"YBB14":28102,"YBB35":28672,"YBB34":28672},
+  "YE3-132S1-2": {"YE3B5":18693,"YE3B3":18367,"YE3B14":18530,"YE3B35":19100,"YE3B34":19100,"YVPB5":22764,"YVPB3":22438,"YVPB14":22601,"YVPB35":23171,"YVPB34":23171,"YEJB5":24592,"YEJB3":24266,"YEJB14":24429,"YEJB35":24999,"YEJB34":24999,"YPEJB5":31029,"YPEJB3":30703,"YPEJB14":30866,"YPEJB35":31436,"YPEJB34":31436,"YBB5":38684,"YBB3":38358,"YBB14":38521,"YBB35":39091,"YBB34":39091},
+  "YE3-132S2-2": {"YE3B5":21261,"YE3B3":20935,"YE3B14":21098,"YE3B35":21668,"YE3B34":21668,"YVPB5":27810,"YVPB3":27484,"YVPB14":27647,"YVPB35":28218,"YVPB34":28218,"YEJB5":27394,"YEJB3":27068,"YEJB14":27231,"YEJB35":27801,"YEJB34":27801,"YPEJB5":31150,"YPEJB3":30824,"YPEJB14":30987,"YPEJB35":31557,"YPEJB34":31557,"YBB5":38836,"YBB3":38510,"YBB14":38673,"YBB35":39243,"YBB34":39243},
+  "YE3-160M1-2": {"YE3B5":29769,"YE3B3":29444,"YE3B14":29606,"YE3B35":30177,"YE3B34":30177,"YVPB5":36349,"YVPB3":36023,"YVPB14":36186,"YVPB35":36756,"YVPB34":36756,"YEJB5":39192,"YEJB3":38866,"YEJB14":39029,"YEJB35":39599,"YEJB34":39599,"YPEJB5":49862,"YPEJB3":49537,"YPEJB14":49699,"YPEJB35":50270,"YPEJB34":50270,"YBB5":62226,"YBB3":61900,"YBB14":62063,"YBB35":62633,"YBB34":62633},
+  "YE3-160M2-2": {"YE3B5":30369,"YE3B3":30043,"YE3B14":30206,"YE3B35":30776,"YE3B34":30776,"YVPB5":36501,"YVPB3":36175,"YVPB14":36338,"YVPB35":36908,"YVPB34":36908,"YEJB5":39344,"YEJB3":39018,"YEJB14":39181,"YEJB35":39751,"YEJB34":39751,"YPEJB5":51111,"YPEJB3":50785,"YPEJB14":50948,"YPEJB35":51518,"YPEJB34":51518,"YBB5":63787,"YBB3":63461,"YBB14":63624,"YBB35":64194,"YBB34":64194},
+  "YE3-160L2-2": {"YE3B5":35070,"YE3B3":34744,"YE3B14":34907,"YE3B35":35477,"YE3B34":35477,"YVPB5":41222,"YVPB3":40896,"YVPB14":41059,"YVPB35":41630,"YVPB34":41630,"YEJB5":45436,"YEJB3":45110,"YEJB14":45273,"YEJB35":45843,"YEJB34":45843,"YPEJB5":59021,"YPEJB3":58695,"YPEJB14":58858,"YPEJB35":59428,"YPEJB34":59428,"YBB5":73674,"YBB3":73348,"YBB14":73511,"YBB35":74081,"YBB34":74081},
+  "YE3-180M-2": {"YE3B5":43751,"YE3B3":43425,"YE3B14":43588,"YE3B35":44158,"YE3B34":44158,"YVPB5":51111,"YVPB3":50785,"YVPB14":50948,"YVPB35":51518,"YVPB34":51518,"YEJB5":59071,"YEJB3":58745,"YEJB14":58908,"YEJB35":59478,"YEJB34":59478,"YPEJB5":74849,"YPEJB3":74523,"YPEJB14":74686,"YPEJB35":75256,"YPEJB34":75256,"YBB5":93459,"YBB3":93133,"YBB14":93296,"YBB35":93866,"YBB34":93866},
+  "YE3-200L1-2": {"YE3B5":63843,"YE3B3":63517,"YE3B14":63680,"YE3B35":64250,"YE3B34":64250,"YVPB5":71357,"YVPB3":71031,"YVPB14":71194,"YVPB35":71764,"YVPB34":71764,"YEJB5":83550,"YEJB3":83224,"YEJB14":83387,"YEJB35":83957,"YEJB34":83957,"YPEJB5":102729,"YPEJB3":102403,"YPEJB14":102566,"YPEJB35":103136,"YPEJB34":103136,"YBB5":128309,"YBB3":127984,"YBB14":128146,"YBB35":128717,"YBB34":128717},
+  "YE3-200L2-2": {"YE3B5":65123,"YE3B3":64797,"YE3B14":64960,"YE3B35":65530,"YE3B34":65530,"YVPB5":71620,"YVPB3":71295,"YVPB14":71458,"YVPB35":72028,"YVPB34":72028,"YEJB5":83763,"YEJB3":83437,"YEJB14":83600,"YEJB35":84171,"YEJB34":84171,"YPEJB5":102891,"YPEJB3":102565,"YPEJB14":102728,"YPEJB35":103298,"YPEJB34":103298,"YBB5":128512,"YBB3":128186,"YBB14":128349,"YBB35":128919,"YBB34":128919},
 };
 
 // ── ฟังก์ชันดึงราคา: motorType (YE3/YVP/YEJ/YPEJ) + fullKey (YE3-xxx-P) + mount (B5/B3/B14/B35/B34)
@@ -1392,8 +1879,16 @@ function lookupIECPrice(motorType, fullKey, mount) {
   if (!motorType || !fullKey || !mount) return null;
   const row = IEC_PRICE_DB[fullKey];
   if (!row) return null;
-  // map motorType → prefix in price col
-  const prefixMap = { YE3:'YE3', YE4:'YE3', YVP:'YVP', YEJ:'YEJ', YPEJ:'YPEJ' };
+  // map motorType → prefix ใน price column
+  // YB มีราคาจริงในฐานข้อมูล (YBB5/YBB3/...)
+  const prefixMap = {
+    YE3:  'YE3',
+    YE4:  'YE3',   // Super Premium ≈ YE3 base
+    YVP:  'YVP',
+    YEJ:  'YEJ',
+    YPEJ: 'YPEJ',
+    YB:   'YB',    // Explosion-proof → YBB5/YBB3/... จาก IEC_PRICE_DB
+  };
   const prefix = prefixMap[motorType];
   if (!prefix) return null;
   return row[`${prefix}${mount}`] ?? null;
@@ -1556,6 +2051,8 @@ function ConnectionDiagram({ isStar }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleNum, isStarConnection }) {
   const { iecMotorType, iecPower, iecPole, iecMount, iecTerminal, iecCable } = state;
+  const isMobile = useIsMobileIEC();
+  const [lightMode, setLightMode] = React.useState(false);
   const [selectedColor,          setSelectedColor]          = React.useState(MOTOR_COLORS[7]);
   const [showQuote,               setShowQuote]              = React.useState(false);
   const [qName,                   setQName]                  = React.useState('');
@@ -1711,258 +2208,308 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
     }
   };
 
-  return (
-    <div className="mt-4 pb-28">
-      {/* ── Summary Card ────────────────────────────────────────────────── */}
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-xl">
-        <p className="text-blue-300 text-xs font-semibold mb-1 uppercase tracking-wider">IEC Standard Motor</p>
+  // ── Theme tokens (Hypoid-style) ────────────────────────────────────────────
+  const T = lightMode ? {
+    pageBg:'#f0f4f8', topBarBg:'rgba(240,244,248,0.97)', topBarBorder:'1px solid rgba(0,0,0,0.08)',
+    panelBg:'#ffffff', panelBorder:'1px solid rgba(0,0,0,0.08)',
+    accent:'#1a4fd6', accentFaint:'rgba(26,79,214,0.08)', accentBorder:'rgba(26,79,214,0.25)',
+    titleColor:'#1a4fd6', labelColor:'#8090a8', valueColor:'#0d1526',
+    btnBg:'rgba(0,0,0,0.04)', btnBorder:'1px solid rgba(0,0,0,0.10)', btnColor:'#0d1526',
+    sectionDivider:'1px solid rgba(0,0,0,0.06)', sectionHeadColor:'#8090a8',
+    codeBg:'rgba(0,0,0,0.05)', codeBorder:'1px solid rgba(0,0,0,0.10)', codeColor:'#0d1526',
+    backBtnBg:'rgba(26,79,214,0.08)', backBtnBorder:'1px solid rgba(26,79,214,0.25)', backBtnColor:'#1a4fd6',
+    specHighlight:'#1a4fd6', viewerBg:'linear-gradient(135deg,#e8edf5,#dde4f0)', toggleIcon:'☀️',
+    gridLine:'rgba(26,79,214,0.025)', loaderRingColor:'#1a4fd6', loaderText:'#8090a8',
+    accentBorderStr:'rgba(26,79,214,0.25)',
+  } : {
+    pageBg:'#0a0c10', topBarBg:'rgba(10,12,16,0.95)', topBarBorder:'1px solid rgba(255,255,255,0.07)',
+    panelBg:'#0f1118', panelBorder:'1px solid rgba(255,255,255,0.07)',
+    accent:'#00e5a0', accentFaint:'rgba(0,229,160,0.08)', accentBorder:'rgba(0,229,160,0.25)',
+    titleColor:'#00e5a0', labelColor:'#4a5060', valueColor:'#e8eaf0',
+    btnBg:'rgba(255,255,255,0.06)', btnBorder:'1px solid rgba(255,255,255,0.1)', btnColor:'#e8eaf0',
+    sectionDivider:'1px solid rgba(255,255,255,0.06)', sectionHeadColor:'#4a5060',
+    codeBg:'rgba(255,255,255,0.06)', codeBorder:'1px solid rgba(255,255,255,0.1)', codeColor:'#e8eaf0',
+    backBtnBg:'rgba(0,229,160,0.08)', backBtnBorder:'1px solid rgba(0,229,160,0.25)', backBtnColor:'#00e5a0',
+    specHighlight:'#00e5a0', viewerBg:'linear-gradient(135deg,#0a0c10,#0d111c)', toggleIcon:'🌙',
+    gridLine:'rgba(0,229,160,0.025)', loaderRingColor:'#00e5a0', loaderText:'#4a5060',
+    accentBorderStr:'rgba(0,229,160,0.25)',
+  };
 
-        {/* Model Code + Copy */}
-        <div className="flex items-center flex-wrap gap-2 mb-3">
-          <span className="text-white font-bold text-sm">Model:</span>
-          <span className="text-yellow-400 font-extrabold text-xl tracking-wide leading-tight break-all">{modelCode}</span>
-          <button type="button" title="Copy"
-            className="text-[10px] px-2 py-0.5 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white transition flex-shrink-0"
-            onClick={async (e) => {
-              const btn = e.currentTarget; const old = btn.textContent;
-              const fb = () => { const ta=document.createElement('textarea');ta.value=modelCode;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta); };
-              try { navigator.clipboard && window.isSecureContext ? await navigator.clipboard.writeText(modelCode) : fb(); } catch { fb(); }
-              btn.textContent='✓'; setTimeout(()=>{btn.textContent=old;},1400);
-            }}>Copy</button>
+  // spec rows for right panel
+  const specRows = [
+    ['Motor Type',   motorInfo?.sub || iecMotorType],
+    ['Frame',        frameLabel(fullKey)],
+    ['Power',        iecPower + ' kW (' + (spec?.hp ? spec.hp + ' HP' : (parseFloat(iecPower)*1.341).toFixed(2) + ' HP') + ')'],
+    ['Mounting',     (mountInfo?.label||'-') + ' – ' + (mountInfo?.desc||'-')],
+    ['Pole',         (poleInfo?.label||'-') + ' (' + (spec?.speed ? spec.speed + ' rpm' : poleInfo?.rpm||'-') + ')'],
+    ['Terminal',     iecTerminal + '°'],
+    ['Cable Pos.',   iecCable],
+    ['Direction',    'CW / CCW'],
+    ['Casing',       'Iron'],
+    ...(getShaftDiameter(fullKey) != null ? [['Output Shaft', 'Ø' + getShaftDiameter(fullKey) + ' mm']] : []),
+    ...(unitPrice != null ? [['ราคา', maskPrice(unitPrice) + ' ฿/ตัว']] : []),
+    ['SAS Stock',    stockLoading ? 'กำลังตรวจสอบ…' : stockQty === -1 ? 'รอสินค้า' : stockQty + ' ตัว (พร้อมส่ง)'],
+    ['จัดส่ง',       stockLoading ? '—' : stockQty === -1 ? 'ภายใน 30–45 วัน' : 'ภายใน 1–3 วัน'],
+  ];
+
+  const highlightKeys = new Set(['Power','Output Shaft','ราคา']);
+  const orangeKeys    = new Set(['SAS Stock','จัดส่ง']);
+
+  return (
+    <>
+      <div
+        id="iec-summary"
+        style={{
+          position:'fixed', inset:0, zIndex:500,
+          display:'flex', flexDirection:'column',
+          background:T.pageBg, fontFamily:"'Sarabun',sans-serif",
+          transition:'background 0.25s',
+        }}
+      >
+        {/* ── Top bar ── */}
+        <div style={{
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding: isMobile ? '8px 12px' : '10px 18px',
+          borderBottom:T.topBarBorder, background:T.topBarBg,
+          backdropFilter:'blur(12px)', flexShrink:0, flexWrap:'wrap', gap:6,
+          transition:'background 0.25s, border 0.25s',
+        }}>
+          {/* Title + toggle */}
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:isMobile?13:15,letterSpacing:'1.5px',color:T.titleColor,textTransform:'uppercase'}}>
+              ⚡ IEC Standard Motor
+            </span>
+            <button type="button" onClick={()=>setLightMode(m=>!m)}
+              style={{display:'flex',alignItems:'center',justifyContent:'center',width:28,height:28,borderRadius:8,background:T.accentFaint,border:`1px solid ${T.accentBorderStr}`,cursor:'pointer',fontSize:15,lineHeight:1,flexShrink:0}}>
+              {T.toggleIcon}
+            </button>
+          </div>
+          {/* Model code + copy */}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontFamily:'monospace',fontSize:isMobile?10:12,fontWeight:600,color:T.codeColor,background:T.codeBg,border:T.codeBorder,padding:'3px 8px',borderRadius:5,maxWidth:isMobile?160:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+              {modelCode||'—'}
+            </span>
+            <button type="button" style={{background:'none',border:'none',cursor:'pointer',color:T.accent,fontSize:11,padding:'3px 8px',borderRadius:4}}
+              onClick={async()=>{ try{ if(navigator.clipboard?.writeText) await navigator.clipboard.writeText(modelCode||''); }catch{} }}>
+              Copy
+            </button>
+          </div>
+          {/* Back */}
+          <button type="button" onClick={()=>update('iecCable',null)}
+            style={{background:T.backBtnBg,border:T.backBtnBorder,color:T.backBtnColor,padding:'4px 12px',borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:600}}>
+            ← ย้อนกลับ
+          </button>
         </div>
 
-        {/* Top row */}
-        <div className="flex flex-row gap-3 items-start">
-          <div className="flex-1 min-w-0 flex flex-col">
-            {[
-              ['Motor Type', motorInfo?.sub || iecMotorType],
-              ['Power',      iecPower + ' kW (' + (spec?.hp ? spec.hp + ' HP' : (parseFloat(iecPower)*1.341).toFixed(2) + ' HP') + ')'],
-              ['Mounting',   (mountInfo?.label||'-') + ' – ' + (mountInfo?.desc||'-')],
-              ['Cable Pos.', iecCable],
-              ['Frame',      frameLabel(fullKey)],
-              ['Pole',       (poleInfo?.label||'-') + ' (' + (spec?.speed ? spec.speed + ' rpm' : poleInfo?.rpm||'-') + ')'],
-              ['Terminal',   iecTerminal + '°'],
-              ['Direction',  'CW / CCW'],
-              ['Casing',     'Iron'],
-              ...(getShaftDiameter(fullKey) != null ? [['Output Shaft', 'Ø' + getShaftDiameter(fullKey) + ' mm']] : []),
-            ].map(([lbl, val]) => (
-              <div key={lbl} className="flex text-xs mb-0.5">
-                <span className="text-white/60 w-20 flex-shrink-0 font-medium">{lbl}:</span>
-                <span className="text-blue-300 font-semibold">{val}</span>
-              </div>
-            ))}
-            {unitPrice != null && (
-              <div className="flex text-xs mb-0.5 mt-1">
-                <span className="text-white/60 w-20 flex-shrink-0 font-medium">ราคา:</span>
-                <span className="text-emerald-400 font-bold">{maskPrice(unitPrice)} ฿/ตัว</span>
-              </div>
-            )}
-            {/* ── SAS Stock ──────────────────────────────────────────────── */}
-            <div className="flex text-xs mb-0.5">
-              <span className="text-white/60 w-20 flex-shrink-0 font-medium">SAS Stock:</span>
-              {stockLoading
-                ? <span className="text-white/50 italic">กำลังตรวจสอบ…</span>
-                : stockQty === -1
-                  ? <span className="text-orange-400 font-bold">รอสินค้า</span>
-                  : <span className="text-emerald-400 font-bold">{stockQty} ตัว (พร้อมส่ง)</span>
-              }
-            </div>
-            <div className="flex text-xs mb-0.5">
-              <span className="text-white/60 w-20 flex-shrink-0 font-medium">จัดส่ง:</span>
-              {stockLoading
-                ? <span className="text-white/50 italic">—</span>
-                : stockQty === -1
-                  ? <span className="text-orange-300 font-semibold">ภายใน 30–45 วัน</span>
-                  : <span className="text-emerald-300 font-semibold">ภายใน 1–3 วัน</span>
-              }
+        {/* ── Body ── */}
+        <div style={{flex:1,display:'flex',flexDirection:isMobile?'column':'row',minHeight:0,overflow:isMobile?'auto':'hidden',WebkitOverflowScrolling:'touch'}}>
+
+          {/* 3D Viewer */}
+          <div style={{flex:isMobile?'none':1,height:isMobile?'300px':undefined,minHeight:isMobile?300:0,maxHeight:isMobile?400:undefined,minWidth:0,background:T.viewerBg,transition:'background 0.25s'}}>
+            <IECViewer3D modelCode={modelCode} lightMode={lightMode} T={T} isMobileSummary={isMobile} />
+          </div>
+
+          {/* Right panel */}
+          <div style={{
+            width:isMobile?'100%':300, flexShrink:0, background:T.panelBg,
+            borderLeft:isMobile?'none':T.panelBorder, borderTop:isMobile?T.panelBorder:'none',
+            overflowY:'auto', display:'flex', flexDirection:'column',
+            transition:'background 0.25s, border 0.25s',
+            paddingBottom: isMobile ? 24 : 0,
+          }}>
+
+            {/* Mobile lighting controls */}
+            {isMobile && <IECMobileLightingControls T={T} />}
+
+            {/* ── Spec rows ── */}
+            <div style={{padding:'14px 16px',borderBottom:T.sectionDivider}}>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:'2px',textTransform:'uppercase',color:T.sectionHeadColor,marginBottom:10}}>ข้อมูลจำเพาะ</div>
+              {specRows.map(([k,v]) => (
+                <div key={k} style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'5px 0',borderBottom:`1px solid ${lightMode?'rgba(0,0,0,0.04)':'rgba(255,255,255,0.04)'}`,gap:6}}>
+                  <span style={{fontSize:11,color:T.labelColor,flexShrink:0}}>{k}</span>
+                  <span style={{
+                    fontSize:11,fontWeight:600,textAlign:'right',wordBreak:'break-all',
+                    color: highlightKeys.has(k) ? T.specHighlight : orangeKeys.has(k) ? (stockQty===-1?'#fb923c':'#34d399') : T.valueColor,
+                  }}>{v||'—'}</span>
+                </div>
+              ))}
             </div>
 
-            <div className="mt-3 flex-1 flex flex-col justify-center">
-              <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-2">Connection Diagrams</p>
-              <div className={`rounded-xl p-2 border-2 ${isStarConnection ? 'border-yellow-400 bg-yellow-400/10' : 'border-blue-400 bg-blue-400/10'}`}>
+            {/* ── Connection Diagram ── */}
+            <div style={{padding:'14px 16px',borderBottom:T.sectionDivider}}>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:'2px',textTransform:'uppercase',color:T.sectionHeadColor,marginBottom:10}}>Connection Diagrams</div>
+              <div style={{borderRadius:10,padding:10,border:`2px solid ${isStarConnection?'#fbbf24':'#60a5fa'}`,background:isStarConnection?'rgba(251,191,36,0.08)':'rgba(96,165,250,0.08)'}}>
                 <ConnectionDiagram isStar={isStarConnection} />
-                <p className={`text-center text-xs font-bold mt-1 ${isStarConnection ? 'text-yellow-400' : 'text-blue-400'}`}>
+                <p style={{textAlign:'center',fontSize:11,fontWeight:700,marginTop:6,color:isStarConnection?'#fbbf24':'#60a5fa'}}>
                   {isStarConnection ? '★ Star (Y) — ใช้กับมอเตอร์นี้' : '▲ Delta (Δ) — ใช้กับมอเตอร์นี้'}
                 </p>
               </div>
             </div>
-          </div>
 
-          <div className="flex-1 flex justify-center">
-            <MountingColorViewer mountInfo={mountInfo} onColorChange={setSelectedColor} />
-          </div>
-        </div>
-
-        {/* Technical Specifications */}
-        <div className="border-t border-white/20 pt-3 mt-3">
-          <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-2">Technical Specifications</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5 text-xs text-white/90">
-            {[
-              ['Standard',   'IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55, Class F, S1'],
-              ['Insulation', 'Class F (105K), by Class B'],
-              ['Cooling',    'TEFC (IC411, IEC60034-6)'],
-              ['Winding',    '100% Copper Wire'],
-              ['Duty',       'Continuous (S1)'],
-              ['Vibration',  'Class A (Class B on request)'],
-              ['Site',       '-15°C to +40°C, Alt ≤ 1000 m'],
-              ['Voltage',    '200–660V, 50/60Hz (±5%)'],
-              ...(spec ? [
-                ['Rated Speed',  spec.speed  + ' rpm'],
-                ['Efficiency',   spec.eff    + ' %'],
-                ...(spec.pf   ? [['Power Factor', String(spec.pf)]]      : []),
-                ...(spec.i380 ? [['Current 380V', spec.i380 + ' A']]     : []),
-                ...(spec.i400 ? [['Current 400V', spec.i400 + ' A']]     : []),
-                ...(spec.i415 ? [['Current 415V', spec.i415 + ' A']]     : []),
-                ['Rated Torque', spec.torque + ' N·m'],
-                ...(spec.weight ? [['Weight',     spec.weight + ' kg']]  : []),
-              ] : []),
-              ['Protection', 'IP54 / IP55'],
-              ['Quality',    'ISO 9001'],
-            ].map(([lbl, val]) => (
-              <div key={lbl} className="flex gap-1">
-                <span className="font-semibold text-white/60 w-24 flex-shrink-0">{lbl}:</span>
-                <span className="text-blue-300">{val}</span>
+            {/* ── Technical Specs ── */}
+            <div style={{padding:'14px 16px',borderBottom:T.sectionDivider}}>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:'2px',textTransform:'uppercase',color:T.sectionHeadColor,marginBottom:10}}>Technical Specifications</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'2px 12px'}}>
+                {[
+                  ['Standard',   'IEC 60034 / GB18613, 3Ph 380V 50Hz, IP55, Class F, S1'],
+                  ['Insulation', 'Class F (105K), by Class B'],
+                  ['Cooling',    'TEFC (IC411, IEC60034-6)'],
+                  ['Winding',    '100% Copper Wire'],
+                  ['Duty',       'Continuous (S1)'],
+                  ['Vibration',  'Class A (Class B on request)'],
+                  ['Site',       '-15°C to +40°C, Alt ≤ 1000 m'],
+                  ['Voltage',    '200–660V, 50/60Hz (±5%)'],
+                  ...(spec ? [
+                    ['Rated Speed', spec.speed + ' rpm'],
+                    ['Efficiency',  spec.eff   + ' %'],
+                    ...(spec.pf   ? [['Power Factor', String(spec.pf)]]    : []),
+                    ...(spec.i380 ? [['Current 380V', spec.i380 + ' A']]   : []),
+                    ...(spec.i400 ? [['Current 400V', spec.i400 + ' A']]   : []),
+                    ...(spec.i415 ? [['Current 415V', spec.i415 + ' A']]   : []),
+                    ['Rated Torque', spec.torque + ' N·m'],
+                    ...(spec.weight ? [['Weight', spec.weight + ' kg']]    : []),
+                  ] : []),
+                  ['Protection', 'IP54 / IP55'],
+                  ['Quality',    'ISO 9001'],
+                ].map(([k,v]) => (
+                  <div key={k} style={{display:'flex',gap:4,fontSize:10,padding:'2px 0',gridColumn:v.length>25?'1 / -1':'auto'}}>
+                    <span style={{fontWeight:600,color:T.labelColor,flexShrink:0,minWidth:70}}>{k}:</span>
+                    <span style={{color:T.valueColor}}>{v}</span>
+                  </div>
+                ))}
+                <div style={{display:'flex',gap:4,fontSize:11,gridColumn:'1 / -1',marginTop:4}}>
+                  <span style={{fontWeight:700,color:'#fbbf24',minWidth:70}}>Warranty:</span>
+                  <span style={{fontWeight:800,color:'#fbbf24',fontSize:13}}>24 เดือน</span>
+                </div>
               </div>
-            ))}
-            <div className="flex gap-1 col-span-full">
-              <span className="font-semibold text-yellow-400 w-24 flex-shrink-0">Warranty:</span>
-              <span className="text-yellow-400 font-extrabold text-base">24 เดือน</span>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* ── ปุ่ม 4 ปุ่ม ─────────────────────────────────────────────────────── */}
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <DataSheetButton state={state} selectedColor={selectedColor} isStarConnection={isStarConnection} />
-        <Drawing2DButton state={state} modelCode={modelCode} />
-        <button type="button"
-          onClick={() => setShowQuote(true)}
-          className="flex flex-col items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-4 rounded-xl shadow transition active:scale-95">
-          <span className="text-2xl">🧾</span>
-          <span className="font-semibold text-sm">ขอใบเสนอราคา</span>
-        </button>
-        <button type="button"
-          onClick={() => { if (typeof onConfirm==='function') onConfirm(modelCode,'3d'); }}
-          className="flex flex-col items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white px-3 py-4 rounded-xl shadow transition active:scale-95">
-          <span className="text-2xl">📦</span>
-          <span className="font-semibold text-sm">3D Step file</span>
-        </button>
-      </div>
+            {/* ── Quantity ── */}
+            <div style={{padding:'14px 16px',borderBottom:T.sectionDivider}}>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:'2px',textTransform:'uppercase',color:T.sectionHeadColor,marginBottom:10}}>จำนวน</div>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                <span style={{fontSize:12,color:T.valueColor}}>IEC Motor</span>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <button type="button" onClick={()=>setQtyMotor(q=>Math.max(1,q-1))}
+                    style={{width:32,height:32,borderRadius:8,background:T.btnBg,border:T.btnBorder,color:T.btnColor,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>−</button>
+                  <span style={{fontSize:15,fontWeight:700,color:T.valueColor,minWidth:28,textAlign:'center'}}>{qtyMotor}</span>
+                  <button type="button" onClick={()=>setQtyMotor(q=>Math.min(999,q+1))}
+                    style={{width:32,height:32,borderRadius:8,background:T.btnBg,border:T.btnBorder,color:T.btnColor,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>+</button>
+                </div>
+              </div>
+            </div>
 
-      <FloatingBack onClick={() => update('iecCable', null)} />
-
-      {/* ── Quote Modal ──────────────────────────────────────────────────────── */}
-      {showQuote && (
-        <div className="fixed inset-0 z-[9990] flex items-center justify-center px-4 py-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setShowQuote(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 z-[9991] overflow-y-auto" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
-
-            {/* Header */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <h3 className="text-xl font-bold flex-1">ขอใบเสนอราคา</h3>
-              <div className="relative">
-                <button type="button"
-                  onClick={() => setShowSalePersonPicker(v => !v)}
-                  className="text-2xl leading-none hover:scale-110 active:scale-95 transition-transform"
-                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}>
-                  🧑‍💼
+            {/* ── Action Buttons ── */}
+            <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:8}}>
+              {/* Top row: Data Sheet + Drawing 2D */}
+              <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'1fr',gap:8}}>
+                <DataSheetButton state={state} selectedColor={selectedColor} isStarConnection={isStarConnection} />
+                <Drawing2DButton state={state} modelCode={modelCode} />
+              </div>
+              {/* Bottom row: ขอราคา + 3D */}
+              <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'1fr',gap:8}}>
+                <button type="button" onClick={()=>setShowQuote(true)}
+                  style={{padding:'11px 6px',borderRadius:10,background:'linear-gradient(90deg,#00e5a0,#00c87a)',color:'#0a1a10',fontWeight:700,fontSize:isMobile?12:14,border:'none',cursor:'pointer',whiteSpace:'nowrap'}}>
+                  🧾 {isMobile?'ขอราคา':'ขอใบเสนอราคา'}
                 </button>
+                <button type="button" onClick={()=>{ if(typeof onConfirm==='function') onConfirm(modelCode,'3d'); }}
+                  style={{padding:'11px 6px',borderRadius:10,background:'linear-gradient(90deg,#22c55e,#16a34a)',color:'white',fontWeight:700,fontSize:isMobile?12:14,border:'none',cursor:'pointer',whiteSpace:'nowrap'}}>
+                  📦 {isMobile?'ไฟล์ 3D':'3D Step file'}
+                </button>
+              </div>
+            </div>
+
+          </div>{/* end right panel */}
+        </div>{/* end body */}
+      </div>{/* end fixed panel */}
+
+      {/* ── Quote Modal ── */}
+      {showQuote && (
+        <div style={{position:'fixed',inset:0,zIndex:9990,display:'flex',alignItems:isMobile?'flex-end':'center',justifyContent:'center',padding:isMobile?0:'16px'}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.65)'}} onClick={()=>!sending&&setShowQuote(false)} />
+          <div style={{
+            position:'relative', background:'white',
+            borderRadius: isMobile ? '20px 20px 0 0' : 16,
+            padding: isMobile ? '20px 20px 32px' : '24px',
+            width:'100%', maxWidth: isMobile ? '100%' : 520,
+            zIndex:9991, overflowY:'auto',
+            maxHeight: isMobile ? '90vh' : 'calc(100vh - 2rem)',
+          }}>
+            {/* drag handle on mobile */}
+            {isMobile && <div style={{width:40,height:4,background:'#e2e8f0',borderRadius:2,margin:'0 auto 16px'}} />}
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+              <h3 style={{fontSize:18,fontWeight:700,flex:1}}>ขอใบเสนอราคา</h3>
+              {/* Sale person picker — dropdown ชิดในกล่อง modal */}
+              <div style={{position:'relative'}}>
+                <button type="button" onClick={()=>setShowSalePersonPicker(v=>!v)} style={{fontSize:22,cursor:'pointer',background:'none',border:'none'}}>🧑‍💼</button>
                 {showSalePersonPicker && (
                   <>
-                    {/* backdrop ปิด dropdown เมื่อคลิกนอก */}
-                    <div className="fixed inset-0 z-[9998]" onClick={() => setShowSalePersonPicker(false)} />
-                    {/* dropdown — right-aligned, fixed position ไม่ถูก overflow clip */}
-                    <div
-                      className="fixed z-[9999] bg-white border border-slate-200 rounded-xl shadow-2xl w-[280px] overflow-y-auto"
-                      style={{ maxHeight: 340, right: 24, top: 80 }}
-                    >
+                    <div style={{position:'fixed',inset:0,zIndex:9998}} onClick={()=>setShowSalePersonPicker(false)} />
+                    <div style={{
+                      position:'absolute', right:0, top:'110%',
+                      zIndex:9999, background:'white',
+                      border:'1px solid #e2e8f0', borderRadius:12,
+                      boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
+                      width:260, maxHeight:280, overflowY:'auto',
+                    }}>
                       {IEC_SALE_PERSONS.map(sp => (
-                        <button key={sp.abbr} type="button"
-                          onClick={() => { setSalePerson(sp.abbr); setShowSalePersonPicker(false); }}
-                          className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition text-sm border-b last:border-b-0 ${salePerson===sp.abbr ? 'bg-green-100 font-semibold' : ''}`}>
-                          <div className="font-semibold text-slate-800">{sp.name}</div>
-                          <div className="text-slate-500 text-xs">{sp.position} · {sp.phone}</div>
+                        <button key={sp.abbr} type="button" onClick={()=>{setSalePerson(sp.abbr);setShowSalePersonPicker(false);}}
+                          style={{width:'100%',textAlign:'left',padding:'10px 16px',background:salePerson===sp.abbr?'#f0fdf4':'transparent',border:'none',borderBottom:'1px solid #f1f5f9',cursor:'pointer'}}>
+                          <div style={{fontWeight:600,fontSize:13}}>{sp.name}</div>
+                          <div style={{fontSize:11,color:'#64748b'}}>{sp.position} · {sp.phone}</div>
                         </button>
                       ))}
                     </div>
                   </>
                 )}
               </div>
-              {salePerson && (
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
-                  {IEC_SALE_PERSONS.find(s => s.abbr === salePerson)?.name || salePerson}
-                </span>
-              )}
+              {salePerson && <span style={{fontSize:11,background:'#dcfce7',color:'#166534',padding:'2px 8px',borderRadius:20,fontWeight:600}}>{IEC_SALE_PERSONS.find(s=>s.abbr===salePerson)?.name||salePerson}</span>}
             </div>
-
-            {/* Form */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm mb-1">ชื่อผู้ขอราคา :</label>
-                <input value={qName} onChange={e => setQName(e.target.value)}
-                       className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">ชื่อบริษัท :</label>
-                <input value={qCompany} onChange={e => setQCompany(e.target.value)}
-                       className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">เบอร์ติดต่อ :</label>
-                <input value={qPhone} onChange={e => setQPhone(e.target.value)}
-                       className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">Email :</label>
-                <input type="email" value={qEmail} onChange={e => setQEmail(e.target.value)}
-                       className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm mb-1">จำนวน (ตัว) :</label>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setQtyMotor(q => Math.max(1, q - 1))}
-                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-lg flex items-center justify-center active:scale-95">−</button>
-                  <input type="number" min={1} max={999} value={qtyMotor}
-                    onChange={e => { const v = parseInt(e.target.value, 10); setQtyMotor(Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1); }}
-                    className="w-16 text-center px-2 py-2 rounded-lg border border-slate-200 outline-none focus:ring font-bold" />
-                  <button type="button" onClick={() => setQtyMotor(q => Math.min(999, q + 1))}
-                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-lg flex items-center justify-center active:scale-95">+</button>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+              {[['ชื่อผู้ขอราคา',qName,setQName,'text'],['ชื่อบริษัท',qCompany,setQCompany,'text'],['เบอร์ติดต่อ',qPhone,setQPhone,'tel'],['Email',qEmail,setQEmail,'email']].map(([lbl,v,set,type])=>(
+                <div key={lbl}>
+                  <label style={{display:'block',fontSize:13,marginBottom:4}}>{lbl} :</label>
+                  <input type={type} value={v} onChange={e=>set(e.target.value)}
+                    style={{width:'100%',padding:'8px 12px',borderRadius:8,border:'1px solid #e2e8f0',outline:'none',fontSize:13,boxSizing:'border-box'}} />
+                </div>
+              ))}
+              <div style={{gridColumn:'1 / -1'}}>
+                <label style={{display:'block',fontSize:13,marginBottom:4}}>จำนวน (ตัว) :</label>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <button type="button" onClick={()=>setQtyMotor(q=>Math.max(1,q-1))} style={{width:36,height:36,borderRadius:8,background:'#f1f5f9',border:'none',fontSize:18,cursor:'pointer',fontWeight:700}}>−</button>
+                  <input type="number" min={1} max={999} value={qtyMotor} onChange={e=>{const v=parseInt(e.target.value,10);setQtyMotor(Number.isFinite(v)?Math.max(1,Math.floor(v)):1);}}
+                    style={{width:60,textAlign:'center',padding:'6px',borderRadius:8,border:'1px solid #e2e8f0',outline:'none',fontWeight:700,fontSize:15}} />
+                  <button type="button" onClick={()=>setQtyMotor(q=>Math.min(999,q+1))} style={{width:36,height:36,borderRadius:8,background:'#f1f5f9',border:'none',fontSize:18,cursor:'pointer',fontWeight:700}}>+</button>
                 </div>
               </div>
             </div>
-
-            {/* Buttons */}
-            <div className="mt-5 flex gap-3 justify-end">
-              <button type="button" onClick={() => setShowQuote(false)} disabled={sending}
-                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 disabled:opacity-50">ปิด</button>
-              <button type="button" onClick={submitQuote}
-                disabled={sending || !qName || !qCompany || !qPhone || !qEmail}
-                className="px-5 py-2 rounded-2xl bg-green-300 hover:bg-green-400 font-semibold shadow active:scale-95 transition transform disabled:opacity-50">
-                {sending ? 'กำลังส่ง…' : 'รับใบเสนอราคา'}
+            <div style={{marginTop:20,display:'flex',gap:12,justifyContent:'flex-end',flexWrap:'wrap'}}>
+              <button type="button" onClick={()=>setShowQuote(false)} disabled={sending}
+                style={{padding:'10px 20px',borderRadius:10,background:'#f1f5f9',border:'none',cursor:'pointer',fontSize:14,fontWeight:600}}>ปิด</button>
+              <button type="button" onClick={submitQuote} disabled={sending||!qName||!qCompany||!qPhone||!qEmail}
+                style={{
+                  padding:'10px 24px', borderRadius:10,
+                  background: (sending||!qName||!qCompany||!qPhone||!qEmail) ? '#86efac' : '#22c55e',
+                  color:'white', border:'none',
+                  cursor: (sending||!qName||!qCompany||!qPhone||!qEmail) ? 'not-allowed' : 'pointer',
+                  fontWeight:700, fontSize:14, transition:'background 0.2s',
+                }}>
+                {sending ? '⏳ กำลังสร้าง PDF…' : '📄 รับใบเสนอราคา PDF'}
               </button>
             </div>
-
-            {/* Summary */}
-            <div className="mt-4 text-sm text-slate-600">
+            <div style={{marginTop:12,fontSize:12,color:'#64748b',borderTop:'1px solid #f1f5f9',paddingTop:10}}>
               <div>Model: <b>{modelCode}</b></div>
-              <div className="flex gap-4 mt-1 flex-wrap">
+              <div style={{display:'flex',gap:16,marginTop:4,flexWrap:'wrap'}}>
                 <span>IEC Motor: <b>{qtyMotor}</b></span>
-                {unitPrice != null && <span>ราคา/ตัว: <b>{maskPrice(unitPrice)} ฿</b></span>}
-                {unitPrice != null && <span>รวม: <b>{maskPrice(unitPrice * qtyMotor)} ฿</b></span>}
+                {unitPrice!=null&&<span>รวม: <b>{maskPrice(unitPrice*qtyMotor)} ฿</b></span>}
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Drawing2DButton — download PDF ตาม Mounting ตรงๆ
-// ─────────────────────────────────────────────────────────────────────────────
-
 async function generateDrawing2D(state, modelCode) {
   const { iecMount } = state;
   const mount = (iecMount || 'B5').toUpperCase();

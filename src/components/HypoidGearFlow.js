@@ -152,7 +152,7 @@ function useIsMobileHyp() {
 // ─────────────────────────────────────────────────────────────────────────────
 // HypoidViewer3D  — model-viewer แบบเดียวกับ BLDCViewer3D
 // ─────────────────────────────────────────────────────────────────────────────
-function HypoidViewer3D({ modelCode, lightMode = false, T = null }) {
+function HypoidViewer3D({ modelCode, lightMode = false, T = null, isMobileSummary = false }) {
   const theme = T || {
     viewerBg:        'linear-gradient(135deg,#0a0c10,#0d111c)',
     gridLine:        'rgba(0,229,160,0.025)',
@@ -328,8 +328,8 @@ function HypoidViewer3D({ modelCode, lightMode = false, T = null }) {
         )}
       </div>
 
-      {/* Lighting/Color controls panel — desktop only */}
-      {!isMobile && (
+      {/* Lighting/Color controls panel — desktop only, hidden when mobile summary uses inline controls */}
+      {!isMobile && !isMobileSummary && (
         <div style={S.panel}>
           <div style={S.sec}>
             <div style={S.secT}>สภาพแวดล้อมแสง</div>
@@ -577,10 +577,96 @@ function formatSupply(s) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// HypoidMobileLightingControls — inline controls ใต้ viewer บน mobile
+// เหมือน BLDCMobileLightingControls แต่ใช้ querySelector 'model-viewer' ตัวแรก
+// ─────────────────────────────────────────────────────────────────────────────
+function HypoidMobileLightingControls({ T }) {
+  const getMV = () => document.querySelector('#hypoid-summary model-viewer') || document.querySelector('model-viewer');
+  const [envIdx,    setEnvIdx]    = useState(0);
+  const [exposure,  setExposure]  = useState(1.3);
+  const [shadow,    setShadow]    = useState(0.6);
+  const [autoLight, setAutoLight] = useState(false);
+  const lightTimer = useRef(null);
+
+  useEffect(() => {
+    if (autoLight) {
+      lightTimer.current = setInterval(() => {
+        const mv = getMV();
+        if (mv) {
+          const cur = parseInt(mv.style.getPropertyValue('--env-rotation') || '0', 10);
+          mv.style.setProperty('--env-rotation', ((cur + 2) % 360) + 'deg');
+        }
+      }, 30);
+    } else clearInterval(lightTimer.current);
+    return () => clearInterval(lightTimer.current);
+  }, [autoLight]);
+  useEffect(() => () => clearInterval(lightTimer.current), []);
+
+  const theme = T || {};
+  const accent = theme.accent || '#00e5a0';
+  const labelColor = theme.labelColor || '#4a5060';
+  const valueColor = theme.valueColor || '#e8eaf0';
+  const sectionDivider = theme.sectionDivider || '1px solid rgba(255,255,255,0.06)';
+  const sectionHeadColor = theme.sectionHeadColor || '#4a5060';
+
+  const sec  = { padding:'12px 16px', borderBottom: sectionDivider };
+  const secT = { fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color: sectionHeadColor, marginBottom:8 };
+  const row  = { display:'flex', alignItems:'center', gap:8, marginBottom:6 };
+  const lbl  = { fontSize:10, color: labelColor, width:54, flexShrink:0 };
+  const sld  = { flex:1, accentColor: accent, cursor:'pointer', height:3 };
+  const val  = { fontSize:10, color: valueColor, width:28, textAlign:'right', flexShrink:0, fontFamily:'monospace' };
+
+  return (
+    <>
+      <div style={sec}>
+        <div style={secT}>สภาพแวดล้อมแสง</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:4 }}>
+          {ENV_PRESETS_HYP.map((env, i) => (
+            <button key={env.value} title={env.label}
+              onClick={() => {
+                setEnvIdx(i);
+                const mv = getMV();
+                if (mv) { try { mv.setAttribute('environment-image', env.value); } catch(e){} }
+              }}
+              style={{ aspectRatio:1, borderRadius:5, border: i===envIdx ? `2px solid ${accent}` : '2px solid transparent', cursor:'pointer', position:'relative', overflow:'hidden', background:env.bg }}
+            >
+              <span style={{ position:'absolute', bottom:0, left:0, right:0, fontSize:6, textAlign:'center', background:'rgba(0,0,0,0.6)', color:'rgba(255,255,255,0.8)' }}>{env.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={sec}>
+        <div style={secT}>ควบคุมแสง</div>
+        <div style={row}>
+          <span style={lbl}>ความสว่าง</span>
+          <input type="range" min={0.5} max={3} step={0.05} value={exposure} style={sld}
+            onChange={e=>{ const v=parseFloat(e.target.value); setExposure(v); const mv=getMV(); if(mv) mv.setAttribute('exposure',v); }}/>
+          <span style={val}>{exposure.toFixed(1)}</span>
+        </div>
+        <div style={row}>
+          <span style={lbl}>เงา</span>
+          <input type="range" min={0} max={1} step={0.05} value={shadow} style={sld}
+            onChange={e=>{ const v=parseFloat(e.target.value); setShadow(v); const mv=getMV(); if(mv) mv.setAttribute('shadow-softness',v); }}/>
+          <span style={val}>{shadow.toFixed(1)}</span>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:4 }}>
+          <span style={{ fontSize:10, color: labelColor }}>☀️ หมุนแสงอัตโนมัติ</span>
+          <button onClick={() => setAutoLight(v => !v)}
+            style={{ width:34, height:18, background: autoLight ? accent : 'rgba(255,255,255,0.1)', borderRadius:9, position:'relative', cursor:'pointer', border:'none', transition:'background 0.2s' }}>
+            <div style={{ position:'absolute', top:2, left: autoLight ? 16 : 2, width:14, height:14, borderRadius:'50%', background:'white', transition:'left 0.2s' }} />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HypoidSummaryPage — matches BLDCSummaryPage layout exactly
 // ─────────────────────────────────────────────────────────────────────────────
 function HypoidSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const { type, gearType, ratio, direction, power, supply, optional, quantity, mounting } = state;
+  const isMobile = useIsMobileHyp();
 
   const [lightMode, setLightMode] = useState(false);
   const [showQuote, setShowQuote] = useState(false);
@@ -736,18 +822,18 @@ function HypoidSummaryPage({ state, modelCode, onConfirm, onBack }) {
         {/* ── Top bar ── */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '10px 18px',
+          padding: isMobile ? '8px 12px' : '10px 18px',
           borderBottom: T.topBarBorder,
           background: T.topBarBg,
           backdropFilter: 'blur(12px)',
-          flexShrink: 0, flexWrap: 'wrap', gap: 8,
+          flexShrink: 0, flexWrap: 'wrap', gap: 6,
           transition: 'background 0.25s, border 0.25s',
         }}>
           {/* Left: title + theme toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{
               fontFamily: "'Rajdhani',sans-serif", fontWeight: 700,
-              fontSize: 15, letterSpacing: '1.5px',
+              fontSize: isMobile ? 13 : 15, letterSpacing: '1.5px',
               color: T.titleColor, textTransform: 'uppercase',
               transition: 'color 0.25s',
             }}>
@@ -774,9 +860,13 @@ function HypoidSummaryPage({ state, modelCode, onConfirm, onBack }) {
           {/* Center: model code + copy */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{
-              fontFamily: 'monospace', fontSize: 12, fontWeight: 600,
+              fontFamily: 'monospace',
+              fontSize: isMobile ? 10 : 12,
+              fontWeight: 600,
               color: T.codeColor, background: T.codeBg, border: T.codeBorder,
-              padding: '3px 10px', borderRadius: 5, transition: 'all 0.25s',
+              padding: '3px 8px', borderRadius: 5, transition: 'all 0.25s',
+              maxWidth: isMobile ? 160 : 'none',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
               {modelCode || '—'}
             </span>
@@ -812,27 +902,42 @@ function HypoidSummaryPage({ state, modelCode, onConfirm, onBack }) {
           </button>
         </div>
 
-        {/* ── Body ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0, overflow: 'hidden' }}>
+        {/* ── Body — column on mobile (scroll), row on desktop ── */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          minHeight: 0,
+          overflow: isMobile ? 'auto' : 'hidden',
+        }}>
 
-          {/* Left: 3D Viewer */}
+          {/* 3D Viewer */}
           <div style={{
-            flex: 1, minWidth: 0,
+            flex: isMobile ? 'none' : 1,
+            height: isMobile ? '300px' : undefined,
+            minHeight: isMobile ? 300 : 0,
+            maxHeight: isMobile ? 400 : undefined,
+            minWidth: 0,
             background: T.viewerBg,
             transition: 'background 0.25s',
           }}>
-            <HypoidViewer3D modelCode={modelCode} lightMode={lightMode} T={T} />
+            <HypoidViewer3D modelCode={modelCode} lightMode={lightMode} T={T} isMobileSummary={isMobile} />
           </div>
 
-          {/* Right panel */}
+          {/* Panel — full width on mobile, fixed 280px on desktop */}
           <div style={{
-            width: 280, flexShrink: 0,
+            width: isMobile ? '100%' : 280,
+            flexShrink: 0,
             background: T.panelBg,
-            borderLeft: T.panelBorder,
-            overflowY: 'auto',
+            borderLeft: isMobile ? 'none' : T.panelBorder,
+            borderTop: isMobile ? T.panelBorder : 'none',
+            overflowY: isMobile ? 'visible' : 'auto',
             display: 'flex', flexDirection: 'column',
             transition: 'background 0.25s, border 0.25s',
           }}>
+
+            {/* Mobile: lighting controls inline (เหมือน BLDC) */}
+            {isMobile && <HypoidMobileLightingControls T={T} />}
 
             {/* Specs */}
             <div style={{ padding: '14px 16px', borderBottom: T.sectionDivider }}>
@@ -925,76 +1030,84 @@ function HypoidSummaryPage({ state, modelCode, onConfirm, onBack }) {
 
             {/* Action Buttons */}
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {/* ขอใบเสนอราคา */}
-              <button
-                type="button"
-                style={{
-                  width: '100%', padding: '11px 0', borderRadius: 10,
-                  background: lightMode
-                    ? 'linear-gradient(90deg,#1a4fd6,#1040b8)'
-                    : 'linear-gradient(90deg,#00e5a0,#00c87a)',
-                  color: lightMode ? '#ffffff' : '#0a1a10',
-                  fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer',
-                  transition: 'background 0.25s, color 0.25s',
-                }}
-                onClick={() => setShowQuote(true)}
-              >
-                🛒 ขอใบเสนอราคา
-              </button>
 
-              {/* รับไฟล์ 3D (.STEP) */}
-              <button
-                type="button"
-                style={{
-                  width: '100%', padding: '11px 0', borderRadius: 10,
-                  background: 'linear-gradient(90deg,#4080ff,#2060dd)',
-                  color: 'white', fontWeight: 700, fontSize: 14,
-                  border: 'none', cursor: 'pointer',
-                }}
-                onClick={() => { if (modelCode) onConfirm(modelCode); }}
-              >
-                📦 รับไฟล์ 3D (.STEP)
-              </button>
+              {/* Top row: ขอราคา + รับไฟล์ 3D — 2 col on mobile */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr', gap: 8 }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: '11px 6px', borderRadius: 10,
+                    background: lightMode ? 'linear-gradient(90deg,#1a4fd6,#1040b8)' : 'linear-gradient(90deg,#00e5a0,#00c87a)',
+                    color: lightMode ? '#ffffff' : '#0a1a10',
+                    fontWeight: 700, fontSize: isMobile ? 12 : 14,
+                    border: 'none', cursor: 'pointer',
+                    transition: 'background 0.25s, color 0.25s',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => setShowQuote(true)}
+                >
+                  🛒 {isMobile ? 'ขอราคา' : 'ขอใบเสนอราคา'}
+                </button>
 
-              {/* General Specification */}
-              <button
-                type="button"
-                style={{
-                  width: '100%', padding: '9px 0', borderRadius: 10,
-                  background: T.btnBg, border: T.btnBorder,
-                  color: T.btnColor, fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  transition: 'all 0.25s',
-                }}
-                onClick={() => {
-                  const a = document.createElement('a');
-                  a.href = '/model/pdf/Hypoid/General%20specification.pdf';
-                  a.download = 'General specification.pdf';
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                }}
-              >
-                📐 General Specification
-              </button>
+                <button
+                  type="button"
+                  style={{
+                    padding: '11px 6px', borderRadius: 10,
+                    background: 'linear-gradient(90deg,#4080ff,#2060dd)',
+                    color: 'white', fontWeight: 700, fontSize: isMobile ? 12 : 14,
+                    border: 'none', cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => { if (modelCode) onConfirm(modelCode); }}
+                >
+                  📦 {isMobile ? 'ไฟล์ 3D' : 'รับไฟล์ 3D (.STEP)'}
+                </button>
+              </div>
 
-              {/* Drawing 2D (pdf) */}
-              <button
-                type="button"
-                style={{
-                  width: '100%', padding: '9px 0', borderRadius: 10,
-                  background: T.btnBg, border: T.btnBorder,
-                  color: T.btnColor, fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  transition: 'all 0.25s',
-                }}
-                onClick={() => {
-                  const src = getDrawingPdfSrc(type, power);
-                  if (!src) { alert('ยังไม่มีไฟล์ Drawing 2D สำหรับรุ่นนี้'); return; }
-                  const a = document.createElement('a');
-                  a.href = src;
-                  a.download = `${modelCode}.pdf`;
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                }}
-              >
-                📄 Drawing 2D (pdf)
-              </button>
+              {/* Bottom row: General Spec + Drawing 2D — 2 col on mobile */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr', gap: 8 }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: isMobile ? '9px 4px' : '9px 0', borderRadius: 10,
+                    background: T.btnBg, border: T.btnBorder,
+                    color: T.btnColor, fontWeight: 600,
+                    fontSize: isMobile ? 11 : 13, cursor: 'pointer',
+                    transition: 'all 0.25s', whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => {
+                    const pub = (typeof process !== 'undefined' && process.env?.PUBLIC_URL) || '';
+                    const a = document.createElement('a');
+                    a.href = `${pub}/model/pdf/Hypoid/General%20specification.pdf`;
+                    a.download = 'General specification.pdf';
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                  }}
+                >
+                  📐 {isMobile ? 'General Spec' : 'General Specification'}
+                </button>
+
+                <button
+                  type="button"
+                  style={{
+                    padding: isMobile ? '9px 4px' : '9px 0', borderRadius: 10,
+                    background: T.btnBg, border: T.btnBorder,
+                    color: T.btnColor, fontWeight: 600,
+                    fontSize: isMobile ? 11 : 13, cursor: 'pointer',
+                    transition: 'all 0.25s', whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => {
+                    const src = getDrawingPdfSrc(type, power);
+                    if (!src) { alert('ยังไม่มีไฟล์ Drawing 2D สำหรับรุ่นนี้'); return; }
+                    const a = document.createElement('a');
+                    a.href = src;
+                    a.download = `${modelCode}.pdf`;
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                  }}
+                >
+                  📄 Drawing 2D (pdf)
+                </button>
+              </div>
+
             </div>
 
           </div>
