@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { productList, renderHypoidGearFlow, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode } from './components/MotorFlows.js';
 import { renderSRVFlow } from './components/SRVWormGearFlow.js';
 import { renderBLDCGearFlow, generateBLDCModelCode } from './components/BLDCGearMotorFlow.js';
+import { renderDCGearFlow, generateDCModelCode } from './components/DCGearMotorFlow.js';
 import { renderRKFSFlow } from './components/RKFSMotorFlow.js';
 import { renderIECMotorFlow } from './components/IECMotorFlow.js';
 import { renderSmallACFlow, generateSmallACModelCode } from './components/SmallACMotorFlow.js';
@@ -747,7 +748,6 @@ const resetSmallAC = () => {
 };
 
 const COMING_SOON = new Set([
-  'DC Gear Motor',
   'SPN Series',
   'P Planetary Gearbox',
   'Servo Drive and Speed controller',
@@ -805,6 +805,8 @@ const handleBackWithReset = () => {
     setHbColor('standard'); 
     setHbQty(1);            
     resetSRV();
+  // [ADD-DC] เคลียร์ DC Gear Motor
+  setDcMotor(null); setDcVoltage(null); setDcRatio(null); setDcGearHead(null);
 };
 
     const resetRKFSState = () => {
@@ -883,6 +885,19 @@ const [bldcHEType, setBldcHEType] = useState(null);          // 'S'|'SF'|'SL'
 const [bldcSelectedImage, setBldcSelectedImage] = useState(null); // 'S' | 'SF' | 'SL'
 const [bldcSFDiameter, setBldcSFDiameter] = useState(null);  // ใช้ในโหมด SF ('12','14','15','16','20','25')
 
+// [ADD-DC] State ของ DC Gear Motor
+const [dcMotor,    setDcMotor]    = useState(null); // motorPrefix: 'S4D40' ฯลฯ
+const [dcVoltage,  setDcVoltage]  = useState(null); // '12' | '24' | '48' | '90'
+const [dcRatio,    setDcRatio]    = useState(null); // number
+const [dcGearHead, setDcGearHead] = useState(null); // 'K' | 'KK' | 'KB' | 'RC' | 'RT'
+
+const dcState   = { dcMotor, dcVoltage, dcRatio, dcGearHead };
+const dcSetters = { setDcMotor, setDcVoltage, setDcRatio, setDcGearHead };
+
+const resetDC = () => {
+  setDcMotor(null); setDcVoltage(null); setDcRatio(null); setDcGearHead(null);
+};
+
 // [ADD-PLANETARY-STATE]  ⬅️ src/App.jsx (ใน App component, โซน useState เดิม)
 const [planetGroup, setPlanetGroup] = useState(null);         // Step1
 const [planetSeries, setPlanetSeries] = useState(null);       // Step2
@@ -959,6 +974,22 @@ const goHomeFromBLDC = () => {
   setSelectedProduct(null);    // กลับหน้า Product
     setBldcHEType(null);
     setBldcSFDiameter(null);
+};
+
+// [ADD-DC] Home + Back สำหรับ DC Gear Motor
+const goHomeFromDC = () => {
+  resetDC();
+  setModelCodeList([]);
+  setSelectedModel(null);
+  setSelectedProduct(null);
+};
+
+const backOneStepDC = () => {
+  if (dcGearHead)  { setDcGearHead(null);  return; }
+  if (dcRatio)     { setDcRatio(null);     return; }
+  if (dcVoltage)   { setDcVoltage(null);   return; }
+  if (dcMotor)     { setDcMotor(null);     return; }
+  goHomeFromDC();
 };
 
 // [ADD-HYPOID] รีเซ็ต Hypoid + กลับหน้า Product รวม (เรียกใช้จาก "ปุ่ม Home เดิม")
@@ -1867,6 +1898,23 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   goHomeFromBLDC,
   backOneStepBLDC
 )}
+  </>
+)}
+
+{/* [ADD-DC] DC Gear Motor Flow */}
+{selectedProduct === 'DC Gear Motor' && (
+  <>
+    {renderDCGearFlow(
+      dcState,
+      dcSetters,
+      (modelCode) => {
+        const models = Array.isArray(modelCode) ? modelCode : [modelCode];
+        setModelCodeList(models);
+        setSelectedModel(models[0]);
+      },
+      goHomeFromDC,
+      backOneStepDC
+    )}
   </>
 )}
 
