@@ -24,3 +24,4 @@ yarn-error.log*
 build 
 build 
 "public/model/glb/" 
+"public/model/glb/" 
