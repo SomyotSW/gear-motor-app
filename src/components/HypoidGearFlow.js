@@ -1134,7 +1134,7 @@ function HypoidSummaryPage({ state, modelCode, onConfirm, onBack }) {
                   🧑‍💼
                 </button>
                 {showSalePersonPicker && (
-                  <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] sm:w-[300px] overflow-hidden">
+                  <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] sm:w-[300px] overflow-y-auto max-h-[320px]">
                     {SALE_PERSONS.map(sp => (
                       <button
                         key={sp.abbr}

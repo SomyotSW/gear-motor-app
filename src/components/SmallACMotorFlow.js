@@ -360,6 +360,22 @@ const TINT_COLORS = [
 
 // Swatch display colours (วงกลมแสดงใน UI)
 const TINT_SWATCHES = ['#c8cdd6','#ffffff','#8a9098','#0a0a0a','#1a4faa','#1a6e30','#c8a800','#aa1a1a'];
+
+// ─── Sale Persons ─────────────────────────────────────────────────────────────
+const SAC_SALE_PERSONS = [
+  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER', phone: '081-921-6225' },
+  { abbr: 'AP',  name: 'Ms.Apichaya P. (AP)',    position: 'Sale Supervisor',               phone: '098-3697494' },
+  { abbr: 'MY',  name: 'Ms.Matavee Y. (MY)',     position: 'Sale Supervisor',               phone: '092-2715371' },
+  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Exclusive',                phone: '080-4632394' },
+  { abbr: 'PW',  name: 'Mr.Parada W.(PW)',       position: 'Sale Engineer',                 phone: '088-9404948' },
+  { abbr: 'SI',  name: 'Ms.Suphak I.(SI)',       position: 'Sale Exclusive',                phone: '096-0787776' },
+  { abbr: 'NM',  name: 'Mr.Naphaphat M.(NM)',    position: 'Sale Exclusive',                phone: '065-7176332' },
+  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',        position: 'Sale Supervisor',               phone: '086-9819616' },
+  { abbr: 'PL',  name: 'Mr.Pongsakorn L.(PL)',   position: 'Sale Engineer',                 phone: '063-2159056' },
+  { abbr: 'TL',  name: 'Ms.Tanawee L.(TL)',      position: 'Sale Supervisor',               phone: '092-2715372' },
+  { abbr: 'NR',  name: 'Ms.Nantida R.(NR)',      position: 'Sale Exclusive',                phone: '098-2711425' },
+];
+
 function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const isMobile = useIsMobile();
   const { sacGearType, sacSize, sacPower, sacRatio, sacCurrent, sacBrake, sacTerminal, sacLead } = state;
@@ -373,6 +389,8 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const [qPhone,     setQPhone]     = useState('');
   const [qEmail,     setQEmail]     = useState('');
   const [sending,    setSending]    = useState(false);
+  const [salePerson, setSalePerson] = useState('CA');
+  const [showSalePersonPicker, setShowSalePersonPicker] = useState(false);
 
   // 3D viewer state
   const [envIdx,    setEnvIdx]    = useState(0);
@@ -494,7 +512,7 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
         : 'https://sas-qc-gearmotor.onrender.com';
       await fetch(`${API_BASE}/api/smallac-quote`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelCode, qtyMotor, customer: { name: qName, company: qCompany, phone: qPhone, email: qEmail } }),
+        body: JSON.stringify({ modelCode, qtyMotor, salePerson, customer: { name: qName, company: qCompany, phone: qPhone, email: qEmail } }),
       });
       setShowQuote(false);
       alert('ส่งคำขอใบเสนอราคาเรียบร้อยแล้วครับ');
@@ -748,6 +766,44 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
           <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setShowQuote(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-[92%] max-w-xl p-6 text-slate-900">
             <h3 className="text-xl font-bold mb-4">ขอใบเสนอราคา Small AC Gear Motor</h3>
+            {/* Sale Person Picker */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-sm text-slate-600">ผู้ดูแล :</span>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowSalePersonPicker(v => !v)}
+                  title="เลือก Sale Person"
+                  className="text-2xl leading-none select-none hover:scale-110 active:scale-95 transition-transform"
+                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}
+                >
+                  🧑‍💼
+                </button>
+                {showSalePersonPicker && (
+                  <>
+                    <div className="fixed inset-0 z-[9998]" onClick={() => setShowSalePersonPicker(false)} />
+                    <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] sm:w-[300px] overflow-y-auto max-h-[320px]">
+                      {SAC_SALE_PERSONS.map(sp => (
+                        <button
+                          key={sp.abbr}
+                          type="button"
+                          onClick={() => { setSalePerson(sp.abbr); setShowSalePersonPicker(false); }}
+                          className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition text-sm border-b last:border-b-0 ${salePerson === sp.abbr ? 'bg-green-100 font-semibold' : ''}`}
+                        >
+                          <div className="font-semibold text-slate-800">{sp.name}</div>
+                          <div className="text-slate-500 text-xs">{sp.position} · {sp.phone}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              {salePerson && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
+                  {SAC_SALE_PERSONS.find(s => s.abbr === salePerson)?.name || salePerson}
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="block text-sm mb-1">ชื่อผู้ขอราคา :</label><input value={qName} onChange={e => setQName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" /></div>
               <div><label className="block text-sm mb-1">ชื่อบริษัท :</label><input value={qCompany} onChange={e => setQCompany(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none focus:ring" /></div>

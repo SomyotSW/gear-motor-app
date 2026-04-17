@@ -2450,7 +2450,7 @@ function SummaryView({ state, update, onConfirm, modelCode, fullKey, spec, poleN
                       zIndex:9999, background:'white',
                       border:'1px solid #e2e8f0', borderRadius:12,
                       boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
-                      width:260, maxHeight:280, overflowY:'auto',
+                      width:260, maxHeight:320, overflowY:'auto',
                     }}>
                       {IEC_SALE_PERSONS.map(sp => (
                         <button key={sp.abbr} type="button" onClick={()=>{setSalePerson(sp.abbr);setShowSalePersonPicker(false);}}

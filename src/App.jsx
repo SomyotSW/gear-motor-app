@@ -473,6 +473,8 @@ const [rkfsQuote, setRkfsQuote] = useState({
   email: '',
   qty: 1,
 });
+const [rkfsSalePerson, setRkfsSalePerson] = useState('CA');
+const [showRKFSSalePicker, setShowRKFSSalePicker] = useState(false);
 
 // === RFQ (ถ้ายังไม่มี ให้เพิ่ม 4 บรรทัดนี้) ===
 const [rfqOpen, setRfqOpen] = useState(false);
@@ -484,6 +486,20 @@ const [acRfqForm, setAcRfqForm] = useState({ name:'', phone:'', company:'', emai
 const [acRfqSending, setAcRfqSending] = useState(false);
 const [selectedSalePerson, setSelectedSalePerson] = useState(null);
 const [showSalePersonPicker, setShowSalePersonPicker] = useState(false);
+
+const RKFS_SALE_PERSONS = [
+  { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER', phone: '081-921-6225' },
+  { abbr: 'AP',  name: 'Ms.Apichaya P. (AP)',    position: 'Sale Supervisor',               phone: '098-3697494' },
+  { abbr: 'MY',  name: 'Ms.Matavee Y. (MY)',     position: 'Sale Supervisor',               phone: '092-2715371' },
+  { abbr: 'TWS', name: 'Ms.Thitikan W. (TWS)',   position: 'Sale Exclusive',                phone: '080-4632394' },
+  { abbr: 'PW',  name: 'Mr.Parada W.(PW)',       position: 'Sale Engineer',                 phone: '088-9404948' },
+  { abbr: 'SI',  name: 'Ms.Suphak I.(SI)',       position: 'Sale Exclusive',                phone: '096-0787776' },
+  { abbr: 'NM',  name: 'Mr.Naphaphat M.(NM)',    position: 'Sale Exclusive',                phone: '065-7176332' },
+  { abbr: 'SK',  name: 'Mr.Sanya K.(SK)',        position: 'Sale Supervisor',               phone: '086-9819616' },
+  { abbr: 'PL',  name: 'Mr.Pongsakorn L.(PL)',   position: 'Sale Engineer',                 phone: '063-2159056' },
+  { abbr: 'TL',  name: 'Ms.Tanawee L.(TL)',      position: 'Sale Supervisor',               phone: '092-2715372' },
+  { abbr: 'NR',  name: 'Ms.Nantida R.(NR)',      position: 'Sale Exclusive',                phone: '098-2711425' },
+];
 
 const handleAcRfqChange = (e) => {
   const { name, value } = e.target;
@@ -2171,6 +2187,45 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
 
       <h3 className="text-xl font-bold mb-4">ขอใบเสนอราคา RKFS Series</h3>
 
+      {/* Sale Person Picker */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-sm text-slate-600">ผู้ดูแล :</span>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowRKFSSalePicker(v => !v)}
+            title="เลือก Sale Person"
+            className="text-2xl leading-none select-none hover:scale-110 active:scale-95 transition-transform"
+            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}
+          >
+            🧑‍💼
+          </button>
+          {showRKFSSalePicker && (
+            <>
+              <div className="fixed inset-0 z-[9998]" onClick={() => setShowRKFSSalePicker(false)} />
+              <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] sm:w-[300px] overflow-y-auto max-h-[320px]">
+                {RKFS_SALE_PERSONS.map(sp => (
+                  <button
+                    key={sp.abbr}
+                    type="button"
+                    onClick={() => { setRkfsSalePerson(sp.abbr); setShowRKFSSalePicker(false); }}
+                    className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition text-sm border-b last:border-b-0 ${rkfsSalePerson === sp.abbr ? 'bg-green-100 font-semibold' : ''}`}
+                  >
+                    <div className="font-semibold text-slate-800">{sp.name}</div>
+                    <div className="text-slate-500 text-xs">{sp.position} · {sp.phone}</div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        {rkfsSalePerson && (
+          <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
+            {RKFS_SALE_PERSONS.find(s => s.abbr === rkfsSalePerson)?.name || rkfsSalePerson}
+          </span>
+        )}
+      </div>
+
       <div className="mb-4 text-sm">
         <div>Model code: <b>
   {(quoteInfo?.model?.replace(/^(RXXRXX|RFXXRXX)/,''))
@@ -2281,6 +2336,9 @@ onClick={async () => {
 
       // หมายเหตุลูกค้า
       extra_note:  String(rkfsQuote?.extra_note ?? ''),
+
+      // Sale Person
+      sale_person: String(rkfsSalePerson || 'CA'),
     };
 
     // === ส่งอีเมล (ใช้ SDK แบบ global ตามที่คุณใช้อยู่) ===

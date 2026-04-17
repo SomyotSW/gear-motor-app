@@ -1125,7 +1125,7 @@ function SRVSummaryPage({ code, specRows, glbBase, onConfirm, onRequestQuote, on
                   className="text-2xl leading-none select-none hover:scale-110 active:scale-95 transition-transform"
                   style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}>🧑‍💼</button>
                 {showSalePersonPicker && (
-                  <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] sm:w-[300px] overflow-hidden">
+                  <div className="absolute left-0 top-full mt-1 z-[9999] bg-white border border-slate-200 rounded-xl shadow-xl w-[260px] sm:w-[300px] overflow-y-auto max-h-[320px]">
                     {SRV_SALE_PERSONS.map(sp => (
                       <button key={sp.abbr} type="button"
                         onClick={() => { setSalePerson(sp.abbr); setShowSalePersonPicker(false); }}
