@@ -89,43 +89,33 @@ function mapBLDCDownloadFilename(modelCode) {
    return null; // ไม่แตะ S
  }
 
-// ===== helper: สร้าง URL แบบ absolute ไปยัง public/model =====
+// ===== helper: สร้าง URL ไปยัง Cloudflare R2 =====
+const R2_BASE = 'https://pub-8cdc08b3fc55463c8c8f399a10351d7e.r2.dev';
 const buildModelUrl = (fileName) => {
-  const base = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
-  return `${base}/model/${encodeURIComponent(fileName)}`;
+  return `${R2_BASE}/${encodeURIComponent(fileName)}`;
 };
 
-// ===== check: HEAD ก่อน, ถ้าไม่ชัดเจนค่อย GET จริง ตรวจชนิด/ขนาด =====
+// ===== normalizeACStepCode: ทุก ratio → 3 เพื่อชี้ไฟล์จริงใน R2 =====
+// เช่น 5IK90RGU-CF-5GU15KB → 5IK90RGU-CF-5GU3KB  (ไฟล์ที่มีใน R2)
+// แต่ชื่อที่ลูกค้าได้ยังคงเป็น Model Code จริง (จัดการที่ a.download)
+function normalizeACStepCode(modelCode) {
+  if (!modelCode) return modelCode;
+  return modelCode.replace(
+    /(\d+)(GN|GU)(\d+(?:\.\d+)?)(KB|RC|RT|K)(\b|$)/gi,
+    (_, frame, gearType, _ratio, suffix) =>
+      `${frame}${gearType.toUpperCase()}3${suffix.toUpperCase()}`
+  );
+}
+
+// ===== check: ตรวจว่าไฟล์มีอยู่ใน R2 จริง =====
 async function checkFileAvailable(fileName, minBytes = 256) {
   const url = buildModelUrl(fileName);
 
-  // 1) HEAD (ถ้ารองรับและไม่ได้ตอบเป็น text/html ก็ใช้ลิงก์ตรงได้)
   try {
-    const head = await fetch(url, { method: 'HEAD', cache: 'no-store' });
-    if (head.ok) {
-      const ct  = (head.headers.get('content-type') || '').toLowerCase();
-      const len = parseInt(head.headers.get('content-length') || '0', 10);
-      // dev server บางตัวไม่ส่ง content-length; ถ้าไม่ใช่ html ก็โอเค
-      if (!ct.includes('text/html') && (!Number.isFinite(len) || len >= minBytes)) {
-        return { mode: 'href', url, filename: fileName };
-      }
-      // ถ้าเป็น html/หรือขนาดน้อย → ตกไป GET เพื่อตรวจจริง
-    }
-  } catch { /* ตกไป GET */ }
-
-  // 2) GET จริง (กันเคส SPA fallback / HEAD ใช้ไม่ได้) + กัน cache
-  try {
-    const url2 = `${url}?t=${Date.now()}`;
-    const res = await fetch(url2, { method: 'GET', cache: 'no-store' });
+    const res = await fetch(url, { method: 'GET', cache: 'no-store' });
     if (!res.ok) return null;
-
-    const ct   = (res.headers.get('content-type') || '').toLowerCase();
     const blob = await res.blob();
-    // ถ้าเป็น html ให้ถือว่าไม่ใช่ไฟล์ 3D
-    if (ct.includes('text/html')) return null;
     if (blob.size < minBytes) return null;
-
-    // OK: ส่ง blob กลับเพื่อดาวน์โหลด
     return { mode: 'blob', blob, url, filename: fileName };
   } catch {
     return null;
@@ -148,24 +138,10 @@ async function resolvePlanetaryStep(planetState) {
     throw new Error(`ไม่พบไฟล์: ${fn}`);
   }
 
-  // --- ซีรีส์อื่น: ใช้ manifest ถ้ามี ---
-  const manifestUrl = buildModelUrl('manifest.json');
-  try {
-    const mr = await fetch(`${manifestUrl}?t=${Date.now()}`, { cache: 'no-store' });
-    if (mr.ok) {
-      const map = await mr.json();                      // { "ZB042": "ZB042-100T3.STEP", ... }
-      const mapped = map[base];
-      if (mapped) {
-        const ok = await checkFileAvailable(mapped);
-        if (ok) return ok;
-      }
-    }
-  } catch { /* ไม่มี/อ่านไม่ได้ ก็ข้าม */ }
-
-  // --- ถ้าไม่มี manifest หรือไม่เจอ mapping → ลองชื่อพื้นฐานตามลำดับ ---
+  // --- ซีรีส์อื่น: ลองชื่อพื้นฐานตามลำดับโดยตรง ---
   const candidates = [
-    `${base}.STEP`,            // eg. ZB042.STEP (ถ้ามี)
-    `${base}-100T3.STEP`,      // eg. ZB042-100T3.STEP (เห็นในโฟลเดอร์คุณ)
+    `${base}.STEP`,
+    `${base}-100T3.STEP`,
   ];
 
   for (const fn of candidates) {
@@ -173,7 +149,7 @@ async function resolvePlanetaryStep(planetState) {
     if (ok) return ok;
   }
 
-  throw new Error(`ไม่พบไฟล์ 3D ของ ${base} ใน /public/model/`);
+  throw new Error(`ไม่พบไฟล์ 3D ของ ${base} ใน R2`);
 }
 
 // === [ADD] Robust resolver สำหรับ BLDC (.STEP) ===
@@ -209,13 +185,13 @@ async function resolveBLDCStep(modelCode) {
   // 4) เผื่อไว้: ลองชื่อเท่ากับรหัสรุ่นตรง ๆ
   candidates.push(`${modelCode}.STEP`);
 
-  // ==== เช็กทีละชื่อใน /public/model ด้วยหัวใจเดียวกับ Planetary ====:contentReference[oaicite:7]{index=7}
+  // ==== เช็กทีละชื่อใน R2 ====
   for (const name of candidates) {
     const ok = await checkFileAvailable(name);
-    if (ok) return ok; // {mode:'href'|'blob', url|blob, filename}
+    if (ok) return ok;
   }
 
-  throw new Error(`ไม่พบไฟล์ใน /public/model จากชื่อที่ลอง: ${candidates.join(' , ')}`);
+  throw new Error(`ไม่พบไฟล์ใน R2 จากชื่อที่ลอง: ${candidates.join(' , ')}`);
 }
 
 // ===== ปุ่ม "ยืนยันและรับไฟล์" ให้เรียกตัวนี้ =====
@@ -315,7 +291,7 @@ async function handleBLDCDownload(modelCode) {
   } catch (err) {
     console.error('BLDC download failed:', err);
     // ข้อความนี้จะอธิบาย “ชื่อที่ลองแล้ว” ชัด ๆ เวลาแมพไม่เจอ
-    toast.error(err?.message || 'ไฟล์ไม่พบใน /public/model');
+    toast.error(err?.message || 'ไม่พบไฟล์ใน R2');
   }
 }
 
@@ -1245,7 +1221,7 @@ const handleDownload = async () => {
   // ✅ ดาวน์โหลดไฟล์ .STEP แบบเสถียร
   setIsDownloading(true);
   try { 
-      // ✅ Planetary Gear: ใช้ตัว resolver เฉพาะ เพื่อชี้ไฟล์จริงจาก /public/model
+      // ✅ Planetary Gear: ใช้ตัว resolver เฉพาะ เพื่อชี้ไฟล์จริงจาก R2
     if (selectedProduct === 'Planetary Gear') {
       const res = await resolvePlanetaryStep(planetState);
             const modelCode = generatePlanetaryModelCode(planetState);
@@ -1300,11 +1276,9 @@ const objectUrl = URL.createObjectURL(blob);
   a.click();
   a.remove();
   URL.revokeObjectURL(objectUrl);
-} catch (err) {
+  } catch (err) {
   console.error('Download check failed:', err);
-  toast.error('ไฟล์ไม่พบใน /public/model หรือชื่อไม่ตรงกับที่ map ได้');
-  // ถ้าอยากคง fallback เดิมไว้: เปิดแท็บใหม่ให้เซฟเองก็ได้
-  // window.open(getFileUrl(), '_blank', 'noopener,noreferrer');
+  toast.error('ไม่พบไฟล์ใน R2 หรือชื่อไม่ตรงกับที่ map ได้');
 } finally {
   setIsDownloading(false);
   setShowForm(false);
@@ -1370,38 +1344,38 @@ const getFileUrl = () => {
       parts[4] = 'XXX'; // Ratio
       parts[5] = 'XX';  // Mounting
       const fileName = `${parts.join('-')}.STEP`;
-      // same-origin (public/model) + กัน cache
-      return `/model/${encodeURIComponent(fileName)}?v=${Date.now()}`;
+      return `${R2_BASE}/${encodeURIComponent(fileName)}`;
     }
   }
 
  if (selectedProduct === 'BLDC Gear Motor') {
-   const base = (typeof process !== 'undefined' && process.env && process.env.PUBLIC_URL) || '';
-
-   // ดึงชนิดเกียร์จาก Model Code (-GUL|-GU|-GNL|-GN-) เผื่อ state ไม่ตรง
    const m = selectedModel.match(/-(GUL|GU|GNL|GN)-/);
    const gearFromModel = m ? m[1] : null;
    const effectiveGear  = bldcGearType || gearFromModel;
    const withSTEP = (name) => name.endsWith('.STEP') ? name : `${name}.STEP`;
+
       // HE (SF/SL) → ใช้ static filename ที่คุณ map ไว้อยู่แล้ว
       if (bldcHEType === 'SF' || bldcHEType === 'SL') {
        const heName = mapBLDCHEStaticFilename(selectedModel, bldcHEType);
-   if (heName) return `${base}/model/${encodeURIComponent(withSTEP(heName))}?v=${Date.now()}`;
+   if (heName) return `${R2_BASE}/${encodeURIComponent(withSTEP(heName))}`;
    }
 
    // Nol: GN/GNL/GU/GUL → map เป็นชื่อไฟล์คงที่ตาม prefix
    if (effectiveGear) {
      const nol = mapBLDCNolStaticFilename(selectedModel, effectiveGear);
-     if (nol) return `${base}/model/${encodeURIComponent(withSTEP(nol))}?v=${Date.now()}`;
+     if (nol) return `${R2_BASE}/${encodeURIComponent(withSTEP(nol))}`;
    }
 
    // เดิม (normalizer 24/36/48/220) — ใช้เป็น fallback
    const mapped = mapBLDCDownloadFilename(selectedModel);
-   if (mapped) return `${base}/model/${encodeURIComponent(withSTEP(mapped))}?v=${Date.now()}`;
+   if (mapped) return `${R2_BASE}/${encodeURIComponent(withSTEP(mapped))}`;
    return '#';
  }
-  // อื่น ๆ ใช้ชื่อรุ่นตรงตัว
-  return `/model/${encodeURIComponent(`${selectedModel}.STEP`)}?v=${Date.now()}`;
+  // อื่น ๆ ใช้ชื่อรุ่นตรงตัว — AC Gear Motor normalize ratio→3 ก่อน
+  const fileCode = selectedProduct === 'AC Gear Motor'
+    ? normalizeACStepCode(selectedModel)
+    : selectedModel;
+  return `${R2_BASE}/${encodeURIComponent(`${fileCode}.STEP`)}`;
 };
 
 

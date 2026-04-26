@@ -1830,7 +1830,15 @@ const gifForHead = (() => {
 
           <FinalResult
             modelCode={Array.isArray(codes) ? selectedModel : codes}
-            downloadLink={`https://github.com/SomyotSW/gear-motor-app/raw/main/src/assets/model/${Array.isArray(codes) ? selectedModel : codes}.STEP`}
+            downloadLink={(() => {
+              const realCode = Array.isArray(codes) ? selectedModel : codes;
+              const fileCode = normalizeGlbCode(realCode); // ratio → 3 ชี้ไฟล์จริงใน R2
+              return `https://pub-8cdc08b3fc55463c8c8f399a10351d7e.r2.dev/${encodeURIComponent(fileCode + '.STEP')}`;
+            })()}
+            downloadFilename={(() => {
+              const realCode = Array.isArray(codes) ? selectedModel : codes;
+              return `${realCode}.STEP`; // ชื่อที่ลูกค้าได้ = Model จริง
+            })()}
             onReset={() => {
               acSetters.setAcMotorType(null);
               acSetters.setAcPower(null);
