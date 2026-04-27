@@ -1311,12 +1311,7 @@ def _reply_text(reply_token: str, text: str):
 
 @app.post("/line/webhook")
 def line_webhook():
-    # ── ตรวจ Signature ─────────────────────────────────────────
     body_bytes = request.get_data()
-    sig        = request.headers.get("X-Line-Signature", "")
-    if not _verify_line_sig(body_bytes, sig):
-        return jsonify({"error": "invalid signature"}), 403
-
     payload = request.get_json(silent=True) or {}
 
     for event in payload.get("events", []):
