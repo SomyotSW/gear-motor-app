@@ -1277,7 +1277,8 @@ def _r2_url(filename: str) -> str:
 
 def _reply_flex(reply_token: str, title: str, model: str,
                 dl_url: str, btn_label: str, color: str):
-    """ส่ง Flex Message พร้อมปุ่มดาวน์โหลด + คำแนะนำเปิดใน browser"""
+    """ส่ง Flex Message พร้อมปุ่มดาวน์โหลด
+    URL มี ?openExternalBrowser=1 → LINE เปิด browser ภายนอกอัตโนมัติ"""
     flex_body = {
         "type": "bubble",
         "size": "mega",
@@ -1290,14 +1291,14 @@ def _reply_flex(reply_token: str, title: str, model: str,
                 "type": "text",
                 "text": title,
                 "color": "#FFFFFF",
-                "size": "lg",
+                "size": "xl",
                 "weight": "bold"
             }]
         },
         "body": {
             "type": "box",
             "layout": "vertical",
-            "spacing": "md",
+            "spacing": "sm",
             "paddingAll": "16px",
             "contents": [
                 {
@@ -1313,24 +1314,6 @@ def _reply_flex(reply_token: str, title: str, model: str,
                     "size": "md",
                     "weight": "bold",
                     "wrap": True
-                },
-                {
-                    "type": "separator",
-                    "margin": "md"
-                },
-                {
-                    "type": "text",
-                    "text": "⚠️ หากกดแล้ว LINE แจ้งว่าดาวน์โหลดไม่ได้",
-                    "color": "#E53935",
-                    "size": "sm",
-                    "wrap": True
-                },
-                {
-                    "type": "text",
-                    "text": "ให00270027กด ··· มุมขวาบน → 0027เปิดในเบราว์เซอร์อื่น0027 แล้วไฟล์จะดาวน์โหลดอัตโนมัติครับ 🙏",
-                    "color": "#555555",
-                    "size": "sm",
-                    "wrap": True
                 }
             ]
         },
@@ -1342,7 +1325,7 @@ def _reply_flex(reply_token: str, title: str, model: str,
                 "type": "button",
                 "style": "primary",
                 "color": color,
-                "height": "sm",
+                "height": "md",
                 "action": {
                     "type": "uri",
                     "label": btn_label,
@@ -1426,9 +1409,11 @@ def line_webhook():
             pdf_r2      = f"{raw_model}.pdf"
             pdf_display = f"{raw_model}.pdf"
             from urllib.parse import quote
+            # openExternalBrowser=1 บังคับ LINE เปิด browser ภายนอกทันที
             dl_url = (f"{_SERVER_BASE}/line/download"
                       f"?file={quote(pdf_r2, safe='')}"
-                      f"&name={quote(pdf_display, safe='')}")
+                      f"&name={quote(pdf_display, safe='')}"
+                      f"&openExternalBrowser=1")
             _reply_flex(reply_token,
                 title="📄 Spec Sheet",
                 model=raw_model,
@@ -1448,7 +1433,8 @@ def line_webhook():
             from urllib.parse import quote
             dl_url = (f"{_SERVER_BASE}/line/download"
                       f"?file={quote(step_r2, safe='')}"
-                      f"&name={quote(step_display, safe='')}")
+                      f"&name={quote(step_display, safe='')}"
+                      f"&openExternalBrowser=1")
             _reply_flex(reply_token,
                 title="📦 3D Model",
                 model=raw_model,
@@ -1473,7 +1459,7 @@ def line_webhook():
 
 # =========================
 # LINE Download Proxy
-# GET /line/download?file=xxx.STEP&name=yyy.STEP
+# GET /line/download?file=xxx.STEP&name=yyy.STEP&openExternalBrowser=1
 # =========================
 @app.get("/line/download")
 def line_download():
