@@ -63,7 +63,7 @@ from flask import request
 
 @app.after_request
 def add_cors_headers(response):
-    if request.path == "/line/webhook":
+    if request.path.startswith("/line/"):
         return response
     origin = request.headers.get("Origin")
 
@@ -86,7 +86,7 @@ def add_cors_headers(response):
 
 @app.before_request
 def handle_preflight():
-    if request.path == "/line/webhook":
+    if request.path.startswith("/line/"):
         return None
     if request.method == "OPTIONS" and request.path.startswith("/api/"):
         return ("", 204)
@@ -1320,36 +1320,74 @@ def line_webhook():
             continue
 
         text        = msg.get("text", "").strip()
-        reply_token = event.get("replyToken", "")
+        reply_token  = event.get("replyToken", "")
+        _SERVER_BASE = os.environ.get("RENDER_EXTERNAL_URL", "https://gear-motor-app.onrender.com")
 
         # ── คำสั่ง: ขอสเปค ───────────────────────────────────
         m = _CMD_SPEC.match(text)
         if m:
             raw_model    = m.group(1).strip()
-            pdf_filename = f"{raw_model}.pdf"
+            pdf_r2       = f"{raw_model}.pdf"          # ชื่อไฟล์จริงใน R2
+            pdf_display  = f"{raw_model}.pdf"          # ชื่อที่ Sale ได้
+            from urllib.parse import quote
+            dl_link = (f"{_SERVER_BASE}/line/download"
+                       f"?file={quote(pdf_r2, safe='')}"
+                       f"&name={quote(pdf_display, safe='')}")
             _reply_text(reply_token,
                 f"📄 นี่ครับ Spec Sheet ของ\n"
                 f"Model : {raw_model}\n\n"
                 f"📥 ดาวน์โหลดได้เลย:\n"
-                f"{_r2_url(pdf_filename)}"
+                f"{dl_link}"
             )
             continue
 
         # ── คำสั่ง: ขอ3D ─────────────────────────────────────
         m = _CMD_3D.match(text)
         if m:
-            raw_model     = m.group(1).strip()
-            file_model    = _normalize_ac_ratio(raw_model)  # ratio → 3
-            step_filename = f"{file_model}.STEP"
+            raw_model    = m.group(1).strip()
+            file_model   = _normalize_ac_ratio(raw_model)   # ratio → 3 สำหรับชี้ไฟล์จริง
+            step_r2      = f"{file_model}.STEP"             # ไฟล์จริงใน R2
+            step_display = f"{raw_model}.STEP"              # ชื่อที่ Sale ได้
+            from urllib.parse import quote
+            dl_link = (f"{_SERVER_BASE}/line/download"
+                       f"?file={quote(step_r2, safe='')}"
+                       f"&name={quote(step_display, safe='')}")
             _reply_text(reply_token,
                 f"📦 นี่ครับ 3D Model ของ\n"
                 f"Model : {raw_model}\n\n"
                 f"📥 ดาวน์โหลดได้เลย:\n"
-                f"{_r2_url(step_filename)}"
+                f"{dl_link}"
             )
             continue
 
     return jsonify({"ok": True}), 200
+
+
+# =========================
+# LINE Download Proxy
+# ดึงไฟล์จาก R2 แล้วส่งกลับพร้อมชื่อไฟล์ที่ถูกต้อง
+# GET /line/download?file=5GU3RC.STEP&name=5GU15RC.STEP
+# =========================
+@app.get("/line/download")
+def line_download():
+    from urllib.parse import unquote
+    file_param = unquote(request.args.get("file", ""))
+    name_param = unquote(request.args.get("name", "")) or file_param
+    if not file_param:
+        return jsonify({"error": "missing file param"}), 400
+
+    file_bytes = _fetch_r2(file_param)
+    if file_bytes is None:
+        return jsonify({"error": f"ไม่พบไฟล์ {file_param} ใน R2"}), 404
+
+    import io
+    from flask import send_file as _send_file
+    return _send_file(
+        io.BytesIO(file_bytes),
+        as_attachment=True,
+        download_name=name_param,
+        mimetype="application/octet-stream",
+    )
 
 
 # =========================
