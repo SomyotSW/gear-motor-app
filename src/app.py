@@ -527,6 +527,9 @@ def ac_quote():
         # A17: ชื่อย่อ Sale Person
         ws["A17"] = sp["abbr"]
 
+        # D17: Job type
+        ws["D17"] = "AC Gear Motor"
+
         # D60: ชื่อเต็ม Sale Person
         ws["D60"] = sp["name"]
 
@@ -1069,6 +1072,7 @@ def dc_quote():
 
         ws["H3"]  = f"QMO26-{brand_tag}-{run_no_str}"
         ws["A17"] = sp["abbr"]
+        ws["D17"] = "DC Gear Motor"
         ws["D60"] = sp["name"]
         ws["D61"] = sp["position"]
 
