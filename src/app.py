@@ -393,12 +393,12 @@ def ac_quote():
         gear_code = str(payload.get("gearCode", "")).strip()
 
         try:
-            qty_motor = int(payload.get("qtyMotor", 1) or 1)
+            qty_motor = max(0, int(payload.get("qtyMotor", 1) or 0))
         except Exception:
             qty_motor = 1
 
         try:
-            qty_gear = int(payload.get("qtyGear", 1) or 1)
+            qty_gear = max(0, int(payload.get("qtyGear", 1) or 0))
         except Exception:
             qty_gear = 1
         
@@ -408,8 +408,13 @@ def ac_quote():
         except Exception:
             qty_ctrl = 0
 
-        if not motor_code or not gear_code:
-            return "Invalid motorCode/gearCode", 400
+        # ต้องมี code สำหรับรายการที่ qty > 0
+        if qty_motor > 0 and not motor_code:
+            return "motorCode is required when qtyMotor > 0", 400
+        if qty_gear > 0 and not gear_code:
+            return "gearCode is required when qtyGear > 0", 400
+        if qty_motor == 0 and qty_gear == 0 and not (ctrl_model and qty_ctrl > 0):
+            return "กรุณาระบุจำนวน Motor, Gear Head หรือ Speed Controller อย่างน้อย 1 รายการ", 400
 
         if not os.path.exists(TEMPLATE_FILE):
             return f"Template file not found: {TEMPLATE_FILE}", 500
@@ -424,16 +429,21 @@ def ac_quote():
                 return f"Controller code not found in price list: {ctrl_model}", 404
             ctrl = PRICE_MAP[ckey]
 
-        mkey = norm_code(motor_code)
-        gkey = norm_code(gear_code)
+        # lookup เฉพาะรายการที่ qty > 0
+        motor = None
+        gear  = None
 
-        if mkey not in PRICE_MAP:
-            return f"Motor code not found in price list: {motor_code}", 404
-        if gkey not in PRICE_MAP:
-            return f"Gear code not found in price list: {gear_code}", 404
+        if qty_motor > 0:
+            mkey = norm_code(motor_code)
+            if mkey not in PRICE_MAP:
+                return f"Motor code not found in price list: {motor_code}", 404
+            motor = PRICE_MAP[mkey]
 
-        motor = PRICE_MAP[mkey]
-        gear = PRICE_MAP[gkey]
+        if qty_gear > 0:
+            gkey = norm_code(gear_code)
+            if gkey not in PRICE_MAP:
+                return f"Gear code not found in price list: {gear_code}", 404
+            gear = PRICE_MAP[gkey]
 
         wb = load_workbook(TEMPLATE_FILE)
         if TEMPLATE_SHEET_NAME not in wb.sheetnames:
@@ -471,27 +481,36 @@ def ac_quote():
         ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
         ws.print_area = "A1:I80"
 
-        # Motor row (A20..G20)
-        ws["A20"] = 1
-        ws["B20"] = motor_code
-        ws["C20"] = motor.get("desc", "")
-        ws["F20"] = qty_motor
-        ws["G20"] = motor.get("price", 0.0)
+        # เขียน rows เฉพาะที่ qty > 0 — row_no นับต่อเนื่อง, template rows: 20, 22, 24
+        ITEM_ROWS = [20, 22, 24]
+        row_no = 1
 
-        # Gear row (A22..G22)
-        ws["A22"] = 2
-        ws["B22"] = gear_code
-        ws["C22"] = gear.get("desc", "")
-        ws["F22"] = qty_gear
-        ws["G22"] = gear.get("price", 0.0)
+        if motor and qty_motor > 0:
+            r = ITEM_ROWS[row_no - 1]
+            ws.cell(r, 1).value = row_no
+            ws.cell(r, 2).value = motor_code
+            ws.cell(r, 3).value = motor.get("desc", "")
+            ws.cell(r, 6).value = qty_motor
+            ws.cell(r, 7).value = motor.get("price", 0.0)
+            row_no += 1
 
-        # Controller row (A24..G24) — optional
-        if ctrl_model and qty_ctrl > 0:
-            ws["A24"] = 3
-            ws["B24"] = ctrl_model
-            ws["C24"] = ctrl.get("desc", "")
-            ws["F24"] = qty_ctrl
-            ws["G24"] = ctrl.get("price", 0.0)
+        if gear and qty_gear > 0:
+            r = ITEM_ROWS[row_no - 1]
+            ws.cell(r, 1).value = row_no
+            ws.cell(r, 2).value = gear_code
+            ws.cell(r, 3).value = gear.get("desc", "")
+            ws.cell(r, 6).value = qty_gear
+            ws.cell(r, 7).value = gear.get("price", 0.0)
+            row_no += 1
+
+        # Controller row — optional
+        if ctrl and ctrl_model and qty_ctrl > 0 and row_no <= len(ITEM_ROWS):
+            r = ITEM_ROWS[row_no - 1]
+            ws.cell(r, 1).value = row_no
+            ws.cell(r, 2).value = ctrl_model
+            ws.cell(r, 3).value = ctrl.get("desc", "")
+            ws.cell(r, 6).value = qty_ctrl
+            ws.cell(r, 7).value = ctrl.get("price", 0.0)
 
         # [BUG FIX #1, #3] เรียก next_qmo_no() และ cleanup_old_pdfs() เพียงครั้งเดียว
         # และ set เซลล์ H3, A17, D60, D61 เพียงครั้งเดียวที่นี่ (ไม่ซ้ำใน if block ข้างบน)
@@ -869,6 +888,241 @@ def bldc_quote():
 
     except Exception as e:
         app.logger.exception("bldc_quote crashed")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+# =========================
+# DC Gear Motor Price Map
+# =========================
+
+DC_PRICE_FILE = os.path.join(DATA_DIR, "DC Gear Motor Price List 2026.xlsx")
+
+def build_dc_price_map() -> dict[str, dict[str, object]]:
+    """อ่านราคาจาก DC Gear Motor Price List 2026.xlsx — โครงสร้างเดียวกับ AC/BLDC"""
+    if not os.path.exists(DC_PRICE_FILE):
+        raise FileNotFoundError(f"DC Price file not found: {DC_PRICE_FILE}")
+    wb = load_workbook(DC_PRICE_FILE, data_only=True)
+    ws = wb.active
+    out: dict[str, dict[str, object]] = {}
+    for r in range(1, (ws.max_row or 0) + 1):
+        code = ws.cell(r, 1).value
+        if not code:
+            continue
+        raw = str(code).strip()
+        key = norm_code(raw)
+        desc  = ws.cell(r, 2).value
+        price = ws.cell(r, 4).value
+        try:
+            price_val = float(price) if price not in (None, "") else 0.0
+        except Exception:
+            price_val = 0.0
+        if price_val > 0 and key not in out:
+            out[key] = {
+                "raw":   raw,
+                "desc":  str(desc).strip() if desc is not None else "",
+                "price": price_val,
+            }
+    return out
+
+try:
+    DC_PRICE_MAP = build_dc_price_map()
+    print(f"[INFO] DC_PRICE_MAP loaded: {len(DC_PRICE_MAP)} entries")
+except Exception as _e:
+    DC_PRICE_MAP = {}
+    print(f"[WARN] Cannot load DC_PRICE_MAP: {_e}")
+
+@app.get("/api/dc-price-reload")
+def dc_price_reload():
+    global DC_PRICE_MAP
+    try:
+        DC_PRICE_MAP = build_dc_price_map()
+        return jsonify({"ok": True, "count": len(DC_PRICE_MAP)})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+# =========================
+# DC Gear Motor Quote endpoint
+# =========================
+
+@app.route("/api/dc-quote", methods=["OPTIONS"])
+def dc_quote_preflight():
+    return ("", 204)
+
+@app.post("/api/dc-quote")
+def dc_quote():
+    """
+    สร้างใบเสนอราคา DC Gear Motor
+    payload:
+        modelCode   – รหัสรุ่นเต็ม  e.g. "S5D90-24GU-30S-5GU15KB"
+        motorCode   – motor part    e.g. "S5D90-24GU-30S"
+        gearCode    – gear part     e.g. "5GU15KB"
+        qtyMotor    – จำนวน Motor (int)
+        customer    – { name, company, phone, email }
+        salePerson  – "CA" (abbr)
+    """
+    try:
+        payload = request.get_json(silent=True) or {}
+
+        model_code = str(payload.get("modelCode", "")).strip()
+
+        # แยก motorCode / gearCode จาก modelCode ถ้า frontend ไม่ส่งมา
+        motor_code = str(payload.get("motorCode", "")).strip()
+        gear_code  = str(payload.get("gearCode",  "")).strip()
+
+        if model_code and not (motor_code and gear_code):
+            # parse: S5D90-24GU-30S-5GU15KB → motor=S5D90-24GU-30S, gear=5GU15KB
+            parts = model_code.split("-")
+            if len(parts) >= 4:
+                motor_code = "-".join(parts[:3])   # e.g. S5D90-24GU-30S
+                gear_code  = parts[3]               # e.g. 5GU15KB
+            else:
+                motor_code = model_code
+                gear_code  = ""
+
+        try:
+            qty_motor = int(payload.get("qtyMotor", payload.get("qty", 1)) or 0)
+            qty_motor = max(0, qty_motor)
+        except Exception:
+            qty_motor = 1
+
+        try:
+            qty_gear = int(payload.get("qtyGear", 1) or 0)
+            qty_gear = max(0, qty_gear)
+        except Exception:
+            qty_gear = 1
+
+        if qty_motor == 0 and qty_gear == 0:
+            return "กรุณาระบุจำนวน DC Motor หรือ Gear Head อย่างน้อย 1 รายการ", 400
+
+        if not motor_code:
+            return "motorCode is required", 400
+        if not os.path.exists(TEMPLATE_FILE):
+            return f"Template file not found: {TEMPLATE_FILE}", 500
+        if not DC_PRICE_MAP:
+            return "DC_PRICE_MAP is empty. Reload /api/dc-price-reload", 500
+
+        mkey = norm_code(motor_code)
+        gkey = norm_code(gear_code) if gear_code else ""
+
+        motor = DC_PRICE_MAP.get(mkey) if qty_motor > 0 else None
+        gear  = DC_PRICE_MAP.get(gkey) if (gkey and qty_gear > 0) else None
+
+        if qty_motor > 0 and not motor:
+            return f"Motor code not found in DC price list: \"{motor_code}\" (key={mkey})", 404
+        if qty_gear > 0 and gear_code and not gear:
+            return f"Gear code not found in DC price list: \"{gear_code}\" (key={gkey})", 404
+
+        # ── Customer & Sale Person ────────────────────────────────────────────
+        cust = payload.get("customer", {}) or {}
+        cust_name    = str(cust.get("name",    "")).strip()
+        cust_company = str(cust.get("company", "")).strip()
+        cust_phone   = str(cust.get("phone",   "")).strip()
+        cust_email   = str(cust.get("email",   "")).strip()
+
+        sale_person_abbr = str(payload.get("salePerson", "CA")).strip() or "CA"
+        sp = SALE_PERSONS.get(sale_person_abbr, SALE_PERSONS["CA"])
+
+        # ── Fill template ─────────────────────────────────────────────────────
+        wb_t = load_workbook(TEMPLATE_FILE)
+        if TEMPLATE_SHEET_NAME not in wb_t.sheetnames:
+            return f"Template sheet not found: {TEMPLATE_SHEET_NAME}", 500
+
+        ws = wb_t[TEMPLATE_SHEET_NAME]
+        for name in list(wb_t.sheetnames):
+            if name != TEMPLATE_SHEET_NAME:
+                del wb_t[name]
+        ws.page_setup.paperSize = ws.PAPERSIZE_A4
+        ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
+        ws.print_area = "A1:I80"
+
+        # ข้อมูลลูกค้า
+        ws["B8"]  = f"คุณ : {cust_name}" if cust_name else "คุณ :"
+        ws["B9"]  = cust_company
+        ws["B13"] = cust_email
+        ws["B14"] = cust_phone
+
+        # Motor row — แสดงเฉพาะเมื่อ qtyMotor > 0
+        row_no = 1
+        if motor and qty_motor > 0:
+            ws["A20"] = row_no
+            ws["B20"] = motor_code
+            ws["C20"] = motor.get("desc", "")
+            ws["F20"] = qty_motor
+            ws["G20"] = motor.get("price", 0.0)
+            row_no += 1
+
+        # Gear row — แสดง A20 ถ้า motor ไม่แสดง, แสดง A22 ถ้า motor แสดงแล้ว
+        if gear and gear_code and qty_gear > 0:
+            g_row = 20 if row_no == 1 else 22
+            ws.cell(g_row, 1).value = row_no
+            ws.cell(g_row, 2).value = gear_code
+            ws.cell(g_row, 3).value = gear.get("desc", "")
+            ws.cell(g_row, 6).value = qty_gear
+            ws.cell(g_row, 7).value = gear.get("price", 0.0)
+
+        # Quotation number & Sale Person
+        cleanup_old_pdfs()
+        run_no     = next_qmo_no()
+        run_no_str = f"{run_no:03d}"
+
+        sp_abbr   = sp.get("abbr", "").strip() if isinstance(sp, dict) else str(sp).strip()
+        brand_tag = sp_abbr if sp_abbr else "SAS"
+
+        ws["H3"]  = f"QMO26-{brand_tag}-{run_no_str}"
+        ws["A17"] = sp["abbr"]
+        ws["D60"] = sp["name"]
+        ws["D61"] = sp["position"]
+
+        # ── Convert to PDF ────────────────────────────────────────────────────
+        with tempfile.TemporaryDirectory() as td:
+            filled_xlsx = os.path.join(td, "DC-QMO26-FILLED.xlsx")
+            wb_t.save(filled_xlsx)
+            try:
+                pdf_temp = xlsx_to_pdf(filled_xlsx, td)
+            except Exception as e:
+                return f"PDF convert failed: {e}", 500
+
+            company_for_file = re.sub(r'[\\/:*?"<>|]+', "", cust_company or "NO-COMPANY").strip()
+            company_for_file = re.sub(r"\s+", "_", company_for_file)[:60] or "NO-COMPANY"
+            date_str   = datetime.now().strftime("%Y%m%d")
+            saved_name = f"QMO26-{brand_tag}-{run_no_str}-{company_for_file}-{date_str}.pdf"
+            saved_path = OUTPUT_DIR / saved_name
+            shutil.copy2(pdf_temp, saved_path)
+
+            # Optional email via SMTP
+            if smtp_is_configured():
+                subject = f"SAS Quotation DC Gear Motor: {model_code}"
+                body_c  = (
+                    f"เรียนคุณ {cust_name}\n\n"
+                    f"ใบเสนอราคา DC Gear Motor\n"
+                    f"Model: {model_code}  x{qty_motor}\n"
+                    f"แนบไฟล์ PDF มาพร้อมอีเมลนี้\n"
+                )
+                if cust_email:
+                    try: send_email_with_pdf(cust_email, subject, body_c, str(saved_path))
+                    except Exception as e: print("[WARN] dc email customer:", e)
+
+                body_i = (
+                    f"แจ้งเตือน: ใบเสนอราคา DC Gear Motor\n\n"
+                    f"ลูกค้า : {cust_name}\nบริษัท : {cust_company}\n"
+                    f"เบอร์  : {cust_phone}\nอีเมล  : {cust_email}\n\n"
+                    f"Model  : {model_code}  x{qty_motor}\n"
+                    f"Motor  : {motor_code}\nGear   : {gear_code}\n"
+                    f"Sale   : {sp.get('name', sale_person_abbr)}\n"
+                    f"เลขที่ : QMO26-{brand_tag}-{run_no_str}\n"
+                )
+                for ie in INTERNAL_NOTIFY_EMAILS:
+                    try: send_email_with_pdf(ie, subject, body_i, str(saved_path))
+                    except Exception as e: print(f"[WARN] dc email internal {ie}:", e)
+
+            return send_file(
+                str(saved_path),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=saved_name,
+            )
+
+    except Exception as e:
+        app.logger.exception("dc_quote crashed")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 # =========================

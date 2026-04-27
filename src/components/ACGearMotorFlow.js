@@ -1584,18 +1584,41 @@ const gifForHead = (() => {
         <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ fontSize:9, fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'#4a5060', marginBottom:10 }}>จำนวน</div>
           {[{ label:'Gear Head', val:qtyGear, set:setQtyGear },{ label:'AC Motor', val:qtyMotor, set:setQtyMotor }].map(({ label, val, set }) => (
-            <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-              <span style={{ fontSize:12, color:'rgba(255,255,255,0.65)' }}>{label}</span>
-              <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                <button type="button" onClick={() => set(q => Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>–</button>
-                <input type="number" min={1} max={999} value={val}
-                  onChange={e => { const v=Number(e.target.value); set(Number.isFinite(v)?Math.max(1,Math.floor(v)):1); }}
-                  onWheel={e => e.currentTarget.blur()}
-                  style={{ width:38, textAlign:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:5, color:'#e8eaf0', fontSize:13, fontWeight:700, padding:'2px 0' }} />
-                <button type="button" onClick={() => set(q => Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>+</button>
+            <div key={label} style={{ marginBottom:8 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <div>
+                  <span style={{ fontSize:12, color:'rgba(255,255,255,0.65)' }}>{label}</span>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.30)' }}>0 = ไม่ต้องการ {label}</div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                  <button type="button" onClick={() => set(q => Math.max(0,q-1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>–</button>
+                  <input type="number" min={0} max={999} value={val}
+                    onChange={e => { const v=Number(e.target.value); set(Number.isFinite(v)?Math.max(0,Math.floor(v)):0); }}
+                    onWheel={e => e.currentTarget.blur()}
+                    style={{ width:38, textAlign:'center',
+                      background: val===0 ? 'rgba(245,166,35,0.12)' : 'rgba(255,255,255,0.06)',
+                      border: `1px solid ${val===0 ? '#f5a623' : 'rgba(255,255,255,0.1)'}`,
+                      borderRadius:5, color: val===0 ? '#f5a623' : '#e8eaf0',
+                      fontSize:13, fontWeight:700, padding:'2px 0', transition:'all 0.2s' }} />
+                  <button type="button" onClick={() => set(q => Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>+</button>
+                </div>
               </div>
             </div>
           ))}
+          {(qtyGear===0 || qtyMotor===0) && !(qtyGear===0 && qtyMotor===0) && (
+            <div style={{ marginTop:4, padding:'5px 8px', borderRadius:6,
+              background:'rgba(245,166,35,0.10)', border:'1px solid rgba(245,166,35,0.25)',
+              fontSize:10, color:'#f5a623' }}>
+              ⚠️ {qtyGear===0 ? 'ใบเสนอราคาจะแสดงเฉพาะ AC Motor' : 'ใบเสนอราคาจะแสดงเฉพาะ Gear Head'}
+            </div>
+          )}
+          {qtyGear===0 && qtyMotor===0 && !(acMotorType==='Variable Speed Motor' && qtyCtrl>0) && (
+            <div style={{ marginTop:4, padding:'5px 8px', borderRadius:6,
+              background:'rgba(245,166,35,0.10)', border:'1px solid rgba(245,166,35,0.25)',
+              fontSize:10, color:'#f5a623' }}>
+              ⚠️ กรุณาระบุจำนวนอย่างน้อย 1 รายการ
+            </div>
+          )}
           {acMotorType === 'Variable Speed Motor' && (
             <div style={{ marginTop:4 }}>
               <div style={{ fontSize:12, color:'rgba(255,255,255,0.65)', marginBottom:5 }}>Speed controller</div>
@@ -1644,11 +1667,15 @@ const gifForHead = (() => {
                 ))}
               </div>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:4 }}>
-                <button type="button" onClick={() => setQtyCtrl(q=>Math.max(1,q-1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>–</button>
-                <input type="number" min={1} max={999} value={qtyCtrl}
-                  onChange={e => { const v=Number(e.target.value); setQtyCtrl(Number.isFinite(v)?Math.max(1,Math.floor(v)):1); }}
+                <button type="button" onClick={() => setQtyCtrl(q=>Math.max(0,q-1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>–</button>
+                <input type="number" min={0} max={999} value={qtyCtrl}
+                  onChange={e => { const v=Number(e.target.value); setQtyCtrl(Number.isFinite(v)?Math.max(0,Math.floor(v)):0); }}
                   onWheel={e => e.currentTarget.blur()}
-                  style={{ width:38, textAlign:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:5, color:'#e8eaf0', fontSize:13, fontWeight:700, padding:'2px 0' }} />
+                  style={{ width:38, textAlign:'center',
+                    background: qtyCtrl===0 ? 'rgba(245,166,35,0.12)' : 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${qtyCtrl===0 ? '#f5a623' : 'rgba(255,255,255,0.1)'}`,
+                    borderRadius:5, color: qtyCtrl===0 ? '#f5a623' : '#e8eaf0',
+                    fontSize:13, fontWeight:700, padding:'2px 0', transition:'all 0.2s' }} />
                 <button type="button" onClick={() => setQtyCtrl(q=>Math.min(999,q+1))} style={{ width:26, height:26, borderRadius:5, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.06)', color:'#e8eaf0', cursor:'pointer', fontSize:15 }}>+</button>
               </div>
             </div>
@@ -1668,7 +1695,12 @@ const gifForHead = (() => {
             📦 รับไฟล์ 3D
           </button>
           <button type="button" onClick={handleRequestQuote}
-            style={{ width:'100%', padding:'11px 0', borderRadius:10, background:'linear-gradient(90deg,#00e5a0,#00c87a)', color:'#0a1a10', fontWeight:700, fontSize:14, border:'none', cursor:'pointer' }}>
+            disabled={qtyGear===0 && qtyMotor===0 && !(acMotorType==='Variable Speed Motor' && qtyCtrl>0)}
+            style={{ width:'100%', padding:'11px 0', borderRadius:10,
+              background:'linear-gradient(90deg,#00e5a0,#00c87a)', color:'#0a1a10',
+              fontWeight:700, fontSize:14, border:'none',
+              cursor: (qtyGear===0 && qtyMotor===0 && !(acMotorType==='Variable Speed Motor' && qtyCtrl>0)) ? 'not-allowed' : 'pointer',
+              opacity: (qtyGear===0 && qtyMotor===0 && !(acMotorType==='Variable Speed Motor' && qtyCtrl>0)) ? 0.4 : 1 }}>
             🛒 ขอใบเสนอราคา
           </button>
           <button type="button" onClick={handleDownloadPDF}
@@ -1770,11 +1802,21 @@ const gifForHead = (() => {
             return (list && list[0]) || '—';
           })()
         }</b></div>
-        <div className="flex gap-4 mt-1">
-          <span>Gear Head: <b>{qtyGear}</b></span>
-          <span>AC Motor: <b>{qtyMotor}</b></span>
-          {acMotorType === 'Variable Speed Motor' && <span>Controller: <b>{qtyCtrl}</b></span>}
-        </div>
+        <div className="flex gap-4 mt-1 flex-wrap">
+            {qtyGear > 0  && <span>Gear Head: <b>{qtyGear}</b></span>}
+            {qtyMotor > 0 && <span>AC Motor: <b>{qtyMotor}</b></span>}
+            {acMotorType === 'Variable Speed Motor' && qtyCtrl > 0 && <span>Controller: <b>{qtyCtrl}</b></span>}
+          </div>
+          {(qtyGear===0 || qtyMotor===0) && (
+            <div className="mt-1 text-xs" style={{ color:'#d97706' }}>
+              ⚠️ {qtyGear===0 && qtyMotor===0
+                    ? (acMotorType==='Variable Speed Motor' && qtyCtrl>0
+                        ? 'ใบเสนอราคาจะแสดงเฉพาะ Speed Controller'
+                        : 'กรุณาระบุจำนวนอย่างน้อย 1 รายการ')
+                    : qtyGear===0 ? 'ไม่รวม Gear Head'
+                    : 'ไม่รวม AC Motor'}
+            </div>
+          )}
       </div>
     </div>
   </div>

@@ -66,6 +66,65 @@ const MOTOR_DATA = [
   { power:250, frameSize:'104mm', motorPrefix:'S6D250',  gearPrefix:'6GU', gearSuffix:'GU' },
 ];
 
+// ── Motor specs from datasheet images (key = `${motorPrefix}-${voltage}`) ───
+// voltage: '12' | '24' | '48' | '90'
+// noLoad: { speed (rpm), current (A max) }
+// load:   { speed (rpm), torque (mN.m), current (A) }
+// brushLife: H,  weight: kg
+const DC_MOTOR_SPECS = {
+  // ── S2D10 (10W, 60mm) ──────────────────────────────────────────────────────
+  'S2D10-12': { noLoadSpeed:3200, noLoadCurrent:'1.0Max', loadSpeed:2800, loadTorque:34,  loadCurrent:2.0,  brushLife:2000, weight:0.7 },
+  'S2D10-24': { noLoadSpeed:3300, noLoadCurrent:'0.5Max', loadSpeed:3000, loadTorque:32,  loadCurrent:0.9,  brushLife:2000, weight:0.7 },
+  'S2D10-48': { noLoadSpeed:3200, noLoadCurrent:'0.3Max', loadSpeed:2800, loadTorque:34,  loadCurrent:0.6,  brushLife:2000, weight:0.7 },
+  'S2D10-90': { noLoadSpeed:3200, noLoadCurrent:'0.3Max', loadSpeed:2800, loadTorque:34,  loadCurrent:0.6,  brushLife:2000, weight:0.7 },
+  // ── S2D15 (15W, 60mm) ──────────────────────────────────────────────────────
+  'S2D15-12': { noLoadSpeed:3200, noLoadCurrent:'0.8Max', loadSpeed:2950, loadTorque:48,  loadCurrent:2.0,  brushLife:2000, weight:0.9 },
+  'S2D15-24': { noLoadSpeed:3300, noLoadCurrent:'0.4Max', loadSpeed:3000, loadTorque:48,  loadCurrent:1.0,  brushLife:2000, weight:0.9 },
+  'S2D15-48': { noLoadSpeed:3200, noLoadCurrent:'0.2Max', loadSpeed:3000, loadTorque:48,  loadCurrent:0.4,  brushLife:2000, weight:0.9 },
+  'S2D15-90': { noLoadSpeed:3200, noLoadCurrent:'0.2Max', loadSpeed:3000, loadTorque:48,  loadCurrent:0.4,  brushLife:2000, weight:0.9 },
+  // ── S3D25 (25W, 70mm) ──────────────────────────────────────────────────────
+  'S3D25-12': { noLoadSpeed:3300, noLoadCurrent:'1.0Max', loadSpeed:3000, loadTorque:80,  loadCurrent:3.5,  brushLife:2000, weight:1.0 },
+  'S3D25-24': { noLoadSpeed:3200, noLoadCurrent:'0.5Max', loadSpeed:2800, loadTorque:85,  loadCurrent:1.6,  brushLife:2000, weight:1.0 },
+  'S3D25-48': { noLoadSpeed:3100, noLoadCurrent:'0.3Max', loadSpeed:2700, loadTorque:88,  loadCurrent:0.6,  brushLife:2000, weight:1.0 },
+  'S3D25-90': { noLoadSpeed:3100, noLoadCurrent:'0.3Max', loadSpeed:2700, loadTorque:88,  loadCurrent:0.6,  brushLife:2000, weight:1.0 },
+  // ── S4D25 (25W, 80mm) ──────────────────────────────────────────────────────
+  'S4D25-12': { noLoadSpeed:3200, noLoadCurrent:'1.4Max', loadSpeed:3100, loadTorque:77,  loadCurrent:3.6,  brushLife:2000, weight:1.7 },
+  'S4D25-24': { noLoadSpeed:3000, noLoadCurrent:'0.7Max', loadSpeed:2850, loadTorque:84,  loadCurrent:1.7,  brushLife:2000, weight:1.7 },
+  'S4D25-90': { noLoadSpeed:3200, noLoadCurrent:'0.2Max', loadSpeed:3000, loadTorque:80,  loadCurrent:0.5,  brushLife:2000, weight:1.7 },
+  // ── S4D40 (40W, 80mm) ──────────────────────────────────────────────────────
+  'S4D40-12': { noLoadSpeed:3100, noLoadCurrent:'2.0Max', loadSpeed:2800, loadTorque:136, loadCurrent:5.2,  brushLife:2000, weight:1.8 },
+  'S4D40-24': { noLoadSpeed:3100, noLoadCurrent:'0.8Max', loadSpeed:3000, loadTorque:127, loadCurrent:2.1,  brushLife:2000, weight:1.8 },
+  'S4D40-90': { noLoadSpeed:3200, noLoadCurrent:'0.3Max', loadSpeed:3000, loadTorque:127, loadCurrent:0.7,  brushLife:2000, weight:1.8 },
+  // ── S5D40 (40W, 90mm) ──────────────────────────────────────────────────────
+  'S5D40-12': { noLoadSpeed:3100, noLoadCurrent:'2.0Max', loadSpeed:2800, loadTorque:136, loadCurrent:5.2,  brushLife:2000, weight:1.9 },
+  'S5D40-24': { noLoadSpeed:3000, noLoadCurrent:'1.0Max', loadSpeed:2800, loadTorque:136, loadCurrent:2.6,  brushLife:2000, weight:1.9 },
+  'S5D40-90': { noLoadSpeed:3200, noLoadCurrent:'0.3Max', loadSpeed:3000, loadTorque:127, loadCurrent:0.7,  brushLife:2000, weight:1.9 },
+  // ── S5D60 (60W, 90mm) ──────────────────────────────────────────────────────
+  'S5D60-12': { noLoadSpeed:3000, noLoadCurrent:'2.0Max', loadSpeed:2600, loadTorque:220, loadCurrent:9.0,  brushLife:2000, weight:2.2 },
+  'S5D60-24': { noLoadSpeed:3100, noLoadCurrent:'1.0Max', loadSpeed:2800, loadTorque:205, loadCurrent:3.8,  brushLife:2000, weight:2.2 },
+  'S5D60-90': { noLoadSpeed:3100, noLoadCurrent:'0.3Max', loadSpeed:2900, loadTorque:198, loadCurrent:1.0,  brushLife:2000, weight:2.2 },
+  // ── S5D90 (90W, 90mm) ──────────────────────────────────────────────────────
+  'S5D90-12': { noLoadSpeed:3100, noLoadCurrent:'2.0Max', loadSpeed:2600, loadTorque:330, loadCurrent:12.0, brushLife:2000, weight:2.2 },
+  'S5D90-24': { noLoadSpeed:3300, noLoadCurrent:'1.0Max', loadSpeed:2800, loadTorque:307, loadCurrent:5.00, brushLife:2000, weight:2.2 },
+  'S5D90-90': { noLoadSpeed:3000, noLoadCurrent:'0.3Max', loadSpeed:2900, loadTorque:307, loadCurrent:1.40, brushLife:2000, weight:2.2 },
+  // ── S5D120 (120W, 90mm) ────────────────────────────────────────────────────
+  'S5D120-12': { noLoadSpeed:3100, noLoadCurrent:'2.0Max', loadSpeed:2500, loadTorque:458, loadCurrent:15.0, brushLife:2000, weight:2.2 },
+  'S5D120-24': { noLoadSpeed:3200, noLoadCurrent:'1.0Max', loadSpeed:2600, loadTorque:441, loadCurrent:7.00, brushLife:2000, weight:2.2 },
+  'S5D120-90': { noLoadSpeed:3000, noLoadCurrent:'0.3Max', loadSpeed:2600, loadTorque:441, loadCurrent:2.00, brushLife:2000, weight:2.2 },
+  // ── S55D250 (250W, 90mm) ───────────────────────────────────────────────────
+  'S55D250-24': { noLoadSpeed:3400, noLoadCurrent:'3.0Max', loadSpeed:3000, loadTorque:796, loadCurrent:16.0, brushLife:2000, weight:3.2 },
+  'S55D250-90': { noLoadSpeed:3300, noLoadCurrent:'1.2Max', loadSpeed:3000, loadTorque:796, loadCurrent:4.20, brushLife:2000, weight:3.2 },
+  // ── S6D250 (250W, 104mm) ──────────────────────────────────────────────────
+  'S6D250-24': { noLoadSpeed:3400, noLoadCurrent:'3.0Max', loadSpeed:3000, loadTorque:796, loadCurrent:16.0, brushLife:2000, weight:3.2 },
+  'S6D250-90': { noLoadSpeed:3300, noLoadCurrent:'1.0Max', loadSpeed:3000, loadTorque:796, loadCurrent:4.00, brushLife:2000, weight:3.2 },
+};
+
+// helper: get spec for current motor+voltage selection
+function getDCMotorSpec(motorPrefix, voltage) {
+  if (!motorPrefix || !voltage) return null;
+  return DC_MOTOR_SPECS[`${motorPrefix}-${voltage}`] || null;
+}
+
 const VOLTAGE_OPTIONS = ['12','24','48','90'];
 const getVoltageSuffix = (v, gs) => `${v}${gs}`;
 const RATE_SPEED_CODE  = '30S';
@@ -613,7 +672,8 @@ function DCSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const isMobile = useIsMobile();
   const { dcMotor, dcVoltage, dcRatio, dcGearHead } = state;
   const [dark,  setDark]    = useState(true);
-  const [qty,   setQty]     = useState(1);
+  const [qtyMotor, setQtyMotor] = useState(1);  // 0 = ลูกค้าต้องการแค่ Gear Head
+  const [qtyGear,  setQtyGear]  = useState(1);  // 0 = ลูกค้าต้องการแค่ DC Motor
   const [showQ, setShowQ]   = useState(false);
   const [qName, setQName]   = useState('');
   const [qComp, setQComp]   = useState('');
@@ -623,21 +683,56 @@ function DCSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const [sp,    setSp]      = useState('CA');
   const [showSP,setShowSP]  = useState(false);
   const T = dark ? D : L;
-  const e   = MOTOR_DATA.find(m=>m.motorPrefix===dcMotor);
-  const ghc = e ? getGearHeadCode(e, dcGearHead) : dcGearHead||'—';
+  const e      = MOTOR_DATA.find(m=>m.motorPrefix===dcMotor);
+  const ghc    = e ? getGearHeadCode(e, dcGearHead) : dcGearHead||'—';
   const outSpd = dcRatio ? (3000/Number(dcRatio)).toFixed(1) : null;
+  const spec   = getDCMotorSpec(dcMotor, dcVoltage);
 
-  const specRows = [
-    ['Motor Code',   e?.motorPrefix||'—'],
-    ['Power',        e?`${e.power} W`:'—'],
-    ['Frame Size',   e?.frameSize||'—'],
-    ['Voltage',      dcVoltage?`${dcVoltage} VDC`:'—'],
-    ['Gear Series',  e?.gearSuffix||'—'],
-    ['Rated Speed',  RATE_SPEED_RPM],
-    ['Ratio',        dcRatio?`${dcRatio} : 1`:'—'],
-    ['Output Speed', outSpd?`${outSpd} rpm`:'—'],
-    ['Gear Head',    ghc],
+  // ── motor code parts (แยกเพื่อส่ง backend) ──────────────────────────────
+  const motorCode = e && dcVoltage
+    ? `${e.motorPrefix}-${getVoltageSuffix(dcVoltage, e.gearSuffix)}-${RATE_SPEED_CODE}`
+    : '';
+  const gearCode = (e && dcRatio && dcGearHead)
+    ? `${e.gearPrefix}${String(dcRatio).replace(/\.0$/,'')}${ghc}`
+    : '';
+
+  // ── Spec rows — DC Motor + Gear Head แยกกัน ──────────────────────────────
+  const dcMotorRows = [
+    ['— DC MOTOR —',      '',     true],
+    ['Motor Code',        e?.motorPrefix||'—'],
+    ['Power',             e?`${e.power} W`:'—',     true],
+    ['Frame Size',        e?.frameSize||'—'],
+    ['Voltage',           dcVoltage?`${dcVoltage} VDC`:'—', true],
+    ['Gear Series',       e?.gearSuffix||'—'],
+    ['Rated Speed',       RATE_SPEED_RPM],
   ];
+
+  const noLoadRows = spec ? [
+    ['— No-load Parameters —', '', true],
+    ['Speed (r/min)',     `${spec.noLoadSpeed}`],
+    ['Current (A)',       spec.noLoadCurrent],
+  ] : [];
+
+  const loadRows = spec ? [
+    ['— Load Parameters —', '', true],
+    ['Speed (r/min)',     `${spec.loadSpeed}`],
+    ['Torque (mN.m)',     `${spec.loadTorque}`,    true],
+    ['Current (A)',       `${spec.loadCurrent}`],
+  ] : [];
+
+  const durRows = spec ? [
+    ['Brush Life (H)',    `${spec.brushLife.toLocaleString()}`, true],
+    ['Motor Weight',      `${spec.weight} kg`],
+  ] : [];
+
+  const gearRows = [
+    ['— GEAR HEAD —',     '',     true],
+    ['Gear Head Type',    ghc],
+    ['Ratio',             dcRatio?`${dcRatio} : 1`:'—', true],
+    ['Output Speed',      outSpd?`${outSpd} rpm`:'—', true],
+  ];
+
+  const allSpecRows = [...dcMotorRows, ...noLoadRows, ...loadRows, ...durRows, ...gearRows];
 
   const submitQuote = async () => {
     if (!qName||!qComp||!qPhone||!qEmail){alert('กรุณากรอกข้อมูลให้ครบ');return;}
@@ -646,7 +741,15 @@ function DCSummaryPage({ state, modelCode, onConfirm, onBack }) {
       const API=process.env.REACT_APP_API_BASE||'http://localhost:5000';
       const res=await fetch(`${API}/api/dc-quote`,{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({modelCode,qty,customer:{name:qName,company:qComp,phone:qPhone,email:qEmail},salePerson:sp}),
+        body:JSON.stringify({
+          modelCode,
+          motorCode,
+          gearCode,
+          qtyMotor,
+          qtyGear,
+          customer:{name:qName,company:qComp,phone:qPhone,email:qEmail},
+          salePerson:sp,
+        }),
       });
       if(!res.ok) throw new Error(await res.text().catch(()=>''));
       const blob=await res.blob();
@@ -655,9 +758,12 @@ function DCSummaryPage({ state, modelCode, onConfirm, onBack }) {
       const fn=(cd.match(/filename\*?=(?:UTF-8''|")?([^\";]+)"?/i)||[])[1]||'dc-quotation.pdf';
       try{
         const b64=await blobToBase64(blob);
-        const ep={to_email:qEmail,requester_name:qName,company:qComp,phone:qPhone,email:qEmail,
-          model_code:modelCode,qty_motor:String(qty),sale_person:sp,
-          time:new Date().toLocaleString('th-TH'),pdf_content:b64,pdf_name:fn};
+        const ep={
+          to_email:qEmail, requester_name:qName, company:qComp, phone:qPhone, email:qEmail,
+          model_code:modelCode, motor_code:motorCode, gear_code:gearCode,
+          qty_motor:String(qtyMotor), qty_gear:String(qtyGear), sale_person:sp,
+          time:new Date().toLocaleString('th-TH'), pdf_content:b64, pdf_name:fn,
+        };
         await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{...ep,to_email:qEmail},EMAILJS_PUBLIC_KEY);
         await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{...ep,to_email:'Chottanin@synergy-as.com'},EMAILJS_PUBLIC_KEY);
         await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{...ep,to_email:'sas04@synergy-as.com'},EMAILJS_PUBLIC_KEY);
@@ -722,40 +828,93 @@ function DCSummaryPage({ state, modelCode, onConfirm, onBack }) {
             {/* specs */}
             <div style={{padding:'14px 16px',borderBottom:`1px solid ${T.border0}`}}>
               <div style={{fontSize:9,fontWeight:700,letterSpacing:'2.5px',textTransform:'uppercase',color:T.txt2,marginBottom:10}}>ข้อมูลจำเพาะ</div>
-              {specRows.map(([k,v])=>(
-                <div key={k} style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',
-                  padding:'5px 0',borderBottom:`1px solid ${T.border0}`,gap:6}}>
-                  <span style={{fontSize:11,color:T.txt1,flexShrink:0}}>{k}</span>
-                  <span style={{fontSize:11,fontWeight:600,textAlign:'right',wordBreak:'break-all',
-                    color:['Power','Output Speed','Ratio'].includes(k)?T.mint:T.txt0}}>{v||'—'}</span>
-                </div>
-              ))}
+              {allSpecRows.map(([k,v,highlight],i)=>{
+                // section header row
+                if (k.startsWith('—') && k.endsWith('—')) {
+                  return (
+                    <div key={i} style={{marginTop:i>0?8:0,marginBottom:4,
+                      fontSize:8,fontWeight:800,letterSpacing:'2px',textTransform:'uppercase',
+                      color:T.mint,opacity:0.70,borderBottom:`1px solid ${T.mint}20`,paddingBottom:3}}>
+                      {k.replace(/—/g,'').trim()}
+                    </div>
+                  );
+                }
+                return (
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',
+                    padding:'4px 0',borderBottom:`1px solid ${T.border0}`,gap:6}}>
+                    <span style={{fontSize:11,color:T.txt1,flexShrink:0}}>{k}</span>
+                    <span style={{fontSize:11,fontWeight:600,textAlign:'right',wordBreak:'break-all',
+                      color:highlight?T.mint:T.txt0}}>{v||'—'}</span>
+                  </div>
+                );
+              })}
             </div>
 
             {/* qty */}
             <div style={{padding:'12px 16px',borderBottom:`1px solid ${T.border0}`}}>
               <div style={{fontSize:9,fontWeight:700,letterSpacing:'2.5px',textTransform:'uppercase',color:T.txt2,marginBottom:10}}>จำนวน</div>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                <span style={{fontSize:12,color:T.txt1}}>DC Gear Motor</span>
+
+              {/* DC Motor qty */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                <div>
+                  <div style={{fontSize:12,color:T.txt0,fontWeight:600}}>DC Motor</div>
+                  <div style={{fontSize:10,color:T.txt2}}>0 = ไม่ต้องการ Motor</div>
+                </div>
                 <div style={{display:'flex',alignItems:'center',gap:4}}>
-                  <button onClick={()=>setQty(q=>Math.max(1,q-1))}
+                  <button onClick={()=>setQtyMotor(q=>Math.max(0,q-1))}
                     style={{width:26,height:26,borderRadius:5,background:T.bg2,border:`1px solid ${T.border1}`,color:T.txt0,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>–</button>
-                  <input type="number" min={1} max={999} value={qty}
-                    onChange={e=>{const v=Number(e.target.value);setQty(isFinite(v)?Math.max(1,Math.floor(v)):1);}}
+                  <input type="number" min={0} max={999} value={qtyMotor}
+                    onChange={e=>{const v=Number(e.target.value);setQtyMotor(isFinite(v)?Math.max(0,Math.floor(v)):0);}}
                     onWheel={e=>e.currentTarget.blur()}
-                    style={{width:36,textAlign:'center',background:T.bg2,border:`1px solid ${T.border1}`,borderRadius:5,color:T.txt0,fontSize:13,fontWeight:700,padding:'2px 0'}}/>
-                  <button onClick={()=>setQty(q=>Math.min(999,q+1))}
+                    style={{width:36,textAlign:'center',background:qtyMotor===0?`${T.amber}18`:T.bg2,
+                      border:`1px solid ${qtyMotor===0?T.amber:T.border1}`,
+                      borderRadius:5,color:qtyMotor===0?T.amber:T.txt0,fontSize:13,fontWeight:700,padding:'2px 0',transition:'all 0.2s'}}/>
+                  <button onClick={()=>setQtyMotor(q=>Math.min(999,q+1))}
                     style={{width:26,height:26,borderRadius:5,background:T.bg2,border:`1px solid ${T.border1}`,color:T.txt0,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
                 </div>
               </div>
+
+              {/* Gear Head qty */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:8,borderTop:`1px solid ${T.border0}`}}>
+                <div>
+                  <div style={{fontSize:12,color:T.txt0,fontWeight:600}}>Gear Head</div>
+                  <div style={{fontSize:10,color:T.txt2}}>0 = ไม่ต้องการ Gear Head</div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:4}}>
+                  <button onClick={()=>setQtyGear(q=>Math.max(0,q-1))}
+                    style={{width:26,height:26,borderRadius:5,background:T.bg2,border:`1px solid ${T.border1}`,color:T.txt0,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>–</button>
+                  <input type="number" min={0} max={999} value={qtyGear}
+                    onChange={e=>{const v=Number(e.target.value);setQtyGear(isFinite(v)?Math.max(0,Math.floor(v)):0);}}
+                    onWheel={e=>e.currentTarget.blur()}
+                    style={{width:36,textAlign:'center',background:qtyGear===0?`${T.amber}18`:T.bg2,
+                      border:`1px solid ${qtyGear===0?T.amber:T.border1}`,
+                      borderRadius:5,color:qtyGear===0?T.amber:T.txt0,fontSize:13,fontWeight:700,padding:'2px 0',transition:'all 0.2s'}}/>
+                  <button onClick={()=>setQtyGear(q=>Math.min(999,q+1))}
+                    style={{width:26,height:26,borderRadius:5,background:T.bg2,border:`1px solid ${T.border1}`,color:T.txt0,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                </div>
+              </div>
+
+              {/* hint */}
+              {(qtyMotor===0||qtyGear===0)&&(
+                <div style={{marginTop:8,padding:'6px 10px',borderRadius:8,
+                  background:`${T.amber}12`,border:`1px solid ${T.amber}30`,
+                  fontSize:10,color:T.amber,display:'flex',alignItems:'center',gap:6}}>
+                  ⚠️ {qtyMotor===0&&qtyGear===0?'กรุณาระบุจำนวนอย่างน้อย 1 รายการ':
+                       qtyMotor===0?'ใบเสนอราคาจะแสดงเฉพาะ Gear Head':
+                       'ใบเสนอราคาจะแสดงเฉพาะ DC Motor'}
+                </div>
+              )}
             </div>
 
             {/* CTAs */}
             <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:8}}>
               <button onClick={()=>setShowQ(true)}
-                style={{width:'100%',padding:'11px 0',borderRadius:10,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,
+                disabled={qtyMotor===0&&qtyGear===0}
+                style={{width:'100%',padding:'11px 0',borderRadius:10,border:'none',
+                  cursor:qtyMotor===0&&qtyGear===0?'not-allowed':'pointer',fontWeight:700,fontSize:14,
                   background:`linear-gradient(135deg,${T.mint},#00c070)`,color:dark?'#050d08':'#fff',
-                  boxShadow:`0 4px 20px ${T.mint}40`}}>
+                  boxShadow:`0 4px 20px ${T.mint}40`,
+                  opacity:qtyMotor===0&&qtyGear===0?0.4:1}}>
                 🛒 ขอใบเสนอราคา
               </button>
               <button onClick={()=>{if(modelCode)onConfirm(modelCode);}}
@@ -812,7 +971,13 @@ function DCSummaryPage({ state, modelCode, onConfirm, onBack }) {
             ))}
             <div style={{marginTop:12,padding:'10px 12px',borderRadius:8,background:T.bg2,border:`1px solid ${T.border0}`,fontSize:12,color:T.txt1}}>
               <div>Model: <b style={{color:T.mint}}>{modelCode}</b></div>
-              <div style={{marginTop:4}}>จำนวน: <b style={{color:T.txt0}}>{qty}</b> ตัว</div>
+              {qtyMotor>0&&<div style={{marginTop:4}}>DC Motor: <b style={{color:T.txt0}}>{qtyMotor}</b> ตัว</div>}
+              {qtyGear>0 &&<div style={{marginTop:2}}>Gear Head: <b style={{color:T.txt0}}>{qtyGear}</b> ชิ้น</div>}
+              {(qtyMotor===0||qtyGear===0)&&(
+                <div style={{marginTop:4,fontSize:10,color:T.amber}}>
+                  ⚠️ {qtyMotor===0?'ไม่รวม DC Motor':''}{qtyMotor===0&&qtyGear===0?' / ':''}{qtyGear===0?'ไม่รวม Gear Head':''}
+                </div>
+              )}
             </div>
             <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:16}}>
               <button onClick={()=>setShowQ(false)} disabled={sending}
