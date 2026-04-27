@@ -1275,6 +1275,54 @@ def _r2_url(filename: str) -> str:
     return f"{_R2_BASE}/{quote(filename, safe='')}"
 
 
+def _reply_file(reply_token: str, file_bytes: bytes, filename: str, mime: str) -> bool:
+    """Upload ไฟล์ขึ้น LINE แล้ว reply เป็น file message กลับกลุ่ม"""
+    headers_auth = {"Authorization": f"Bearer {_LINE_TOKEN}"}
+
+    # Step 1: Upload ไฟล์ขึ้น LINE Content API
+    try:
+        upload_resp = http_requests.post(
+            "https://api-data.line.me/v2/bot/message/upload/multipart",
+            headers=headers_auth,
+            data={"type": "file"},
+            files={"file": (filename, file_bytes, mime)},
+            timeout=60,
+        )
+        if upload_resp.status_code not in (200, 201):
+            print(f"[LINE upload error] {upload_resp.status_code}: {upload_resp.text}")
+            return False
+        upload_data = upload_resp.json()
+        message_id  = upload_data.get("messageId") or upload_data.get("id", "")
+        if not message_id:
+            return False
+    except Exception as e:
+        print(f"[LINE upload exception] {e}")
+        return False
+
+    # Step 2: Reply ด้วย file message
+    try:
+        reply_resp = http_requests.post(
+            _LINE_REPLY_API,
+            headers={**headers_auth, "Content-Type": "application/json"},
+            json={
+                "replyToken": reply_token,
+                "messages": [{
+                    "type": "file",
+                    "originalContentUrl": f"https://api-data.line.me/v2/bot/message/{message_id}/content",
+                    "previewImageUrl": "",
+                    "fileName": filename,
+                    "fileSize": len(file_bytes),
+                }],
+            },
+            timeout=15,
+        )
+        return reply_resp.status_code == 200
+    except Exception as e:
+        print(f"[LINE reply file exception] {e}")
+        return False
+
+
+
 def _fetch_r2(filename: str) -> bytes | None:
     """ดึงไฟล์จาก R2 คืน bytes หรือ None ถ้าไม่เจอ/ไม่ใช่ไฟล์จริง"""
     try:
@@ -1320,74 +1368,58 @@ def line_webhook():
             continue
 
         text        = msg.get("text", "").strip()
-        reply_token  = event.get("replyToken", "")
-        _SERVER_BASE = os.environ.get("RENDER_EXTERNAL_URL", "https://gear-motor-app.onrender.com")
+        reply_token = event.get("replyToken", "")
 
         # ── คำสั่ง: ขอสเปค ───────────────────────────────────
         m = _CMD_SPEC.match(text)
         if m:
             raw_model    = m.group(1).strip()
-            pdf_r2       = f"{raw_model}.pdf"          # ชื่อไฟล์จริงใน R2
-            pdf_display  = f"{raw_model}.pdf"          # ชื่อที่ Sale ได้
-            from urllib.parse import quote
-            dl_link = (f"{_SERVER_BASE}/line/download"
-                       f"?file={quote(pdf_r2, safe='')}"
-                       f"&name={quote(pdf_display, safe='')}")
-            _reply_text(reply_token,
-                f"📄 นี่ครับ Spec Sheet ของ\n"
-                f"Model : {raw_model}\n\n"
-                f"📥 ดาวน์โหลดได้เลย:\n"
-                f"{dl_link}"
-            )
+            pdf_r2       = f"{raw_model}.pdf"
+            pdf_display  = f"{raw_model}.pdf"
+            file_bytes   = _fetch_r2(pdf_r2)
+            if file_bytes:
+                ok = _reply_file(reply_token, file_bytes, pdf_display, "application/pdf")
+                if not ok:
+                    _reply_text(reply_token,
+                        f"📄 นี่ครับ Spec Sheet ของ\n"
+                        f"Model : {raw_model}\n\n"
+                        f"📥 ดาวน์โหลดได้เลย:\n"
+                        f"{_r2_url(pdf_r2)}"
+                    )
+            else:
+                _reply_text(reply_token,
+                    f"❌ ขออภัยครับ ไม่พบ Spec Sheet ของ\n"
+                    f"Model : {raw_model}\n\n"
+                    f"กรุณาตรวจสอบชื่อรุ่นอีกครั้งครับ 🙏"
+                )
             continue
 
         # ── คำสั่ง: ขอ3D ─────────────────────────────────────
         m = _CMD_3D.match(text)
         if m:
-            raw_model    = m.group(1).strip()
-            file_model   = _normalize_ac_ratio(raw_model)   # ratio → 3 สำหรับชี้ไฟล์จริง
-            step_r2      = f"{file_model}.STEP"             # ไฟล์จริงใน R2
-            step_display = f"{raw_model}.STEP"              # ชื่อที่ Sale ได้
-            from urllib.parse import quote
-            dl_link = (f"{_SERVER_BASE}/line/download"
-                       f"?file={quote(step_r2, safe='')}"
-                       f"&name={quote(step_display, safe='')}")
-            _reply_text(reply_token,
-                f"📦 นี่ครับ 3D Model ของ\n"
-                f"Model : {raw_model}\n\n"
-                f"📥 ดาวน์โหลดได้เลย:\n"
-                f"{dl_link}"
-            )
+            raw_model     = m.group(1).strip()
+            file_model    = _normalize_ac_ratio(raw_model)  # ratio → 3
+            step_r2       = f"{file_model}.STEP"            # ไฟล์จริงใน R2
+            step_display  = f"{raw_model}.STEP"             # ชื่อที่ Sale ได้รับ
+            file_bytes    = _fetch_r2(step_r2)
+            if file_bytes:
+                ok = _reply_file(reply_token, file_bytes, step_display, "application/octet-stream")
+                if not ok:
+                    _reply_text(reply_token,
+                        f"📦 นี่ครับ 3D Model ของ\n"
+                        f"Model : {raw_model}\n\n"
+                        f"📥 ดาวน์โหลดได้เลย:\n"
+                        f"{_r2_url(step_r2)}"
+                    )
+            else:
+                _reply_text(reply_token,
+                    f"❌ ขออภัยครับ ไม่พบ 3D Model ของ\n"
+                    f"Model : {raw_model}\n\n"
+                    f"กรุณาตรวจสอบชื่อรุ่นอีกครั้งครับ 🙏"
+                )
             continue
 
     return jsonify({"ok": True}), 200
-
-
-# =========================
-# LINE Download Proxy
-# ดึงไฟล์จาก R2 แล้วส่งกลับพร้อมชื่อไฟล์ที่ถูกต้อง
-# GET /line/download?file=5GU3RC.STEP&name=5GU15RC.STEP
-# =========================
-@app.get("/line/download")
-def line_download():
-    from urllib.parse import unquote
-    file_param = unquote(request.args.get("file", ""))
-    name_param = unquote(request.args.get("name", "")) or file_param
-    if not file_param:
-        return jsonify({"error": "missing file param"}), 400
-
-    file_bytes = _fetch_r2(file_param)
-    if file_bytes is None:
-        return jsonify({"error": f"ไม่พบไฟล์ {file_param} ใน R2"}), 404
-
-    import io
-    from flask import send_file as _send_file
-    return _send_file(
-        io.BytesIO(file_bytes),
-        as_attachment=True,
-        download_name=name_param,
-        mimetype="application/octet-stream",
-    )
 
 
 # =========================
