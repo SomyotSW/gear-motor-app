@@ -63,10 +63,8 @@ from flask import request
 
 @app.after_request
 def add_cors_headers(response):
-    # LINE Webhook ไม่ต้องการ CORS headers
     if request.path == "/line/webhook":
         return response
-
     origin = request.headers.get("Origin")
 
     # ✅ ADD: allow vercel preview domains too
@@ -88,11 +86,11 @@ def add_cors_headers(response):
 
 @app.before_request
 def handle_preflight():
-    # LINE Webhook — ข้าม CORS check ทั้งหมด
     if request.path == "/line/webhook":
         return None
     if request.method == "OPTIONS" and request.path.startswith("/api/"):
         return ("", 204)
+    
 @app.route("/api/ac-quote", methods=["OPTIONS"])
 def ac_quote_preflight():
     return ("", 204)
@@ -1329,21 +1327,12 @@ def line_webhook():
         if m:
             raw_model    = m.group(1).strip()
             pdf_filename = f"{raw_model}.pdf"
-            exists       = _fetch_r2(pdf_filename) is not None
-
-            if exists:
-                _reply_text(reply_token,
-                    f"📄 นี่ครับ Spec Sheet ของ\n"
-                    f"Model : {raw_model}\n\n"
-                    f"📥 ดาวน์โหลดได้เลย:\n"
-                    f"{_r2_url(pdf_filename)}"
-                )
-            else:
-                _reply_text(reply_token,
-                    f"❌ ขออภัยครับ ไม่พบ Spec Sheet ของ\n"
-                    f"Model : {raw_model}\n\n"
-                    f"กรุณาตรวจสอบชื่อรุ่นอีกครั้งครับ 🙏"
-                )
+            _reply_text(reply_token,
+                f"📄 นี่ครับ Spec Sheet ของ\n"
+                f"Model : {raw_model}\n\n"
+                f"📥 ดาวน์โหลดได้เลย:\n"
+                f"{_r2_url(pdf_filename)}"
+            )
             continue
 
         # ── คำสั่ง: ขอ3D ─────────────────────────────────────
@@ -1352,21 +1341,12 @@ def line_webhook():
             raw_model     = m.group(1).strip()
             file_model    = _normalize_ac_ratio(raw_model)  # ratio → 3
             step_filename = f"{file_model}.STEP"
-            exists        = _fetch_r2(step_filename) is not None
-
-            if exists:
-                _reply_text(reply_token,
-                    f"📦 นี่ครับ 3D Model ของ\n"
-                    f"Model : {raw_model}\n\n"
-                    f"📥 ดาวน์โหลดได้เลย:\n"
-                    f"{_r2_url(step_filename)}"
-                )
-            else:
-                _reply_text(reply_token,
-                    f"❌ ขออภัยครับ ไม่พบ 3D Model ของ\n"
-                    f"Model : {raw_model}\n\n"
-                    f"กรุณาตรวจสอบชื่อรุ่นอีกครั้งครับ 🙏"
-                )
+            _reply_text(reply_token,
+                f"📦 นี่ครับ 3D Model ของ\n"
+                f"Model : {raw_model}\n\n"
+                f"📥 ดาวน์โหลดได้เลย:\n"
+                f"{_r2_url(step_filename)}"
+            )
             continue
 
     return jsonify({"ok": True}), 200
