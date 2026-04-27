@@ -63,6 +63,10 @@ from flask import request
 
 @app.after_request
 def add_cors_headers(response):
+    # LINE Webhook ไม่ต้องการ CORS headers
+    if request.path == "/line/webhook":
+        return response
+
     origin = request.headers.get("Origin")
 
     # ✅ ADD: allow vercel preview domains too
@@ -84,9 +88,11 @@ def add_cors_headers(response):
 
 @app.before_request
 def handle_preflight():
+    # LINE Webhook — ข้าม CORS check ทั้งหมด
+    if request.path == "/line/webhook":
+        return None
     if request.method == "OPTIONS" and request.path.startswith("/api/"):
         return ("", 204)
-    
 @app.route("/api/ac-quote", methods=["OPTIONS"])
 def ac_quote_preflight():
     return ("", 204)
@@ -1262,8 +1268,6 @@ def _verify_line_sig(body: bytes, signature: str) -> bool:
     """ตรวจ X-Line-Signature ป้องกัน request ปลอม"""
     if not _LINE_SECRET:
         return True  # dev mode — ข้ามการตรวจ
-    if not signature:
-        return True  # LINE Verify request ไม่มี signature — ให้ผ่าน
     mac = hmac.new(_LINE_SECRET.encode(), body, hashlib.sha256).digest()
     return hmac.compare_digest(base64.b64encode(mac).decode(), signature)
 
