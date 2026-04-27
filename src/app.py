@@ -31,6 +31,10 @@ from flask import Flask, request, send_file, jsonify, abort
 from openpyxl import load_workbook
 
 from flask_cors import CORS
+import requests as http_requests
+import hashlib
+import hmac
+import base64
 
 app = Flask(__name__)
 
@@ -1218,6 +1222,154 @@ def iec_quote():
     except Exception as e:
         app.logger.exception("iec_quote crashed")
         return jsonify({"ok": False, "error": str(e)}), 500
+
+# =========================
+# Mr.Motor Bot — LINE Webhook
+# =========================
+#
+# ENV vars ที่ต้องตั้งใน Render:
+#   LINE_CHANNEL_SECRET        — Channel Secret จาก LINE Developers Console
+#   LINE_CHANNEL_ACCESS_TOKEN  — Long-lived Access Token
+#   R2_PUBLIC_BASE             — https://pub-8cdc08b3fc55463c8c8f399a10351d7e.r2.dev
+#
+# คำสั่งที่รองรับ (ในกลุ่ม LINE):
+#   ขอสเปค Model : 5IK90RGU-CF-5GU15KB   → ส่ง link PDF กลับ
+#   ขอ3D Model : 5IK90RGU-CF-5GU15KB     → ส่ง link .STEP กลับ (normalize ratio→3)
+# =========================
+
+_LINE_REPLY_API = "https://api.line.me/v2/bot/message/reply"
+_R2_BASE        = os.environ.get("R2_PUBLIC_BASE",
+                    "https://pub-8cdc08b3fc55463c8c8f399a10351d7e.r2.dev")
+_LINE_SECRET    = os.environ.get("LINE_CHANNEL_SECRET", "")
+_LINE_TOKEN     = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
+
+_CMD_SPEC = re.compile(r"ขอสเปค\s*[Mm]odel\s*:\s*(.+)", re.IGNORECASE)
+_CMD_3D   = re.compile(r"ขอ3[Dd]\s*[Mm]odel\s*:\s*(.+)", re.IGNORECASE)
+
+
+def _normalize_ac_ratio(model_code: str) -> str:
+    """เปลี่ยน ratio ทุกค่า → 3 เพื่อชี้ไฟล์จริงใน R2
+    เช่น 5IK90RGU-CF-5GU15KB → 5IK90RGU-CF-5GU3KB"""
+    return re.sub(
+        r"(\d+)(GN|GU)(\d+(?:\.\d+)?)(KB|RC|RT|K)(\b|$)",
+        lambda m: f"{m.group(1)}{m.group(2).upper()}3{m.group(4).upper()}",
+        model_code,
+        flags=re.IGNORECASE,
+    )
+
+
+def _verify_line_sig(body: bytes, signature: str) -> bool:
+    """ตรวจ X-Line-Signature ป้องกัน request ปลอม"""
+    if not _LINE_SECRET:
+        return True  # dev mode — ข้ามการตรวจ
+    mac = hmac.new(_LINE_SECRET.encode(), body, hashlib.sha256).digest()
+    return hmac.compare_digest(base64.b64encode(mac).decode(), signature)
+
+
+def _r2_url(filename: str) -> str:
+    from urllib.parse import quote
+    return f"{_R2_BASE}/{quote(filename, safe='')}"
+
+
+def _fetch_r2(filename: str) -> bytes | None:
+    """ดึงไฟล์จาก R2 คืน bytes หรือ None ถ้าไม่เจอ/ไม่ใช่ไฟล์จริง"""
+    try:
+        r = http_requests.get(_r2_url(filename), timeout=30)
+        if r.status_code != 200:
+            return None
+        if "text/html" in r.headers.get("content-type", ""):
+            return None
+        if len(r.content) < 256:
+            return None
+        return r.content
+    except Exception as e:
+        print(f"[R2 fetch error] {e}")
+        return None
+
+
+def _reply_text(reply_token: str, text: str):
+    """ส่ง text message กลับ LINE group"""
+    http_requests.post(
+        _LINE_REPLY_API,
+        headers={
+            "Authorization": f"Bearer {_LINE_TOKEN}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "replyToken": reply_token,
+            "messages": [{"type": "text", "text": text}],
+        },
+        timeout=10,
+    )
+
+
+@app.post("/line/webhook")
+def line_webhook():
+    # ── ตรวจ Signature ─────────────────────────────────────────
+    body_bytes = request.get_data()
+    sig        = request.headers.get("X-Line-Signature", "")
+    if not _verify_line_sig(body_bytes, sig):
+        return jsonify({"error": "invalid signature"}), 403
+
+    payload = request.get_json(silent=True) or {}
+
+    for event in payload.get("events", []):
+        if event.get("type") != "message":
+            continue
+        msg = event.get("message", {})
+        if msg.get("type") != "text":
+            continue
+
+        text        = msg.get("text", "").strip()
+        reply_token = event.get("replyToken", "")
+
+        # ── คำสั่ง: ขอสเปค ───────────────────────────────────
+        m = _CMD_SPEC.match(text)
+        if m:
+            raw_model    = m.group(1).strip()
+            pdf_filename = f"{raw_model}.pdf"
+            exists       = _fetch_r2(pdf_filename) is not None
+
+            if exists:
+                _reply_text(reply_token,
+                    f"📄 นี่ครับ Spec Sheet ของ\n"
+                    f"Model : {raw_model}\n\n"
+                    f"📥 ดาวน์โหลดได้เลย:\n"
+                    f"{_r2_url(pdf_filename)}"
+                )
+            else:
+                _reply_text(reply_token,
+                    f"❌ ขออภัยครับ ไม่พบ Spec Sheet ของ\n"
+                    f"Model : {raw_model}\n\n"
+                    f"กรุณาตรวจสอบชื่อรุ่นอีกครั้งครับ 🙏"
+                )
+            continue
+
+        # ── คำสั่ง: ขอ3D ─────────────────────────────────────
+        m = _CMD_3D.match(text)
+        if m:
+            raw_model     = m.group(1).strip()
+            file_model    = _normalize_ac_ratio(raw_model)  # ratio → 3
+            step_filename = f"{file_model}.STEP"
+            exists        = _fetch_r2(step_filename) is not None
+
+            if exists:
+                _reply_text(reply_token,
+                    f"📦 นี่ครับ 3D Model ของ\n"
+                    f"Model : {raw_model}\n\n"
+                    f"📥 ดาวน์โหลดได้เลย:\n"
+                    f"{_r2_url(step_filename)}"
+                )
+            else:
+                _reply_text(reply_token,
+                    f"❌ ขออภัยครับ ไม่พบ 3D Model ของ\n"
+                    f"Model : {raw_model}\n\n"
+                    f"กรุณาตรวจสอบชื่อรุ่นอีกครั้งครับ 🙏"
+                )
+            continue
+
+    return jsonify({"ok": True}), 200
+
 
 # =========================
 # Health
