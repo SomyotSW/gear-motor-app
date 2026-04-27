@@ -1277,7 +1277,7 @@ def _r2_url(filename: str) -> str:
 
 def _reply_flex(reply_token: str, title: str, model: str,
                 dl_url: str, btn_label: str, color: str):
-    """ส่ง Flex Message พร้อมปุ่มดาวน์โหลด"""
+    """ส่ง Flex Message พร้อมปุ่มดาวน์โหลด + คำแนะนำเปิดใน browser"""
     flex_body = {
         "type": "bubble",
         "size": "mega",
@@ -1297,7 +1297,7 @@ def _reply_flex(reply_token: str, title: str, model: str,
         "body": {
             "type": "box",
             "layout": "vertical",
-            "spacing": "sm",
+            "spacing": "md",
             "paddingAll": "16px",
             "contents": [
                 {
@@ -1312,6 +1312,24 @@ def _reply_flex(reply_token: str, title: str, model: str,
                     "color": "#111111",
                     "size": "md",
                     "weight": "bold",
+                    "wrap": True
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "⚠️ หากกดแล้ว LINE แจ้งว่าดาวน์โหลดไม่ได้",
+                    "color": "#E53935",
+                    "size": "sm",
+                    "wrap": True
+                },
+                {
+                    "type": "text",
+                    "text": "ให00270027กด ··· มุมขวาบน → 0027เปิดในเบราว์เซอร์อื่น0027 แล้วไฟล์จะดาวน์โหลดอัตโนมัติครับ 🙏",
+                    "color": "#555555",
+                    "size": "sm",
                     "wrap": True
                 }
             ]
