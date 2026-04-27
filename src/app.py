@@ -1262,6 +1262,8 @@ def _verify_line_sig(body: bytes, signature: str) -> bool:
     """ตรวจ X-Line-Signature ป้องกัน request ปลอม"""
     if not _LINE_SECRET:
         return True  # dev mode — ข้ามการตรวจ
+    if not signature:
+        return True  # LINE Verify request ไม่มี signature — ให้ผ่าน
     mac = hmac.new(_LINE_SECRET.encode(), body, hashlib.sha256).digest()
     return hmac.compare_digest(base64.b64encode(mac).decode(), signature)
 
