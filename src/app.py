@@ -1276,10 +1276,8 @@ def _r2_url(filename: str) -> str:
 
 
 def _reply_file(reply_token: str, file_bytes: bytes, filename: str, mime: str) -> bool:
-    """Upload ไฟล์ขึ้น LINE แล้ว reply เป็น file message กลับกลุ่ม"""
+    """Upload ไฟล์ขึ้น LINE แล้ว reply เป็น file message"""
     headers_auth = {"Authorization": f"Bearer {_LINE_TOKEN}"}
-
-    # Step 1: Upload ไฟล์ขึ้น LINE Content API
     try:
         upload_resp = http_requests.post(
             "https://api-data.line.me/v2/bot/message/upload/multipart",
@@ -1299,7 +1297,6 @@ def _reply_file(reply_token: str, file_bytes: bytes, filename: str, mime: str) -
         print(f"[LINE upload exception] {e}")
         return False
 
-    # Step 2: Reply ด้วย file message
     try:
         reply_resp = http_requests.post(
             _LINE_REPLY_API,
@@ -1320,6 +1317,58 @@ def _reply_file(reply_token: str, file_bytes: bytes, filename: str, mime: str) -
     except Exception as e:
         print(f"[LINE reply file exception] {e}")
         return False
+
+
+def _reply_multi(reply_token: str, file_bytes: bytes, filename: str,
+                 mime: str, dl_link: str, intro_text: str):
+    """ส่ง text + link + ไฟล์ในครั้งเดียว (LINE รองรับ max 5 messages per reply)
+    ถ้า upload ล้มเหลว → fallback ส่ง text + link แทน"""
+    headers_auth = {"Authorization": f"Bearer {_LINE_TOKEN}"}
+
+    # Upload ไฟล์ก่อน
+    message_id = None
+    try:
+        upload_resp = http_requests.post(
+            "https://api-data.line.me/v2/bot/message/upload/multipart",
+            headers=headers_auth,
+            data={"type": "file"},
+            files={"file": (filename, file_bytes, mime)},
+            timeout=60,
+        )
+        if upload_resp.status_code in (200, 201):
+            ud = upload_resp.json()
+            message_id = ud.get("messageId") or ud.get("id", "")
+    except Exception as e:
+        print(f"[upload exception] {e}")
+
+    if message_id:
+        # ส่ง text + ไฟล์พร้อมกัน
+        messages = [
+            {"type": "text", "text": f"{intro_text}\n\n📎 ไฟล์แนบด้านล่างครับ 👇"},
+            {
+                "type": "file",
+                "originalContentUrl": f"https://api-data.line.me/v2/bot/message/{message_id}/content",
+                "previewImageUrl": "",
+                "fileName": filename,
+                "fileSize": len(file_bytes),
+            },
+        ]
+    else:
+        # Fallback: ส่ง text + link แทน
+        messages = [{
+            "type": "text",
+            "text": f"{intro_text}\n\n📥 ดาวน์โหลดได้เลย:\n{dl_link}"
+        }]
+
+    try:
+        http_requests.post(
+            _LINE_REPLY_API,
+            headers={**headers_auth, "Content-Type": "application/json"},
+            json={"replyToken": reply_token, "messages": messages},
+            timeout=15,
+        )
+    except Exception as e:
+        print(f"[reply multi exception] {e}")
 
 
 
@@ -1368,24 +1417,25 @@ def line_webhook():
             continue
 
         text        = msg.get("text", "").strip()
-        reply_token = event.get("replyToken", "")
+        reply_token     = event.get("replyToken", "")
+        _SERVER_BASE    = "https://gear-motor-app.onrender.com"
 
         # ── คำสั่ง: ขอสเปค ───────────────────────────────────
         m = _CMD_SPEC.match(text)
         if m:
-            raw_model    = m.group(1).strip()
-            pdf_r2       = f"{raw_model}.pdf"
-            pdf_display  = f"{raw_model}.pdf"
-            file_bytes   = _fetch_r2(pdf_r2)
+            raw_model   = m.group(1).strip()
+            pdf_r2      = f"{raw_model}.pdf"
+            pdf_display = f"{raw_model}.pdf"
+            file_bytes  = _fetch_r2(pdf_r2)
             if file_bytes:
-                ok = _reply_file(reply_token, file_bytes, pdf_display, "application/pdf")
-                if not ok:
-                    _reply_text(reply_token,
-                        f"📄 นี่ครับ Spec Sheet ของ\n"
-                        f"Model : {raw_model}\n\n"
-                        f"📥 ดาวน์โหลดได้เลย:\n"
-                        f"{_r2_url(pdf_r2)}"
-                    )
+                from urllib.parse import quote
+                dl_link = (f"{_SERVER_BASE}/line/download"
+                           f"?file={quote(pdf_r2, safe='')}"
+                           f"&name={quote(pdf_display, safe='')}")
+                # ส่ง text + ไฟล์ใน messages เดียวกัน (max 5 messages per reply)
+                _reply_multi(reply_token, file_bytes, pdf_display, "application/pdf", dl_link,
+                    f"📄 นี่ครับ Spec Sheet ของ\nModel : {raw_model}"
+                )
             else:
                 _reply_text(reply_token,
                     f"❌ ขออภัยครับ ไม่พบ Spec Sheet ของ\n"
@@ -1397,20 +1447,19 @@ def line_webhook():
         # ── คำสั่ง: ขอ3D ─────────────────────────────────────
         m = _CMD_3D.match(text)
         if m:
-            raw_model     = m.group(1).strip()
-            file_model    = _normalize_ac_ratio(raw_model)  # ratio → 3
-            step_r2       = f"{file_model}.STEP"            # ไฟล์จริงใน R2
-            step_display  = f"{raw_model}.STEP"             # ชื่อที่ Sale ได้รับ
-            file_bytes    = _fetch_r2(step_r2)
+            raw_model    = m.group(1).strip()
+            file_model   = _normalize_ac_ratio(raw_model)
+            step_r2      = f"{file_model}.STEP"
+            step_display = f"{raw_model}.STEP"
+            file_bytes   = _fetch_r2(step_r2)
             if file_bytes:
-                ok = _reply_file(reply_token, file_bytes, step_display, "application/octet-stream")
-                if not ok:
-                    _reply_text(reply_token,
-                        f"📦 นี่ครับ 3D Model ของ\n"
-                        f"Model : {raw_model}\n\n"
-                        f"📥 ดาวน์โหลดได้เลย:\n"
-                        f"{_r2_url(step_r2)}"
-                    )
+                from urllib.parse import quote
+                dl_link = (f"{_SERVER_BASE}/line/download"
+                           f"?file={quote(step_r2, safe='')}"
+                           f"&name={quote(step_display, safe='')}")
+                _reply_multi(reply_token, file_bytes, step_display, "application/octet-stream", dl_link,
+                    f"📦 นี่ครับ 3D Model ของ\nModel : {raw_model}"
+                )
             else:
                 _reply_text(reply_token,
                     f"❌ ขออภัยครับ ไม่พบ 3D Model ของ\n"
@@ -1419,7 +1468,37 @@ def line_webhook():
                 )
             continue
 
+        # ── ข้อความอื่น ๆ ที่ไม่ใช่คำสั่ง ────────────────────
+        _reply_text(reply_token,
+            "สวัสดีครับ 😊 ผม Mr.SAS MotorBot\n\n"
+            "ตอนนี้ผมเก่งแค่เรื่อง Spec กับ 3D ครับ\n"
+            "เรื่องอื่นๆ อาจจะยังน้าาาา 🙏\n\n"
+            "📌 คำสั่งที่ใช้ได้:\n"
+            "• ขอสเปค Model : [ชื่อรุ่น]\n"
+            "• ขอ3D Model : [ชื่อรุ่น]"
+        )
+
     return jsonify({"ok": True}), 200
+
+
+# =========================
+# LINE Download Proxy
+# GET /line/download?file=xxx.STEP&name=yyy.STEP
+# =========================
+@app.get("/line/download")
+def line_download():
+    from urllib.parse import unquote
+    file_param = unquote(request.args.get("file", ""))
+    name_param = unquote(request.args.get("name", "")) or file_param
+    if not file_param:
+        return jsonify({"error": "missing file param"}), 400
+    file_bytes = _fetch_r2(file_param)
+    if file_bytes is None:
+        return jsonify({"error": f"ไม่พบไฟล์ {file_param}"}), 404
+    import io
+    from flask import send_file as _sf
+    return _sf(io.BytesIO(file_bytes), as_attachment=True,
+               download_name=name_param, mimetype="application/octet-stream")
 
 
 # =========================
