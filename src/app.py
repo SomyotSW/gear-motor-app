@@ -1664,8 +1664,9 @@ def line_webhook():
         m = _CMD_SPEC.match(text)
         if m:
             raw_model   = m.group(1).strip()
-            pdf_r2      = f"{raw_model}.pdf"
-            pdf_display = f"{raw_model}.pdf"
+            file_model  = _normalize_ac_ratio(raw_model)   # ratio → 3 ชี้ไฟล์จริงใน R2
+            pdf_r2      = f"{file_model}.pdf"              # เช่น 5GU3KB.pdf
+            pdf_display = f"{raw_model}.pdf"               # เช่น 5GU60KB.pdf
             from urllib.parse import quote
             # openExternalBrowser=1 บังคับ LINE เปิด browser ภายนอกทันที
             dl_url = (f"{_SERVER_BASE}/line/download"
