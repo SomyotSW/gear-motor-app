@@ -280,7 +280,7 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
   const floatingBack = (onClick) => (
     <button
       onClick={onClick}
-      className="fixed left-3 bottom-3 z-20 px-3 py-2 rounded-full shadow-xl bg-white/90 hover:bg-white transform hover:-translate-y-1 transition"
+      className="fixed left-3 bottom-3 z-20 px-3 py-2 rounded-full shadow-lg bg-white/90 hover:bg-white transition-colors"
     >
       ← ย้อนกลับ
     </button>
@@ -295,10 +295,15 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
 
   // ── STEP 1 — Series ─────────────────────────────────────────────────────────
   if (!srvSeries) {
+    const seriesInfo = {
+      SRV:  { desc: 'เกียร์หนอนมาตรฐาน เพลาออกด้านเดียว ติดตั้งง่าย ใช้งานได้หลากหลาย เหมาะกับงานทั่วไปอุตสาหกรรม', tag: 'Single Output Shaft' },
+      SDRV: { desc: 'เกียร์หนอนคู่ อัตราทดสูง ลดความเร็วได้มากในรุ่นเดียว ประหยัดพื้นที่ติดตั้ง เหมาะสำหรับงานที่ต้องการอัตราทดสูงพิเศษ', tag: 'Double Reduction' },
+      SVF:  { desc: 'แบบ Foot-mount พร้อมหน้าแปลน ติดตั้งบนฐานราบได้โดยตรง เหมาะสำหรับงานที่ต้องการฐานรองรับน้ำหนักสูง', tag: 'Flange + Foot Mount' },
+    };
     return (
       <>
-        <Section title="เลือก Series">
-          <div className="grid grid-cols-3 gap-4">
+        <Section title="เลือก Series — ซีรีส์เกียร์หนอน">
+          <div className="grid grid-cols-3 gap-5">
             {[
               { key: 'SRV',  img: SRVVImg,  label: 'SRV'  },
               { key: 'SDRV', img: SDRVImg,  label: 'SDRV' },
@@ -306,13 +311,18 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
             ].map(({ key, img, label }) => (
               <button key={key}
                 onClick={() => update('srvSeries', key)}
-                className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
+                className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left"
               >
                 <img src={img} alt={label} className="w-full rounded-t-2xl" />
-                <p className="text-center py-2 font-semibold text-gray-800">{label}</p>
+                <div className="px-3 py-2 pb-3">
+                  <p className="font-bold text-gray-800 text-sm">{label}</p>
+                  <p className="text-[10px] text-blue-600 font-semibold mb-1">{seriesInfo[key].tag}</p>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">{seriesInfo[key].desc}</p>
+                </div>
               </button>
             ))}
           </div>
+          <p className="mt-4 text-xs text-blue-200 opacity-70 italic">* กรุณาเลือก Series ที่ตรงกับความต้องการในงานของคุณ — หากไม่แน่ใจสามารถปรึกษาทีมวิศวกรฝ่ายขายได้ทันที</p>
         </Section>
       </>
     );
@@ -321,16 +331,31 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
   // ── STEP 2 — Size ───────────────────────────────────────────────────────────
   if (srvSeries && !srvSize) {
     const sizes = sizeMap[srvSeries] || [];
+    const sizeHint = {
+      '025':'≤ 120 N·m', '030':'≤ 200 N·m', '040':'≤ 400 N·m', '050':'≤ 630 N·m',
+      '063':'≤ 1,400 N·m','075':'≤ 2,200 N·m','090':'≤ 4,200 N·m','110':'≤ 8,000 N·m',
+      '130':'≤ 11,000 N·m','150':'≤ 16,000 N·m',
+      '025/030':'ทด 2 ขั้น','025/040':'ทด 2 ขั้น','030/040':'ทด 2 ขั้น','030/050':'ทด 2 ขั้น',
+      '030/063':'ทด 2 ขั้น','040/075':'ทด 2 ขั้น','040/090':'ทด 2 ขั้น','050/110':'ทด 2 ขั้น',
+      '063/130':'ทด 2 ขั้น','063/150':'ทด 2 ขั้น',
+    };
     return (
       <>
-        <Section title="เลือก Size Gear">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <Section title="เลือก Size Gear — ขนาดเกียร์หนอน">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {sizes.map(sz => (
               <button key={sz}
                 onClick={() => update('srvSize', sz)}
-                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-4 py-6 text-blue-800 font-bold border border-gray-300 hover:bg-blue-100"
-              >{sz}</button>
+                className="rounded-xl shadow-md transition-opacity hover:opacity-80 bg-white px-3 py-4 text-blue-800 font-bold border border-gray-200 flex flex-col items-center gap-1"
+              >
+                <span className="text-base font-bold">{sz}</span>
+                {sizeHint[sz] && <span className="text-[9px] text-gray-400 font-normal">{sizeHint[sz]}</span>}
+              </button>
             ))}
+          </div>
+          <div className="mt-4 p-3 rounded-xl bg-white/10 border border-white/20">
+            <p className="text-xs text-blue-200 font-semibold mb-1">💡 แนะนำการเลือกขนาด</p>
+            <p className="text-[11px] text-white/70 leading-relaxed">ขนาดเกียร์ควรเลือกให้แรงบิดสูงสุดของเกียร์ <span className="text-yellow-300 font-semibold">(M2n)</span> มากกว่าแรงบิดที่ต้องการใช้งานจริง อย่างน้อย <span className="text-yellow-300 font-semibold">1.0–1.5 เท่า</span> เพื่อความปลอดภัยและอายุการใช้งานที่ยาวนาน</p>
           </div>
         </Section>
         {floatingBack(() => update('srvSeries', null))}
@@ -340,26 +365,32 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
 
   // ── STEP 3 — Input Type ─────────────────────────────────────────────────────
   if (srvSize && !srvInputSel) {
+    const inputInfo = {
+      WM: { label: 'With Motor', sub: 'พร้อมมอเตอร์ AC', desc: 'เลือกรับเกียร์พร้อมมอเตอร์มาตรฐาน IEC ครบชุด เหมาะสำหรับงานติดตั้งใหม่ที่ต้องการชุดขับเคลื่อนสมบูรณ์' },
+      WS: { label: 'With Servo Motor', sub: 'พร้อม Servo Motor', desc: 'เกียร์สำหรับต่อเข้ากับ Servo Motor โดยตรง มีหน้าแปลน Input สำหรับยึดมอเตอร์ Servo ทุกยี่ห้อ' },
+      IS: { label: 'Input Shaft', sub: 'มีเพลา Input', desc: 'แบบมีเพลา Input โผล่ออกมาพร้อมใช้ เหมาะสำหรับต่อสายพาน โซ่ หรือ Coupling เข้ากับต้นกำลังอื่นๆ' },
+    };
     return (
       <>
-        <Section title="เลือก Input Power ที่ต้องการ">
-          <div className="grid grid-cols-3 gap-4">
-            <button onClick={() => update('srvInputSel', 'WM')}
-              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
-              <img src={SRVWMImg} alt="With motor" className="w-full rounded-t-2xl" />
-              <p className="text-center py-2 font-semibold text-gray-800">With motor</p>
-            </button>
-            <button onClick={() => update('srvInputSel', 'WS')}
-              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
-              <img src={SRVWSImg} alt="With Servo motor" className="w-full rounded-t-2xl" />
-              <p className="text-center py-2 font-semibold text-gray-800">With Servo motor</p>
-            </button>
-            <button onClick={() => update('srvInputSel', 'IS')}
-              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
-              <img src={SRVIImg} alt="Input shaft" className="w-full rounded-t-2xl" />
-              <p className="text-center py-2 font-semibold text-gray-800">Input shaft</p>
-            </button>
+        <Section title="เลือกรูปแบบ Input — ต้นกำลังขับเคลื่อน">
+          <div className="grid grid-cols-3 gap-5">
+            {[
+              { key: 'WM', img: SRVWMImg },
+              { key: 'WS', img: SRVWSImg },
+              { key: 'IS', img: SRVIImg  },
+            ].map(({ key, img }) => (
+              <button key={key} onClick={() => update('srvInputSel', key)}
+                className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left">
+                <img src={img} alt={inputInfo[key].label} className="w-full rounded-t-2xl" />
+                <div className="px-3 py-2 pb-3">
+                  <p className="font-bold text-gray-800 text-sm">{inputInfo[key].label}</p>
+                  <p className="text-[10px] text-blue-600 font-semibold mb-1">{inputInfo[key].sub}</p>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">{inputInfo[key].desc}</p>
+                </div>
+              </button>
+            ))}
           </div>
+          <p className="mt-3 text-[11px] text-white/60 italic">* Size ที่เลือก: <span className="text-yellow-300 font-bold">{srvSeries}{srvSize}</span> — หากต้องการรับชุดครบพร้อมมอเตอร์แนะนำเลือก "With Motor"</p>
         </Section>
         {floatingBack(() => update('srvSize', null))}
       </>
@@ -372,14 +403,19 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
     const powers = powerBySize[key] || [];
     return (
       <>
-        <Section title="เลือกขนาดมอเตอร์ (กิโลวัต): Power Motor (kW)">
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+        <Section title="เลือกกำลังมอเตอร์ — Power Motor (kW)">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {powers.map(p => (
               <button key={p} onClick={() => update('srvPowerKW', p)}
-                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-4 py-6 font-semibold">
-                {p}
+                className="rounded-xl shadow-md transition-opacity hover:opacity-80 bg-white px-4 py-5 font-bold text-blue-800 border border-gray-200 flex flex-col items-center gap-1">
+                <span className="text-xl">{p}</span>
+                <span className="text-[10px] text-gray-400 font-normal">กิโลวัตต์</span>
               </button>
             ))}
+          </div>
+          <div className="mt-4 p-3 rounded-xl bg-white/10 border border-white/20">
+            <p className="text-xs text-blue-200 font-semibold mb-1">💡 แนะนำการเลือกกำลังมอเตอร์</p>
+            <p className="text-[11px] text-white/70 leading-relaxed">กำลังมอเตอร์ที่เลือกควรมากกว่ากำลังที่ต้องการใช้งานจริง เพื่อรองรับการสตาร์ทและโหลดกระแทก (Shock load) หากมีสภาวะโหลดหนัก ควรเพิ่มขนาดขึ้น 1 ระดับ</p>
           </div>
         </Section>
         {floatingBack(() => update('srvInputSel', null))}
@@ -389,17 +425,24 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
 
   // ── STEP 3.1.1 (WM only) — Pole ─────────────────────────────────────────────
   if (srvInputSel === 'WM' && srvPowerKW && !srvPole) {
+    const poleInfo = {
+      '4P': { rpm: '~1,450 รอบ/นาที', desc: 'ความเร็วมาตรฐาน เหมาะกับงานทั่วไป เครื่องจักร สายพาน และงานต่อเนื่อง ประหยัดพลังงานในระยะยาว' },
+      '6P': { rpm: '~950 รอบ/นาที', desc: 'ความเร็วต่ำกว่า แรงบิดสูงกว่า เหมาะกับงานที่ต้องการความนุ่มนวล เช่น ลิฟต์ ระบบลำเลียงวัสดุหนัก' },
+    };
     return (
       <>
-        <Section title="เลือกจำนวน Pole มอเตอร์ : Motor Pole">
-          <div className="grid grid-cols-2 gap-4">
+        <Section title="เลือกจำนวน Pole — ความเร็วมอเตอร์">
+          <div className="grid grid-cols-2 gap-5">
             {['4P', '6P'].map(p => (
               <button key={p} onClick={() => update('srvPole', p)}
-                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-4 py-6 font-semibold">
-                {p === '4P' ? '4 Pole' : '6 Pole'}
+                className="rounded-2xl shadow-md transition-opacity hover:opacity-80 bg-white px-4 py-5 text-left border border-gray-200">
+                <p className="text-2xl font-bold text-blue-800 mb-1">{p === '4P' ? '4 Pole' : '6 Pole'}</p>
+                <p className="text-sm text-green-600 font-semibold mb-2">{poleInfo[p].rpm}</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">{poleInfo[p].desc}</p>
               </button>
             ))}
           </div>
+          <p className="mt-3 text-[11px] text-white/60 italic">* ความเร็วรอบมอเตอร์เป็นค่าโดยประมาณที่ความถี่ 50 Hz — ค่าจริงอาจแตกต่างเล็กน้อยตามโหลด</p>
         </Section>
         {floatingBack(() => update('srvPowerKW', null))}
       </>
@@ -410,17 +453,25 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
   if (srvInputSel === 'WM' && srvPowerKW && srvPole && !srvIECMode) {
     return (
       <>
-        <Section title="เลือกเฉพาะ Gear + IEC Adapter หรือ ทั้งชุด Gear + Motor">
-          <div className="grid grid-cols-2 gap-4">
+        <Section title="เลือกรูปแบบการสั่งซื้อ — IEC Adapter">
+          <div className="grid grid-cols-2 gap-5">
             <button onClick={() => update('srvIECMode', 'IEC')}
-              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left">
               <img src={SRVIECImg} alt="IEC Adapter" className="w-full rounded-t-2xl" />
-              <p className="text-center py-2 font-semibold text-gray-800">IEC Adapter</p>
+              <div className="px-3 py-3">
+                <p className="font-bold text-gray-800">IEC Adapter เท่านั้น</p>
+                <p className="text-[10px] text-blue-600 font-semibold mb-1">Gear Unit Only</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">สั่งซื้อเฉพาะชุดเกียร์พร้อม IEC Adapter — เหมาะสำหรับผู้ที่มีมอเตอร์อยู่แล้วหรือต้องการติดตั้งมอเตอร์เอง ลดต้นทุนได้</p>
+              </div>
             </button>
             <button onClick={() => update('srvIECMode', 'IEC+Motor')}
-              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left">
               <img src={SRVWMImg} alt="IEC Adapter + Motor" className="w-full rounded-t-2xl" />
-              <p className="text-center py-2 font-semibold text-gray-800">IEC Adapter + Motor</p>
+              <div className="px-3 py-3">
+                <p className="font-bold text-gray-800">IEC Adapter + Motor</p>
+                <p className="text-[10px] text-green-600 font-semibold mb-1">Complete Drive Package</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">รับชุดครบพร้อมมอเตอร์ ประกอบสมบูรณ์จากโรงงาน ทดสอบแล้ว พร้อมใช้งานได้ทันที ลดเวลาติดตั้งในหน้างาน</p>
+              </div>
             </button>
           </div>
         </Section>
@@ -440,26 +491,30 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
       ? <img src={InshaftImg} alt="Input shaft" className="w-40 mx-auto mb-4 rounded-xl shadow" />
       : null;
 
+    const baseRPMDisplay = srvPole === '6P' ? 950 : 1450;
+
     return (
       <>
-        <Section title="เลือกอัตราทด : Ratio">
+        <Section title="เลือกอัตราทด — Gear Ratio (i)">
           {extra}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {ratios.map(r => (
-              <button key={r} onClick={() => update('srvRatio', r)}
-                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-3 py-4 font-semibold">
-                {r}
-              </button>
-            ))}
+            {ratios.map(r => {
+              const outSpd = srvInputSel === 'WM' ? Math.round(baseRPMDisplay / parseFloat(r)) : null;
+              return (
+                <button key={r} onClick={() => update('srvRatio', r)}
+                  className="rounded-xl shadow-md transition-opacity hover:opacity-80 bg-white px-2 py-4 flex flex-col items-center gap-1 border border-gray-200">
+                  <span className="text-base font-bold text-blue-800">1:{r}</span>
+                  {outSpd !== null && <span className="text-[9px] text-gray-400">~{outSpd} rpm</span>}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 p-3 rounded-xl bg-white/10 border border-white/20 space-y-1">
+            <p className="text-xs text-blue-200 font-semibold">📐 สูตรคำนวณความเร็วรอบ Output</p>
+            <p className="text-[11px] text-white/80"><span className="text-yellow-300 font-bold">n₂ = n₁ ÷ i</span> — ความเร็วรอบ Output (rpm) = ความเร็วมอเตอร์ ÷ อัตราทด</p>
+            {srvInputSel === 'WM' && <p className="text-[11px] text-white/60">มอเตอร์ {srvPole === '6P' ? '6 Pole ≈ 950 rpm' : '4 Pole ≈ 1,450 rpm'} — ตัวเลขใต้แต่ละปุ่มคือ Output Speed โดยประมาณ</p>}
           </div>
         </Section>
-        <p className="text-blue-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
-          สามารถใช้สูตรคำนวณความเร็วรอบจากอัตราทดได้เลย:{' '}
-          <b>ความเร็วหัวเกียร์ (รอบ/นาที) = ความเร็วมอเตอร์ (รอบ/นาที) ÷ อัตราทด (i)</b><br />
-          ถ้าเลือกมอเตอร์ 4 Pole ค่าโดยประมาณ = <b>1450</b> รอบ/นาที<br />
-          ถ้าเลือกมอเตอร์ 6 Pole ค่าโดยประมาณ = <b>950</b> รอบ/นาที<br />
-          ถ้าเลือกอัตราทด (i) 50 = <b>ความเร็วของหัวเกียร์ = 1450 / 50 = 29 rpm</b>
-        </p>
         {floatingBack(() => {
           if (srvIECMode)  return update('srvIECMode', null);
           if (srvPole)     return update('srvPole', null);
@@ -472,26 +527,36 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
 
   // ── STEP 4 — Gear Type ───────────────────────────────────────────────────────
   if (!srvGearType) {
+    const gearTypeInfo = {
+      'FA':                   { desc: 'หน้าแปลนยึดด้านหน้า (Flange-A) เพลา Output โผล่ออกด้านหน้า นิยมใช้กับงานที่ต้องการยึดตรง เช่น Roller Conveyor, Mixer' },
+      'FB':                   { desc: 'หน้าแปลนยึดด้านหลัง (Flange-B) เพลา Output โผล่ออกด้านหลัง ติดตั้งกลับทิศทาง เหมาะกับงานที่พื้นที่จำกัดด้านหน้า' },
+      'Hollow & Solid shaft': { desc: 'เพลา Hollow (กลวง) หรือ Solid — สวมเพลาได้โดยตรงไม่ต้องใช้ Coupling ลดการสูญเสียพลังงาน เหมาะกับงาน Agitator, Conveyor' },
+      'T':                    { desc: 'แบบ Torque Arm รองรับแรงบิดด้วย Arm ด้านข้าง เหมาะกับงาน Conveyor Belt และงานที่เพลา Output ไม่สามารถยึดแบบปกติได้' },
+    };
     return (
       <>
-        <Section title="เลือกตำแหน่งการติดตั้ง : Mounting Type">
-          <div className="grid grid-cols-4 gap-4">
+        <Section title="เลือกรูปแบบติดตั้ง — Gear Mounting Type">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { k: 'FA',                   label: 'FA',                   img: SRVFAImg     },
               { k: 'FB',                   label: 'FB',                   img: SRVFBImg     },
-              { k: 'Hollow & Solid shaft', label: 'Hollow & Solid shaft', img: SRVHollowImg },
-              { k: 'T',                    label: 'T',                    img: SRVTImg      },
+              { k: 'Hollow & Solid shaft', label: 'Hollow / Solid',       img: SRVHollowImg },
+              { k: 'T',                    label: 'Torque Arm (T)',        img: SRVTImg      },
             ].map(({ k, label, img }) => (
               <button key={k} onClick={() => update('srvGearType', k)}
-                className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+                className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left">
                 {img
                   ? <img src={img} alt={label} className="w-full rounded-t-2xl" />
-                  : <div className="h-32 rounded-t-2xl flex items-center justify-center font-bold text-2xl">{label}</div>
+                  : <div className="h-32 rounded-t-2xl flex items-center justify-center font-bold text-2xl bg-gray-100">{label}</div>
                 }
-                <p className="text-center py-2 font-semibold text-gray-800">{label}</p>
+                <div className="px-3 py-2 pb-3">
+                  <p className="font-bold text-gray-800 text-sm mb-1">{label}</p>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">{gearTypeInfo[k].desc}</p>
+                </div>
               </button>
             ))}
           </div>
+          <p className="mt-3 text-[11px] text-white/60 italic">* การเลือกรูปแบบติดตั้งที่ถูกต้องช่วยลดความเสียหายของเกียร์และยืดอายุการใช้งาน — หากไม่แน่ใจให้ติดต่อวิศวกรฝ่ายขาย</p>
         </Section>
         {floatingBack(() => update('srvRatio', null))}
       </>
@@ -505,21 +570,26 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
       : srvGearType === 'FB' ? [{ k: '1', img: SRVFBAImg }, { k: '2', img: SRVFBBImg }]
       : [{ k: '1', img: SRVTAImg }, { k: '2', img: SRVTBImg }];
 
+    const dirLabel = { '1': 'ทิศทาง A — เพลา Output ด้านซ้าย', '2': 'ทิศทาง B — เพลา Output ด้านขวา' };
+
     return (
       <>
-        <Section title="เลือกทิศทางการติดตั้ง">
-          <div className="grid grid-cols-2 gap-4">
+        <Section title={`เลือกทิศทาง Output — ${srvGearType} Direction`}>
+          <div className="grid grid-cols-2 gap-5">
             {subImages.map(({ k, img }) => (
               <button key={k}
                 onClick={() => update('srvGearTypeSub', k)}
-                className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
-                title={k}
+                className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left"
               >
                 <img src={img} alt={`${srvGearType}${k}`} className="w-full rounded-t-2xl" />
-                <p className="text-center py-2 font-semibold text-gray-800">{k}</p>
+                <div className="px-3 py-2 pb-3">
+                  <p className="font-bold text-gray-800 text-sm">{srvGearType}{k}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{dirLabel[k]}</p>
+                </div>
               </button>
             ))}
           </div>
+          <p className="mt-3 text-[11px] text-white/60 italic">* กรุณาตรวจสอบทิศทางการวางเกียร์ในหน้างานจริงก่อนสั่งซื้อ เพื่อหลีกเลี่ยงการติดตั้งผิดทิศทาง</p>
         </Section>
         {floatingBack(() => update('srvGearType', null))}
       </>
@@ -528,23 +598,33 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
 
   // ── STEP 5 — Shaft Design ────────────────────────────────────────────────────
   if (!srvShaftDesign) {
+    const shaftInfo = {
+      DS:     { label: 'DS — Dual Shaft',     desc: 'เพลาโผล่ทั้ง 2 ข้าง (ซ้าย-ขวา) เหมาะสำหรับงานที่ต้องการ Output 2 ด้าน หรือต้องการติดตาชั่ง/เอ็นโคดเดอร์ฝั่งหนึ่ง' },
+      DS1:    { label: 'DS1 — Right Shaft',   desc: 'เพลาโผล่ด้านขวาเพียงข้างเดียว ลดการชนกับโครงสร้าง เหมาะกับพื้นที่จำกัดด้านซ้าย' },
+      DS2:    { label: 'DS2 — Left Shaft',    desc: 'เพลาโผล่ด้านซ้ายเพียงข้างเดียว เหมาะกับพื้นที่จำกัดด้านขวา หรืองานที่ต้องการ Output ด้านซ้ายเท่านั้น' },
+      Hollow: { label: 'Hollow Shaft',        desc: 'เพลากลวง สวมเข้ากับเพลาเครื่องจักรได้โดยตรง ไม่ต้องใช้ Coupling — ลดการสั่นสะเทือน เหมาะกับ Agitator และ Conveyor' },
+    };
     return (
       <>
-        <Section title="เลือกลักษณะเพลา : Shaft Design">
-          <div className="grid grid-cols-4 gap-4">
+        <Section title="เลือกลักษณะเพลา Output — Shaft Design">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { k: 'DS',     img: DSImg,        label: 'DS'     },
-              { k: 'DS1',    img: DS1Img,       label: 'DS1'    },
-              { k: 'DS2',    img: DS2Img,       label: 'DS2'    },
-              { k: 'Hollow', img: SRVHollowImg, label: 'Hollow' },
-            ].map(({ k, img, label }) => (
+              { k: 'DS',     img: DSImg        },
+              { k: 'DS1',    img: DS1Img       },
+              { k: 'DS2',    img: DS2Img       },
+              { k: 'Hollow', img: SRVHollowImg },
+            ].map(({ k, img }) => (
               <button key={k} onClick={() => update('srvShaftDesign', k)}
-                className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
-                <img src={img} alt={label} className="w-full rounded-t-2xl" />
-                <p className="text-center py-2 font-semibold">{label}</p>
+                className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left">
+                <img src={img} alt={k} className="w-full rounded-t-2xl" />
+                <div className="px-2 py-2 pb-3">
+                  <p className="font-bold text-gray-800 text-xs mb-1">{shaftInfo[k].label}</p>
+                  <p className="text-[9px] text-gray-500 leading-relaxed">{shaftInfo[k].desc}</p>
+                </div>
               </button>
             ))}
           </div>
+          <p className="mt-3 text-[11px] text-white/60 italic">* เพลา Hollow ไม่มีรหัสเพิ่มในชื่อรุ่น — DS, DS1, DS2 จะปรากฏในรหัสสินค้าเพื่อระบุลักษณะเพลา</p>
         </Section>
         {floatingBack(() => {
           if (srvGearTypeSub) return update('srvGearTypeSub', null);
@@ -557,19 +637,29 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
   // ── STEP 6 — Mounting Position ───────────────────────────────────────────────
   if (!srvMounting) {
     const image = srvSeries === 'SVF' ? SVFMTImg : SRVMTImg;
+    const mountInfo = {
+      B3: 'แนวนอน เพลา Output ขนานพื้น (มาตรฐาน)', B8: 'แนวนอน เพลา Output ขนานพื้นแบบกลับด้าน',
+      V5: 'แนวตั้ง เพลา Input ชี้ขึ้น',            V6: 'แนวตั้ง เพลา Input ชี้ลง',
+      B6: 'เพลา Output ตั้งฉากกับพื้น (ชี้ขึ้น)',   B7: 'เพลา Output ตั้งฉากกับพื้น (ชี้ลง)',
+    };
     return (
       <>
-        <Section title="เลือกตำแหน่งการติดตั้ง : Mounting position">
-          <div className="flex justify-center mb-6">
-            <img src={image} alt="Mounting Table" className="max-w-md w-full rounded-xl shadow" />
+        <Section title="เลือกตำแหน่งติดตั้ง — Mounting Position">
+          <div className="flex justify-center mb-5">
+            <img src={image} alt="Mounting Table" className="max-w-lg w-full rounded-xl shadow-lg" />
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {['B3', 'B8', 'V5', 'V6', 'B6', 'B7'].map(m => (
               <button key={m} onClick={() => update('srvMounting', m)}
-                className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white px-3 py-4 font-semibold">
-                {m}
+                className="rounded-xl shadow-md transition-opacity hover:opacity-80 bg-white px-2 py-4 flex flex-col items-center gap-1 border border-gray-200">
+                <span className="text-base font-bold text-blue-800">{m}</span>
+                <span className="text-[8px] text-gray-400 text-center leading-tight">{mountInfo[m]?.split(' ').slice(0,2).join(' ')}</span>
               </button>
             ))}
+          </div>
+          <div className="mt-4 p-3 rounded-xl bg-white/10 border border-white/20">
+            <p className="text-xs text-blue-200 font-semibold mb-1">⚠️ สำคัญ — การเลือกตำแหน่งติดตั้ง</p>
+            <p className="text-[11px] text-white/70 leading-relaxed">ตำแหน่งติดตั้งส่งผลต่อระดับน้ำมันหล่อลื่นภายในเกียร์โดยตรง — กรุณาระบุตำแหน่งที่ถูกต้องเพื่อให้ทีมงานเตรียมน้ำมันในปริมาณที่เหมาะสม ป้องกันความเสียหายของเกียร์</p>
           </div>
         </Section>
         {floatingBack(() => update('srvShaftDesign', null))}
@@ -581,19 +671,28 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
   if (!srvIECSize) {
     return (
       <>
-        <Section title="เลือกขนาดหน้าแปลนของ Adapter : IEC Adapter Size">
-          <div className="grid grid-cols-2 gap-4">
+        <Section title="เลือกขนาดหน้าแปลน Adapter — IEC Flange Size">
+          <div className="grid grid-cols-2 gap-5">
             <button onClick={() => update('srvIECSize', 'B5')}
-              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left">
               <img src={B5Img} alt="B5" className="w-full rounded-t-2xl" />
-              <p className="text-center py-2 font-semibold">B5</p>
+              <div className="px-3 py-3">
+                <p className="font-bold text-gray-800">B5 — Large Flange</p>
+                <p className="text-[10px] text-blue-600 font-semibold mb-1">หน้าแปลนขนาดใหญ่</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">หน้าแปลนแบบ B5 มีขนาดใหญ่กว่า B14 รองรับมอเตอร์กำลังสูงขึ้น มีรูยึด 4 รู บนหน้าแปลนวงกลม นิยมใช้กับงานหนักและมอเตอร์ขนาดใหญ่</p>
+              </div>
             </button>
             <button onClick={() => update('srvIECSize', 'B14')}
-              className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white">
+              className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left">
               <img src={B14TImg} alt="B14" className="w-full rounded-t-2xl" />
-              <p className="text-center py-2 font-semibold">B14</p>
+              <div className="px-3 py-3">
+                <p className="font-bold text-gray-800">B14 — Small Flange</p>
+                <p className="text-[10px] text-green-600 font-semibold mb-1">หน้าแปลนขนาดเล็ก</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">หน้าแปลนแบบ B14 มีขนาดกะทัดรัดกว่า รูยึด 4 รู บนหน้าแปลนสี่เหลี่ยม เหมาะกับมอเตอร์กำลังต่ำ-กลาง และพื้นที่ติดตั้งจำกัด</p>
+              </div>
             </button>
           </div>
+          <p className="mt-3 text-[11px] text-white/60 italic">* ขนาดหน้าแปลนที่เหมาะสมได้จากตาราง Catalog หน้า 20–21 ตามขนาดเกียร์และกำลังมอเตอร์ที่เลือก</p>
         </Section>
         {floatingBack(() => update('srvMounting', null))}
       </>
@@ -602,11 +701,19 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
 
   // ── STEP 8 — Motor Type + Terminal Box + Cable (IEC+Motor only) ──────────────
   if (srvInputSel === 'WM' && srvIECMode === 'IEC+Motor' && (!srvMotorType || !srvPosition || !srvPositionSub)) {
+    const motorDesc = {
+      YE3:   { eff: 'IE3 Premium', desc: 'ประสิทธิภาพสูง ประหยัดพลังงาน เหมาะกับงานเดินต่อเนื่อง มาตรฐาน IEC 60034-30 ประหยัดค่าไฟระยะยาว' },
+      YE4:   { eff: 'IE4 Super Premium', desc: 'ประสิทธิภาพสูงสุด ลดการใช้พลังงานกว่า IE3 เหมาะกับงาน 24 ชั่วโมง คืนทุนเร็วจากการประหยัดไฟ' },
+      YEJ:   { eff: 'Brake Motor', desc: 'มอเตอร์พร้อม Electromagnetic Brake หยุดได้ทันทีเมื่อตัดไฟ เหมาะกับลิฟต์ ระบบยก และงานที่ต้องการหยุดแม่นยำ' },
+      YVP:   { eff: 'VFD Motor', desc: 'ออกแบบพิเศษสำหรับ Inverter ปรับความเร็วได้หลากหลาย ฉนวนทนทานต่อแรงดันพัลส์จาก VFD' },
+      YVPEJ: { eff: 'VFD + Brake', desc: 'มอเตอร์ Inverter พร้อม Brake รวมทั้งการปรับความเร็วและการเบรกในหน่วยเดียว ใช้กับงานที่ต้องการควบคุมทั้งสองฟังก์ชัน' },
+      YB:    { eff: 'Explosion-proof', desc: 'มอเตอร์กันระเบิด สำหรับพื้นที่อันตราย เช่น โรงงานเคมี ปิโตรเคมี ได้รับมาตรฐาน ATEX/IECEx' },
+    };
     return (
       <>
         {/* Motor Type */}
         {!srvMotorType && (
-          <Section title="เลือกประเภทของมอเตอร์ : Motor Type">
+          <Section title="เลือกประเภทมอเตอร์ — Motor Type">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[
                 { type: 'YE3',   img: YE3Img   },
@@ -618,60 +725,70 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
               ].map(({ type, img }) => (
                 <button key={type}
                   onClick={() => update('srvMotorType', type)}
-                  className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
-                  title={type}
+                  className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left"
                 >
                   <img src={img} alt={type} className="w-full rounded-t-2xl" />
-                  <p className="text-center py-2 font-semibold text-gray-800">{type}</p>
+                  <div className="px-2 py-2 pb-3">
+                    <p className="font-bold text-gray-800 text-sm">{type}</p>
+                    <p className="text-[9px] text-blue-600 font-semibold mb-1">{motorDesc[type]?.eff}</p>
+                    <p className="text-[9px] text-gray-500 leading-relaxed">{motorDesc[type]?.desc}</p>
+                  </div>
                 </button>
               ))}
             </div>
+            <p className="mt-3 text-[11px] text-white/60 italic">* สำหรับงานทั่วไปแนะนำ YE3 (IE3) — หากต้องการปรับความเร็วให้เลือก YVP พร้อม Inverter</p>
           </Section>
         )}
 
         {/* Terminal Box Position */}
         {srvMotorType && !srvPosition && (
-          <Section title="ทิศทางการติดตั้งกล่องไฟ : Terminal Box Position">
+          <Section title="เลือกทิศทางกล่องสายไฟ — Terminal Box Position">
             <div className="grid grid-cols-4 gap-4">
               {[
-                { p: '0',   img: T0Img   },
-                { p: '90',  img: T90Img  },
-                { p: '180', img: T180Img },
-                { p: '270', img: T270Img },
-              ].map(({ p, img }) => (
+                { p: '0',   img: T0Img,   desc: 'กล่องไฟด้านบน' },
+                { p: '90',  img: T90Img,  desc: 'หมุน 90° ซ้าย' },
+                { p: '180', img: T180Img, desc: 'กล่องไฟด้านล่าง' },
+                { p: '270', img: T270Img, desc: 'หมุน 270° ขวา' },
+              ].map(({ p, img, desc }) => (
                 <button key={p}
                   onClick={() => update('srvPosition', p)}
-                  className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
-                  title={`${p}°`}
+                  className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left"
                 >
                   <img src={img} alt={`T${p}`} className="w-full rounded-t-2xl" />
-                  <p className="text-center py-2 font-semibold text-gray-800">{p}°</p>
+                  <div className="px-2 py-2">
+                    <p className="font-bold text-gray-800 text-sm text-center">{p}°</p>
+                    <p className="text-[9px] text-gray-500 text-center">{desc}</p>
+                  </div>
                 </button>
               ))}
             </div>
+            <p className="mt-3 text-[11px] text-white/60 italic">* เลือกตำแหน่งกล่องไฟให้เข้าถึงได้สะดวก และหลีกเลี่ยงให้น้ำไหลเข้าช่องสาย (ขาเสียบสายควรชี้ลง)</p>
           </Section>
         )}
 
         {/* Cable Wire Position */}
         {srvMotorType && srvPosition && !srvPositionSub && (
-          <Section title="ทิศทางการเข้าของสายไฟ : Cable wire position">
+          <Section title="เลือกทิศทางเข้าสาย — Cable Entry Position">
             <div className="grid grid-cols-4 gap-4">
               {[
-                { s: 'X', img: CXImg },
-                { s: '1', img: C1Img },
-                { s: '2', img: C2Img },
-                { s: '3', img: C3Img },
-              ].map(({ s, img }) => (
+                { s: 'X', img: CXImg, desc: 'ไม่ระบุทิศทาง (Standard)' },
+                { s: '1', img: C1Img, desc: 'สายเข้าด้านซ้าย' },
+                { s: '2', img: C2Img, desc: 'สายเข้าด้านขวา' },
+                { s: '3', img: C3Img, desc: 'สายเข้าด้านหน้า' },
+              ].map(({ s, img, desc }) => (
                 <button key={s}
                   onClick={() => update('srvPositionSub', s)}
-                  className="rounded-2xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition bg-white"
-                  title={s}
+                  className="rounded-2xl shadow-lg transition-opacity hover:opacity-80 bg-white text-left"
                 >
                   <img src={img} alt={`C${s}`} className="w-full rounded-t-2xl" />
-                  <p className="text-center py-2 font-semibold text-gray-800">{s}</p>
+                  <div className="px-2 py-2">
+                    <p className="font-bold text-gray-800 text-sm text-center">{s}</p>
+                    <p className="text-[9px] text-gray-500 text-center">{desc}</p>
+                  </div>
                 </button>
               ))}
             </div>
+            <p className="mt-3 text-[11px] text-white/60 italic">* หากไม่มีข้อกำหนดพิเศษ เลือก X (Standard) — ทีมโรงงานจะเลือกตำแหน่งที่เหมาะสมตามการติดตั้งมาตรฐาน</p>
           </Section>
         )}
 
@@ -764,7 +881,7 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
     ['Output Torque', outTorque !== null ? `${outTorque} N·m` : '-'],
     ['Mounting',     srvMounting || '-'],
     ['Output shaft', shafts.join(' , ') || '-'],
-    ['Warranty',     '18 เดือน'],
+    ['Warranty',     '18 Months (after delivery)'],
   ];
 
   // ─── SRV GLB filename mapping (SRV090... → use SRV090 as base) ───────────
@@ -779,6 +896,7 @@ export function renderSRVFlow(state, setState, onConfirm, onRequestQuote) {
     <SRVSummaryPage
       code={code}
       specRows={specRows}
+      sizeKey={sizeKey}
       glbBase={glbBase}
       onConfirm={onConfirm}
       onRequestQuote={onRequestQuote}
@@ -972,6 +1090,224 @@ function SRVViewer3D({ modelCode, glbBase }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SALE_PERSONS (สำหรับ quote modal)
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SRV DataSheet PDF Generator — jsPDF (same pattern as IECMotorFlow)
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadJsPDFSRV() {
+  if (window.jspdf && window.jspdf.jsPDF) return window.jspdf.jsPDF;
+  if (window.jsPDF) return window.jsPDF;
+  await new Promise((res) => {
+    if (document.getElementById('jspdf-cdn')) { res(); return; }
+    const s = document.createElement('script');
+    s.id = 'jspdf-cdn';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = res; document.head.appendChild(s);
+  });
+  await new Promise((res) => {
+    if (document.getElementById('jspdf-autotable-cdn')) { res(); return; }
+    const s = document.createElement('script');
+    s.id = 'jspdf-autotable-cdn';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+    s.onload = res; document.head.appendChild(s);
+  });
+  return window.jspdf?.jsPDF || window.jsPDF;
+}
+
+// ── Performance data from SAS SRV Series catalog ─────────────────────────────
+// Key specs per size: Max output torque (N·m), output shaft Ø, Fr2 max (N), weight approx
+const SRV_SIZE_SPECS = {
+  '025': { maxTorque: 120,  shaft: 'Ø11 mm', fr2: 1350,  weightKg: 0.8  },
+  '030': { maxTorque: 200,  shaft: 'Ø14 mm', fr2: 1830,  weightKg: 1.3  },
+  '040': { maxTorque: 400,  shaft: 'Ø18/19 mm', fr2: 3490, weightKg: 2.5 },
+  '050': { maxTorque: 630,  shaft: 'Ø24/25 mm', fr2: 4840, weightKg: 4.2 },
+  '063': { maxTorque: 1400, shaft: 'Ø25/28 mm', fr2: 6270, weightKg: 7.5 },
+  '075': { maxTorque: 2200, shaft: 'Ø28/35 mm', fr2: 7380, weightKg: 11  },
+  '090': { maxTorque: 4200, shaft: 'Ø35/38 mm', fr2: 8180, weightKg: 17  },
+  '110': { maxTorque: 8000, shaft: 'Ø42 mm',    fr2:12000, weightKg: 28  },
+  '130': { maxTorque:11000, shaft: 'Ø45 mm',    fr2:13500, weightKg: 40  },
+  '150': { maxTorque:16000, shaft: 'Ø50 mm',    fr2:18000, weightKg: 58  },
+};
+
+// Ratio → available (condensed from catalog table)
+const SRV_RATIO_LIST = [5, 7.5, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100];
+
+async function generateSRVDatasheetPDF(code, specRows, sizeKey) {
+  const JsPDF = await loadJsPDFSRV();
+  if (!JsPDF) throw new Error('Cannot load jsPDF');
+
+  const doc    = new JsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
+  const W      = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  let   y      = margin;
+
+  const NAVY   = [15, 40, 100];
+  const TEAL   = [0,  160, 120];
+  const LGRAY  = [240, 242, 246];
+  const DGRAY  = [60, 70, 80];
+  const WHITE  = [255, 255, 255];
+
+  const dateStr = new Date().toLocaleDateString('en-GB', { year:'numeric', month:'long', day:'numeric' });
+
+  // ── Header Banner ──
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, W, 28, 'F');
+  doc.setFillColor(...TEAL);
+  doc.rect(0, 28, W, 3, 'F');
+
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+  doc.text('SAS TRANSMISSION', margin, 11);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text('SRV Worm Gear Reducer  -  Technical Data Sheet', margin, 19);
+  doc.setFontSize(7.5);
+  doc.text('Date: ' + dateStr, margin, 26);
+  y = 38;
+
+  // ── Model Code Box ──
+  doc.setFillColor(...LGRAY);
+  doc.roundedRect(margin, y, W - margin * 2, 16, 3, 3, 'F');
+  doc.setFillColor(...TEAL);
+  doc.roundedRect(margin, y, 42, 16, 3, 3, 'F');
+
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+  doc.text('MODEL CODE', margin + 2, y + 5);
+  doc.setFontSize(9.5);
+  doc.text(code || '-', margin + 21, y + 12, { align:'center' });
+
+  doc.setTextColor(...NAVY);
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+  doc.text('SRV WORM GEAR REDUCER SERIES', margin + 48, y + 7);
+  doc.setTextColor(...DGRAY);
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+  doc.text('Synergy Asia Solution Co.,Ltd.  |  We Only Focus On The Reducer Field', margin + 48, y + 13.5);
+  y += 22;
+
+  // ── Spec table ──
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text('SELECTED CONFIGURATION', margin, y + 5);
+  y += 9;
+
+  const tableRows = specRows.map(([k, v]) => [k, v || '-']);
+
+  doc.autoTable({
+    startY: y,
+    head: [['Parameter', 'Value']],
+    body: tableRows,
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 8.5, cellPadding: 3, lineColor: [220, 222, 228], lineWidth: 0.3 },
+    headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle:'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: [248, 249, 252] },
+    columnStyles: {
+      0: { fontStyle:'bold', textColor: DGRAY, cellWidth: 48 },
+      1: { textColor: [20, 20, 30] },
+    },
+  });
+
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Size Performance Data ──
+  const sk = (sizeKey || '').split('/')[0].replace(/\D/g,'').padStart(3,'0');
+  const specs = SRV_SIZE_SPECS[sk];
+
+  if (specs) {
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text(`SRV${sk} — SIZE PERFORMANCE DATA  (from SAS SRV Series Catalog)`, margin, y);
+    y += 5;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Specification', 'Value']],
+      body: [
+        ['Max Output Torque (M2n)', specs.maxTorque + ' N·m'],
+        ['Output Shaft Diameter', specs.shaft],
+        ['Max Radial Load Fr2', specs.fr2 + ' N'],
+        ['Approx. Weight', specs.weightKg + ' kg'],
+        ['Available Ratios (i)', SRV_RATIO_LIST.join(' / ')],
+        ['Lubrication', 'Synthetic oil (factory filled)'],
+        ['Housing material', 'Die-cast aluminium / Cast iron (SRV110-150)'],
+        ['Protection class', 'IP54 (standard)'],
+        ['Ambient temperature', '-10°C to +40°C'],
+        ['Thermal capacity', 'See catalog page 14-15'],
+      ],
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8.5, cellPadding: 3, lineColor: [220, 222, 228], lineWidth: 0.3 },
+      headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle:'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+      columnStyles: {
+        0: { fontStyle:'bold', textColor: DGRAY, cellWidth: 72 },
+        1: { textColor: [20, 20, 30] },
+      },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── Formula reference ──
+  if (y < 240) {
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text('QUICK FORMULAS', margin, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...DGRAY);
+    const formulas = [
+      'Output speed (n2):  n2 = n1 ÷ i   [1/min]',
+      'Output torque (M2n):  M2n = 9550 × P1n × ηd ÷ n2   [N·m]',
+      'Service factor (fs):  Select from daily operating hours & load type (catalog p.16–17)',
+    ];
+    formulas.forEach(f => { doc.text(f, margin + 2, y); y += 5; });
+    y += 2;
+  }
+
+  // ── Footer ──
+  const pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(...NAVY);
+  doc.rect(0, pageH - 18, W, 18, 'F');
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+  doc.text('Synergy Asia Solution Co.,Ltd.  |  SRV Worm Gear Reducer Series', margin, pageH - 11);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Tel: 081-921-6225  |  Warranty: 18 Months after delivery', margin, pageH - 5);
+  doc.setTextColor(160, 185, 215);
+  doc.text('Data from SAS SRV Series Catalog. Specs subject to change without notice.', W - margin, pageH - 5, { align: 'right' });
+
+  doc.save((code || 'SRV_DataSheet') + '.pdf');
+}
+
+// SRVDataSheetButton — same pattern as IECMotorFlow DataSheetButton
+function SRVDataSheetButton({ code, specRows, sizeKey }) {
+  const [status, setStatus] = React.useState('idle');
+
+  const handleClick = async () => {
+    if (status === 'loading') return;
+    setStatus('loading');
+    try {
+      await generateSRVDatasheetPDF(code, specRows, sizeKey);
+      setStatus('done');
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch (err) {
+      console.error('SRV PDF error:', err);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
+    }
+  };
+
+  const label = { idle:'📄 Data Sheet', loading:'⏳ กำลังสร้าง...', done:'✅ ดาวน์โหลดแล้ว', error:'⚠️ ลองใหม่' }[status];
+  const bg = status === 'error' ? 'rgba(220,50,50,0.18)' : 'rgba(30,100,220,0.12)';
+  const border = status === 'error' ? '1px solid rgba(220,50,50,0.4)' : '1px solid rgba(30,100,220,0.3)';
+  const color = status === 'error' ? '#e05050' : '#6090e0';
+
+  return (
+    <button type="button" onClick={handleClick} disabled={status === 'loading'}
+      style={{ width:'100%', padding:'10px 0', borderRadius:10, background:bg, border, color, fontWeight:600, fontSize:13, cursor:'pointer', transition:'opacity 0.15s', opacity: status === 'loading' ? 0.6 : 1 }}>
+      {label}
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 const SRV_SALE_PERSONS = [
   { abbr: 'CA',  name: 'Mr. Chottanin A. (CA)',  position: 'TRANSMISSION PRODUCT MANAGER', phone: '081-921-6225' },
   { abbr: 'AP',  name: 'Ms.Apichaya P. (AP)',    position: 'Sale Supervisor',               phone: '098-3697494' },
@@ -987,7 +1323,7 @@ const SRV_SALE_PERSONS = [
 // ─────────────────────────────────────────────────────────────────────────────
 // SRVSummaryPage — fullscreen layout แบบ BLDC
 // ─────────────────────────────────────────────────────────────────────────────
-function SRVSummaryPage({ code, specRows, glbBase, onConfirm, onRequestQuote, onBack }) {
+function SRVSummaryPage({ code, specRows, sizeKey, glbBase, onConfirm, onRequestQuote, onBack }) {
   const [qty,      setQty]      = React.useState(1);
   const [showQuote,setShowQuote]= React.useState(false);
   const [qName,    setQName]    = React.useState('');
@@ -1104,6 +1440,7 @@ function SRVSummaryPage({ code, specRows, glbBase, onConfirm, onRequestQuote, on
                 onClick={() => { if (typeof downloadSrvDrawingPDF === 'function') downloadSrvDrawingPDF(code); else console.warn('downloadSrvDrawingPDF not found'); }}>
                 📐 Drawing 2D
               </button>
+              <SRVDataSheetButton code={code} specRows={specRows} sizeKey={sizeKey} />
             </div>
 
           </div>
