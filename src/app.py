@@ -1757,6 +1757,246 @@ def health():
         }
     )
 
+# =========================
+# Analytics — Supabase
+# =========================
+# ENV vars ที่ต้องตั้งใน Render:
+#   SUPABASE_URL        = https://ldawndfthgswudmolnrb.supabase.co
+#   SUPABASE_SECRET_KEY = sb_secret_BtlbdADuiZ6p8BTfFri_HA_9VnJeyZ_
+#   DASHBOARD_PASSWORD_HASH = (bcrypt hash ของ Stephen442)
+# =========================
+
+import json as _json
+import bcrypt as _bcrypt
+
+_SUPABASE_URL  = os.environ.get("SUPABASE_URL", "https://ldawndfthgswudmolnrb.supabase.co")
+_SUPABASE_KEY  = os.environ.get("SUPABASE_SECRET_KEY", "")
+
+# bcrypt hash ของ "Stephen442" — สร้างครั้งเดียวตอน deploy
+# ถ้า DASHBOARD_PASSWORD_HASH ไม่ได้ตั้ง ENV ใช้ค่าที่ pre-hash ไว้นี้
+_DEFAULT_PW_HASH = os.environ.get(
+    "DASHBOARD_PASSWORD_HASH",
+    "$2b$12$06WJNs2CeztRwaegGQFWw.9e.heFqvofq9eIx39RtDt1oskPDPEiG"  # Stephen442
+)
+
+_SUPABASE_HEADERS = lambda: {
+    "apikey":        _SUPABASE_KEY,
+    "Authorization": f"Bearer {_SUPABASE_KEY}",
+    "Content-Type":  "application/json",
+    "Prefer":        "return=minimal",
+}
+
+# ── Rate limiting แบบ in-memory (กัน spam) ──────────────────────────────────
+import time as _time
+from collections import defaultdict as _defaultdict
+_rate_store = _defaultdict(list)  # ip -> [timestamp, ...]
+_RATE_WINDOW = 60   # วินาที
+_RATE_LIMIT  = 30   # requests ต่อ window
+
+def _check_rate(ip: str) -> bool:
+    """คืน True ถ้ายังอยู่ใน limit"""
+    now = _time.time()
+    hits = [t for t in _rate_store[ip] if now - t < _RATE_WINDOW]
+    _rate_store[ip] = hits
+    if len(hits) >= _RATE_LIMIT:
+        return False
+    _rate_store[ip].append(now)
+    return True
+
+def _get_ip() -> str:
+    return request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+
+# ── GET /api/analytics/total — public endpoint แสดงตัวเลขบนปุ่ม ────────────
+@app.route("/api/analytics/total", methods=["OPTIONS", "GET"])
+def analytics_total():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    if not _SUPABASE_KEY:
+        return jsonify({"total": 0}), 200
+    try:
+        r = http_requests.get(
+            f"{_SUPABASE_URL}/rest/v1/page_visits?select=count",
+            headers={**_SUPABASE_HEADERS(), "Prefer": "count=exact", "Range": "0-0"},
+            timeout=5,
+        )
+        total = int(r.headers.get("Content-Range", "0/0").split("/")[-1] or 0)
+        return jsonify({"total": total}), 200
+    except Exception:
+        return jsonify({"total": 0}), 200
+@app.route("/api/analytics/visit", methods=["OPTIONS", "POST"])
+def analytics_visit():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    ip = _get_ip()
+    if not _check_rate(ip):
+        return jsonify({"ok": False, "error": "rate limit"}), 429
+    try:
+        ua = request.headers.get("User-Agent", "")[:500]
+        ref = request.headers.get("Referer", "")[:500]
+        payload = request.get_json(silent=True) or {}
+        session_id = str(payload.get("session_id", ""))[:64]
+
+        r = http_requests.post(
+            f"{_SUPABASE_URL}/rest/v1/page_visits",
+            headers=_SUPABASE_HEADERS(),
+            json={"user_agent": ua, "referrer": ref, "session_id": session_id},
+            timeout=5,
+        )
+        return jsonify({"ok": r.status_code in (200, 201)}), 200
+    except Exception as e:
+        app.logger.warning("analytics_visit error: %s", e)
+        return jsonify({"ok": False}), 200  # ไม่ให้ frontend crash
+
+# ── POST /api/analytics/click — เรียกเมื่อคลิก product ─────────────────────
+@app.route("/api/analytics/click", methods=["OPTIONS", "POST"])
+def analytics_click():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    ip = _get_ip()
+    if not _check_rate(ip):
+        return jsonify({"ok": False, "error": "rate limit"}), 429
+    try:
+        payload = request.get_json(silent=True) or {}
+        product_name = str(payload.get("product_name", ""))[:100]
+        session_id   = str(payload.get("session_id",   ""))[:64]
+        if not product_name:
+            return jsonify({"ok": False, "error": "missing product_name"}), 400
+
+        ua = request.headers.get("User-Agent", "")[:500]
+        r = http_requests.post(
+            f"{_SUPABASE_URL}/rest/v1/product_clicks",
+            headers=_SUPABASE_HEADERS(),
+            json={"product_name": product_name, "user_agent": ua, "session_id": session_id},
+            timeout=5,
+        )
+        return jsonify({"ok": r.status_code in (200, 201)}), 200
+    except Exception as e:
+        app.logger.warning("analytics_click error: %s", e)
+        return jsonify({"ok": False}), 200
+
+# ── POST /api/analytics/login — ตรวจ password คืน token ────────────────────
+@app.route("/api/analytics/login", methods=["OPTIONS", "POST"])
+def analytics_login():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    ip = _get_ip()
+    # Login rate limit เข้มกว่า — 5 ครั้ง / นาที
+    now = _time.time()
+    login_hits = [t for t in _rate_store.get(f"login:{ip}", []) if now - t < 60]
+    if len(login_hits) >= 5:
+        return jsonify({"ok": False, "error": "Too many attempts"}), 429
+    _rate_store[f"login:{ip}"] = login_hits + [now]
+
+    try:
+        payload  = request.get_json(silent=True) or {}
+        password = str(payload.get("password", "")).encode()
+        stored   = _DEFAULT_PW_HASH.encode()
+
+        if not _bcrypt.checkpw(password, stored):
+            return jsonify({"ok": False, "error": "รหัสผ่านไม่ถูกต้อง"}), 401
+
+        # สร้าง signed token (HMAC-SHA256) อายุ 24 ชม.
+        import hmac as _hmac, base64 as _b64
+        secret   = os.environ.get("DASHBOARD_TOKEN_SECRET", "sas-dashboard-secret-key-2025")
+        exp      = int(_time.time()) + 86400
+        payload_str = f"dashboard:{exp}"
+        sig      = _hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()
+        token    = _b64.urlsafe_b64encode(f"{payload_str}:{sig}".encode()).decode()
+        return jsonify({"ok": True, "token": token, "exp": exp}), 200
+    except Exception as e:
+        app.logger.warning("analytics_login error: %s", e)
+        return jsonify({"ok": False, "error": "Server error"}), 500
+
+def _verify_dashboard_token(token: str) -> bool:
+    """ตรวจ token ที่ออกจาก analytics_login"""
+    try:
+        import hmac as _hmac, base64 as _b64
+        secret  = os.environ.get("DASHBOARD_TOKEN_SECRET", "sas-dashboard-secret-key-2025")
+        decoded = _b64.urlsafe_b64decode(token.encode()).decode()
+        parts   = decoded.rsplit(":", 1)
+        if len(parts) != 2:
+            return False
+        payload_str, sig = parts
+        expected = _hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()
+        if not _hmac.compare_digest(sig, expected):
+            return False
+        _, exp_str = payload_str.split(":", 1)
+        return int(_time.time()) < int(exp_str)
+    except Exception:
+        return False
+
+# ── GET /api/analytics/stats — ดึงข้อมูลสำหรับ Dashboard ──────────────────
+@app.route("/api/analytics/stats", methods=["OPTIONS", "GET"])
+def analytics_stats():
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    # ตรวจ token
+    auth = request.headers.get("Authorization", "")
+    token = auth.replace("Bearer ", "").strip()
+    if not token or not _verify_dashboard_token(token):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+
+    if not _SUPABASE_KEY:
+        return jsonify({"ok": False, "error": "Supabase not configured"}), 500
+
+    try:
+        # ── 1) Total visits ──────────────────────────────────────────────────
+        r_total = http_requests.get(
+            f"{_SUPABASE_URL}/rest/v1/page_visits?select=count",
+            headers={**_SUPABASE_HEADERS(), "Prefer": "count=exact", "Range": "0-0"},
+            timeout=8,
+        )
+        total_visits = int(r_total.headers.get("Content-Range", "0/0").split("/")[-1] or 0)
+
+        # ── 2) Visits per day (30 วันล่าสุด) ────────────────────────────────
+        r_daily = http_requests.get(
+            f"{_SUPABASE_URL}/rest/v1/rpc/visits_per_day",
+            headers=_SUPABASE_HEADERS(),
+            timeout=8,
+        )
+        daily_visits = r_daily.json() if r_daily.ok else []
+
+        # ── 3) Product clicks รวม (all time) ────────────────────────────────
+        r_prod = http_requests.get(
+            f"{_SUPABASE_URL}/rest/v1/rpc/product_clicks_summary",
+            headers=_SUPABASE_HEADERS(),
+            timeout=8,
+        )
+        product_summary = r_prod.json() if r_prod.ok else []
+
+        # ── 4) Product clicks per day (30 วัน) ──────────────────────────────
+        r_prod_daily = http_requests.get(
+            f"{_SUPABASE_URL}/rest/v1/rpc/product_clicks_per_day",
+            headers=_SUPABASE_HEADERS(),
+            timeout=8,
+        )
+        product_daily = r_prod_daily.json() if r_prod_daily.ok else []
+
+        # ── 5) Visits today / this week / this month ─────────────────────────
+        r_period = http_requests.get(
+            f"{_SUPABASE_URL}/rest/v1/rpc/visits_by_period",
+            headers=_SUPABASE_HEADERS(),
+            timeout=8,
+        )
+        period_stats = r_period.json() if r_period.ok else {}
+        if isinstance(period_stats, list) and period_stats:
+            period_stats = period_stats[0]
+
+        return jsonify({
+            "ok": True,
+            "total_visits":   total_visits,
+            "daily_visits":   daily_visits,
+            "product_summary": product_summary,
+            "product_daily":  product_daily,
+            "period":         period_stats,
+        }), 200
+
+    except Exception as e:
+        app.logger.exception("analytics_stats error")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)

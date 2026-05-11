@@ -340,36 +340,345 @@ async function handleBLDCDownload(modelCode) {
    return null;
  }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AnalyticsDashboard — Protected Dashboard (password: Stephen442)
+// ─────────────────────────────────────────────────────────────────────────────
+function AnalyticsDashboard({ onClose, apiBase }) {
+  const [phase, setPhase] = React.useState('login'); // 'login' | 'loading' | 'dashboard'
+  const [pw, setPw] = React.useState('');
+  const [loginErr, setLoginErr] = React.useState('');
+  const [token, setToken] = React.useState('');
+  const [stats, setStats] = React.useState(null);
+  const [chartTab, setChartTab] = React.useState('daily'); // 'daily'|'weekly'|'monthly'
+  const [loadErr, setLoadErr] = React.useState('');
+
+  // ── Login ────────────────────────────────────────────────────────────────
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginErr('');
+    try {
+      const r = await fetch(`${apiBase}/api/analytics/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+      const d = await r.json();
+      if (!d.ok) { setLoginErr(d.error || 'รหัสผ่านไม่ถูกต้อง'); return; }
+      setToken(d.token);
+      setPhase('loading');
+      fetchStats(d.token);
+    } catch {
+      setLoginErr('ไม่สามารถเชื่อมต่อ server ได้');
+    }
+  };
+
+  // ── Fetch stats ──────────────────────────────────────────────────────────
+  const fetchStats = async (t) => {
+    setLoadErr('');
+    try {
+      const r = await fetch(`${apiBase}/api/analytics/stats`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      const d = await r.json();
+      if (!d.ok) { setLoadErr(d.error || 'โหลดข้อมูลไม่สำเร็จ'); setPhase('login'); return; }
+      setStats(d);
+      setPhase('dashboard');
+    } catch {
+      setLoadErr('เชื่อมต่อ server ไม่ได้');
+      setPhase('login');
+    }
+  };
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+  const aggregateByWeek = (daily) => {
+    if (!daily?.length) return [];
+    const map = {};
+    daily.forEach(({ day, count }) => {
+      const d = new Date(day);
+      const mon = new Date(d); mon.setDate(d.getDate() - d.getDay() + 1);
+      const key = mon.toISOString().slice(0, 10);
+      map[key] = (map[key] || 0) + Number(count);
+    });
+    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([day, count]) => ({ day, count }));
+  };
+
+  const aggregateByMonth = (daily) => {
+    if (!daily?.length) return [];
+    const map = {};
+    daily.forEach(({ day, count }) => {
+      const key = day.slice(0, 7);
+      map[key] = (map[key] || 0) + Number(count);
+    });
+    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([day, count]) => ({ day, count }));
+  };
+
+  const getChartData = (daily) => {
+    if (chartTab === 'daily')   return (daily || []).slice(-30);
+    if (chartTab === 'weekly')  return aggregateByWeek(daily).slice(-12);
+    if (chartTab === 'monthly') return aggregateByMonth(daily).slice(-12);
+    return [];
+  };
+
+  const fmtLabel = (day) => {
+    if (chartTab === 'daily')   return day.slice(5);        // MM-DD
+    if (chartTab === 'weekly')  return `W${day.slice(5,7)}`; // WMM
+    if (chartTab === 'monthly') return day.slice(0, 7);     // YYYY-MM
+  };
+
+  // ── Mini Bar Chart (SVG) ─────────────────────────────────────────────────
+  const BarChart = ({ data, color = '#3b82f6', height = 120 }) => {
+    if (!data?.length) return <p className="text-center text-gray-400 text-sm py-4">ไม่มีข้อมูล</p>;
+    const max = Math.max(...data.map(d => Number(d.count)), 1);
+    const w = 100 / data.length;
+    return (
+      <div className="relative" style={{ height }}>
+        <svg viewBox={`0 0 100 100`} preserveAspectRatio="none" className="w-full h-full">
+          {data.map((d, i) => {
+            const pct = (Number(d.count) / max) * 85;
+            return (
+              <g key={i}>
+                <rect x={i * w + w * 0.1} y={100 - pct} width={w * 0.8} height={pct}
+                  fill={color} opacity="0.85" rx="1" />
+              </g>
+            );
+          })}
+        </svg>
+        {/* labels */}
+        <div className="flex justify-between mt-1 overflow-hidden">
+          {data.filter((_, i) => data.length <= 12 || i % Math.ceil(data.length / 10) === 0)
+            .map((d, i) => (
+              <span key={i} className="text-[9px] text-gray-400 truncate">{fmtLabel(d.day)}</span>
+            ))}
+        </div>
+      </div>
+    );
+  };
+
+  // ── Product horizontal bar ────────────────────────────────────────────────
+  const ProductBar = ({ name, count, maxCount }) => {
+    const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+    const shortName = name.replace(' Series', '').replace(' Gear Motor', '').replace(' STANDARD MOTOR', '');
+    return (
+      <div className="mb-2">
+        <div className="flex justify-between text-xs mb-0.5">
+          <span className="text-gray-700 font-medium truncate max-w-[70%]">{shortName}</span>
+          <span className="text-blue-600 font-bold">{count.toLocaleString()}</span>
+        </div>
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500"
+            style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    );
+  };
+
+  // ── Overlay ──────────────────────────────────────────────────────────────
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+
+      {/* LOGIN */}
+      {phase === 'login' && (
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-2">📊</div>
+            <h2 className="text-xl font-bold text-gray-800">Analytics Dashboard</h2>
+            <p className="text-gray-400 text-sm mt-1">SAS Transmission</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1">รหัสผ่าน</label>
+              <input
+                type="password"
+                value={pw}
+                onChange={e => setPw(e.target.value)}
+                placeholder="กรอกรหัสผ่าน"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                autoFocus
+              />
+            </div>
+            {loginErr && <p className="text-red-500 text-xs text-center">{loginErr}</p>}
+            {loadErr  && <p className="text-red-500 text-xs text-center">{loadErr}</p>}
+            <button type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition">
+              เข้าสู่ระบบ
+            </button>
+            <button type="button" onClick={onClose}
+              className="w-full text-gray-400 hover:text-gray-600 text-sm py-1">
+              ยกเลิก
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* LOADING */}
+      {phase === 'loading' && (
+        <div className="bg-white rounded-2xl shadow-2xl p-12 text-center">
+          <div className="text-5xl animate-bounce mb-4">📊</div>
+          <p className="text-gray-500">กำลังโหลดข้อมูล...</p>
+        </div>
+      )}
+
+      {/* DASHBOARD */}
+      {phase === 'dashboard' && stats && (
+        <div className="bg-gray-50 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto">
+
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-700 to-blue-500 rounded-t-2xl px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+            <div>
+              <h2 className="text-white font-bold text-lg">📊 Analytics Dashboard</h2>
+              <p className="text-blue-100 text-xs">SAS Transmission — ข้อมูลจริงจาก Supabase</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => fetchStats(token)}
+                className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition">
+                🔄 รีเฟรช
+              </button>
+              <button onClick={onClose}
+                className="bg-white/20 hover:bg-red-500 text-white text-xs px-3 py-1.5 rounded-lg transition">
+                ✕ ปิด
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6">
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: 'ทั้งหมด', value: stats.total_visits, icon: '🌐', color: 'bg-blue-50 border-blue-200' },
+                { label: 'วันนี้',   value: stats.period?.today   ?? 0, icon: '📅', color: 'bg-green-50 border-green-200' },
+                { label: 'สัปดาห์นี้', value: stats.period?.this_week  ?? 0, icon: '📆', color: 'bg-yellow-50 border-yellow-200' },
+                { label: 'เดือนนี้', value: stats.period?.this_month ?? 0, icon: '🗓️', color: 'bg-purple-50 border-purple-200' },
+              ].map(({ label, value, icon, color }) => (
+                <div key={label} className={`rounded-xl border p-4 ${color}`}>
+                  <div className="text-2xl mb-1">{icon}</div>
+                  <div className="text-2xl font-bold text-gray-800">{Number(value).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Visit Trend Chart */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-gray-700">📈 จำนวนผู้เข้าใช้งาน</h3>
+                <div className="flex gap-1">
+                  {['daily', 'weekly', 'monthly'].map(t => (
+                    <button key={t}
+                      onClick={() => setChartTab(t)}
+                      className={`text-xs px-3 py-1 rounded-lg transition ${chartTab === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                      {t === 'daily' ? 'รายวัน' : t === 'weekly' ? 'รายสัปดาห์' : 'รายเดือน'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <BarChart data={getChartData(stats.daily_visits)} color="#3b82f6" height={130} />
+            </div>
+
+            {/* Product Clicks */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Top Products Bar */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <h3 className="font-bold text-gray-700 mb-4">🏆 Product ยอดนิยม (ทั้งหมด)</h3>
+                {stats.product_summary?.length > 0 ? (() => {
+                  const maxC = Math.max(...stats.product_summary.map(p => Number(p.total_clicks)));
+                  return stats.product_summary
+                    .sort((a, b) => Number(b.total_clicks) - Number(a.total_clicks))
+                    .map((p, i) => (
+                      <ProductBar key={i} name={p.product_name} count={Number(p.total_clicks)} maxCount={maxC} />
+                    ));
+                })() : <p className="text-gray-400 text-sm">ยังไม่มีข้อมูล</p>}
+              </div>
+
+              {/* Product Clicks Chart */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <h3 className="font-bold text-gray-700 mb-4">📊 Clicks รายวัน (Top 5)</h3>
+                {stats.product_daily?.length > 0 ? (() => {
+                  // Group by product, take top 5
+                  const byProduct = {};
+                  stats.product_daily.forEach(({ product_name, day, count }) => {
+                    if (!byProduct[product_name]) byProduct[product_name] = [];
+                    byProduct[product_name].push({ day, count: Number(count) });
+                  });
+                  const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'];
+                  const top5 = Object.entries(byProduct)
+                    .map(([name, data]) => ({ name, total: data.reduce((s, d) => s + d.count, 0), data }))
+                    .sort((a, b) => b.total - a.total).slice(0, 5);
+                  return (
+                    <div className="space-y-3">
+                      {top5.map(({ name, data }, i) => (
+                        <div key={name}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="w-2 h-2 rounded-full" style={{ background: colors[i] }} />
+                            <span className="text-xs text-gray-600 truncate">{name.replace(' Series','').replace(' Gear Motor','')}</span>
+                          </div>
+                          <BarChart data={data.slice(-14)} color={colors[i]} height={50} />
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })() : <p className="text-gray-400 text-sm">ยังไม่มีข้อมูล</p>}
+              </div>
+            </div>
+
+            <p className="text-center text-xs text-gray-400">
+              ข้อมูลอัพเดตแบบ real-time จาก Supabase · Southeast Asia (Singapore)
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
 
   const EMAILJS_PUBLIC_KEY = 'BvIT5-X7LnkaS3LKq';
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // ── [ADD] Visitor Counter ──────────────────────────────────────────────────
-  const [visitorCount, setVisitorCount] = useState(0);
-  const [visitHistory, setVisitHistory] = useState([]);
+  // ── [Analytics] Supabase Tracking ────────────────────────────────────────
+  const ANALYTICS_BASE = 'https://gear-motor-app.onrender.com';
+
+  // session_id ต่อ browser session (ไม่เก็บข้ามครั้ง)
+  const sessionId = React.useRef(
+    (() => {
+      let s = sessionStorage.getItem('sas_sid');
+      if (!s) { s = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('sas_sid', s); }
+      return s;
+    })()
+  ).current;
+
+  // จำนวนผู้ใช้ล่าสุดที่ดึงจาก Supabase (แสดงหน้า Index)
+  const [visitorCount, setVisitorCount] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
 
+  // ส่ง page visit + ดึง total count
   useEffect(() => {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('th-TH', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
+    // fire-and-forget: บันทึก visit
+    fetch(`${ANALYTICS_BASE}/api/analytics/visit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId }),
+    }).catch(() => {});
 
-    // ดึงข้อมูลเดิม
-    const storedCount = parseInt(localStorage.getItem('sas_visitor_count') || '0', 10);
-    const storedHistory = JSON.parse(localStorage.getItem('sas_visit_history') || '[]');
-
-    const newCount = storedCount + 1;
-    const newHistory = [dateStr, ...storedHistory].slice(0, 50); // เก็บล่าสุด 50 รายการ
-
-    localStorage.setItem('sas_visitor_count', String(newCount));
-    localStorage.setItem('sas_visit_history', JSON.stringify(newHistory));
-
-    setVisitorCount(newCount);
-    setVisitHistory(newHistory);
+    // ดึง total visits (ใช้ public stats endpoint ที่ไม่ต้องใส่ token)
+    fetch(`${ANALYTICS_BASE}/api/analytics/total`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.total != null) setVisitorCount(d.total); })
+      .catch(() => {});
   }, []);
+
+  // helper: ส่ง product click event
+  const trackClick = React.useCallback((productName) => {
+    fetch(`${ANALYTICS_BASE}/api/analytics/click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_name: productName, session_id: sessionId }),
+    }).catch(() => {});
+  }, [sessionId]);
   // ── [ADD] Deep-link via URL hash: /#ac-gear-motor ──────────────────────────
 useEffect(() => {
   const hash = window.location.hash.toLowerCase().replace('#', '');
@@ -1499,53 +1808,23 @@ const getFileUrl = () => {
 </div>
 </div>
 
-{/* ── [ADD] Visitor Counter Box (มุมขวาบน ใต้แบนเนอร์) ── */}
+{/* ── Visitor Counter — ปัจจุบันมีผู้ใช้งานมากกว่า ── */}
 <div className="flex justify-end mb-3 -mt-2 pr-1">
-  <div className="relative">
-    <button
-      onClick={() => setShowHistory(v => !v)}
-      className="flex items-center gap-2 px-3 py-1.5 rounded-xl
-                 bg-white/15 backdrop-blur-sm border border-white/30
-                 text-white text-xs font-semibold shadow-md
-                 hover:bg-white/25 active:scale-95 transition-all"
-      title="ประวัติการเข้าใช้งาน"
-    >
-      <span>👥</span>
-      <span>ผู้เข้าใช้</span>
-      <span className="bg-blue-500/80 text-white rounded-full px-2 py-0.5 text-xs font-bold">
-        {visitorCount.toLocaleString()}
-      </span>
-      <span className="text-white/60 text-[10px]">ครั้ง</span>
-    </button>
-
-    {/* Dropdown ประวัติ */}
-    {showHistory && (
-      <div className="absolute right-0 top-9 z-50 w-60 max-h-64 overflow-y-auto
-                      bg-white/95 backdrop-blur-md rounded-xl shadow-2xl
-                      border border-white/40 p-3">
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-bold text-gray-700 text-sm">ประวัติการเข้าใช้งาน</span>
-          <button
-            onClick={() => setShowHistory(false)}
-            className="w-5 h-5 rounded-full bg-red-400 text-white text-xs flex items-center justify-center"
-          >✕</button>
-        </div>
-        {visitHistory.length === 0 ? (
-          <p className="text-gray-400 text-xs text-center py-2">ยังไม่มีข้อมูล</p>
-        ) : (
-          <ul className="space-y-1">
-            {visitHistory.map((d, i) => (
-              <li key={i} className="flex items-center gap-2 text-xs text-gray-600 border-b border-gray-100 pb-1">
-                <span className="text-blue-400 font-bold w-5 text-right shrink-0">{i + 1}.</span>
-                <span>{d}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="text-center text-[10px] text-gray-400 mt-2">แสดงล่าสุด 50 รายการ</p>
-      </div>
-    )}
-  </div>
+  <button
+    onClick={() => setShowHistory(v => !v)}
+    className="flex items-center gap-2 px-3 py-1.5 rounded-xl
+               bg-white/15 backdrop-blur-sm border border-white/30
+               text-white text-xs font-semibold shadow-md
+               hover:bg-white/25 active:scale-95 transition-all"
+    title="เปิด Dashboard สถิติ"
+  >
+    <span>📊</span>
+    <span className="text-white/80">ปัจจุบันมีผู้ใช้งานมากกว่า</span>
+    <span className="bg-blue-500/80 text-white rounded-full px-2 py-0.5 text-xs font-bold min-w-[28px] text-center">
+      {visitorCount != null ? visitorCount.toLocaleString() : '…'}
+    </span>
+    <span className="text-white/60 text-[10px]">ครั้ง</span>
+  </button>
 </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
@@ -1554,6 +1833,7 @@ const getFileUrl = () => {
   key={p.name}
   type="button"
   onClick={() => {
+  trackClick(p.name);
   if (p.name === 'AC Gear Motor') {
     // กันค้างค่าเดิมทุกตัว
     setAcMotorType(null);
@@ -2417,6 +2697,14 @@ onClick={async () => {
               {isDownloading && (<img src={hourglass} alt="loading" className="w-8 h-8 absolute -top-10 right-0 animate-spin" />)}
             </div>
           </div>
+        )}
+
+        {/* ── Analytics Dashboard Modal ───────────────────────────────── */}
+        {showHistory && (
+          <AnalyticsDashboard
+            onClose={() => setShowHistory(false)}
+            apiBase={ANALYTICS_BASE}
+          />
         )}
 
         <ToastContainer position="top-center" autoClose={3000} />

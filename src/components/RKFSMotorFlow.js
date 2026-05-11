@@ -1715,6 +1715,8 @@ const clickSweep = (e, run) => {
                 src={require(`../assets/rkfs/4Series/1${label}.png`)}
                 alt={`${label} Series`}
                 className="w-full rounded-xl"
+                loading="lazy"
+                decoding="async"
               />
               <p className="text-center mt-2 font-semibold text-gray-700">
                 {label} Series
@@ -1746,7 +1748,7 @@ const clickSweep = (e, run) => {
                   onClick={(e) => clickSweep(e, () => update("rkfsDesign", design))}
                   className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
                 >
-                  <img src={imgSrc} alt={design} className="w-full rounded-xl" />
+                  <img src={imgSrc} alt={design} className="w-full rounded-xl" loading="lazy" decoding="async" />
                   <p className="text-center mt-2 font-semibold">{design}</p>
                 </button>
               );
@@ -1913,7 +1915,7 @@ const clickSweep = (e, run) => {
                           ${isClickable ? 'hover:-translate-y-2 cursor-pointer' : 'opacity-70 cursor-not-allowed'}`}
               title={key}
             >
-              <img src={img} alt={`${rkfsSeries}${key}`} className="w-full rounded-t-2xl" />
+              <img src={img} alt={`${rkfsSeries}${key}`} className="w-full rounded-t-2xl" loading="lazy" decoding="async" />
               <p className="text-center py-2 font-semibold text-gray-800">{key}</p>
             </button>
           );
@@ -1955,7 +1957,7 @@ const clickSweep = (e, run) => {
                 onClick={(e) => clickSweep(e, () => update("rkfsMotorType", type))}
                 className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
               >
-                <img src={img} alt={type} className="w-full rounded-t-xl" />
+                <img src={img} alt={type} className="w-full rounded-t-xl" loading="lazy" decoding="async" />
                 <p className="text-center py-2 font-semibold text-gray-800">
                   {type}
                 </p>
@@ -2290,6 +2292,7 @@ if (rkfsInputSel === 'INPUT Shaft') {
             src={mountingImageMap[rkfsSeries]}
             alt="Mounting"
             loading="lazy"
+            decoding="async"
             onClick={() => document.getElementById('rkfs-mount-modal')?.showModal()}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -2610,7 +2613,7 @@ if (rkfsInputSel === 'INPUT Shaft') {
                   onClick={(e) => clickSweep(e, () => update("rkfsPosition", pos))}
                   className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
                 >
-                  <img src={img} alt={`T${pos}`} className="w-full rounded-t-xl" />
+                  <img src={img} alt={`T${pos}`} className="w-full rounded-t-xl" loading="lazy" decoding="async" />
                   <p className="text-center py-2 font-semibold text-gray-800">{pos}°</p>
                 </button>
               ))}
@@ -2651,7 +2654,7 @@ if (rkfsInputSel === 'INPUT Shaft') {
                   onClick={(e) => clickSweep(e, () => update("rkfsPositionSub", sub))}
                   className="rounded-xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition duration-300 bg-white"
                 >
-                  <img src={img} alt={`C${sub}`} className="w-full rounded-t-xl" />
+                  <img src={img} alt={`C${sub}`} className="w-full rounded-t-xl" loading="lazy" decoding="async" />
                   <p className="text-center py-2 font-semibold text-gray-800">{sub}</p>
                 </button>
               ))}
