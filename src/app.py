@@ -1762,8 +1762,8 @@ def health():
 # =========================
 # ENV vars ที่ต้องตั้งใน Render:
 #   SUPABASE_URL        = https://ldawndfthgswudmolnrb.supabase.co
-#   SUPABASE_SECRET_KEY = sb_secret_BtlbdADuiZ6p8BTfFri_HA_9VnJeyZ_
-#   DASHBOARD_PASSWORD_HASH = (bcrypt hash ของ Stephen442)
+#   SUPABASE_SECRET_KEY = (ใส่ใน Render ENV เท่านั้น ห้ามใส่ในโค้ด)
+#   DASHBOARD_TOKEN_SECRET = (ตั้งค่าสุ่มอะไรก็ได้)
 # =========================
 
 import json as _json
