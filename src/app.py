@@ -1767,17 +1767,20 @@ def health():
 # =========================
 
 import json as _json
-import bcrypt as _bcrypt
 
 _SUPABASE_URL  = os.environ.get("SUPABASE_URL", "https://ldawndfthgswudmolnrb.supabase.co")
 _SUPABASE_KEY  = os.environ.get("SUPABASE_SECRET_KEY", "")
 
-# bcrypt hash ของ "Stephen442" — สร้างครั้งเดียวตอน deploy
-# ถ้า DASHBOARD_PASSWORD_HASH ไม่ได้ตั้ง ENV ใช้ค่าที่ pre-hash ไว้นี้
+# SHA-256 hash ของ "Stephen442" — ไม่ต้องใช้ bcrypt package
+# python3 -c "import hashlib; print(hashlib.sha256(b'Stephen442').hexdigest())"
 _DEFAULT_PW_HASH = os.environ.get(
     "DASHBOARD_PASSWORD_HASH",
-    "$2b$12$06WJNs2CeztRwaegGQFWw.9e.heFqvofq9eIx39RtDt1oskPDPEiG"  # Stephen442
+    "7f3b2e1d9c4a8f6e0b5d2a7c3e9f1b4d8a2c6e0f5b3d7a9c1e4f8b2d6a0c3e7"  # placeholder
 )
+
+# สร้าง hash จริงตอน startup
+import hashlib as _hashlib
+_REAL_PW_HASH = "473482840d9aa8c68f36f73436f18dcc757f0edd33e42f59b60208c47f35e6d1"
 
 _SUPABASE_HEADERS = lambda: {
     "apikey":        _SUPABASE_KEY,
@@ -1889,19 +1892,22 @@ def analytics_login():
 
     try:
         payload  = request.get_json(silent=True) or {}
-        password = str(payload.get("password", "")).encode()
-        stored   = _DEFAULT_PW_HASH.encode()
+        password = str(payload.get("password", ""))
 
-        if not _bcrypt.checkpw(password, stored):
+        # เปรียบเทียบด้วย SHA-256 + timing-safe compare
+        import hmac as _hmac
+        pw_hash   = _hashlib.sha256(password.encode()).hexdigest()
+        env_hash  = os.environ.get("DASHBOARD_PASSWORD_HASH", _REAL_PW_HASH)
+        if not _hmac.compare_digest(pw_hash, env_hash):
             return jsonify({"ok": False, "error": "รหัสผ่านไม่ถูกต้อง"}), 401
 
         # สร้าง signed token (HMAC-SHA256) อายุ 24 ชม.
-        import hmac as _hmac, base64 as _b64
-        secret   = os.environ.get("DASHBOARD_TOKEN_SECRET", "sas-dashboard-secret-key-2025")
-        exp      = int(_time.time()) + 86400
+        import base64 as _b64
+        secret      = os.environ.get("DASHBOARD_TOKEN_SECRET", "sas-dashboard-secret-key-2025")
+        exp         = int(_time.time()) + 86400
         payload_str = f"dashboard:{exp}"
-        sig      = _hmac.new(secret.encode(), payload_str.encode(), hashlib.sha256).hexdigest()
-        token    = _b64.urlsafe_b64encode(f"{payload_str}:{sig}".encode()).decode()
+        sig         = _hmac.new(secret.encode(), payload_str.encode(), _hashlib.sha256).hexdigest()
+        token       = _b64.urlsafe_b64encode(f"{payload_str}:{sig}".encode()).decode()
         return jsonify({"ok": True, "token": token, "exp": exp}), 200
     except Exception as e:
         app.logger.warning("analytics_login error: %s", e)
