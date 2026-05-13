@@ -666,6 +666,283 @@ function ImageZoom({ src, onClose }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// DC Gear Motor DataSheet PDF Generator (same pattern as SRVDataSheetButton)
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadJsPDFDC() {
+  if (window.jspdf && window.jspdf.jsPDF) return window.jspdf.jsPDF;
+  if (window.jsPDF) return window.jsPDF;
+  await new Promise((res) => {
+    if (document.getElementById('jspdf-cdn')) { res(); return; }
+    const s = document.createElement('script');
+    s.id = 'jspdf-cdn';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = res; document.head.appendChild(s);
+  });
+  await new Promise((res) => {
+    if (document.getElementById('jspdf-autotable-cdn')) { res(); return; }
+    const s = document.createElement('script');
+    s.id = 'jspdf-autotable-cdn';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+    s.onload = res; document.head.appendChild(s);
+  });
+  return window.jspdf?.jsPDF || window.jsPDF;
+}
+
+// ── DC Gear Motor catalog data from SAS DC Gear Motor datasheet ───────────────
+// Key: motorPrefix  Value: { caseSize (mm), maxTorqueGearMNm, gearRatios, gearheadTypes }
+const DC_CATALOG_DATA = {
+  'S2D10':   { caseSize:'60mm',  maxOutputTorqueNm:null, gearPrefix:'2GN', gearRatios:'3~200', gearheadTypes:'KK (Round Shaft)', brushLife:2000 },
+  'S2D15':   { caseSize:'60mm',  maxOutputTorqueNm:null, gearPrefix:'2GN', gearRatios:'3~200', gearheadTypes:'KK (Round Shaft)', brushLife:2000 },
+  'S3D25':   { caseSize:'70mm',  maxOutputTorqueNm:null, gearPrefix:'3GN', gearRatios:'3~200', gearheadTypes:'KK (Round Shaft)', brushLife:2000 },
+  'S4D25':   { caseSize:'80mm',  maxOutputTorqueNm:null, gearPrefix:'4GN', gearRatios:'3~200', gearheadTypes:'KK / RC / RT',      brushLife:2000 },
+  'S4D40':   { caseSize:'80mm',  maxOutputTorqueNm:null, gearPrefix:'4GN', gearRatios:'3~200', gearheadTypes:'KK / RC / RT',      brushLife:2000 },
+  'S5D40':   { caseSize:'90mm',  maxOutputTorqueNm:null, gearPrefix:'5GU', gearRatios:'3~200', gearheadTypes:'K / KB / RC / RT',  brushLife:2000 },
+  'S5D60':   { caseSize:'90mm',  maxOutputTorqueNm:null, gearPrefix:'5GU', gearRatios:'3~200', gearheadTypes:'K / KB / RC / RT',  brushLife:2000 },
+  'S5D90':   { caseSize:'90mm',  maxOutputTorqueNm:null, gearPrefix:'5GU', gearRatios:'3~200', gearheadTypes:'K / KB / RC / RT',  brushLife:2000 },
+  'S5D120':  { caseSize:'90mm',  maxOutputTorqueNm:null, gearPrefix:'5GU', gearRatios:'3~200', gearheadTypes:'K / KB / RC / RT',  brushLife:2000 },
+  'S55D250': { caseSize:'90mm',  maxOutputTorqueNm:null, gearPrefix:'5GU', gearRatios:'3~200', gearheadTypes:'K / KB / RC / RT',  brushLife:2000 },
+  'S6D250':  { caseSize:'104mm', maxOutputTorqueNm:null, gearPrefix:'6GU', gearRatios:'3~200', gearheadTypes:'KB',                brushLife:2000 },
+};
+
+// Torque table per gearhead size (max output torque N·m from catalog gear-torque tables)
+// Source: SAS DC Gear Motor Catalog — Gear Motor Torque Table
+const DC_GEARHEAD_MAX_TORQUE = {
+  '2GN': 3.0,   // 10W/15W 60mm — ratio 200: ~3.0 N·m upside
+  '3GN': 5.0,   // 25W 70mm — ratio 200: ~5.0 N·m upside
+  '4GN': 8.0,   // 25W/40W 80mm — ratio 200: ~8.0 N·m upside
+  '5GN': 10.0,  // 40W 90mm (GN type) — ratio 200: ~10.0 N·m
+  '5GU': 100.0, // 40–120W 90mm (GU reinforced) — ratio 200: ~100 N·m upside
+  '6GU': 100.0, // 250W 104mm (GU reinforced) — ratio 200: ~100 N·m upside
+};
+
+async function generateDCDatasheetPDF(modelCode, allSpecRows, motorPrefix, voltage) {
+  const JsPDF = await loadJsPDFDC();
+  if (!JsPDF) throw new Error('Cannot load jsPDF');
+
+  const doc    = new JsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
+  const W      = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  let   y      = margin;
+
+  // Color palette (DC brand: deep navy + electric blue + teal accent)
+  const NAVY   = [10,  30,  80];
+  const BLUE   = [30, 100, 220];
+  const TEAL   = [0,  170, 150];
+  const LGRAY  = [240, 242, 246];
+  const DGRAY  = [60,  70,  80];
+  const WHITE  = [255, 255, 255];
+
+  const dateStr = new Date().toLocaleDateString('en-GB', { year:'numeric', month:'long', day:'numeric' });
+
+  // ── Header Banner ──
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, W, 28, 'F');
+  doc.setFillColor(...BLUE);
+  doc.rect(0, 28, W, 3, 'F');
+
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+  doc.text('SAS TRANSMISSION', margin, 11);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text('DC Gear Motor  -  Technical Data Sheet', margin, 19);
+  doc.setFontSize(7.5);
+  doc.text('Date: ' + dateStr, margin, 26);
+  y = 38;
+
+  // ── Model Code Box ──
+  doc.setFillColor(...LGRAY);
+  doc.roundedRect(margin, y, W - margin * 2, 16, 3, 3, 'F');
+  doc.setFillColor(...BLUE);
+  doc.roundedRect(margin, y, 42, 16, 3, 3, 'F');
+
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+  doc.text('MODEL CODE', margin + 2, y + 5);
+  doc.setFontSize(9.5);
+  doc.text(modelCode || '-', margin + 21, y + 12, { align:'center' });
+
+  doc.setTextColor(...NAVY);
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+  doc.text('DC GEAR MOTOR SERIES', margin + 48, y + 7);
+  doc.setTextColor(...DGRAY);
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+  doc.text('Synergy Asia Solution Co.,Ltd.  |  HIGH QUALITY, BETTER VALUE  |  WWW.MOTORSAS.COM', margin + 48, y + 13.5);
+  y += 22;
+
+  // ── Motor Specifications Table ──
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text('SELECTED CONFIGURATION', margin, y + 5);
+  y += 9;
+
+  // Build clean rows — filter out section headers for the table, keep them as separators
+  const motorTableRows = [];
+  let currentSection = '';
+  for (const row of allSpecRows) {
+    const [k, v, highlight] = row;
+    if (k.startsWith('—') && k.endsWith('—')) {
+      currentSection = k.replace(/—/g,'').trim();
+    } else {
+      motorTableRows.push([k, String(v || '—')]);
+    }
+  }
+
+  doc.autoTable({
+    startY: y,
+    head: [['Parameter', 'Value']],
+    body: motorTableRows,
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 8.5, cellPadding: 3, lineColor: [220, 222, 228], lineWidth: 0.3 },
+    headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle:'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: [248, 249, 252] },
+    columnStyles: {
+      0: { fontStyle:'bold', textColor: DGRAY, cellWidth: 52 },
+      1: { textColor: [20, 20, 30] },
+    },
+  });
+
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Motor Performance Data from Catalog ──
+  const spec = DC_MOTOR_SPECS[`${motorPrefix}-${voltage}`];
+  if (spec) {
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text(`MOTOR PERFORMANCE DATA  (from SAS DC Gear Motor Catalog)`, margin, y);
+    y += 5;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Parameter', 'No-Load', 'Load (Rated)']],
+      body: [
+        ['Speed (r/min)',  String(spec.noLoadSpeed),  String(spec.loadSpeed)],
+        ['Current (A)',    String(spec.noLoadCurrent), String(spec.loadCurrent)],
+        ['Torque (mN·m)', '—',                        String(spec.loadTorque)],
+      ],
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8.5, cellPadding: 3, lineColor: [220, 222, 228], lineWidth: 0.3 },
+      headStyles: { fillColor: BLUE, textColor: WHITE, fontStyle:'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+      columnStyles: {
+        0: { fontStyle:'bold', textColor: DGRAY, cellWidth: 52 },
+        1: { textColor: [20, 20, 30] },
+        2: { textColor: [20, 20, 30] },
+      },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── DC Gear Motor General Specifications ──
+  if (y < 220) {
+    const catData = motorPrefix ? DC_CATALOG_DATA[motorPrefix] : null;
+    const gearPrefix = catData?.gearPrefix || '';
+    const maxTorque  = DC_GEARHEAD_MAX_TORQUE[gearPrefix] || '—';
+
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text('DC GEAR MOTOR — GENERAL SPECIFICATIONS', margin, y);
+    y += 5;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Specification', 'Value']],
+      body: [
+        ['Motor Type',            'DC Brushed PM Motor'],
+        ['Frame / Case Size',     catData?.caseSize || '—'],
+        ['Rated Speed',           '3000 rpm (synchronous)'],
+        ['Available Voltage',     '12 VDC / 24 VDC / 90 VDC'],
+        ['Gear Type (GN)',        'General Helical Gear'],
+        ['Gear Type (GU)',        'Reinforced Helical Gear'],
+        ['Gear Ratio Range',      catData?.gearRatios ? `1 : ${catData.gearRatios}` : '1 : 3~200'],
+        ['Gearhead Types',        catData?.gearheadTypes || 'K / KK / KB / RC / RT'],
+        ['Max Output Torque',     maxTorque !== '—' ? `≤ ${maxTorque} N·m (upside, ratio 200)` : '—'],
+        ['Brush Life',            `${spec?.brushLife?.toLocaleString() || 2000} H`],
+        ['Insulation Class',      'Class B (130°C)'],
+        ['Use Temperature',       '-10°C ~ +40°C (Non freezing)'],
+        ['Use Humidity',          '≤ 85% (Place without dew)'],
+        ['Lead Wire Standard',    '300 mm ± 10, UL1015, AWG16'],
+        ['Protection',            'Standard (refer to catalog)'],
+        ['Warranty',              '18 Months after delivery'],
+      ],
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8.5, cellPadding: 3, lineColor: [220, 222, 228], lineWidth: 0.3 },
+      headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle:'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [248, 249, 252] },
+      columnStyles: {
+        0: { fontStyle:'bold', textColor: DGRAY, cellWidth: 68 },
+        1: { textColor: [20, 20, 30] },
+      },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── Model Code Explanation ──
+  if (y < 250) {
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text('MODEL CODE EXPLANATION', margin, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...DGRAY);
+    const notes = [
+      'Motor code:   S[frame]D[power]-[voltage][gearSuffix]-30S',
+      'Example: S5D60-24GU-30S  →  Frame 5 (90mm), 60W, 24VDC, GU gear, 3000rpm',
+      'Gearhead:   [size]GN[ratio]K  or  [size]GU[ratio][type]',
+      'Example: 5GU30K  →  Frame 5, GU type, ratio 1:30, K shaft type',
+      'Gear ratio range: 3, 3.6, 5, 6, 7.5, 9, 10, 12.5, 15, 18, 20, 25, 30, 36, 40, 50, 60, 75, 90, 100, 120, 150, 180, 200',
+    ];
+    notes.forEach(n => { doc.text(n, margin + 2, y); y += 5; });
+  }
+
+  // ── Footer ──
+  const pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(...NAVY);
+  doc.rect(0, pageH - 18, W, 18, 'F');
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+  doc.text('Synergy Asia Solution Co.,Ltd.  |  DC Gear Motor Series  |  WWW.MOTORSAS.COM', margin, pageH - 11);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Tel: 081-921-6225  |  Warranty: 18 Months after delivery', margin, pageH - 5);
+  doc.setTextColor(160, 185, 215);
+  doc.text('Data from SAS DC Gear Motor Catalog. Specs subject to change without notice.', W - margin, pageH - 5, { align:'right' });
+
+  doc.save((modelCode || 'DC_GearMotor_DataSheet') + '.pdf');
+}
+
+// DCDataSheetButton — same pattern as SRVDataSheetButton
+function DCDataSheetButton({ modelCode, allSpecRows, motorPrefix, voltage, dark, T }) {
+  const [status, setStatus] = React.useState('idle');
+
+  const handleClick = async () => {
+    if (status === 'loading') return;
+    setStatus('loading');
+    try {
+      await generateDCDatasheetPDF(modelCode, allSpecRows, motorPrefix, voltage);
+      setStatus('done');
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch (err) {
+      console.error('DC PDF error:', err);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
+    }
+  };
+
+  const label = { idle:'📄 Data Sheet', loading:'⏳ กำลังสร้าง...', done:'✅ ดาวน์โหลดแล้ว', error:'⚠️ ลองใหม่' }[status];
+  const bg     = status === 'error' ? 'rgba(220,50,50,0.18)' : 'rgba(30,100,220,0.12)';
+  const border = status === 'error' ? '1px solid rgba(220,50,50,0.4)' : '1px solid rgba(30,100,220,0.3)';
+  const color  = status === 'error' ? '#e05050' : '#6090e0';
+
+  return (
+    <button type="button" onClick={handleClick} disabled={status === 'loading'}
+      style={{ width:'100%', padding:'10px 0', borderRadius:10, background:bg, border, color,
+        fontWeight:600, fontSize:13, cursor:'pointer', transition:'opacity 0.15s',
+        opacity: status === 'loading' ? 0.6 : 1 }}>
+      {label}
+    </button>
+  );
+}
+
 // DCSummaryPage
 // ═════════════════════════════════════════════════════════════════════════════
 function DCSummaryPage({ state, modelCode, onConfirm, onBack }) {
@@ -923,6 +1200,14 @@ function DCSummaryPage({ state, modelCode, onConfirm, onBack }) {
                   boxShadow:`0 4px 20px ${T.indigo}40`}}>
                 📦 รับไฟล์ 3D (.STEP)
               </button>
+              <DCDataSheetButton
+                modelCode={modelCode}
+                allSpecRows={allSpecRows}
+                motorPrefix={dcMotor}
+                voltage={dcVoltage}
+                dark={dark}
+                T={T}
+              />
             </div>
           </div>
         </div>

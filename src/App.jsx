@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { productList, renderHypoidGearFlow, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderServoFlow, generateServoModelCode, renderHBGearFlow, generateHBModelCode } from './components/MotorFlows.js';
+import { productList, renderHypoidGearFlow, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderHBGearFlow, generateHBModelCode } from './components/MotorFlows.js';
 import { renderSRVFlow } from './components/SRVWormGearFlow.js';
+import { renderServoFlow, generateServoModelCode, mapServoGlbFilename } from './components/ServoMotorFlow.js';
 import { renderBLDCGearFlow, generateBLDCModelCode } from './components/BLDCGearMotorFlow.js';
 import { renderDCGearFlow, generateDCModelCode } from './components/DCGearMotorFlow.js';
 import { renderRKFSFlow } from './components/RKFSMotorFlow.js';
@@ -1580,7 +1581,11 @@ const objectUrl = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
   a.href = objectUrl;
-  a.download = `${selectedModel}.STEP`; // ใช้ชื่อที่ผู้ใช้คุ้น (ModelCode.STEP)
+  // Servo Motor: ใช้ชื่อไฟล์จาก mapServoGlbFilename ให้ตรงกับ R2
+  const downloadName = selectedProduct === 'Servo Motor'
+    ? `${mapServoGlbFilename(selectedModel)}.STEP`
+    : `${selectedModel}.STEP`;
+  a.download = downloadName;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1645,6 +1650,14 @@ const handleRKFSRequestQuote = (summary) => {
 
 const getFileUrl = () => {
   if (!selectedModel) return '#';
+
+  // 👉 Servo Motor — ใช้ mapServoGlbFilename แปลง model code → ชื่อไฟล์ R2
+  // SMH60-A04-B30-CE42 → SMH60A04B30CE → SMH60A04B30CE.STEP
+  if (selectedProduct === 'Servo Motor') {
+    const fileName = mapServoGlbFilename(selectedModel);
+    if (fileName) return `${R2_BASE}/${encodeURIComponent(`${fileName}.STEP`)}`;
+    return '#';
+  }
 
   // 👉 RKFS ใช้ placeholder ทั้ง Ratio=XXX และ Mounting=XX
   if (selectedProduct === 'RKFS Series') {
