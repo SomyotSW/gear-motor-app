@@ -185,7 +185,7 @@ function useIsMobile() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Image Card — fluid, fills grid cell. Hover: scale up + glow. Tap: press down. */
-function ImgCard({ img, label, active, onClick }) {
+function ImgCard({ img, label, desc, active, onClick }) {
   return (
     <motion.button
       type="button"
@@ -232,6 +232,15 @@ function ImgCard({ img, label, active, onClick }) {
       }}>
         {label}
       </div>
+      {desc && (
+        <div style={{
+          width: '100%', textAlign: 'center', padding: '0 4px 6px',
+          fontSize: 9, color: active ? 'rgba(0,229,160,0.75)' : 'rgba(255,255,255,0.35)',
+          lineHeight: 1.35, flexShrink: 0,
+        }}>
+          {desc}
+        </div>
+      )}
       {active && (
         <span style={{
           position: 'absolute', top: 4, right: 4,
@@ -246,7 +255,7 @@ function ImgCard({ img, label, active, onClick }) {
 }
 
 /** Pill Button — 3D raised. Hover: lift + brighten. Tap: press. */
-function PillBtn({ label, active, onClick, wide = false }) {
+function PillBtn({ label, desc, active, onClick, wide = false }) {
   return (
     <motion.button
       type="button"
@@ -259,8 +268,8 @@ function PillBtn({ label, active, onClick, wide = false }) {
       whileTap={{ scale: 0.9, y: 2, transition: { type: 'spring', stiffness: 420, damping: 22 } }}
       style={{
         minWidth: wide ? 90 : 56,
-        height: 34,
-        padding: '0 10px',
+        height: desc ? 'auto' : 34,
+        padding: desc ? '6px 10px' : '0 10px',
         borderRadius: 8,
         border: active ? '2px solid #00e5a0' : '1.5px solid rgba(255,255,255,0.18)',
         background: active
@@ -275,15 +284,62 @@ function PillBtn({ label, active, onClick, wide = false }) {
         letterSpacing: '0.3px',
         flexShrink: 0,
         willChange: 'transform',
+        display: 'flex', flexDirection: 'column', alignItems: desc && wide ? 'flex-start' : 'center',
+        textAlign: 'left',
       }}
     >
-      {label}
+      <span>{label}</span>
+      {desc && <span style={{ fontSize: 9, fontWeight: 400, color: active ? 'rgba(0,229,160,0.7)' : 'rgba(255,255,255,0.35)', marginTop: 2, lineHeight: 1.35 }}>{desc}</span>}
     </motion.button>
   );
 }
 
-/** Section wrapper — supports flex (default) or CSS grid via `cols` prop */
-function Section({ step, title, note, children, cols }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// StepBar — แถบ Progress ด้านบน คลิก Step ที่ผ่านมาแล้วได้เลย
+// ─────────────────────────────────────────────────────────────────────────────
+const TOTAL_STEPS = 8;
+
+function StepBar({ currentStep, onJump }) {
+  const STEP_LABELS = ['Type','Size','Power','Ratio','Supply','Brake','Terminal','Lead'];
+  return (
+    <div style={{ display: 'flex', gap: 3, marginBottom: 14, overflowX: 'auto', paddingBottom: 2 }}>
+      {Array.from({ length: TOTAL_STEPS }, (_, i) => {
+        const stepNum  = i + 1;
+        const isDone   = stepNum < currentStep;
+        const isCur    = stepNum === currentStep;
+        return (
+          <div key={i}
+            onClick={isDone && onJump ? () => onJump(stepNum) : undefined}
+            title={isDone ? `กลับ Step ${stepNum}: ${STEP_LABELS[i]}` : undefined}
+            style={{
+              flex: '0 0 auto',
+              minWidth: 34,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              cursor: isDone ? 'pointer' : 'default',
+            }}
+          >
+            <div style={{
+              width: '100%', height: isDone ? 5 : 3, borderRadius: 3,
+              background: isDone ? '#00e5a0' : isCur ? '#facc15' : 'rgba(255,255,255,0.15)',
+              transition: 'all 0.25s',
+            }} />
+            <span style={{
+              fontSize: 8, fontWeight: isDone || isCur ? 700 : 400,
+              color: isDone ? '#00e5a0' : isCur ? '#facc15' : 'rgba(255,255,255,0.25)',
+              letterSpacing: '0.2px', whiteSpace: 'nowrap',
+            }}>
+              {STEP_LABELS[i]}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Section wrapper — supports flex (default) or CSS grid via `cols` prop.
+ *  Now accepts `onJump` for StepBar + `subtitle` for step description. */
+function Section({ step, title, subtitle, note, children, cols, onJump, currentStep }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -291,7 +347,11 @@ function Section({ step, title, note, children, cols }) {
       transition={{ duration: 0.3 }}
       style={{ marginBottom: 24 }}
     >
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
+      {/* StepBar — แสดงทุก Section เฉพาะ Section แรก (step===1) ถึงจะ render แถบ */}
+      {step === 1 && onJump !== undefined && (
+        <StepBar currentStep={currentStep || 1} onJump={onJump} />
+      )}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: subtitle ? 4 : 12 }}>
         {step && (
           <span style={{
             background: 'linear-gradient(135deg,#00e5a0,#00b880)',
@@ -304,13 +364,14 @@ function Section({ step, title, note, children, cols }) {
         <span style={{ color: '#e8eaf0', fontWeight: 700, fontSize: 13, letterSpacing: '0.5px' }}>{title}</span>
         {note && <span style={{ color: '#4a5060', fontSize: 10 }}>{note}</span>}
       </div>
+      {subtitle && (
+        <p style={{ color: 'rgba(255,255,255,0.42)', fontSize: 11, margin: '0 0 10px', lineHeight: 1.45 }}>{subtitle}</p>
+      )}
       {cols ? (
-        /* CSS Grid — fills full width, equal columns */
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 8 }}>
           {children}
         </div>
       ) : (
-        /* Flex wrap — for pill buttons */
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {children}
         </div>
@@ -375,6 +436,502 @@ const SAC_SALE_PERSONS = [
   { abbr: 'TL',  name: 'Ms.Tanawee L.(TL)',      position: 'Sale Supervisor',               phone: '092-2715372' },
   { abbr: 'NR',  name: 'Ms.Nantida R.(NR)',      position: 'Sale Exclusive',                phone: '098-2711425' },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SAS Small AC Gear Motor DataSheet PDF Generator
+// Full catalog data: Size Tables, Torque, Weight, Shaft Specs
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Complete Size Table from Catalog (all gearbox sizes) ─────────────────────
+// key: `${size}-${powerW}` (Standard type, 50Hz)
+// fields: A, D, E, F, G, H, J, K, L, M, X, Y, Z, S, P, Q, W, T, weightKg
+const SAC_SIZE_TABLE = {
+  // 1# Gearbox — Shaft Ø18mm
+  '18-100-std':   { A:254, D:'40(50)', E:'110(140)', F:'135(120)', G:'65(120)', H:9,  J:16,  K:'50(39.5)', L:'10(12)', M:130.5, X:'143(/)', Y:'88.5(2)', Z:100, S:18, P:30, Q:27, W:5, T:20.2, weightKg:5.7 },
+  '18-100-light': { A:254, D:'40(50)', E:'110(140)', F:'135(120)', G:'65(120)', H:9,  J:16,  K:'50(39.5)', L:'10(12)', M:130.5, X:'143(/)', Y:'88.5(2)', Z:100, S:18, P:30, Q:27, W:5, T:20.2, weightKg:5.7 },
+  '18-200-std':   { A:279, D:'40(50)', E:'110(140)', F:'135(120)', G:'65(120)', H:9,  J:16,  K:'50(39.5)', L:'10(12)', M:130.5, X:'143(/)', Y:'88.5(2)', Z:100, S:18, P:30, Q:27, W:5, T:20.2, weightKg:7.0 },
+  '18-200-light': { A:279, D:'40(50)', E:'110(140)', F:'135(120)', G:'65(120)', H:9,  J:16,  K:'50(39.5)', L:'10(12)', M:130.5, X:'143(/)', Y:'88.5(2)', Z:100, S:18, P:30, Q:27, W:5, T:20.2, weightKg:7.0 },
+
+  // 2# Gearbox — Shaft Ø22mm
+  '22-100-std':   { A:281, D:'65(148)', E:'130(185)', F:'158(175)', G:'90(165)', H:12, J:17.5, K:'60(48)', L:'13(12)', M:130.5, X:'161(/)', Y:'97.5(3)', Z:100, S:22, P:40, Q:35, W:7, T:25, weightKg:7.30 },
+  '22-100-light': { A:341, D:'65(148)', E:'130(185)', F:'158(175)', G:'90(165)', H:12, J:33.5, K:'60(48)', L:'13(12)', M:130.5, X:'161(/)', Y:'97.5(3)', Z:100, S:22, P:40, Q:35, W:7, T:25, weightKg:12.0 },
+  '22-200-std':   { A:306, D:'65(148)', E:'130(185)', F:'158(175)', G:'90(165)', H:12, J:17.5, K:'60(48)', L:'13(12)', M:130.5, X:'161(/)', Y:'97.5(3)', Z:100, S:22, P:40, Q:35, W:7, T:25, weightKg:9.00 },
+  '22-200-light': { A:306, D:'65(148)', E:'130(185)', F:'158(175)', G:'90(165)', H:12, J:17.5, K:'60(48)', L:'13(12)', M:130.5, X:'161(/)', Y:'97.5(3)', Z:100, S:22, P:40, Q:35, W:7, T:25, weightKg:9.00 },
+  '22-400-std':   { A:320, D:'65(148)', E:'130(185)', F:'158(175)', G:'90(165)', H:12, J:17.5, K:'60(48)', L:'13(12)', M:146,   X:'168(/)', Y:'97.5(3)', Z:114, S:22, P:40, Q:35, W:7, T:25, weightKg:11.5 },
+  '22-400-light': { A:320, D:'65(148)', E:'130(185)', F:'158(175)', G:'90(165)', H:12, J:17.5, K:'60(48)', L:'13(12)', M:146,   X:'168(/)', Y:'97.5(3)', Z:114, S:22, P:40, Q:35, W:7, T:25, weightKg:11.5 },
+  '22-750-light': { A:337, D:'65(148)', E:'130(185)', F:'158(175)', G:'90(165)', H:12, J:17.5, K:'60(48)', L:'13(12)', M:172,   X:'168(/)', Y:'97.5(3)', Z:126, S:22, P:40, Q:35, W:7, T:25, weightKg:13.5 },
+
+  // 3# Gearbox — Shaft Ø28mm
+  '28-200-std':   { A:339, D:'90(170)', E:'140(220)', F:'178(205)', G:'120(195)', H:12, J:23, K:'68(58)', L:'17(13)', M:130.5, X:'184(/)', Y:'116(3)', Z:100, S:28, P:45, Q:40, W:7, T:31.1, weightKg:9.00 },
+  '28-200-light': { A:401, D:'90(170)', E:'140(220)', F:'178(205)', G:'120(195)', H:12, J:39, K:'68(58)', L:'17(13)', M:130.5, X:'184(/)', Y:'116(3)', Z:100, S:28, P:45, Q:40, W:7, T:31.1, weightKg:18.0 },
+  '28-400-std':   { A:352, D:'90(170)', E:'140(220)', F:'178(205)', G:'120(195)', H:12, J:23, K:'68(58)', L:'17(13)', M:146,   X:'184(/)', Y:'116(3)', Z:114, S:28, P:45, Q:40, W:7, T:31.1, weightKg:14.0 },
+  '28-400-light': { A:352, D:'90(170)', E:'140(220)', F:'178(205)', G:'120(195)', H:12, J:23, K:'68(58)', L:'17(13)', M:146,   X:'184(/)', Y:'116(3)', Z:114, S:28, P:45, Q:40, W:7, T:31.1, weightKg:14.0 },
+  '28-750-std':   { A:367, D:'90(170)', E:'140(220)', F:'178(205)', G:'120(195)', H:12, J:23, K:'68(58)', L:'17(13)', M:172,   X:'184(/)', Y:'116(3)', Z:126, S:28, P:45, Q:40, W:7, T:31.1, weightKg:16.0 },
+  '28-750-light': { A:367, D:'90(170)', E:'140(220)', F:'178(205)', G:'120(195)', H:12, J:23, K:'68(58)', L:'17(13)', M:172,   X:'184(/)', Y:'116(3)', Z:126, S:28, P:45, Q:40, W:7, T:31.1, weightKg:16.0 },
+  '28-1500-light':{ A:413, D:'90(170)', E:'140(220)', F:'178(205)', G:'120(195)', H:12, J:23, K:'68(58)', L:'17(13)', M:192,   X:'193(/)', Y:'116(3)', Z:137, S:28, P:45, Q:40, W:7, T:31.1, weightKg:25.0 },
+
+  // 4# Gearbox — Shaft Ø32mm
+  '32-400-std':   { A:456, D:'130(185)', E:'170(255)', F:'210(239)', G:'165(216)', H:13, J:47.5, K:'70(66.5)', L:'18(13)', M:130.5, X:'216(/)', Y:'138.5(3)', Z:100, S:32, P:55, Q:50, W:10, T:35.5, weightKg:28.0 },
+  '32-750-std':   { A:405, D:'130(185)', E:'170(255)', F:'210(239)', G:'165(216)', H:13, J:30.0, K:'70(66.5)', L:'18(13)', M:172,   X:'216(/)', Y:'138.5(3)', Z:126, S:32, P:55, Q:50, W:10, T:35.5, weightKg:28.0 },
+  '32-750-light': { A:405, D:'130(185)', E:'170(255)', F:'210(239)', G:'165(216)', H:13, J:30.0, K:'70(66.5)', L:'18(13)', M:172,   X:'216(/)', Y:'138.5(3)', Z:126, S:32, P:55, Q:50, W:10, T:35.5, weightKg:28.0 },
+  '32-1500-std':  { A:448, D:'130(185)', E:'170(255)', F:'210(239)', G:'165(216)', H:13, J:30.0, K:'70(66.5)', L:'18(13)', M:192,   X:'216(/)', Y:'138.5(3)', Z:137, S:32, P:55, Q:50, W:10, T:35.5, weightKg:36.0 },
+  '32-1500-light':{ A:448, D:'130(185)', E:'170(255)', F:'210(239)', G:'165(216)', H:13, J:30.0, K:'70(66.5)', L:'18(13)', M:192,   X:'216(/)', Y:'138.5(3)', Z:137, S:32, P:55, Q:50, W:10, T:35.5, weightKg:36.0 },
+
+  // 5# Gearbox — Shaft Ø40mm
+  '40-400-std':   { A:539, D:'150(230)', E:'210(310)', F:'265(277)', G:'203(255)', H:15, J:59, K:83, L:'20(18)', M:146, X:'255(/)', Y:'160(5)', Z:114, S:40, P:65, Q:60, W:10, T:43.5, weightKg:46.0 },
+  '40-750-std':   { A:455, D:'150(230)', E:'210(310)', F:'265(277)', G:'203(255)', H:15, J:36, K:83, L:'20(18)', M:172, X:'255(/)', Y:'160(5)', Z:126, S:40, P:65, Q:60, W:10, T:43.5, weightKg:42.5 },
+  '40-750-light': { A:555, D:'150(230)', E:'210(310)', F:'265(277)', G:'203(255)', H:15, J:59, K:83, L:'20(18)', M:172, X:'255(/)', Y:'160(5)', Z:126, S:40, P:65, Q:60, W:10, T:43.5, weightKg:50.0 },
+  '40-1500-std':  { A:498, D:'150(230)', E:'210(310)', F:'265(277)', G:'203(255)', H:15, J:36, K:83, L:'20(18)', M:192, X:'255(/)', Y:'160(5)', Z:137, S:40, P:65, Q:60, W:10, T:43.5, weightKg:52.0 },
+  '40-1500-light':{ A:498, D:'150(230)', E:'210(310)', F:'265(277)', G:'203(255)', H:15, J:36, K:83, L:'20(18)', M:192, X:'255(/)', Y:'160(5)', Z:137, S:40, P:65, Q:60, W:10, T:43.5, weightKg:52.0 },
+  '40-2200-std':  { A:518, D:'150(230)', E:'210(310)', F:'265(277)', G:'203(255)', H:15, J:36, K:83, L:'20(18)', M:192, X:'255(/)', Y:'160(5)', Z:137, S:40, P:65, Q:60, W:10, T:43.5, weightKg:58.0 },
+  '40-3700-std':  { A:548, D:'150(230)', E:'210(310)', F:'265(277)', G:'203(255)', H:15, J:36, K:83, L:'20(18)', M:213, X:'255(/)', Y:'160(5)', Z:160, S:40, P:65, Q:60, W:10, T:43.5, weightKg:62.0 },
+
+  // 6# Gearbox — Shaft Ø50mm
+  '50-1500-std':  { A:555, D:'170(280)', E:'265(390)', F:'335(367)', G:'238(342)', H:18, J:51, K:'97(92)', L:25, M:192, X:'312(/)', Y:'200(5)', Z:137, S:50, P:80, Q:75, W:14, T:54, weightKg:94.0 },
+  '50-2200-std':  { A:575, D:'170(280)', E:'265(390)', F:'335(367)', G:'238(342)', H:18, J:51, K:'97(92)', L:25, M:192, X:'312(/)', Y:'200(5)', Z:137, S:50, P:80, Q:75, W:14, T:54, weightKg:97.0 },
+  '50-3700-std':  { A:605, D:'170(280)', E:'265(390)', F:'335(367)', G:'238(342)', H:18, J:51, K:'97(92)', L:25, M:213, X:'312(/)', Y:'200(5)', Z:160, S:50, P:80, Q:75, W:14, T:54, weightKg:98.0 },
+};
+
+// Helper: get size table row
+function getSizeRow(size, power, isLight) {
+  const typeKey = isLight ? 'light' : 'std';
+  return SAC_SIZE_TABLE[`${size}-${power}-${typeKey}`]
+      || SAC_SIZE_TABLE[`${size}-${power}-std`]
+      || null;
+}
+
+// Output Torque table (kg.m, 50Hz Standard) — from catalog
+const SAC_OUTPUT_TORQUE_DB = {
+  '18-100-3':0.20,'18-100-5':0.30,'18-100-10':0.60,'18-100-15':0.80,'18-100-20':1.10,'18-100-25':1.40,'18-100-30':1.70,'18-100-40':2.30,'18-100-45':2.50,'18-100-50':2.80,
+  '18-100-60':3.40,'18-100-70':3.40,'18-100-80':3.40,'18-100-90':3.40,'18-100-100':3.40,'18-100-120':3.40,'18-100-140':3.40,'18-100-160':3.40,'18-100-180':3.40,'18-100-200':3.40,
+  '18-200-3':0.30,'18-200-5':0.60,'18-200-10':1.10,
+  '22-100-60':3.40,'22-100-70':3.90,'22-100-80':4.50,'22-100-90':5.10,'22-100-100':5.60,'22-100-120':6.80,'22-100-140':7.90,'22-100-160':9.00,'22-100-180':10.1,'22-100-200':11.3,
+  '22-200-15':1.50,'22-200-20':2.00,'22-200-25':2.50,'22-200-30':3.00,'22-200-40':4.10,'22-200-45':4.60,'22-200-50':5.10,'22-200-60':6.10,'22-200-70':7.10,'22-200-80':8.10,'22-200-90':9.10,
+  '22-200-100':10.1,'22-200-120':11.6,'22-200-140':11.6,'22-200-160':11.6,'22-200-180':11.6,'22-200-200':11.6,
+  '22-400-3':0.70,'22-400-5':1.10,'22-400-10':2.30,
+  '22-400-15':3.00,'22-400-20':4.10,'22-400-25':5.10,'22-400-30':6.10,'22-400-40':8.10,'22-400-45':9.10,'22-400-50':10.1,'22-400-60':10.3,'22-400-70':10.3,'22-400-80':10.3,'22-400-90':10.3,
+  '28-200-100':10.1,'28-200-120':12.2,'28-200-140':14.2,'28-200-160':16.2,'28-200-180':18.3,'28-200-200':20.3,
+  '28-400-15':3.40,'28-400-20':4.50,'28-400-25':5.60,'28-400-30':6.10,'28-400-40':8.10,'28-400-45':9.10,'28-400-50':10.1,'28-400-60':12.2,'28-400-70':14.2,'28-400-80':16.2,'28-400-90':18.3,'28-400-100':20.3,
+  '28-750-3':1.30,'28-750-5':2.10,'28-750-10':4.20,'28-750-15':6.30,'28-750-20':8.50,'28-750-25':10.6,
+  '28-750-30':11.4,'28-750-40':15.2,'28-750-45':17.1,'28-750-50':19.0,'28-750-60':20.7,'28-750-70':20.7,'28-750-80':20.7,'28-750-90':20.7,'28-750-100':20.7,'28-750-120':20.7,
+  '32-400-100':20.3,'32-400-120':24.4,'32-400-140':28.4,'32-400-160':32.5,'32-400-180':36.5,'32-400-200':40.6,
+  '32-750-30':11.4,'32-750-40':15.2,'32-750-45':17.1,'32-750-50':19.0,'32-750-60':22.8,'32-750-70':26.6,'32-750-80':30.4,'32-750-90':34.3,'32-750-100':38.1,'32-750-120':45.7,
+  '32-1500-3':2.50,'32-1500-5':4.20,'32-1500-10':8.50,'32-1500-15':12.7,'32-1500-20':16.9,'32-1500-25':21.1,'32-1500-30':25.4,
+  '32-1500-40':30.4,'32-1500-45':34.3,'32-1500-50':38.1,'32-1500-60':45.7,'32-1500-70':51.8,'32-1500-80':51.8,'32-1500-90':51.8,'32-1500-100':51.8,
+  '40-750-120':48.0,'40-750-140':54.8,'40-750-160':61.7,'40-750-180':68.5,
+  '40-1500-40':30.4,'40-1500-45':34.3,'40-1500-50':38.1,'40-1500-60':45.7,'40-1500-70':53.3,'40-1500-80':60.9,'40-1500-90':68.5,'40-1500-100':76.1,
+  '40-2200-3':3.70,'40-2200-5':6.20,'40-2200-10':12.4,'40-2200-15':16.7,'40-2200-20':22.3,'40-2200-25':27.9,'40-2200-30':33.5,'40-2200-40':44.7,
+  '40-2200-45':50.2,'40-2200-50':55.8,'40-2200-60':67.0,'40-2200-70':78.1,'40-2200-80':83.7,
+  '40-3700-3':6.30,'40-3700-5':10.4,'40-3700-10':20.9,
+  '50-1500-120':91.3,'50-1500-140':106.6,'50-1500-160':121.8,'50-1500-180':137.0,
+  '50-2200-45':50.2,'50-2200-50':55.8,'50-2200-60':67.0,'50-2200-70':78.1,'50-2200-80':89.3,'50-2200-90':100.5,'50-2200-100':111.6,
+  '50-3700-15':31.3,'50-3700-20':41.7,'50-3700-25':52.2,'50-3700-30':56.3,'50-3700-40':75.1,'50-3700-45':84.5,'50-3700-50':93.9,'50-3700-60':112.6,
+};
+
+// Gear box size — full specs with Ø symbol
+const SAC_SHAFT_SPECS = {
+  18: { stdDia: 'O18 mm', maxDia: 'O20 mm', bearing: '6004', frameNo: '1#', material: 'Aluminium Alloy' },
+  22: { stdDia: 'O22 mm', maxDia: 'O25 mm', bearing: '6205', frameNo: '2#', material: 'Aluminium Alloy' },
+  28: { stdDia: 'O28 mm', maxDia: 'O30 mm', bearing: '6206', frameNo: '3#', material: 'Aluminium Alloy' },
+  32: { stdDia: 'O32 mm', maxDia: 'O35 mm', bearing: '6207', frameNo: '4#', material: 'Aluminium Alloy' },
+  40: { stdDia: 'O40 mm', maxDia: 'O45 mm', bearing: '6209', frameNo: '5#', material: 'Cast Iron' },
+  50: { stdDia: 'O50 mm', maxDia: 'O55 mm', bearing: '6211', frameNo: '6#', material: 'Cast Iron' },
+};
+
+// Capacitor for single-phase
+const SAC_CAPACITOR = {
+  100:  '8 uF/450V (C-running)',
+  200:  '12 uF/450V (C-running)',
+  400:  '15 uF/450V + 75 uF/250V (Running + Starting)',
+  750:  '20 uF/450V + 150 uF/250V (Running + Starting)',
+  1500: '40 uF/450V + 200 uF/250V (Running + Starting)',
+};
+
+// Brake unit specs from catalog
+const SAC_BRAKE_SPECS = {
+  B: {
+    '100-200':  { maxRpm: 4000, torque: '0.15–0.4 kg.m', clearance: '0.25–0.5 mm', weight: '2.0 kg' },
+    '400-750':  { maxRpm: 3600, torque: '0.25–0.7 kg.m', clearance: '0.25–0.5 mm', weight: '4.3 kg' },
+    '1100-1500':{ maxRpm: 3600, torque: '0.92–2.0 kg.m', clearance: '0.25–0.5 mm', weight: '6.3 kg' },
+    '2200-3700':{ maxRpm: 3600, torque: '1.80–3.5 kg.m', clearance: '0.25–0.5 mm', weight: '7.0 kg' },
+  },
+};
+
+// Helper: get brake spec row by power
+function getBrakeSpec(power) {
+  if (!power) return null;
+  if (power <= 200)  return SAC_BRAKE_SPECS.B['100-200'];
+  if (power <= 750)  return SAC_BRAKE_SPECS.B['400-750'];
+  if (power <= 1500) return SAC_BRAKE_SPECS.B['1100-1500'];
+  return SAC_BRAKE_SPECS.B['2200-3700'];
+}
+
+// Gear type descriptions
+const GEAR_TYPE_FULL = {
+  SHN: 'SHN — Horizontal, Foot-mount Standard',
+  SVN: 'SVN — Vertical, Foot-mount Standard',
+  SHM: 'SHM — Horizontal, Flange-mount (Scaled Frame)',
+  SVM: 'SVM — Vertical, Flange-mount (Scaled Frame)',
+  SHD: 'SHD — Horizontal, Scaled Frame Type',
+  SVD: 'SVD — Vertical, Scaled Frame Type',
+};
+
+const TERMINAL_FULL = {
+  G1: 'G1 — Terminal Box on Left side (from output shaft)',
+  G2: 'G2 — Terminal Box on Right side (from output shaft)',
+  G3: 'G3 — Terminal Box on Top (from output shaft)',
+  G4: 'G4 — Terminal Box on Bottom (from output shaft)',
+};
+
+// ── jsPDF loader via CDN ──────────────────────────────────────────────────────
+async function loadJsPDFforSAC() {
+  if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
+  if (window.jsPDF) return window.jsPDF;
+  await new Promise((res, rej) => {
+    if (document.getElementById('jspdf-cdn')) { res(); return; }
+    const s = document.createElement('script');
+    s.id = 'jspdf-cdn';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = res; s.onerror = rej; document.head.appendChild(s);
+  });
+  await new Promise((res, rej) => {
+    if (document.getElementById('jspdf-autotable-cdn')) { res(); return; }
+    const s = document.createElement('script');
+    s.id = 'jspdf-autotable-cdn';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+    s.onload = res; s.onerror = rej; document.head.appendChild(s);
+  });
+  return window.jspdf?.jsPDF || window.jsPDF;
+}
+
+// Helper: load image element → base64 dataURL
+function imgToBase64(imgElement) {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width  = imgElement.naturalWidth  || imgElement.width  || 120;
+    canvas.height = imgElement.naturalHeight || imgElement.height || 120;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  } catch { return null; }
+}
+
+// Helper: load image from src URL → base64 via canvas (handles CORS via same-origin)
+function loadImgAsBase64(src) {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        resolve(c.toDataURL('image/png'));
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function generateSmallACDatasheetPDF(state, modelCode, imgSrcs) {
+  const JsPDF = await loadJsPDFforSAC();
+  if (!JsPDF) throw new Error('Cannot load jsPDF');
+
+  const { sacGearType, sacSize, sacPower, sacRatio, sacCurrent, sacBrake, sacTerminal, sacLead } = state;
+
+  // Load images passed directly from React (reliable — no DOM query needed)
+  const [gearImgB64, termImgB64] = await Promise.all([
+    imgSrcs?.gearSrc ? loadImgAsBase64(imgSrcs.gearSrc) : Promise.resolve(null),
+    imgSrcs?.termSrc ? loadImgAsBase64(imgSrcs.termSrc) : Promise.resolve(null),
+  ]);
+
+  const doc  = new JsPDF({ unit: 'mm', format: 'a4' });
+  const W    = doc.internal.pageSize.getWidth();
+  const H    = doc.internal.pageSize.getHeight();
+  const NAVY = [10, 30, 80];
+  const WHITE= [255,255,255];
+  const LGRAY= [240,243,248];
+  const GREEN= [0, 180, 120];
+  const margin = 14;
+  let y = 0;
+
+  // ── Add footer to every page ──────────────────────────────────────────────
+  const addFooter = () => {
+    doc.setFillColor(...NAVY);
+    doc.rect(0, H - 14, W, 14, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(6.5); doc.setFont('helvetica', 'bold');
+    doc.text('Synergy Asia Solution Co.,Ltd.  |  Small AC Gear Motor SHN/SVN Series  |  WWW.MOTORSAS.COM', margin, H - 8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Tel: 081-921-6225  |  Data from SAS Small AC Gear Motor Catalog  |  Specs subject to change without notice.', margin, H - 3.5);
+    doc.setTextColor(160,185,215);
+    doc.text(`Page ${doc.internal.getNumberOfPages()}`, W - margin, H - 5.5, { align: 'right' });
+  };
+
+  // ── Header ──────────────────────────────────────────────────────────────────
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, W, 26, 'F');
+  // Accent stripe
+  doc.setFillColor(...GREEN);
+  doc.rect(0, 26, W, 2, 'F');
+  doc.setTextColor(...WHITE);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text('Small AC Gear Motor — Technical Data Sheet', margin, 11);
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+  doc.text('SAS Synergy Asia Solution Co.,Ltd.  |  SHN / SVN Series  |  WWW.MOTORSAS.COM', margin, 18);
+  doc.setFontSize(9.5); doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...GREEN);
+  doc.text(modelCode || '—', W - margin, 18, { align: 'right' });
+  doc.setTextColor(20,20,20);
+  y = 34;
+
+  // ── sectionTitle helper ───────────────────────────────────────────────────
+  const sectionTitle = (t, num) => {
+    if (y + 14 > H - 20) { addFooter(); doc.addPage(); y = 16; }
+    doc.setFillColor(...LGRAY);
+    doc.roundedRect(margin, y, W - margin * 2, 7, 1, 1, 'F');
+    doc.setFillColor(...NAVY);
+    doc.roundedRect(margin, y, 3, 7, 0.5, 0.5, 'F');
+    doc.setTextColor(...NAVY); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+    doc.text(`${num}. ${t}`, margin + 6, y + 4.8);
+    doc.setTextColor(20,20,20); doc.setFont('helvetica', 'normal');
+    y += 10;
+  };
+
+  const autoT = (body, colStyles, extra = {}) => {
+    if (y + 20 > H - 20) { addFooter(); doc.addPage(); y = 16; }
+    doc.autoTable({
+      startY: y, head: [], body,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8.5, cellPadding: 2.4, lineColor: [220,225,235], lineWidth: 0.2 },
+      columnStyles: colStyles || {
+        0: { fontStyle: 'bold', fillColor: LGRAY, textColor: NAVY, cellWidth: 46 },
+        1: { textColor: [20,20,20] },
+        2: { fontStyle: 'bold', fillColor: LGRAY, textColor: NAVY, cellWidth: 46 },
+        3: { textColor: [20,20,20] },
+      },
+      theme: 'plain',
+      ...extra,
+    });
+    y = doc.lastAutoTable.finalY + 5;
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 1 — MODEL CONFIGURATION
+  // ══════════════════════════════════════════════════════════════════════════
+  sectionTitle('MODEL CONFIGURATION', 1);
+  const motorSpeed  = 1500;
+  const outSpeed    = sacRatio ? Math.round((motorSpeed / sacRatio) * 10) / 10 : '—';
+  const currentLbl  = sacCurrent === 'S' ? 'Three Phase  220-240 / 380-415V, 50/60Hz' : 'Single Phase  220V, 50/60Hz';
+  const brakeLbl    = sacBrake === 'B' ? 'B — DC Electromagnetic Brake' : sacBrake === 'YB' ? 'YB — Manual Brake Unit' : 'None';
+
+  autoT([
+    ['Model Code',        modelCode || '—',              'Series',           'SHN / SVN (ZHN / ZVN)'],
+    ['Gear Type',         GEAR_TYPE_FULL[sacGearType] || sacGearType || '—', 'Frame Size No.',  sacSize ? `${SAC_SHAFT_SPECS[sacSize]?.frameNo || ''} (No.${sacSize})` : '—'],
+    ['Motor Power',       sacPower ? `${sacPower} W  (${(sacPower/746).toFixed(2)} HP)` : '—', 'Motor Speed (Input)', `${motorSpeed} rpm`],
+    ['Gear Ratio',        sacRatio ? `${sacRatio} : 1` : '—',                'Output Speed',    `${outSpeed} rpm`],
+    ['Power Supply',      currentLbl,                    'IP Protection',    'IP54'],
+    ['Brake Unit',        brakeLbl,                      'Terminal Box Dir.',sacTerminal ? `${sacTerminal}  ${TERMINAL_FULL[sacTerminal]?.split('—')[1]?.trim() || ''}` : '—'],
+    ['Lead Direction',    sacLead || '—',                'Operating Duty',   'S1 — Continuous Running'],
+  ]);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 2 — MOTOR & GEARBOX SPECIFICATION
+  // ══════════════════════════════════════════════════════════════════════════
+  sectionTitle('MOTOR & GEARBOX SPECIFICATION', 2);
+  const shaftSpec   = SAC_SHAFT_SPECS[sacSize] || {};
+  const torqueKey   = `${sacSize}-${sacPower}-${sacRatio}`;
+  const outTorque   = SAC_OUTPUT_TORQUE_DB[torqueKey];
+  const sizeRow     = getSizeRow(sacSize, sacPower, false);
+
+  autoT([
+    ['Insulation Class',  'Class F',                     'Ambient Temperature', '-10°C ~ +40°C'],
+    ['Protection Class',  'IP54 (Terminal Box)',          'Humidity',            '≤ 90% RH  (no condensation)'],
+    ['Altitude',          '≤ 1000 m',                    'Standard',            'GB755 / IEC-60034'],
+    ['Poles',             '4P  (6P motor optional)',      'Starting Method',     sacCurrent === 'S' ? 'Direct-on-line (DOL)' : 'Capacitor start'],
+    ['Frame Material',    shaftSpec.material || 'Aluminium Alloy', 'Gear Material', '40Cr + Hb280  Heat-treated HRC50'],
+    ['Gear Shaft',        '20CrMnTi  HRC60  Class-6',    'Motor Shaft',         '20CrMnTi  HRC60  Class-6'],
+    ['Output Shaft Dia.', shaftSpec.stdDia ? shaftSpec.stdDia.replace('O', '\u00d8') : '—', 'Max Shaft Dia.', shaftSpec.maxDia ? shaftSpec.maxDia.replace('O', '\u00d8') : '—'],
+    ['Output Bearing',    shaftSpec.bearing || '—',      'Oil Seal',            'High-temp resistant, oil infiltration proof'],
+    ['Output Torque',     outTorque ? `${outTorque} kg.m  (50Hz, Std. type)` : 'See Catalog Torque Table', 'Unit Weight', sizeRow ? `${sizeRow.weightKg} kg` : '—'],
+  ]);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 3 — DIMENSION TABLE (from catalog)
+  // ══════════════════════════════════════════════════════════════════════════
+  sectionTitle('DIMENSION TABLE  (Unit: mm)', 3);
+  if (sizeRow) {
+    doc.autoTable({
+      startY: y,
+      head: [['A', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'X', 'Y', 'Z', 'S', 'P', 'Q', 'W', 'T', 'Weight']],
+      body: [[
+        sizeRow.A, sizeRow.D, sizeRow.E, sizeRow.F, sizeRow.G,
+        sizeRow.H, sizeRow.J, sizeRow.K, sizeRow.L, sizeRow.M,
+        sizeRow.X, sizeRow.Y, sizeRow.Z, sizeRow.S, sizeRow.P,
+        sizeRow.Q, sizeRow.W, sizeRow.T, `${sizeRow.weightKg} kg`,
+      ]],
+      margin: { left: margin, right: margin },
+      headStyles: { fillColor: NAVY, textColor: WHITE, fontSize: 7, halign: 'center', cellPadding: 1.8 },
+      styles: { fontSize: 7, cellPadding: 1.8, halign: 'center', lineColor: [220,225,235], lineWidth: 0.2 },
+      theme: 'grid',
+    });
+    y = doc.lastAutoTable.finalY + 3;
+    doc.setFontSize(7); doc.setTextColor(120,120,120); doc.setFont('helvetica','italic');
+    doc.text('Note: Values in ( ) denote vertical gearbox dimension.  S = Output shaft std. diameter (\u00d8mm)', margin, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20);
+    y += 6;
+  } else {
+    doc.setFontSize(8); doc.setTextColor(120,120,120);
+    doc.text('Dimension data not available for this configuration.', margin, y);
+    y += 8;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 4 — GEAR TYPE & TERMINAL BOX IMAGES
+  // ══════════════════════════════════════════════════════════════════════════
+  if (gearImgB64 || termImgB64) {
+    sectionTitle('GEAR TYPE & TERMINAL BOX DIRECTION', 4);
+    const imgW = 60; const imgH = 52;
+    const gap  = 10;
+    let imgX   = margin;
+
+    if (gearImgB64) {
+      if (y + imgH + 16 > H - 20) { addFooter(); doc.addPage(); y = 16; }
+      doc.addImage(gearImgB64, 'PNG', imgX, y, imgW, imgH);
+      doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...NAVY);
+      doc.text(sacGearType || '', imgX + imgW / 2, y + imgH + 4, { align: 'center' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(80,80,80);
+      const gDesc = GEAR_TYPE_FULL[sacGearType] || '';
+      doc.text(gDesc.split('—')[1]?.trim() || '', imgX + imgW / 2, y + imgH + 8.5, { align: 'center' });
+      imgX += imgW + gap;
+    }
+
+    if (termImgB64) {
+      if (y + imgH + 16 > H - 20) { addFooter(); doc.addPage(); y = 16; }
+      doc.addImage(termImgB64, 'PNG', imgX, y, imgW, imgH);
+      doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...NAVY);
+      doc.text(sacTerminal || '', imgX + imgW / 2, y + imgH + 4, { align: 'center' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(80,80,80);
+      const tDesc = TERMINAL_FULL[sacTerminal] || '';
+      doc.text(tDesc.split('—')[1]?.trim() || '', imgX + imgW / 2, y + imgH + 8.5, { align: 'center' });
+    }
+    y += imgH + 16;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 5 — BRAKE UNIT SPECIFICATION (if selected)
+  // ══════════════════════════════════════════════════════════════════════════
+  let secNum = 5;
+  if (sacBrake && sacBrake !== '') {
+    sectionTitle(`BRAKE UNIT — ${sacBrake === 'B' ? 'DC Electromagnetic Brake (B)' : 'Manual Brake Unit (YB)'}`, secNum++);
+    const bSpec = getBrakeSpec(sacPower) || {};
+    autoT([
+      ['Brake Type',    sacBrake === 'B' ? 'DC Electromagnetic (spring-applied, DC released)' : 'Manual lever (no electrical required)', 'Max Premit RPM', bSpec.maxRpm ? `${bSpec.maxRpm} rpm` : '—'],
+      ['Hold Torque',   bSpec.torque || '—',  'Clearance',  bSpec.clearance || '0.25–0.5 mm'],
+      ['Brake Voltage', sacBrake === 'B' ? 'DC 24V (rectified from AC)' : 'N/A (manual)', 'Weight',  bSpec.weight || '—'],
+    ]);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 6 — CAPACITOR (single-phase)
+  // ══════════════════════════════════════════════════════════════════════════
+  if (sacCurrent === 'C' && sacPower) {
+    sectionTitle('CAPACITOR — 1-PHASE C-RUNNING TYPE', secNum++);
+    const cap = SAC_CAPACITOR[sacPower] || '—';
+    autoT([
+      ['Motor Power', `${sacPower} W`, 'Capacitor Specification', cap],
+      ['Note', 'Running capacitor is always required.  Starting capacitor for 400W and above.', '', ''],
+    ]);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 7 — COMPLETE SHAFT SIZE REFERENCE TABLE
+  // ══════════════════════════════════════════════════════════════════════════
+  if (y + 70 > H - 20) { addFooter(); doc.addPage(); y = 16; }
+  sectionTitle('SHAFT SIZE REFERENCE TABLE — All Gearbox Sizes', secNum++);
+  doc.autoTable({
+    startY: y,
+    head: [['Gear No.', 'Std. Shaft Dia.', 'Max Shaft Dia.', 'Output Bearing', 'Frame Material', 'Power Range']],
+    body: [
+      ['1#', '\u00d818 mm', '\u00d820 mm', '6004', 'Aluminium Alloy', '100W ~ 200W'],
+      ['2#', '\u00d822 mm', '\u00d825 mm', '6205', 'Aluminium Alloy', '100W ~ 750W'],
+      ['3#', '\u00d828 mm', '\u00d830 mm', '6206', 'Aluminium Alloy', '200W ~ 1500W'],
+      ['4#', '\u00d832 mm', '\u00d835 mm', '6207', 'Aluminium Alloy', '400W ~ 1500W'],
+      ['5#', '\u00d840 mm', '\u00d845 mm', '6209', 'Cast Iron',       '750W ~ 3700W'],
+      ['6#', '\u00d850 mm', '\u00d855 mm', '6211', 'Cast Iron',       '1500W ~ 3700W'],
+    ],
+    margin: { left: margin, right: margin },
+    headStyles: { fillColor: NAVY, textColor: WHITE, fontSize: 8, cellPadding: 2 },
+    styles: { fontSize: 8, cellPadding: 2, lineColor: [220,225,235], lineWidth: 0.2 },
+    columnStyles: { 0: { halign: 'center', fontStyle: 'bold' } },
+    theme: 'grid',
+  });
+  y = doc.lastAutoTable.finalY + 6;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 8 — GEAR MATERIALS & CONSTRUCTION
+  // ══════════════════════════════════════════════════════════════════════════
+  sectionTitle('GEAR MATERIALS & CONSTRUCTION', secNum++);
+  autoT([
+    ['Gearbox Housing',  '1#–4#: Aluminium alloy  |  5#–6#: Cast iron (Al 5#, 6# = 40, 50)', 'Gear Piece',  '40Cr mixed Hb280, HRC50  — precision milled, Class 6'],
+    ['Gear Shaft',       '20CrMnTi  cementite quench HRC60  — gear hobbing Class 6', 'Motor Shaft', '20CrMnTi  cementite quench HRC60  — gear hobbing Class 6'],
+    ['Ball Bearing',     'High precision — long service life', 'Oil Seal',    'Prevents high-temp oil infiltration'],
+    ['Terminal Box (Std)','IP54 Aluminium alloy terminal box', 'Terminal Box (Alt)', 'IP20 Steel case with deft structure'],
+  ]);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 9 — CONNECTION FACTOR & FORMULAS
+  // ══════════════════════════════════════════════════════════════════════════
+  sectionTitle('CONNECTION FACTOR & BASIC FORMULAS', secNum++);
+  autoT([
+    ['Sprocket / Chain', 'K = 1.00', 'Gear',       'K = 1.25'],
+    ['Belt',             'K = 1.50', 'Flat Belt',  'K = 2.50'],
+    ['Ratio  i',         'i = N / 1800', 'Speed  N', 'N = V / (pi x D)  [m/min]'],
+    ['Torque  T',        'T = W x R x K  [kg.m]',  'Input Power',  'kW1 = N x T / 974'],
+    ['Output Power',     'kW2 = kW1 x F / E',       'HP',           'HP1 = N x T / 716'],
+  ]);
+
+  // ── Footer on last page ────────────────────────────────────────────────
+  addFooter();
+  doc.save((modelCode || 'SmallAC_DataSheet') + '.pdf');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SmallACDataSheetButton
+// ─────────────────────────────────────────────────────────────────────────────
+function SmallACDataSheetButton({ state, modelCode, imgSrcs }) {
+  const [status, setStatus] = React.useState('idle');
+  const handleClick = async () => {
+    if (status === 'loading') return;
+    setStatus('loading');
+    try {
+      await generateSmallACDatasheetPDF(state, modelCode, imgSrcs);
+      setStatus('done');
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch (err) {
+      console.error('SmallAC PDF error:', err);
+      setStatus('error');
+      alert('Cannot create PDF:\n' + err.message);
+      setTimeout(() => setStatus('idle'), 3000);
+    }
+  };
+  const icon  = { idle: '📄', loading: '⏳', done: '✅', error: '⚠️' }[status];
+  const label = { idle: 'Data Sheet', loading: 'กำลังสร้าง...', done: 'ดาวน์โหลดแล้ว ✓', error: 'ลองใหม่' }[status];
+  return (
+    <button type="button" onClick={handleClick} disabled={status === 'loading'}
+      style={{
+        width: '100%', padding: '11px 0', borderRadius: 10,
+        background: status === 'done' ? 'linear-gradient(90deg,#6366f1,#4f46e5)' : status === 'error' ? 'linear-gradient(90deg,#ef4444,#dc2626)' : 'linear-gradient(90deg,#6366f1,#4f46e5)',
+        color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        opacity: status === 'loading' ? 0.7 : 1,
+      }}>
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
 
 function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
   const isMobile = useIsMobile();
@@ -443,24 +1000,32 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
   };
 
   const currentLabel = sacCurrent === 'S' ? 'Three Phase 220/380VAC' : 'Single Phase 220VAC';
-  const brakeLabel   = sacBrake === 'B' ? 'DC Brake' : sacBrake === 'YB' ? 'Manual Brake Unit' : 'None';
-  const motorSpeed   = 1500; // standard AC motor
+  const brakeLabel   = sacBrake === 'B' ? 'DC Brake' : sacBrake === 'YB' ? 'Manual Brake' : 'None';
+  const motorSpeed   = 1500;
   const outSpeed     = sacRatio ? Math.round((motorSpeed / sacRatio) * 10) / 10 : null;
+  const shaftSp      = SAC_SHAFT_SPECS[sacSize] || {};
+  const torqueVal    = sacSize && sacPower && sacRatio ? SAC_OUTPUT_TORQUE_DB[`${sacSize}-${sacPower}-${sacRatio}`] : null;
+  const sizeRowSP    = sacSize && sacPower ? getSizeRow(sacSize, sacPower, false) : null;
 
   const specRows = [
-    ['Gear Type',     sacGearType || '—'],
-    ['Frame Size',    sacSize ? `No.${sacSize}` : '—'],
-    ['Power',         sacPower ? `${sacPower} W` : '—'],
-    ['Motor Speed',   '1500 rpm'],
-    ['Ratio',         sacRatio ? `${sacRatio} : 1` : '—'],
-    ['Output Speed',  outSpeed ? `${outSpeed} rpm` : '—'],
-    ['Supply',        currentLabel],
-    ['Brake Unit',    brakeLabel],
-    ['Terminal Dir.', sacTerminal || '—'],
-    ['Lead Dir.',     sacLead || '—'],
-    ['IP Class',      'IP54'],
-    ['Insulation',    'Class F'],
-    ['Duty',          'S1'],
+    ['Gear Type',       sacGearType || '—'],
+    ['Frame Size',      sacSize ? `${shaftSp.frameNo || ''}  No.${sacSize}` : '—'],
+    ['Power',           sacPower ? `${sacPower} W  (${(sacPower/746).toFixed(2)} HP)` : '—'],
+    ['Motor Speed',     '1500 rpm'],
+    ['Ratio',           sacRatio ? `${sacRatio} : 1` : '—'],
+    ['Output Speed',    outSpeed ? `${outSpeed} rpm` : '—'],
+    ['Output Torque',   torqueVal ? `${torqueVal} kg.m` : '—'],
+    ['Shaft Dia. (Std)',shaftSp.stdDia ? shaftSp.stdDia.replace('O', '\u00d8') : '—'],
+    ['Shaft Dia. (Max)',shaftSp.maxDia ? shaftSp.maxDia.replace('O', '\u00d8') : '—'],
+    ['Output Bearing',  shaftSp.bearing || '—'],
+    ['Weight',          sizeRowSP ? `${sizeRowSP.weightKg} kg` : '—'],
+    ['Supply',          currentLabel],
+    ['Brake Unit',      brakeLabel],
+    ['Terminal Dir.',   sacTerminal || '—'],
+    ['Lead Dir.',       sacLead || '—'],
+    ['IP Class',        'IP54'],
+    ['Insulation',      'Class F'],
+    ['Duty',            'S1'],
   ];
 
   // ── GLB model URL resolver ──────────────────────────────────────────────────
@@ -721,7 +1286,7 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
               {specRows.map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '5px 0', borderBottom: `1px solid ${lightMode ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'}`, gap: 6 }}>
                   <span style={{ fontSize: 11, color: T.labelColor, flexShrink: 0 }}>{k}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: ['Power', 'Output Speed', 'Ratio'].includes(k) ? T.specHighlight : T.valueColor, textAlign: 'right', wordBreak: 'break-all' }}>{v}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: ['Power', 'Output Speed', 'Ratio', 'Output Torque', 'Weight'].includes(k) ? T.specHighlight : T.valueColor, textAlign: 'right', wordBreak: 'break-all' }}>{v}</span>
                 </div>
               ))}
             </div>
@@ -749,6 +1314,16 @@ function SmallACSummaryPage({ state, modelCode, onConfirm, onBack }) {
                 onClick={() => setShowQuote(true)}>
                 🛒 ขอใบเสนอราคา
               </button>
+              <SmallACDataSheetButton
+                state={state}
+                modelCode={modelCode}
+                imgSrcs={{
+                  gearSrc: (GEAR_TYPES.find(g => g.code === sacGearType) || {}).img,
+                  termSrc: SV_GEAR_TYPES.includes(sacGearType)
+                    ? (TERMINAL_DIRS.find(d => d.code === sacTerminal) || {}).imgSV
+                    : (TERMINAL_DIRS.find(d => d.code === sacTerminal) || {}).img,
+                }}
+              />
               <button type="button"
                 style={{ width: '100%', padding: '11px 0', borderRadius: 10, background: 'linear-gradient(90deg,#4080ff,#2060dd)', color: 'white', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}
                 onClick={() => { if (modelCode) onConfirm(modelCode); }}>
@@ -852,6 +1427,28 @@ function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
   const setTerminal  = v => { update('sacTerminal', v); update('sacLead', null); };
   const setLead      = v => { update('sacLead', v); };
 
+  // jumpToStep — คลิก StepBar แล้ว reset ข้อมูลจาก step นั้นเป็นต้นไป
+  const jumpToStep = (stepNum) => {
+    if (stepNum <= 1) setGearType(null);
+    else if (stepNum <= 2) setSize(null);
+    else if (stepNum <= 3) setPower(null);
+    else if (stepNum <= 4) setRatio(null);
+    else if (stepNum <= 5) setCurrent(null);
+    else if (stepNum <= 6) setBrake(null);
+    else if (stepNum <= 7) setTerminal(null);
+    else if (stepNum <= 8) setLead(null);
+  };
+
+  // currentStep — คำนวณ step ปัจจุบัน
+  const currentStep = !sacGearType ? 1
+    : !sacSize     ? 2
+    : !sacPower    ? 3
+    : !sacRatio    ? 4
+    : !sacCurrent  ? 5
+    : sacBrake === null || sacBrake === undefined ? 6
+    : !sacTerminal ? 7
+    : 8;
+
   const ratios       = sacSize && sacPower ? (RATIOS_BY_SIZE_POWER[`${sacSize}-${sacPower}`] || []) : [];
   const currentTypes = sacSize && sacPower ? getAvailableCurrentTypes(sacSize, sacPower) : [];
   const leadOptions  = sacTerminal ? (LEAD_BY_TERMINAL[sacTerminal] || []) : [];
@@ -889,6 +1486,37 @@ function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
     borderBottom: '1px solid rgba(255,255,255,0.07)',
   };
 
+  // Descriptions for Gear Type buttons
+  const GEAR_TYPE_DESCS = {
+    SHN: 'แนวนอน ขาตั้ง มาตรฐาน',
+    SVN: 'แนวตั้ง ขาตั้ง มาตรฐาน',
+    SHM: 'แนวนอน หน้าแปลน',
+    SVM: 'แนวตั้ง หน้าแปลน',
+    SHD: 'แนวนอน สเกลเฟรม',
+    SVD: 'แนวตั้ง สเกลเฟรม',
+  };
+
+  // Brake descriptions
+  const BRAKE_DESCS = {
+    '': 'ไม่มีเบรก เหมาะงานแนวนอนทั่วไป',
+    B: 'เบรกแม่เหล็กไฟฟ้า DC ล็อคเมื่อไฟดับ',
+    YB: 'เบรกแบบใช้มือ ไม่ต้องใช้ไฟฟ้า',
+  };
+
+  // Current descriptions
+  const CURRENT_DESCS = {
+    S: 'ระบบไฟ 3 เฟส 220–415V กำลังสูง',
+    C: 'ระบบไฟ 1 เฟส 220V มีคาปาซิเตอร์',
+  };
+
+  // Terminal descriptions
+  const TERMINAL_DESCS = {
+    G1: 'กล่องขั้วต่อด้านซ้าย',
+    G2: 'กล่องขั้วต่อด้านขวา',
+    G3: 'กล่องขั้วต่อด้านบน',
+    G4: 'กล่องขั้วต่อด้านล่าง',
+  };
+
   return (
     <div style={containerStyle}>
       {/* Header */}
@@ -896,19 +1524,29 @@ function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
         <span style={{ fontFamily: "'Rajdhani',sans-serif", fontWeight: 700, fontSize: 17, letterSpacing: '1.5px', color: '#00e5a0', textTransform: 'uppercase' }}>
           ⚙️ Small AC Gear Motor
         </span>
-        <button type="button" onClick={onHome}
-          style={{ background: 'rgba(0,229,160,0.08)', border: '1px solid rgba(0,229,160,0.25)', color: '#00e5a0', padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-          ⌂ Home
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" onClick={() => jumpToStep(1)}
+            style={{ background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.25)', color: '#ff8080', padding: '5px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+            🔄 Reset
+          </button>
+          <button type="button" onClick={onHome}
+            style={{ background: 'rgba(0,229,160,0.08)', border: '1px solid rgba(0,229,160,0.25)', color: '#00e5a0', padding: '5px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+            ⌂ Home
+          </button>
+        </div>
       </div>
 
+      {/* ── StepBar — แสดงด้านบนตลอดเวลา ── */}
+      <StepBar currentStep={currentStep} onJump={jumpToStep} />
+
       {/* ── STEP 1: Gear Type — 6 cols desktop / 3 cols mobile ── */}
-      <Section step={1} title="Gear Type" cols={gearTypeCols}>
+      <Section step={1} title="Gear Type" subtitle="เลือกรุ่นมอเตอร์เกียร์ตามทิศทางติดตั้งและแบบการยึด" cols={gearTypeCols}>
         {GEAR_TYPES.map(g => (
           <ImgCard
             key={g.code}
             img={g.img}
             label={g.label}
+            desc={GEAR_TYPE_DESCS[g.code] || ''}
             active={sacGearType === g.code}
             onClick={() => setGearType(g.code)}
           />
@@ -917,57 +1555,61 @@ function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
 
       {/* ── STEP 2: Size No. ── */}
       {sacGearType && (
-        <Section step={2} title="Size No.">
+        <Section step={2} title="Size No." subtitle="หมายเลขกระปุกเกียร์ — กำหนดขนาดเพลาออก ขนาดโมลลิ่ง และแรงบิดสูงสุด">
           {SIZES.map(s => (
-            <PillBtn key={s} label={String(s)} active={sacSize === s} onClick={() => setSize(s)} />
+            <PillBtn key={s} label={`No.${s}`} desc={`เพลา Φ${s}mm`} active={sacSize === s} onClick={() => setSize(s)} wide />
           ))}
         </Section>
       )}
 
       {/* ── STEP 3: Power Motor ── */}
       {sacSize && (
-        <Section step={3} title="Power Motor">
+        <Section step={3} title="Power Motor" subtitle="กำลังมอเตอร์ไฟฟ้า — ยิ่งสูงแรงบิดออกยิ่งมาก เลือกให้ตรงกับโหลดงาน">
           {(POWERS_BY_SIZE[sacSize] || []).map(p => (
-            <PillBtn key={p} label={`${p}W`} active={sacPower === p} onClick={() => setPower(p)} wide />
+            <PillBtn key={p} label={`${p}W`} desc={p >= 750 ? `${(p/746).toFixed(2)} HP` : `${p}W`} active={sacPower === p} onClick={() => setPower(p)} wide />
           ))}
         </Section>
       )}
 
       {/* ── STEP 4: Ratio ── */}
       {sacPower && ratios.length > 0 && (
-        <Section step={4} title="Ratio" note={`(${ratios.length} ค่า)`}>
-          {ratios.map(r => (
-            <PillBtn key={r} label={String(r)} active={sacRatio === r} onClick={() => setRatio(r)} />
-          ))}
+        <Section step={4} title="Ratio" subtitle="อัตราทดเกียร์ — ยิ่งสูงความเร็วออกยิ่งต่ำ แรงบิดออกยิ่งสูง" note={`(${ratios.length} ค่า)`}>
+          {ratios.map(r => {
+            const outRpm = Math.round((1500 / r) * 10) / 10;
+            return (
+              <PillBtn key={r} label={String(r)} desc={`~${outRpm}rpm`} active={sacRatio === r} onClick={() => setRatio(r)} />
+            );
+          })}
         </Section>
       )}
 
       {/* ── STEP 5: Motor Current ── */}
       {sacRatio && (
-        <Section step={5} title="Motor Current (Supply)">
+        <Section step={5} title="Motor Current (Supply)" subtitle="เลือกระบบไฟฟ้าให้ตรงกับที่ใช้ในโรงงาน">
           {currentTypes.map(ct => (
-            <PillBtn key={ct} label={CURRENT_LABELS[ct]} active={sacCurrent === ct} onClick={() => setCurrent(ct)} wide />
+            <PillBtn key={ct} label={CURRENT_LABELS[ct]} desc={CURRENT_DESCS[ct] || ''} active={sacCurrent === ct} onClick={() => setCurrent(ct)} wide />
           ))}
         </Section>
       )}
 
       {/* ── STEP 6: Brake Unit ── */}
       {sacCurrent && (
-        <Section step={6} title="Brake Unit">
+        <Section step={6} title="Brake Unit" subtitle="เลือกชุดเบรกสำหรับงานที่ต้องล็อคเพลาเมื่อหยุด หรืองานแนวดิ่ง">
           {BRAKE_UNITS.map(b => (
-            <PillBtn key={b.code} label={b.label} active={sacBrake === b.code} onClick={() => setBrake(b.code)} wide />
+            <PillBtn key={b.code} label={b.label} desc={BRAKE_DESCS[b.code] || ''} active={sacBrake === b.code} onClick={() => setBrake(b.code)} wide />
           ))}
         </Section>
       )}
 
       {/* ── STEP 7: Terminal Box Direction — 4 cols desktop / 2 cols mobile ── */}
       {sacBrake !== undefined && sacBrake !== null && (
-        <Section step={7} title="Terminal Box Direction (from output shaft)" cols={terminalCols}>
+        <Section step={7} title="Terminal Box Direction (from output shaft)" subtitle="ตำแหน่งกล่องขั้วต่อ วัดจากด้านเพลาออก" cols={terminalCols}>
           {TERMINAL_DIRS.map(d => (
             <ImgCard
               key={d.code}
               img={SV_GEAR_TYPES.includes(sacGearType) ? d.imgSV : d.img}
               label={d.label}
+              desc={TERMINAL_DESCS[d.code] || ''}
               active={sacTerminal === d.code}
               onClick={() => setTerminal(d.code)}
             />
@@ -977,7 +1619,7 @@ function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
 
       {/* ── STEP 8: Lead Direction ── */}
       {sacTerminal && (
-        <Section step={8} title="Lead Direction (from output shaft)">
+        <Section step={8} title="Lead Direction (from output shaft)" subtitle="ทิศทางออกของสายไฟ วัดจากด้านเพลาออก ดูภาพอ้างอิงด้านล่าง">
           <div style={{ width: '100%', marginBottom: 12 }}>
             <img
               src={TerminalImg}
@@ -1008,7 +1650,7 @@ function SmallACFlowInner({ state, setters, onConfirm, onHome }) {
             </div>
           )}
           {leadOptions.map(l => (
-            <PillBtn key={l} label={l} active={sacLead === l} onClick={() => setLead(l)} />
+            <PillBtn key={l} label={l} desc={{ LD:'ซ้าย-ลง',LT:'ซ้าย-บน',LF:'ซ้าย-หน้า',LB:'ซ้าย-หลัง',RD:'ขวา-ลง',RT:'ขวา-บน',RF:'ขวา-หน้า',RB:'ขวา-หลัง',TL:'บน-ซ้าย',TR:'บน-ขวา',TF:'บน-หน้า',TB:'บน-หลัง',DL:'ล่าง-ซ้าย',DR:'ล่าง-ขวา',DF:'ล่าง-หน้า',DB:'ล่าง-หลัง' }[l] || ''} active={sacLead === l} onClick={() => setLead(l)} />
           ))}
         </Section>
       )}
