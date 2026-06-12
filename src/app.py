@@ -1489,6 +1489,8 @@ def iec_quote():
 # Mr.SAS MotorBot — LINE Webhook (Blueprint)
 # แยกออกไปอยู่ใน line_bot.py แล้ว — register ที่นี่เพียงบรรทัดเดียว
 # =========================
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(__file__))
 from line_bot import line_bot_bp
 app.register_blueprint(line_bot_bp)
 
