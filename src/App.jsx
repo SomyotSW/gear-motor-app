@@ -8,6 +8,7 @@ import { renderRKFSFlow } from './components/RKFSMotorFlow.js';
 import { renderIECMotorFlow } from './components/IECMotorFlow.js';
 import { renderSmallACFlow, generateSmallACModelCode } from './components/SmallACMotorFlow.js';
 import ACGearMotorFlow, { generateACModelCode } from './components/ACGearMotorFlow.js';
+import ElectricityCalculator from './components/ElectricityCalculator';
 import bgImage from './assets/GearBG2.png';
 import emailjs from 'emailjs-com';
 // ✅ ADD: EmailJS IDs (ใช้ค่าเดิมจาก ENV ถ้ามี / ไม่ทำให้แอปล้ม)
@@ -719,6 +720,10 @@ useEffect(() => {
     setShowForm(false);
     setSelectedProduct('RKFS Series');
   }
+  // ── Deep-link: /#elec-calc ────────────────────────────────────────────────
+  if (hash === 'elec-calc') {
+    setShowElecCalc(true);
+  }
 }, []);
   const [userInfo, setUserInfo] = useState({ name: '', phone: '', company: '', email: '' });
   useEffect(() => {
@@ -750,6 +755,7 @@ useEffect(() => {
 const [modelCodeList, setModelCodeList] = useState([]);   // รายการโค้ดที่ส่งมาจาก MotorFlows
 const [selectedModel, setSelectedModel] = useState(null); // ตัวที่ถูกเลือก
 const [showForm, setShowForm] = useState(false);
+const [showElecCalc, setShowElecCalc] = useState(false);
 const [quoteInfo, setQuoteInfo] = useState(null);
 const [showRKFSQuote, setShowRKFSQuote] = useState(false);
 const [rkfsQuote, setRkfsQuote] = useState({
@@ -1720,6 +1726,13 @@ const getFileUrl = () => {
 
       {/* เนื้อหา */}
       <div className="relative z-10 p-6 max-w-6xl mx-auto text-gray-900">
+      {/* ── Electricity Calculator Page ── */}
+      {showElecCalc && (
+        <div className="fixed inset-0 z-[9998] overflow-y-auto">
+          <ElectricityCalculator onBack={() => setShowElecCalc(false)} />
+        </div>
+      )}
+
         {!selectedProduct && (
           <>
 {/* Title: Lux 3D gradient + GIF flanks */}
@@ -1821,8 +1834,23 @@ const getFileUrl = () => {
 </div>
 </div>
 
-{/* ── Visitor Counter — ปัจจุบันมีผู้ใช้งานมากกว่า ── */}
-<div className="flex justify-end mb-3 -mt-2 pr-1">
+{/* ── Action Row: ค่าไฟ + Visitor Counter ── */}
+<div className="flex items-center justify-between mb-3 -mt-2 pr-1 flex-wrap gap-2">
+
+  {/* ⚡ ปุ่มคำนวนค่าไฟ */}
+  <button
+    onClick={() => setShowElecCalc(true)}
+    className="flex items-center gap-2 px-4 py-2 rounded-xl
+               bg-gradient-to-r from-emerald-500 to-cyan-500
+               text-white text-sm font-bold shadow-lg shadow-emerald-500/30
+               hover:from-emerald-400 hover:to-cyan-400
+               active:scale-95 transition-all"
+  >
+    <span>⚡</span>
+    <span>คำนวนค่าไฟ</span>
+  </button>
+
+  {/* Visitor Counter */}
   <button
     onClick={() => setShowHistory(v => !v)}
     className="flex items-center gap-2 px-3 py-1.5 rounded-xl
