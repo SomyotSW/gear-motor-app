@@ -66,6 +66,72 @@ STATE MANAGEMENT:
   ใช้ in-memory dict _user_state[user_id] = { "step": ..., "data": ... }
   (เพียงพอสำหรับ dev/test — production ควรย้ายไป Redis หรือ Supabase)
 ═══════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  KNOWN PITFALLS & DEFENSES  (อ่านก่อนแก้ไขไฟล์นี้!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PITFALL 1 — SIGNATURE ไม่ได้ตรวจสอบ (🔴 Critical Security)
+───────────────────────────────────────────────────────────
+  ปัญหา: LINE ส่ง X-Line-Signature header มาพร้อมทุก webhook
+         ถ้าไม่ verify ใครก็ POST มา /line/webhook แกล้งเป็น LINE ได้
+         inject state เพี้ยน หรือทำให้ bot reply ผิดๆ ได้
+  สถานะ: ✅ มี _verify_line_signature() ป้องกันแล้ว (ดูใต้ Config block)
+  ⚠️ อย่าลบ: verify ต้องอ่าน request.get_data() (raw bytes) ก่อน
+             อย่าย้ายไปทำหลัง get_json() — body จะหายไปแล้ว
+
+PITFALL 2 — REPLY TOKEN หมดอายุเร็ว (~30 วินาที)
+───────────────────────────────────────────────────────────
+  ปัญหา: LINE replyToken ใช้ได้ครั้งเดียวและหมดอายุในเวลาสั้นมาก
+         _fetch_r2() มี timeout=30s → ถ้า R2 ช้า token อาจหมดก่อน
+         → LINE API คืน 400 "Invalid reply token" → user ไม่ได้รับข้อความ
+  สถานะ: ⚠️ ยังเสี่ยงอยู่สำหรับไฟล์ใหญ่หรือ R2 ช้า
+  แนวทางแก้: ตอบ LINE ด้วย 200 OK ทันที แล้วใช้ Push Message API แทน
+             หรือลด R2 timeout ให้เหลือ ~8 วิ แล้ว fallback แจ้ง user
+
+PITFALL 3 — DUPLICATE EVENTS (LINE ส่ง webhook ซ้ำ)
+───────────────────────────────────────────────────────────
+  ปัญหา: LINE Platform อาจส่ง webhook event ซ้ำได้เสมอ (at-least-once)
+         เช่น กดปุ่ม __asset:3d แล้วมา 2 ครั้ง → reply 2 รอบ
+         → ครั้งที่ 2 LINE API error เพราะ token ใช้ไปแล้ว (ไม่ crash แต่ log error)
+  สถานะ: ✅ ป้องกันด้วย _seen_event_ids set + TTL-style cleanup
+         (ดู _is_duplicate_event() ใต้ State management block)
+  หมายเหตุ: webhookEventId อยู่ใน event["webhookEventId"] (ไม่ใช่ event["id"])
+
+PITFALL 4 — IN-MEMORY STATE หายเมื่อ SERVER RESTART / REDEPLOY
+───────────────────────────────────────────────────────────
+  ปัญหา: Render deploy ใหม่ทุกครั้ง → _user_state ล้างหมดทันที
+         user ที่กำลังอยู่ใน step "asset_model" จะหลุด flow
+         → พิมพ์ Model code มา → bot งง → ตอบ Greeting แทน
+  สถานะ: ✅ มี Fallback regex ดัก Model code ไว้แล้ว (~บรรทัด 692)
+         จับ pattern [A-Z0-9][A-Z0-9\-\.]+ ที่มี '-' → ถามประเภทไฟล์ใหม่
+  แนวทางแก้ระยะยาว: ย้าย state → Redis (Upstash) หรือ Supabase table
+
+PITFALL 5 — DEAD CODE ใน _flex_asset_type_with_model()
+───────────────────────────────────────────────────────────
+  ปัญหา: ฟังก์ชันนี้มีโค้ดหลัง return statement (~บรรทัด 367-401)
+         เป็นซาก _flex_ask_model() เก่าที่ถูก inline แล้วลืมลบ
+         ไม่ทำให้ crash แต่ทำให้ confuse มากเวลาอ่าน
+  สถานะ: ⚠️ ยังอยู่ — ไม่กระทบ runtime แต่ควร cleanup ในรอบถัดไป
+
+PITFALL 6 — /line/download โหลด R2 ทั้งก้อนก่อน send
+───────────────────────────────────────────────────────────
+  ปัญหา: endpoint นี้ดึงไฟล์ทั้งหมดก่อน (_fetch_r2) แล้วค่อย send
+         ถ้าไฟล์ STEP ใหญ่หลาย MB → RAM spike + response ช้า
+         ถ้า Render มี memory limit จะ OOM crash
+  สถานะ: ⚠️ acceptable สำหรับไฟล์เล็ก/ปานกลาง
+  แนวทางแก้: redirect ไปยัง R2 URL ตรงๆ แทน proxy
+             (ทำได้เลยถ้า R2 bucket เป็น public อยู่แล้ว)
+
+PITFALL 7 — GROUP CHAT: user_id ปนกับ groupId
+───────────────────────────────────────────────────────────
+  ปัญหา: _get_user_id() ใช้ groupId เป็น fallback ถ้าไม่มี userId
+         ทำให้ทุกคนในกลุ่มแชร์ state เดียวกัน
+         คนหนึ่งกด "ขอ3D&Spec" อีกคนพิมพ์ model code → ได้ไฟล์แทน
+  สถานะ: ⚠️ acceptable เพราะ use case หลักเป็น 1:1 DM
+  แนวทางแก้: ใช้ composite key f"{groupId}:{userId}" แทน
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
 from __future__ import annotations
@@ -112,6 +178,49 @@ _SERVER_BASE = os.environ.get(
 #   "compare_photo" — รอ user ส่งรูปเนมเพลท
 # =============================================================================
 _user_state: dict[str, dict] = {}
+
+# =============================================================================
+# Defense: Duplicate-event deduplication (PITFALL 3)
+# เก็บ webhookEventId ที่เคยเห็นไว้ใน set เพื่อ skip event ซ้ำ
+# ล้าง set ทุก MAX_SEEN_SIZE entries เพื่อไม่ให้ RAM รั่ว
+# =============================================================================
+_seen_event_ids: set[str] = set()
+_MAX_SEEN_SIZE = 500  # รีเซ็ตเมื่อ set ใหญ่เกินนี้
+
+
+def _is_duplicate_event(event: dict) -> bool:
+    """คืน True ถ้า event นี้เคยประมวลผลไปแล้ว (LINE ส่งซ้ำ)"""
+    global _seen_event_ids
+    event_id = event.get("webhookEventId") or event.get("id")
+    if not event_id:
+        return False  # ไม่มี ID → ประมวลผลปกติ (ปลอดภัยกว่า skip)
+    if event_id in _seen_event_ids:
+        print(f"[dedup] skipping duplicate event_id={event_id}")
+        return True
+    if len(_seen_event_ids) >= _MAX_SEEN_SIZE:
+        _seen_event_ids = set()  # flush เมื่อเต็ม (simple TTL substitute)
+    _seen_event_ids.add(event_id)
+    return False
+
+
+# =============================================================================
+# Defense: Signature verification (PITFALL 1)
+# LINE ส่ง HMAC-SHA256 ของ raw body ใน X-Line-Signature header
+# ต้อง verify ก่อนประมวลผลทุกครั้ง — อ่าน raw bytes ก่อน parse JSON
+# =============================================================================
+
+def _verify_line_signature(raw_body: bytes, signature_header: str) -> bool:
+    """ตรวจสอบว่า request มาจาก LINE Platform จริง
+    คืน False ถ้า signature ไม่ตรงหรือ _LINE_SECRET ว่าง"""
+    if not _LINE_SECRET:
+        print("[security] LINE_CHANNEL_SECRET not set — skipping signature check")
+        return True  # dev fallback: ถ้าไม่มี secret ให้ผ่านไปก่อน
+    if not signature_header:
+        return False
+    expected = base64.b64encode(
+        hmac.new(_LINE_SECRET.encode("utf-8"), raw_body, hashlib.sha256).digest()
+    ).decode("utf-8")
+    return hmac.compare_digest(expected, signature_header)
 
 COMPARE_BRANDS = [
     "Oriental", "ZD", "Suntech", "GTR", "Panasonic",
@@ -179,7 +288,7 @@ def _dl_url(r2_file: str, display_name: str) -> str:
 # =============================================================================
 
 def _post_line(reply_token: str, messages: list) -> None:
-    http_requests.post(
+    resp = http_requests.post(
         _LINE_REPLY_API,
         headers={
             "Authorization": f"Bearer {_LINE_TOKEN}",
@@ -188,6 +297,8 @@ def _post_line(reply_token: str, messages: list) -> None:
         json={"replyToken": reply_token, "messages": messages},
         timeout=10,
     )
+    if resp.status_code != 200:
+        print(f"[LINE reply error] status={resp.status_code} body={resp.text[:300]}")
 
 
 def _reply_text(reply_token: str, text: str) -> None:
@@ -348,9 +459,9 @@ def _flex_asset_type() -> dict:
 
 
 def _flex_asset_type_with_model(model: str) -> dict:
-    """Bubble ถาม type ไฟล์ พร้อมแสดง model ที่ส่งมา"""
-    base = _flex_asset_type()
-    # แทรก text แสดง model ไว้ใต้หัวข้อ "เอาอะไรดีครับ?"
+    """Bubble ถาม type ไฟล์ พร้อมแสดง model ที่ส่งมา (ไม่ mutate _flex_asset_type)"""
+    import copy
+    base = copy.deepcopy(_flex_asset_type())
     body_contents = base["body"]["contents"]
     body_contents.insert(1, {
         "type": "text",
@@ -592,126 +703,146 @@ def _get_user_id(event: dict) -> str:
 
 @line_bot_bp.post("/line/webhook")
 def line_webhook():
+    # ── Defense PITFALL 1: ตรวจ signature ก่อนทุกอย่าง ──────────────────
+    # ต้องอ่าน raw_body ที่นี่ก่อน get_json() เพราะ Flask อ่าน body stream ได้ครั้งเดียว
+    raw_body = request.get_data()
+    sig = request.headers.get("X-Line-Signature", "")
+    if not _verify_line_signature(raw_body, sig):
+        print(f"[security] invalid signature rejected — sig={sig[:20]}...")
+        return jsonify({"error": "invalid signature"}), 400
+
     payload = request.get_json(silent=True) or {}
 
     for event in payload.get("events", []):
-        event_type  = event.get("type")
-        reply_token = event.get("replyToken", "")
-        user_id     = _get_user_id(event)
-
-        # ── follow / join → ทักทายทันที ────────────────────────────────────
-        if event_type in ("follow", "join"):
-            _reply_flex(reply_token, "สวัสดีครับ! Mr.SAS MotorBot", _flex_greeting())
+        # ── Defense PITFALL 3: ข้าม duplicate event ──────────────────────
+        if _is_duplicate_event(event):
             continue
-
-        if event_type != "message":
-            continue
-
-        msg      = event.get("message", {})
-        msg_type = msg.get("type")
-
-        # ── รูปภาพ (เนมเพลท) ────────────────────────────────────────────────
-        if msg_type == "image":
-            state = _user_state.get(user_id, {})
-            if state.get("step") == "compare_photo":
-                brand = state.get("data", {}).get("brand", "")
-                # [TODO] ส่ง image message_id ไป OCR (Google Vision / Claude Vision)
-                # แล้ว match กับ SAS model จาก Supabase / Vector DB
-                # ตอนนี้ตอบ placeholder ไปก่อน
-                _reply_text(
-                    reply_token,
-                    f"📷 ได้รับรูปเนมเพลทแล้วครับ ({brand})\n\n"
-                    f"🔧 ระบบกำลังพัฒนาส่วน OCR + Match อยู่ครับ\n"
-                    f"ในระหว่างนี้ทีมแอดมินจะ Match รุ่นให้ด้วยตัวเองก่อนนะครับ 🙏\n\n"
-                    f"พิมพ์ 'เมนู' เพื่อเริ่มใหม่",
-                )
-                _user_state.pop(user_id, None)
-            else:
-                _reply_flex(reply_token, "สวัสดีครับ!", _flex_greeting())
-            continue
-
-        if msg_type != "text":
-            continue
-
-        text = msg.get("text", "").strip()
-
-        # ── คำสั่ง: เมนู / กลับ ─────────────────────────────────────────────
-        if text.lower() in ("เมนู", "menu", "หน้าแรก", "กลับ", "start", "สวัสดี", "hi", "hello"):
-            _user_state.pop(user_id, None)
-            _reply_flex(reply_token, "สวัสดีครับ! Mr.SAS MotorBot", _flex_greeting())
-            continue
-
-        # ── ปุ่มหลัก: ขอ3D&Spec ─────────────────────────────────────────────
-        if text == "ขอ3D&Spec":
-            _user_state[user_id] = {"step": "asset_type", "data": {}}
-            _reply_flex(reply_token, "เอาอะไรดีครับ?", _flex_asset_type())
-            continue
-
-        # ── ปุ่มหลัก: เทียบรุ่น ─────────────────────────────────────────────
-        if text == "เทียบรุ่น":
-            _user_state[user_id] = {"step": "compare_brand", "data": {}}
-            _reply_flex(reply_token, "เลือกแบรนด์คู่เทียบครับ", _flex_compare_brands())
-            continue
-
-        # ── STATE: asset_type — User เลือกประเภทไฟล์ ────────────────────────
-        if text.startswith("__asset:"):
-            a_type = text.replace("__asset:", "")
-            prev_state = _user_state.get(user_id, {})
-            pending_model = prev_state.get("data", {}).get("pending_model")
-            if pending_model:
-                # มี model code รอค้างอยู่ → ประมวลผลได้เลย
-                _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
-                _handle_asset_request(reply_token, user_id, pending_model)
-            else:
-                _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
-                label = _ASSET_LABEL.get(a_type, a_type)
-                _reply_flex(reply_token, f"ขอ {label}", _flex_ask_model(label))
-            continue
-
-        # ── STATE: asset_model — User ส่ง Model code ────────────────────────
-        state = _user_state.get(user_id, {})
-        if state.get("step") == "asset_model":
-            _handle_asset_request(reply_token, user_id, text)
-            continue
-
-        # ── Fallback: ข้อความที่ดูเหมือน Model code แต่ไม่มี state ──────────
-        # (กรณี server restart ทำให้ in-memory state หาย)
-        if re.match(r'^[A-Z0-9][A-Z0-9\-\.]+$', text, re.IGNORECASE) and '-' in text:
-            _user_state[user_id] = {"step": "asset_type", "data": {"pending_model": text}}
-            _reply_flex(
-                reply_token,
-                "เอาไฟล์ประเภทไหนดีครับ?",
-                _flex_asset_type_with_model(text),
-            )
-            continue
-
-        # ── STATE: compare_brand — User เลือกแบรนด์ ─────────────────────────
-        if text.startswith("__brand:"):
-            brand = text.replace("__brand:", "")
-            _user_state[user_id] = {"step": "compare_photo", "data": {"brand": brand}}
-            _reply_text(
-                reply_token,
-                f"เลือก {brand} แล้วครับ 👍\n\n"
-                f"📸 ขอดูเนมเพลทหน่อยครับ\n"
-                f"(ถ่ายรูปหรือส่งภาพเนมเพลทมาได้เลยครับ)",
-            )
-            continue
-
-        # ── STATE: compare_photo — รอรูป (แต่ user ส่ง text มา) ─────────────
-        if state.get("step") == "compare_photo":
-            _reply_text(
-                reply_token,
-                "📸 รอรูปเนมเพลทอยู่ครับ\n"
-                "ส่งรูปมาได้เลยนะครับ 😊\n\n"
-                "พิมพ์ 'เมนู' ถ้าอยากเริ่มใหม่",
-            )
-            continue
-
-        # ── ข้อความอื่นๆ → ทักทาย ────────────────────────────────────────────
-        _user_state.pop(user_id, None)
-        _reply_flex(reply_token, "สวัสดีครับ! Mr.SAS MotorBot", _flex_greeting())
+        try:
+            _handle_event(event)
+        except Exception as exc:
+            import traceback
+            print(f"[webhook unhandled exception] {exc}\n{traceback.format_exc()}")
 
     return jsonify({"ok": True}), 200
+
+
+def _handle_event(event: dict) -> None:
+    """ประมวลผล 1 event จาก LINE"""
+    event_type  = event.get("type")
+    reply_token = event.get("replyToken", "")
+    user_id     = _get_user_id(event)
+
+    # ── follow / join → ทักทายทันที ────────────────────────────────────
+    if event_type in ("follow", "join"):
+        _reply_flex(reply_token, "สวัสดีครับ! Mr.SAS MotorBot", _flex_greeting())
+        return
+
+    if event_type != "message":
+        return
+
+    msg      = event.get("message", {})
+    msg_type = msg.get("type")
+
+    # ── รูปภาพ (เนมเพลท) ────────────────────────────────────────────────
+    if msg_type == "image":
+        state = _user_state.get(user_id, {})
+        if state.get("step") == "compare_photo":
+            brand = state.get("data", {}).get("brand", "")
+            # [TODO] ส่ง image message_id ไป OCR (Google Vision / Claude Vision)
+            # แล้ว match กับ SAS model จาก Supabase / Vector DB
+            # ตอนนี้ตอบ placeholder ไปก่อน
+            _reply_text(
+                reply_token,
+                f"📷 ได้รับรูปเนมเพลทแล้วครับ ({brand})\n\n"
+                f"🔧 ระบบกำลังพัฒนาส่วน OCR + Match อยู่ครับ\n"
+                f"ในระหว่างนี้ทีมแอดมินจะ Match รุ่นให้ด้วยตัวเองก่อนนะครับ 🙏\n\n"
+                f"พิมพ์ 'เมนู' เพื่อเริ่มใหม่",
+            )
+            _user_state.pop(user_id, None)
+        else:
+            _reply_flex(reply_token, "สวัสดีครับ!", _flex_greeting())
+        return
+
+    if msg_type != "text":
+        return
+
+    text = msg.get("text", "").strip()
+
+    # ── คำสั่ง: เมนู / กลับ ─────────────────────────────────────────────
+    if text.lower() in ("เมนู", "menu", "หน้าแรก", "กลับ", "start", "สวัสดี", "hi", "hello"):
+        _user_state.pop(user_id, None)
+        _reply_flex(reply_token, "สวัสดีครับ! Mr.SAS MotorBot", _flex_greeting())
+        return
+
+    # ── ปุ่มหลัก: ขอ3D&Spec ─────────────────────────────────────────────
+    if text == "ขอ3D&Spec":
+        _user_state[user_id] = {"step": "asset_type", "data": {}}
+        _reply_flex(reply_token, "เอาอะไรดีครับ?", _flex_asset_type())
+        return
+
+    # ── ปุ่มหลัก: เทียบรุ่น ─────────────────────────────────────────────
+    if text == "เทียบรุ่น":
+        _user_state[user_id] = {"step": "compare_brand", "data": {}}
+        _reply_flex(reply_token, "เลือกแบรนด์คู่เทียบครับ", _flex_compare_brands())
+        return
+
+    # ── STATE: asset_type — User เลือกประเภทไฟล์ ────────────────────────
+    if text.startswith("__asset:"):
+        a_type = text.replace("__asset:", "")
+        prev_state = _user_state.get(user_id, {})
+        pending_model = prev_state.get("data", {}).get("pending_model")
+        if pending_model:
+            # มี model code รอค้างอยู่ → ประมวลผลได้เลย
+            _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
+            _handle_asset_request(reply_token, user_id, pending_model)
+        else:
+            _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
+            label = _ASSET_LABEL.get(a_type, a_type)
+            _reply_flex(reply_token, f"ขอ {label}", _flex_ask_model(label))
+        return
+
+    # ── STATE: asset_model — User ส่ง Model code ────────────────────────
+    state = _user_state.get(user_id, {})
+    if state.get("step") == "asset_model":
+        _handle_asset_request(reply_token, user_id, text)
+        return
+
+    # ── Fallback: ข้อความที่ดูเหมือน Model code แต่ไม่มี state ──────────
+    # (กรณี server restart ทำให้ in-memory state หาย)
+    if re.match(r'^[A-Z0-9][A-Z0-9\-\.]+$', text, re.IGNORECASE) and '-' in text:
+        _user_state[user_id] = {"step": "asset_type", "data": {"pending_model": text}}
+        _reply_flex(
+            reply_token,
+            "เอาไฟล์ประเภทไหนดีครับ?",
+            _flex_asset_type_with_model(text),
+        )
+        return
+
+    # ── STATE: compare_brand — User เลือกแบรนด์ ─────────────────────────
+    if text.startswith("__brand:"):
+        brand = text.replace("__brand:", "")
+        _user_state[user_id] = {"step": "compare_photo", "data": {"brand": brand}}
+        _reply_text(
+            reply_token,
+            f"เลือก {brand} แล้วครับ 👍\n\n"
+            f"📸 ขอดูเนมเพลทหน่อยครับ\n"
+            f"(ถ่ายรูปหรือส่งภาพเนมเพลทมาได้เลยครับ)",
+        )
+        return
+
+    # ── STATE: compare_photo — รอรูป (แต่ user ส่ง text มา) ─────────────
+    if state.get("step") == "compare_photo":
+        _reply_text(
+            reply_token,
+            "📸 รอรูปเนมเพลทอยู่ครับ\n"
+            "ส่งรูปมาได้เลยนะครับ 😊\n\n"
+            "พิมพ์ 'เมนู' ถ้าอยากเริ่มใหม่",
+        )
+        return
+
+    # ── ข้อความอื่นๆ → ทักทาย ────────────────────────────────────────────
+    _user_state.pop(user_id, None)
+    _reply_flex(reply_token, "สวัสดีครับ! Mr.SAS MotorBot", _flex_greeting())
 
 
 # =============================================================================
