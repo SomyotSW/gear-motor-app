@@ -77,8 +77,12 @@ PITFALL 1 — SIGNATURE ไม่ได้ตรวจสอบ (🔴 Critical S
          ถ้าไม่ verify ใครก็ POST มา /line/webhook แกล้งเป็น LINE ได้
          inject state เพี้ยน หรือทำให้ bot reply ผิดๆ ได้
   สถานะ: ✅ มี _verify_line_signature() ป้องกันแล้ว (ดูใต้ Config block)
-  ⚠️ อย่าลบ: verify ต้องอ่าน request.get_data() (raw bytes) ก่อน
-             อย่าย้ายไปทำหลัง get_json() — body จะหายไปแล้ว
+  ⚠️ BUG TRAP — "body consumed twice":
+     Flask request body เป็น stream อ่านได้ครั้งเดียว
+     ถ้าเรียก request.get_data() แล้วตามด้วย request.get_json()
+     → get_json() ได้ empty dict → events ว่าง → bot เงียบ ไม่ตอบ!
+     วิธีแก้: parse JSON จาก raw_body โดยตรงด้วย json.loads(raw_body)
+     (ดูใน line_webhook() — ห้ามเปลี่ยนกลับไปใช้ get_json() เด็ดขาด)
 
 PITFALL 2 — REPLY TOKEN หมดอายุเร็ว (~30 วินาที)
 ───────────────────────────────────────────────────────────
@@ -704,14 +708,19 @@ def _get_user_id(event: dict) -> str:
 @line_bot_bp.post("/line/webhook")
 def line_webhook():
     # ── Defense PITFALL 1: ตรวจ signature ก่อนทุกอย่าง ──────────────────
-    # ต้องอ่าน raw_body ที่นี่ก่อน get_json() เพราะ Flask อ่าน body stream ได้ครั้งเดียว
+    # อ่าน raw_body ครั้งเดียว แล้ว parse JSON จาก bytes เลย
+    # ⚠️ อย่าเรียก request.get_json() หลังจากนี้ — body stream หมดแล้ว
     raw_body = request.get_data()
     sig = request.headers.get("X-Line-Signature", "")
     if not _verify_line_signature(raw_body, sig):
         print(f"[security] invalid signature rejected — sig={sig[:20]}...")
         return jsonify({"error": "invalid signature"}), 400
 
-    payload = request.get_json(silent=True) or {}
+    import json as _json
+    try:
+        payload = _json.loads(raw_body) if raw_body else {}
+    except Exception:
+        payload = {}
 
     for event in payload.get("events", []):
         # ── Defense PITFALL 3: ข้าม duplicate event ──────────────────────
