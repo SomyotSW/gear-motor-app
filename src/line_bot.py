@@ -138,20 +138,30 @@ def _r2_url(filename: str) -> str:
     return f"{_R2_BASE}/{quote(filename, safe='')}"
 
 
-def _fetch_r2(filename: str) -> bytes | None:
-    """ดึงไฟล์จาก R2 คืน bytes หรือ None ถ้าไม่เจอ"""
-    try:
-        r = http_requests.get(_r2_url(filename), timeout=30)
-        if r.status_code != 200:
-            return None
-        if "text/html" in r.headers.get("content-type", ""):
-            return None
-        if len(r.content) < 256:
-            return None
-        return r.content
-    except Exception as e:
-        print(f"[R2 fetch error] {e}")
-        return None
+def _fetch_r2(filename: str) -> tuple[bytes, str] | tuple[None, None]:
+    """ดึงไฟล์จาก R2 คืน (bytes, actual_filename) หรือ (None, None) ถ้าไม่เจอ
+    สำหรับ .step/.STEP จะลองทั้งตัวพิมพ์เล็กและตัวพิมพ์ใหญ่อัตโนมัติ"""
+    candidates = [filename]
+    # สร้าง variant นามสกุล: ถ้าเป็น .step → ลอง .STEP ด้วย และในทางกลับกัน
+    base, _, ext = filename.rpartition(".")
+    if ext.lower() == "step":
+        alt = f"{base}.STEP" if ext == "step" else f"{base}.step"
+        if alt != filename:
+            candidates.append(alt)
+
+    for candidate in candidates:
+        try:
+            r = http_requests.get(_r2_url(candidate), timeout=30)
+            if r.status_code != 200:
+                continue
+            if "text/html" in r.headers.get("content-type", ""):
+                continue
+            if len(r.content) < 256:
+                continue
+            return r.content, candidate
+        except Exception as e:
+            print(f"[R2 fetch error] {candidate}: {e}")
+    return None, None
 
 
 def _dl_url(r2_file: str, display_name: str) -> str:
@@ -337,7 +347,21 @@ def _flex_asset_type() -> dict:
     }
 
 
-def _flex_ask_model(asset_label: str) -> dict:
+def _flex_asset_type_with_model(model: str) -> dict:
+    """Bubble ถาม type ไฟล์ พร้อมแสดง model ที่ส่งมา"""
+    base = _flex_asset_type()
+    # แทรก text แสดง model ไว้ใต้หัวข้อ "เอาอะไรดีครับ?"
+    body_contents = base["body"]["contents"]
+    body_contents.insert(1, {
+        "type": "text",
+        "text": f"Model: {model}",
+        "size": "sm",
+        "color": "#0066CC",
+        "weight": "bold",
+        "margin": "sm",
+        "wrap": True,
+    })
+    return base
     """Bubble ถาม Model code"""
     return {
         "type": "bubble",
@@ -521,8 +545,9 @@ def _handle_asset_request(reply_token: str, user_id: str, raw_model: str) -> Non
 
     # กำหนด candidates ตาม type
     if a_type == "3d":
-        r2_file      = f"{file_model}.STEP"
-        display_name = f"{raw_model}.STEP"
+        # ลอง .step (ตัวพิมพ์เล็ก) ก่อน แล้ว fallback .STEP อัตโนมัติใน _fetch_r2
+        r2_file      = f"{file_model}.step"
+        display_name = f"{raw_model}.step"
         mime         = "application/octet-stream"
     elif a_type == "2d":
         r2_file      = f"{file_model}.pdf"
@@ -533,8 +558,8 @@ def _handle_asset_request(reply_token: str, user_id: str, raw_model: str) -> Non
         display_name = f"{raw_model}.pdf"
         mime         = "application/pdf"
 
-    # ตรวจว่าไฟล์มีจริง
-    file_bytes = _fetch_r2(r2_file)
+    # ตรวจว่าไฟล์มีจริง (_fetch_r2 คืน actual filename ที่เจอ)
+    file_bytes, actual_r2_file = _fetch_r2(r2_file)
     if file_bytes is None:
         _reply_text(
             reply_token,
@@ -545,6 +570,8 @@ def _handle_asset_request(reply_token: str, user_id: str, raw_model: str) -> Non
         _user_state.pop(user_id, None)
         return
 
+    # ใช้ชื่อไฟล์จริงที่เจอใน R2 (อาจเป็น .step หรือ .STEP)
+    r2_file = actual_r2_file
     url = _dl_url(r2_file, display_name)
     label = _ASSET_LABEL.get(a_type, "ดาวน์โหลด")
 
@@ -629,15 +656,33 @@ def line_webhook():
         # ── STATE: asset_type — User เลือกประเภทไฟล์ ────────────────────────
         if text.startswith("__asset:"):
             a_type = text.replace("__asset:", "")
-            _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
-            label = _ASSET_LABEL.get(a_type, a_type)
-            _reply_flex(reply_token, f"ขอ {label}", _flex_ask_model(label))
+            prev_state = _user_state.get(user_id, {})
+            pending_model = prev_state.get("data", {}).get("pending_model")
+            if pending_model:
+                # มี model code รอค้างอยู่ → ประมวลผลได้เลย
+                _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
+                _handle_asset_request(reply_token, user_id, pending_model)
+            else:
+                _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
+                label = _ASSET_LABEL.get(a_type, a_type)
+                _reply_flex(reply_token, f"ขอ {label}", _flex_ask_model(label))
             continue
 
         # ── STATE: asset_model — User ส่ง Model code ────────────────────────
         state = _user_state.get(user_id, {})
         if state.get("step") == "asset_model":
             _handle_asset_request(reply_token, user_id, text)
+            continue
+
+        # ── Fallback: ข้อความที่ดูเหมือน Model code แต่ไม่มี state ──────────
+        # (กรณี server restart ทำให้ in-memory state หาย)
+        if re.match(r'^[A-Z0-9][A-Z0-9\-\.]+$', text, re.IGNORECASE) and '-' in text:
+            _user_state[user_id] = {"step": "asset_type", "data": {"pending_model": text}}
+            _reply_flex(
+                reply_token,
+                "เอาไฟล์ประเภทไหนดีครับ?",
+                _flex_asset_type_with_model(text),
+            )
             continue
 
         # ── STATE: compare_brand — User เลือกแบรนด์ ─────────────────────────
@@ -681,7 +726,7 @@ def line_download():
     if not file_param:
         return jsonify({"error": "missing file param"}), 400
 
-    file_bytes = _fetch_r2(file_param)
+    file_bytes, _ = _fetch_r2(file_param)
     if file_bytes is None:
         return jsonify({"error": f"ไม่พบไฟล์ {file_param}"}), 404
 
