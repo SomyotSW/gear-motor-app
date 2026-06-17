@@ -720,6 +720,12 @@ def line_webhook():
     # อ่าน raw_body ครั้งเดียว แล้ว parse JSON จาก bytes เลย
     # ⚠️ อย่าเรียก request.get_json() หลังจากนี้ — body stream หมดแล้ว
     raw_body = request.get_data()
+
+    # ✅ FIX: LINE ส่ง empty body ตอนกด "Verify" บน Developer Console
+    # ถ้า body ว่าง → ตอบ 200 OK ทันที (ไม่มี events ให้ประมวลผล)
+    if not raw_body:
+        return jsonify({"ok": True}), 200
+
     sig = request.headers.get("X-Line-Signature", "")
     if not _verify_line_signature(raw_body, sig):
         print(f"[security] invalid signature rejected — sig={sig[:20]}...")
