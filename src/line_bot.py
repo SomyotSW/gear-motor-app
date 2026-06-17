@@ -171,6 +171,10 @@ _SERVER_BASE = os.environ.get(
     "https://gear-motor-app.onrender.com",
 )
 
+# Startup diagnostic — แสดงใน Render Logs ว่า ENV ถูก set ไหม
+print(f"[line_bot] LINE_CHANNEL_SECRET  : {'✅ set ({} chars)'.format(len(_LINE_SECRET.strip())) if _LINE_SECRET.strip() else '❌ NOT SET'}")
+print(f"[line_bot] LINE_CHANNEL_ACCESS_TOKEN: {'✅ set ({} chars)'.format(len(_LINE_TOKEN.strip())) if _LINE_TOKEN.strip() else '❌ NOT SET'}")
+
 # =============================================================================
 # State management (in-memory)
 # user_id → { "step": str, "data": dict }
@@ -216,15 +220,20 @@ def _is_duplicate_event(event: dict) -> bool:
 def _verify_line_signature(raw_body: bytes, signature_header: str) -> bool:
     """ตรวจสอบว่า request มาจาก LINE Platform จริง
     คืน False ถ้า signature ไม่ตรงหรือ _LINE_SECRET ว่าง"""
-    if not _LINE_SECRET:
+    secret = _LINE_SECRET.strip()  # ป้องกัน whitespace/newline ที่ติดมาจาก ENV
+    if not secret:
         print("[security] LINE_CHANNEL_SECRET not set — skipping signature check")
         return True  # dev fallback: ถ้าไม่มี secret ให้ผ่านไปก่อน
     if not signature_header:
+        print("[security] missing X-Line-Signature header")
         return False
     expected = base64.b64encode(
-        hmac.new(_LINE_SECRET.encode("utf-8"), raw_body, hashlib.sha256).digest()
+        hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).digest()
     ).decode("utf-8")
-    return hmac.compare_digest(expected, signature_header)
+    ok = hmac.compare_digest(expected, signature_header.strip())
+    if not ok:
+        print(f"[security] signature mismatch — expected={expected[:20]}... got={signature_header[:20]}...")
+    return ok
 
 COMPARE_BRANDS = [
     "Oriental", "ZD", "Suntech", "GTR", "Panasonic",
