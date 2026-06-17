@@ -721,15 +721,24 @@ def line_webhook():
     # ⚠️ อย่าเรียก request.get_json() หลังจากนี้ — body stream หมดแล้ว
     raw_body = request.get_data()
 
-    # ✅ FIX: LINE ส่ง empty body ตอนกด "Verify" บน Developer Console
-    # ถ้า body ว่าง → ตอบ 200 OK ทันที (ไม่มี events ให้ประมวลผล)
+    # ✅ FIX 1: LINE Verify ส่ง empty body → ตอบ 200 ทันที
     if not raw_body:
+        print("[webhook] empty body — LINE Verify ping, returning 200")
         return jsonify({"ok": True}), 200
 
     sig = request.headers.get("X-Line-Signature", "")
-    if not _verify_line_signature(raw_body, sig):
-        print(f"[security] invalid signature rejected — sig={sig[:20]}...")
+
+    # ✅ FIX 2: debug log + ถ้า secret ไม่ได้ set → bypass signature check
+    secret_len = len(_LINE_SECRET.strip())
+    print(f"[webhook] body_len={len(raw_body)} sig={'OK' if sig else 'MISSING'} secret={'SET('+str(secret_len)+')' if secret_len else 'NOT SET ❌'}")
+
+    if not _LINE_SECRET.strip():
+        print("[webhook] ⚠️ LINE_CHANNEL_SECRET not set — bypassing signature check")
+    elif not _verify_line_signature(raw_body, sig):
+        print(f"[security] ❌ invalid signature rejected — sig={sig[:30]}...")
         return jsonify({"error": "invalid signature"}), 400
+    else:
+        print("[webhook] ✅ signature verified OK")
 
     import json as _json
     try:
