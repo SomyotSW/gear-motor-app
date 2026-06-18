@@ -176,7 +176,7 @@ print(f"[line_bot] LINE_CHANNEL_SECRET  : {'✅ set ({} chars)'.format(len(_LINE
 print(f"[line_bot] LINE_CHANNEL_ACCESS_TOKEN: {'✅ set ({} chars)'.format(len(_LINE_TOKEN.strip())) if _LINE_TOKEN.strip() else '❌ NOT SET'}")
 
 # =============================================================================
-# State management (in-memory)
+# State management (Supabase-backed — persistent across restarts)
 # user_id → { "step": str, "data": dict }
 #
 # step values:
@@ -184,8 +184,76 @@ print(f"[line_bot] LINE_CHANNEL_ACCESS_TOKEN: {'✅ set ({} chars)'.format(len(_
 #   "asset_model"   — รอ user พิมพ์ Model code
 #   "compare_brand" — รอ user เลือกแบรนด์คู่แข่ง
 #   "compare_photo" — รอ user ส่งรูปเนมเพลท
+#
+# ต้องสร้าง table ใน Supabase ก่อนใช้งาน:
+#   create table line_user_state (
+#     user_id  text primary key,
+#     step     text not null,
+#     data     jsonb not null default '{}',
+#     updated_at timestamptz not null default now()
+#   );
 # =============================================================================
+import json as _json_mod
+
+_SUPABASE_URL   = os.environ.get("SUPABASE_URL", "").rstrip("/")
+_SUPABASE_KEY   = os.environ.get("SUPABASE_SECRET_KEY", "")
+_STATE_TABLE    = "line_user_state"
+
+# Fallback in-memory cache — ใช้เมื่อ Supabase ไม่ได้ตั้งค่า (dev) หรือ request ล้มเหลว
 _user_state: dict[str, dict] = {}
+
+def _sb_headers() -> dict:
+    return {
+        "apikey": _SUPABASE_KEY,
+        "Authorization": f"Bearer {_SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+    }
+
+def _state_get(user_id: str) -> dict:
+    """ดึง state ของ user จาก Supabase; fallback in-memory ถ้า Supabase ไม่พร้อม"""
+    if not (_SUPABASE_URL and _SUPABASE_KEY):
+        return _user_state.get(user_id, {})
+    try:
+        url = f"{_SUPABASE_URL}/rest/v1/{_STATE_TABLE}?user_id=eq.{quote(user_id, safe='')}&select=step,data"
+        r = http_requests.get(url, headers=_sb_headers(), timeout=5)
+        if r.status_code == 200:
+            rows = r.json()
+            if rows:
+                return {"step": rows[0]["step"], "data": rows[0].get("data") or {}}
+        return {}
+    except Exception as e:
+        print(f"[state_get error] {e}")
+        return _user_state.get(user_id, {})
+
+def _state_set(user_id: str, state: dict) -> None:
+    """บันทึก state ลง Supabase (upsert); fallback in-memory ถ้า Supabase ไม่พร้อม"""
+    _user_state[user_id] = state  # อัปเดต in-memory เสมอ (เร็ว + fallback)
+    if not (_SUPABASE_URL and _SUPABASE_KEY):
+        return
+    try:
+        url = f"{_SUPABASE_URL}/rest/v1/{_STATE_TABLE}"
+        payload = {
+            "user_id": user_id,
+            "step": state.get("step", ""),
+            "data": state.get("data", {}),
+            "updated_at": "now()",
+        }
+        headers = {**_sb_headers(), "Prefer": "resolution=merge-duplicates,return=minimal"}
+        http_requests.post(url, headers=headers, json=payload, timeout=5)
+    except Exception as e:
+        print(f"[state_set error] {e}")
+
+def _state_pop(user_id: str) -> None:
+    """ลบ state ของ user ออกจาก Supabase และ in-memory"""
+    _user_state.pop(user_id, None)
+    if not (_SUPABASE_URL and _SUPABASE_KEY):
+        return
+    try:
+        url = f"{_SUPABASE_URL}/rest/v1/{_STATE_TABLE}?user_id=eq.{quote(user_id, safe='')}"
+        http_requests.delete(url, headers=_sb_headers(), timeout=5)
+    except Exception as e:
+        print(f"[state_pop error] {e}")
 
 # =============================================================================
 # Defense: Duplicate-event deduplication (PITFALL 3)
@@ -666,7 +734,7 @@ _ASSET_LABEL = {
 
 def _handle_asset_request(reply_token: str, user_id: str, raw_model: str) -> None:
     """รับ model code, หาไฟล์ใน R2 ตาม asset_type ที่เลือกไว้, ส่งกลับ"""
-    state  = _user_state.get(user_id, {})
+    state  = _state_get(user_id)
     a_type = state.get("data", {}).get("asset_type", "3d")
     file_model = _normalize_ac_ratio(raw_model)
 
@@ -694,7 +762,7 @@ def _handle_asset_request(reply_token: str, user_id: str, raw_model: str) -> Non
             f"ลองตรวจสอบ Model code อีกครั้งนะครับ\n\n"
             f"พิมพ์ 'เมนู' เพื่อเริ่มใหม่",
         )
-        _user_state.pop(user_id, None)
+        _state_pop(user_id)
         return
 
     # ใช้ชื่อไฟล์จริงที่เจอใน R2 (อาจเป็น .step หรือ .STEP)
@@ -704,7 +772,7 @@ def _handle_asset_request(reply_token: str, user_id: str, raw_model: str) -> Non
 
     flex = _flex_download_result(raw_model, [{"label": f"📥 {label}", "url": url}])
     _reply_flex(reply_token, f"✅ {label} — {raw_model}", flex)
-    _user_state.pop(user_id, None)
+    _state_pop(user_id)
 
 
 # =============================================================================
@@ -781,7 +849,7 @@ def _handle_event(event: dict) -> None:
 
     # ── รูปภาพ (เนมเพลท) ────────────────────────────────────────────────
     if msg_type == "image":
-        state = _user_state.get(user_id, {})
+        state = _state_get(user_id)
         if state.get("step") == "compare_photo":
             brand = state.get("data", {}).get("brand", "")
             # [TODO] ส่ง image message_id ไป OCR (Google Vision / Claude Vision)
@@ -794,7 +862,7 @@ def _handle_event(event: dict) -> None:
                 f"ในระหว่างนี้ทีมแอดมินจะ Match รุ่นให้ด้วยตัวเองก่อนนะครับ 🙏\n\n"
                 f"พิมพ์ 'เมนู' เพื่อเริ่มใหม่",
             )
-            _user_state.pop(user_id, None)
+            _state_pop(user_id)
         else:
             _reply_flex(reply_token, "สวัสดีครับ!", _flex_greeting())
         return
@@ -806,47 +874,47 @@ def _handle_event(event: dict) -> None:
 
     # ── คำสั่ง: เมนู / กลับ ─────────────────────────────────────────────
     if text.lower() in ("เมนู", "menu", "หน้าแรก", "กลับ", "start", "สวัสดี", "hi", "hello"):
-        _user_state.pop(user_id, None)
+        _state_pop(user_id)
         _reply_flex(reply_token, "สวัสดีครับ! Mr.SAS MotorBot", _flex_greeting())
         return
 
     # ── ปุ่มหลัก: ขอ3D&Spec ─────────────────────────────────────────────
     if text == "ขอ3D&Spec":
-        _user_state[user_id] = {"step": "asset_type", "data": {}}
+        _state_set(user_id, {"step": "asset_type", "data": {}})
         _reply_flex(reply_token, "เอาอะไรดีครับ?", _flex_asset_type())
         return
 
     # ── ปุ่มหลัก: เทียบรุ่น ─────────────────────────────────────────────
     if text == "เทียบรุ่น":
-        _user_state[user_id] = {"step": "compare_brand", "data": {}}
+        _state_set(user_id, {"step": "compare_brand", "data": {}})
         _reply_flex(reply_token, "เลือกแบรนด์คู่เทียบครับ", _flex_compare_brands())
         return
 
     # ── STATE: asset_type — User เลือกประเภทไฟล์ ────────────────────────
     if text.startswith("__asset:"):
         a_type = text.replace("__asset:", "")
-        prev_state = _user_state.get(user_id, {})
+        prev_state = _state_get(user_id)
         pending_model = prev_state.get("data", {}).get("pending_model")
         if pending_model:
             # มี model code รอค้างอยู่ → ประมวลผลได้เลย
-            _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
+            _state_set(user_id, {"step": "asset_model", "data": {"asset_type": a_type}})
             _handle_asset_request(reply_token, user_id, pending_model)
         else:
-            _user_state[user_id] = {"step": "asset_model", "data": {"asset_type": a_type}}
+            _state_set(user_id, {"step": "asset_model", "data": {"asset_type": a_type}})
             label = _ASSET_LABEL.get(a_type, a_type)
             _reply_flex(reply_token, f"ขอ {label}", _flex_ask_model(label))
         return
 
     # ── STATE: asset_model — User ส่ง Model code ────────────────────────
-    state = _user_state.get(user_id, {})
+    state = _state_get(user_id)
     if state.get("step") == "asset_model":
         _handle_asset_request(reply_token, user_id, text)
         return
 
     # ── Fallback: ข้อความที่ดูเหมือน Model code แต่ไม่มี state ──────────
-    # (กรณี server restart ทำให้ in-memory state หาย)
+    # (กรณี server restart ทำให้ in-memory state หาย — ยังคงไว้เพื่อ edge case อื่นๆ)
     if re.match(r'^[A-Z0-9][A-Z0-9\-\.]+$', text, re.IGNORECASE) and '-' in text:
-        _user_state[user_id] = {"step": "asset_type", "data": {"pending_model": text}}
+        _state_set(user_id, {"step": "asset_type", "data": {"pending_model": text}})
         _reply_flex(
             reply_token,
             "เอาไฟล์ประเภทไหนดีครับ?",
@@ -857,7 +925,7 @@ def _handle_event(event: dict) -> None:
     # ── STATE: compare_brand — User เลือกแบรนด์ ─────────────────────────
     if text.startswith("__brand:"):
         brand = text.replace("__brand:", "")
-        _user_state[user_id] = {"step": "compare_photo", "data": {"brand": brand}}
+        _state_set(user_id, {"step": "compare_photo", "data": {"brand": brand}})
         _reply_text(
             reply_token,
             f"เลือก {brand} แล้วครับ 👍\n\n"
@@ -877,7 +945,7 @@ def _handle_event(event: dict) -> None:
         return
 
     # ── ข้อความอื่นๆ → ทักทาย ────────────────────────────────────────────
-    _user_state.pop(user_id, None)
+    _state_pop(user_id)
     _reply_flex(reply_token, "สวัสดีครับ! Mr.SAS MotorBot", _flex_greeting())
 
 
