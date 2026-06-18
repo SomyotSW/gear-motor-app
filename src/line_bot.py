@@ -486,6 +486,9 @@ def _flex_asset_type_with_model(model: str) -> dict:
         "wrap": True,
     })
     return base
+
+
+def _flex_ask_model(asset_label: str) -> dict:
     """Bubble ถาม Model code"""
     return {
         "type": "bubble",
@@ -512,7 +515,7 @@ def _flex_asset_type_with_model(model: str) -> dict:
                 },
                 {
                     "type": "text",
-                    "text": "(Model ที่แอดมินเสนอในใบเสนอราคา — Copy แล้วส่งมาได้เลยครับ)",
+                    "text": "💡 ท่านสามารถ Copy code แต่ละรายการจากใบเสนอราคามากรอกในนี้ได้เลยครับ",
                     "size": "xs",
                     "color": "#AAAAAA",
                     "wrap": True,
