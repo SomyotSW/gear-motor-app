@@ -732,26 +732,68 @@ _ASSET_LABEL = {
     "datasheet": "Data Sheet (PDF)",
 }
 
+# SRV Series: รายการ model ที่รองรับ
+_SRV_MODELS = {
+    "SRV025", "SRV030", "SRV040", "SRV050", "SRV063",
+    "SRV075", "SRV090", "SRV110", "SRV130", "SRV150",
+}
+
+# SRV Series: ratio ที่ถูกต้อง (ใช้ตรวจ format เท่านั้น)
+_SRV_RATIOS = {"7.5", "10", "15", "20", "25", "30", "40", "50", "60", "80", "100"}
+
+
+def _parse_srv_code(raw_model: str) -> tuple[str, str, str] | None:
+    """แยก SRV model code ออกเป็น (srv_model, ratio, framesize)
+    รูปแบบ: SRV075-7.5-90B14 → ('SRV075', '7.5', '90B14')
+    คืน None ถ้าไม่ใช่ SRV series หรือ format ไม่ถูกต้อง"""
+    m = re.match(
+        r'^(SRV\d{3})-(\d+(?:\.\d+)?)-(.+)$',
+        raw_model.strip(),
+        re.IGNORECASE,
+    )
+    if not m:
+        return None
+    srv_model = m.group(1).upper()
+    if srv_model not in _SRV_MODELS:
+        return None
+    return srv_model, m.group(2), m.group(3)
+
+
+def _resolve_srv_r2_file(srv_model: str, ratio: str, framesize: str, a_type: str) -> tuple[str, str]:
+    """คืน (r2_file, display_name) สำหรับ SRV series
+    - 2D / Datasheet : r2_file = SRV075.pdf,           display = SRV075-7.5-90B14.pdf
+    - 3D             : r2_file = SRV075-xx-90B14.step, display = SRV075-7.5-90B14.step
+    """
+    raw_code = f"{srv_model}-{ratio}-{framesize}"
+    if a_type in ("2d", "datasheet"):
+        return f"{srv_model}.pdf", f"{raw_code}.pdf"
+    else:  # 3d
+        # xx แทน ratio ทุกค่า — ลอง .step/.STEP ผ่าน _fetch_r2 อัตโนมัติ
+        return f"{srv_model}-xx-{framesize}.step", f"{raw_code}.step"
+
+
 def _handle_asset_request(reply_token: str, user_id: str, raw_model: str) -> None:
     """รับ model code, หาไฟล์ใน R2 ตาม asset_type ที่เลือกไว้, ส่งกลับ"""
     state  = _state_get(user_id)
     a_type = state.get("data", {}).get("asset_type", "3d")
-    file_model = _normalize_ac_ratio(raw_model)
 
-    # กำหนด candidates ตาม type
-    if a_type == "3d":
-        # ลอง .step (ตัวพิมพ์เล็ก) ก่อน แล้ว fallback .STEP อัตโนมัติใน _fetch_r2
-        r2_file      = f"{file_model}.step"
-        display_name = f"{raw_model}.step"
-        mime         = "application/octet-stream"
-    elif a_type == "2d":
-        r2_file      = f"{file_model}.pdf"
-        display_name = f"{raw_model}.pdf"
-        mime         = "application/pdf"
-    else:  # datasheet — ไฟล์เดียวกับ .pdf (Spec Sheet)
-        r2_file      = f"{file_model}.pdf"
-        display_name = f"{raw_model}.pdf"
-        mime         = "application/pdf"
+    # ── SRV Series: แยก logic พิเศษ ─────────────────────────────────────
+    srv_parts = _parse_srv_code(raw_model)
+    if srv_parts:
+        srv_model, ratio, framesize = srv_parts
+        r2_file, display_name = _resolve_srv_r2_file(srv_model, ratio, framesize, a_type)
+    else:
+        # ── สินค้าอื่น: logic เดิม ────────────────────────────────────────
+        file_model = _normalize_ac_ratio(raw_model)
+        if a_type == "3d":
+            r2_file      = f"{file_model}.step"
+            display_name = f"{raw_model}.step"
+        elif a_type == "2d":
+            r2_file      = f"{file_model}.pdf"
+            display_name = f"{raw_model}.pdf"
+        else:  # datasheet
+            r2_file      = f"{file_model}.pdf"
+            display_name = f"{raw_model}.pdf"
 
     # ตรวจว่าไฟล์มีจริง (_fetch_r2 คืน actual filename ที่เจอ)
     file_bytes, actual_r2_file = _fetch_r2(r2_file)
