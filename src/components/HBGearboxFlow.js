@@ -457,7 +457,7 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
       >
         <span className="sheen-layer"></span>
         <span className="glow-layer"></span>
-        <img src={img} alt={label} className={`${big ? 'h-84 w-84' : 'h-68 w-68'} object-contain card-image`} />
+        <img src={img} alt={label} className={`${big ? 'h-56 w-56' : 'h-64 w-64'} object-contain card-image`} />
         <div className="mt-2 text-base font-semibold">{label}</div>
       </button>
     );
@@ -470,9 +470,8 @@ export function renderHBGearFlow(hbState, hbSetters, onConfirm, onHome, onDownlo
     return (
       <div className="space-y-4 mt-0">
         <h3 className="text-white font-bold mb-2 drop-shadow">Serier Selection</h3>
-        <div className="grid grid-cols-2 gap-5 justify-items-center items-start">
+        <div className="grid grid-cols-1 gap-5 justify-items-center items-start">
           <Tile img={HB1Img}  label="HB Series"       onClick={() => update('hbSeries', 'HB')} />
-          <Tile img={ZDY1Img} label="ZDY/ZLY/ZSY/…"  onClick={() => update('hbSeries', 'ZDYFAMILY')} />
         </div>
       </div>
     );

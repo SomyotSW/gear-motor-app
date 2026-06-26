@@ -20,6 +20,9 @@ import DriverImg from '../assets/driver/driver.png';
 import BMKImg from '../assets/bmk/bmk.png';
 import IECImg from '../assets/iec/iec.png';
 import WPImg from '../assets/wp/wp.png';
+import ZSeriesImg from '../assets/Z/ZDYZLYZSYZFY.png';
+import MSeriesImg from '../assets/M/M Series.png';
+import SMRRSeriesImg from '../assets/smrr/smrr.png';
 
 import SingleImg from '../assets/ac/Voltage/Single.png';
 import ThreeImg from '../assets/ac/Voltage/Three.png';
@@ -293,6 +296,9 @@ export const productList = [
   { name: 'BMK SERIES', image: BMKImg },
   { name: 'WP WORMGEAR REDUCER', image: WPImg },
   { name: 'Servo Driver and Speed Controller', image: DriverImg },
+  { name: 'Z Series', image: ZSeriesImg },
+  { name: 'M Series', image: MSeriesImg },
+  { name: 'SMRR Series', image: SMRRSeriesImg },
 ];
 
 
@@ -304,6 +310,8 @@ export { generateHypoidModelCode, renderHypoidGearFlow } from './HypoidGearFlow.
 
 export { generateHBModelCode, renderHBGearFlow, calcSFBySeriesStage, getPNBySeriesStage,
          H1_PN1500_BY_SIZE, H1_PN750_BY_SIZE, H3_PN1500_BY_SIZE, H3_PN1000_BY_SIZE, H3_PN750_BY_SIZE } from './HBGearboxFlow.js';
+
+export { generateZModelCode, renderZSeriesFlow } from './ZSeriesFlow.js';
 
 
 // [ADD-BLDC] BLDC Gear Motor Flow (updated with High-efficiency)

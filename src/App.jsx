@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { productList, renderHypoidGearFlow, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderHBGearFlow, generateHBModelCode } from './components/MotorFlows.js';
+import { productList, renderHypoidGearFlow, renderPlanetaryGearFlow, generatePlanetaryModelCode, renderHBGearFlow, generateHBModelCode, renderZSeriesFlow, generateZModelCode } from './components/MotorFlows.js';
 import { renderSRVFlow } from './components/SRVWormGearFlow.js';
 import { renderServoFlow, generateServoModelCode, mapServoGlbFilename } from './components/ServoMotorFlow.js';
 import { renderBLDCGearFlow, generateBLDCModelCode } from './components/BLDCGearMotorFlow.js';
@@ -1005,6 +1005,14 @@ const hbState = { hbSeries, hbHBType, hbStage, hbOutput, hbMount, hbSize, hbRati
 hbKW, 	hbPole,  hbColor, hbQty, };
 const hbSetters = { setHbSeries, setHbHBType, setHbStage, setHbOutput, setHbMount, setHbSize, setHbRatio, setHbShaftDesign, setHbZdySelected, setHbPreviewShaft, setHbRatioDraft, setHbKW, setHbPole, setHbColor, setHbQty, };
 
+// ── Z Series state ────────────────────────────────────────────────────────
+const [zType,     setZType]     = useState(null); // 'ZDY' | 'ZLY' | 'ZSY' | 'ZFY'
+const [zSize,     setZSize]     = useState(null); // number
+const [zRatio,    setZRatio]    = useState(null); // number
+const [zAssembly, setZAssembly] = useState(null); // 'I'..'IX'
+const zState   = { zType, zSize, zRatio, zAssembly };
+const zSetters = { setZType, setZSize, setZRatio, setZAssembly };
+
 // ส่วนที่ 2  —  เพิ่ม useState สำหรับ IEC (วางในกลุ่ม useState เดิม)
 // ──────────────────────────────────────────────────────────────────────
 const [iecMotorType, setIecMotorType] = useState(null);
@@ -1059,6 +1067,8 @@ const COMING_SOON = new Set([
   'SPN Series',
   'P Planetary Gearbox',
   'Servo Drive and Speed controller',
+  'M Series',
+  'SMRR Series',
 ]);
 
 const handleBackUniversal = () => {
@@ -1115,6 +1125,8 @@ const handleBackWithReset = () => {
     resetSRV();
   // [ADD-DC] เคลียร์ DC Gear Motor
   setDcMotor(null); setDcVoltage(null); setDcRatio(null); setDcGearHead(null);
+  // [ADD-Z] เคลียร์ Z Series
+  setZType(null); setZSize(null); setZRatio(null); setZAssembly(null);
 };
 
     const resetRKFSState = () => {
@@ -1936,7 +1948,6 @@ const getFileUrl = () => {
           </>
         )}
 
-
 {selectedProduct && COMING_SOON.has(selectedProduct) && (
   <>
     {/* ปุ่ม Home มุมขวาบน */}
@@ -2390,6 +2401,31 @@ className="text-green-400 font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]
   </>
 )}
 
+{/* ── Z Series Flow ── */}
+{selectedProduct === 'Z Series' && !selectedModel && !showForm && (
+  <>
+    <div className="flex justify-between items-center mt-6">
+      <h2 className="text-white font-bold mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">Z Series Selection</h2>
+    </div>
+    {renderZSeriesFlow({
+      zState,
+      zSetters,
+      onHome: () => {
+        ['zType','zSize','zRatio','zAssembly'].forEach(k => {
+          const fn = zSetters[`set${k.charAt(0).toUpperCase()}${k.slice(1)}`];
+          if (typeof fn === 'function') fn(null);
+        });
+        setSelectedProduct(null);
+      },
+      onSubmit: (modelCode) => {
+        setModelCodeList([modelCode]);
+        setSelectedModel(modelCode);
+        setShowForm(true);
+      },
+    })}
+  </>
+)}
+
 {selectedProduct === 'SRV Worm Gear' && !selectedModel && !showForm && (
   <>
     <div className="flex justify-between items-center mt-6">
@@ -2697,8 +2733,25 @@ onClick={async () => {
 )}
 
 {!showRKFSQuote && showForm && (
-          <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center">
-            <h3 className="text-lg font-semibold mb-4">กรอกข้อมูลครบทุกช่องและรับไฟล์ .STEP ได้ทันที ไม่ต้องรอ..ตอบกลับครับ</h3>
+          <div className="mt-10 max-w-md mx-auto bg-white p-6 rounded shadow text-center relative">
+
+            {/* Home button — มุมบนขวา */}
+            <button
+              type="button"
+              onClick={handleBackWithReset}
+              title="กลับหน้าหลัก"
+              className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center
+                         bg-gray-100 hover:bg-blue-500 hover:text-white text-gray-400
+                         border border-gray-200 shadow-sm transition-all duration-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7A1 1 0 003 11h1v6a1 1 0 001 1h4v-4h2v4h4a1 1 0 001-1v-6h1a1 1 0 00.707-1.707l-7-7z" />
+              </svg>
+            </button>
+
+            {/* padding-right เพื่อไม่ให้หัวข้อทับปุ่ม */}
+            <h3 className="text-lg font-semibold mb-4 pr-8">
+            กรอกข้อมูลครบทุกช่องและรับไฟล์ .STEP ได้ทันที ไม่ต้องรอ..ตอบกลับครับ</h3>
 
             <input type="text" placeholder="ชื่อ" value={userInfo.name} onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })} className="w-full mb-2 p-2 border rounded" />
             <input
